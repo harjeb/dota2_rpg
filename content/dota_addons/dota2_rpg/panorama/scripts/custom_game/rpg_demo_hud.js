@@ -148,6 +148,19 @@
         return label;
     }
 
+    function localizeFormat(token, value) {
+        return $.Localize(token).replace("%s1", String(value));
+    }
+
+    function localizeHeroName(heroName) {
+        var token = "#" + heroName;
+        var localized = $.Localize(token);
+        if (localized && localized !== token && localized !== heroName) {
+            return localized;
+        }
+        return heroName.replace("npc_dota_hero_", "").replace(/_/g, " ");
+    }
+
     function createMoveButton(parent, side, index, direction, text) {
         var button = $.CreatePanel("Button", parent, side + direction + index);
         button.AddClass("MoveButton");
@@ -286,8 +299,14 @@
                 panels.effectMenu.SetHasClass("Hidden", true);
                 panels.targetMenu.SetHasClass("Hidden", true);
                 panels.row.SetHasClass("MenuOpen", false);
+                panels.row.SetHasClass("ConditionMenuOpen", false);
+                panels.row.SetHasClass("EffectMenuOpen", false);
+                panels.row.SetHasClass("TargetMenuOpen", false);
             }
-            $("#" + side + "Editor").SetHasClass("MenuExpanded", false);
+            var editor = $("#" + side + "Editor");
+            editor.SetHasClass("ConditionMenuExpanded", false);
+            editor.SetHasClass("EffectMenuExpanded", false);
+            editor.SetHasClass("TargetMenuExpanded", false);
         }
     }
 
@@ -308,7 +327,13 @@
         closeEditorMenus();
         menu.SetHasClass("Hidden", !shouldOpen);
         panels.row.SetHasClass("MenuOpen", shouldOpen);
-        $("#" + side + "Editor").SetHasClass("MenuExpanded", shouldOpen);
+        panels.row.SetHasClass("ConditionMenuOpen", shouldOpen && menuType === "condition");
+        panels.row.SetHasClass("EffectMenuOpen", shouldOpen && menuType === "effect");
+        panels.row.SetHasClass("TargetMenuOpen", shouldOpen && menuType === "target");
+        var editor = $("#" + side + "Editor");
+        editor.SetHasClass("ConditionMenuExpanded", shouldOpen && menuType === "condition");
+        editor.SetHasClass("EffectMenuExpanded", shouldOpen && menuType === "effect");
+        editor.SetHasClass("TargetMenuExpanded", shouldOpen && menuType === "target");
     }
 
     function chooseCondition(side, index, condition) {
@@ -366,8 +391,9 @@
         panels.effectSelect.SetHasClass("Hidden", !usesEffect);
         panels.thresholdEntry.enabled = !locked && Boolean(valueKind);
         panels.effectSelect.enabled = !locked && usesEffect;
-        panels.percentLabel.SetHasClass("Hidden", valueKind !== "pct");
-        panels.percentLabel.text = valueKind === "seconds" ? "s" : "%";
+        panels.conditionEditor.SetHasClass("WideConditionSelect", !valueKind && !usesEffect);
+        panels.percentLabel.SetHasClass("Hidden", valueKind !== "pct" && valueKind !== "seconds");
+        panels.percentLabel.text = valueKind === "seconds" ? $.Localize("#dota2_rpg_seconds_short") : "%";
     }
 
     function clampValue(value, fallback, kind) {
@@ -453,7 +479,7 @@
         }
         var selectedHero = heroes[selectedHeroIndex[side]];
         if (selectedHero) {
-            $("#" + side + "SelectedHero").text = $.Localize("#" + selectedHero.name);
+            $("#" + side + "SelectedHero").text = localizeHeroName(selectedHero.name);
         }
     }
 
@@ -552,6 +578,12 @@
         }
     }
 
+    function updateShopEconomyLabels(gold) {
+        $("#GoldLabel").text = localizeFormat("#dota2_rpg_shop_gold", gold);
+        $("#RefreshShopLabel").text = localizeFormat("#dota2_rpg_shop_refresh", shopState.costs.refresh);
+        $("#BenchBuyLabel").text = localizeFormat("#dota2_rpg_bench_buy", shopState.costs.bench_slot);
+    }
+
     function onShopStateInner(data) {
         if (!data) {
             data = shopState;
@@ -578,7 +610,7 @@
         renderShop();
         renderLineupStrip();
         renderRadiantHeroStrip();
-        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + shopState.gold;
+        updateShopEconomyLabels(shopState.gold);
         updateTeamLevelLabels();
     }
 
@@ -609,8 +641,8 @@
                 portrait.AddClass("ShopPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
-                var nameLabel = createLabel(slot, "ShopName", heroName.replace("npc_dota_hero_", ""));
-                createLabel(slot, "ShopPrice", "100g");
+                createLabel(slot, "ShopName", localizeHeroName(heroName));
+                createLabel(slot, "ShopPrice", localizeFormat("#dota2_rpg_shop_price", shopState.costs.hero));
                 if (!owned) {
                     slot.SetPanelEvent("onactivate", function () {
                         GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
@@ -621,8 +653,7 @@
                 }
             }(shopState.offer[index]));
         }
-        $("#ShopHeader").text = $.Localize("#dota2_rpg_shop_title") +
-            "  [offer=" + shopState.offer.length + " owned=" + shopState.owned.length + "]";
+        $("#ShopHeader").text = $.Localize("#dota2_rpg_shop_title");
     }
 
     function wireShopButtons() {
@@ -845,6 +876,7 @@
         // 时间奖励：越快越多（服务端已算好 time_bonus）
         gold += Number(settlement.time_bonus || 0);
         saveData.gold += gold;
+        shopState.gold = saveData.gold;
         // 服务端是金币权威，把存档金币推回去
         syncSaveToServer();
         persistSave();
@@ -879,6 +911,10 @@
     function onBattleState(data) {
         phase = data.phase || "setup";
         serverReady = Number(data.ready || 0) === 1;
+        if (data.gold !== undefined) {
+            shopState.gold = Math.max(0, Number(data.gold) || 0);
+            saveData.gold = shopState.gold;
+        }
         if (data.level) {
             currentLevelId = data.level;
         }
@@ -909,7 +945,7 @@
 
         renderLevelList();
         updateLevelProgress();
-        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+        updateShopEconomyLabels(shopState.gold);
         updateTeamLevelLabels();
 
         if (phase !== "setup") {
@@ -955,7 +991,7 @@
                 ? $.Localize("#dota2_rpg_attempts_left") + " " + attemptsLeft(settlement.level)
                 : $.Localize("#dota2_rpg_no_attempts");
         }
-        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+        updateShopEconomyLabels(shopState.gold);
         updateTeamLevelLabels();
     }
 
@@ -990,7 +1026,8 @@
         renderSide("Dire");
     });
     wireShopButtons();
-    $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+    shopState.gold = saveData.gold;
+    updateShopEconomyLabels(shopState.gold);
     updateTeamLevelLabels();
     sendHeroLevels();
     syncSaveToServer();

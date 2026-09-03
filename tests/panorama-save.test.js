@@ -24,13 +24,16 @@ function createPanel(id) {
         GetChildCount: function () { return 0; },
         GetChild: function () { return createPanel(""); },
         GetAttributeString: function (_, fallback) { return fallback; },
-        RemoveAndDeleteChildren: function () {}
+        RemoveAndDeleteChildren: function () {},
+        classes: classes
     };
 }
 
 function runHud(savedValue) {
     var panels = {};
+    var createdPanels = [];
     var sentEvents = [];
+    var subscriptions = {};
     var persistedValue = null;
 
     function panorama(selector) {
@@ -40,9 +43,21 @@ function runHud(savedValue) {
         return panels[selector];
     }
     panorama.CreatePanel = function (_, parent, id) {
-        return createPanel(id || "");
+        var panel = createPanel(id || "");
+        createdPanels.push(panel);
+        return panel;
     };
-    panorama.Localize = function (token) { return token; };
+    panorama.Localize = function (token) {
+        var localized = {
+            "#npc_dota_hero_axe": "Localized Axe",
+            "#dota2_rpg_shop_title": "Hero Shop",
+            "#dota2_rpg_shop_gold": "Gold: %s1",
+            "#dota2_rpg_shop_price": "%s1 gold",
+            "#dota2_rpg_shop_refresh": "Refresh (%s1 gold)",
+            "#dota2_rpg_bench_buy": "Buy bench slot (%s1 gold)"
+        };
+        return localized[token] || token;
+    };
     panorama.LocalStorage = {
         Get: function () { return savedValue === null ? null : JSON.stringify(savedValue); },
         Set: function (_, value) { persistedValue = value; }
@@ -52,7 +67,7 @@ function runHud(savedValue) {
         console: console,
         $: panorama,
         GameEvents: {
-            Subscribe: function () {},
+            Subscribe: function (name, callback) { subscriptions[name] = callback; },
             SendCustomGameEventToServer: function (name, payload) {
                 sentEvents.push({ name: name, payload: payload });
             }
@@ -70,7 +85,13 @@ function runHud(savedValue) {
     if (!saveSync) {
         throw new Error("HUD did not send rpg_save_sync during initialization");
     }
-    return { payload: saveSync, persistedValue: persistedValue };
+    return {
+        payload: saveSync,
+        persistedValue: persistedValue,
+        panels: panels,
+        createdPanels: createdPanels,
+        subscriptions: subscriptions
+    };
 }
 
 function assert(condition, message) {
@@ -85,6 +106,31 @@ assert(fresh.payload.owned_text === "", "fresh owned list must be serialized as 
 assert(fresh.payload.lineup_text === "", "fresh lineup must be serialized as an empty string");
 assert(fresh.payload.owned === undefined && fresh.payload.lineup === undefined,
     "save sync must not contain nested list fields");
+
+fresh.subscriptions.rpg_shop_state({
+    gold: 300,
+    offer_text: "npc_dota_hero_axe",
+    owned_text: "",
+    lineup_text: "",
+    bench_slots: 0,
+    cost_hero: 100,
+    cost_refresh: 20,
+    cost_bench_slot: 200,
+    bench_slot_max: 5,
+    lineup_max: 5
+});
+assert(fresh.panels["#GoldLabel"].text === "Gold: 300",
+    "shop header must show the authoritative shop-state gold");
+assert(fresh.panels["#RefreshShopLabel"].text === "Refresh (20 gold)",
+    "refresh label must be localized with the server-configured cost");
+var localizedHeroFound = fresh.createdPanels.some(function (panel) {
+    return panel.classes.ShopName && panel.text === "Localized Axe";
+});
+assert(localizedHeroFound, "shop hero names must use Dota hero localization");
+
+fresh.subscriptions.rpg_battle_state({ phase: "setup", ready: 1, gold: 180, level: "ch01" });
+assert(fresh.panels["#GoldLabel"].text === "Gold: 180",
+    "battle-state gold must refresh the shop header instead of leaving a stale save value");
 
 var brokenV1 = runHud(JSON.parse(fs.readFileSync(brokenV1Path, "utf8")));
 assert(brokenV1.payload.gold === 300, "empty v1 save affected by the zero-gold bug must migrate to 300 gold");
@@ -132,4 +178,4 @@ var currentSave = runHud({
 });
 assert(currentSave.payload.gold === 0, "current-version zero gold must not be migrated again");
 
-console.log("PASS: Panorama save initialization, v1 migration, and flat CEM payloads");
+console.log("PASS: Panorama save migration, localized shop rendering, and authoritative gold display");

@@ -23,22 +23,13 @@
 					</Button>
 				</Panel>
 				<Panel id="ConditionMenu" class="ConditionMenu Hidden">
-					<Panel class="ConditionMenuColumn">
-						<Button id="AlwaysOption" class="ConditionOption" value="always"><Label text="#dota2_rpg_condition_always" /></Button>
-						<Button id="EnemyBelowOption" class="ConditionOption" value="enemy_below"><Label text="#dota2_rpg_condition_enemy_below" /></Button>
-						<Button id="SelfBelowOption" class="ConditionOption" value="self_below"><Label text="#dota2_rpg_condition_self_below" /></Button>
-						<Button id="AllyBelowOption" class="ConditionOption" value="ally_below"><Label text="#dota2_rpg_condition_ally_below" /></Button>
-						<Button id="EnemyInRangeOption" class="ConditionOption" value="enemy_in_range"><Label text="#dota2_rpg_condition_enemy_in_range" /></Button>
-						<Button id="EnemyChannelingOption" class="ConditionOption" value="enemy_channeling"><Label text="#dota2_rpg_condition_enemy_channeling" /></Button>
-					</Panel>
-					<Panel class="ConditionMenuColumn">
-						<Button id="EnemyHighestHpOption" class="ConditionOption" value="enemy_highest_hp"><Label text="#dota2_rpg_condition_enemy_highest_hp" /></Button>
-						<Button id="EnemyLowestHpOption" class="ConditionOption" value="enemy_lowest_hp"><Label text="#dota2_rpg_condition_enemy_lowest_hp" /></Button>
-						<Button id="EnemyNearestOption" class="ConditionOption" value="enemy_nearest"><Label text="#dota2_rpg_condition_enemy_nearest" /></Button>
-						<Button id="EnemyFarthestOption" class="ConditionOption" value="enemy_farthest"><Label text="#dota2_rpg_condition_enemy_farthest" /></Button>
-						<Button id="EnemyHasEffectOption" class="ConditionOption" value="enemy_has_effect"><Label text="#dota2_rpg_condition_enemy_has_effect" /></Button>
-						<Button id="EnemyLacksEffectOption" class="ConditionOption" value="enemy_lacks_effect"><Label text="#dota2_rpg_condition_enemy_lacks_effect" /></Button>
-					</Panel>
+					<Button id="AlwaysOption" class="ConditionOption" value="always"><Label text="#dota2_rpg_condition_always" /></Button>
+					<Button id="SelfHpBelowOption" class="ConditionOption" value="self_hp_below"><Label text="#dota2_rpg_condition_self_hp_below" /></Button>
+					<Button id="SelfMpAboveOption" class="ConditionOption" value="self_mp_above"><Label text="#dota2_rpg_condition_self_mp_above" /></Button>
+					<Button id="EnemyExistsOption" class="ConditionOption" value="enemy_exists"><Label text="#dota2_rpg_condition_enemy_exists" /></Button>
+					<Button id="AllyExistsOption" class="ConditionOption" value="ally_exists"><Label text="#dota2_rpg_condition_ally_exists" /></Button>
+					<Button id="EnemyCountOption" class="ConditionOption" value="enemy_count_ge"><Label text="#dota2_rpg_condition_enemy_count_ge" /></Button>
+					<Button id="BattleTimeOption" class="ConditionOption" value="battle_time_ge"><Label text="#dota2_rpg_condition_battle_time_ge" /></Button>
 				</Panel>
 				<Panel id="EffectMenu" class="EffectMenu Hidden">
 					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
@@ -53,21 +44,17 @@
 					</Button>
 				</Panel>
 				<Panel id="TargetMenu" class="TargetMenu Hidden">
-					<Panel class="TargetMenuColumn">
-						<Button class="TargetOption" value="enemy_hp_lowest"><Label text="#dota2_rpg_target_enemy_hp_lowest" /></Button>
-						<Button class="TargetOption" value="enemy_hp_pct_lowest"><Label text="#dota2_rpg_target_enemy_hp_pct_lowest" /></Button>
-						<Button class="TargetOption" value="enemy_hp_highest"><Label text="#dota2_rpg_target_enemy_hp_highest" /></Button>
-						<Button class="TargetOption" value="enemy_hp_pct_highest"><Label text="#dota2_rpg_target_enemy_hp_pct_highest" /></Button>
-						<Button class="TargetOption" value="enemy_nearest"><Label text="#dota2_rpg_target_enemy_nearest" /></Button>
-						<Button class="TargetOption" value="enemy_farthest"><Label text="#dota2_rpg_target_enemy_farthest" /></Button>
-					</Panel>
-					<Panel class="TargetMenuColumn">
-						<Button class="TargetOption" value="enemy_attack_highest"><Label text="#dota2_rpg_target_enemy_attack_highest" /></Button>
-						<Button class="TargetOption" value="enemy_casting"><Label text="#dota2_rpg_target_enemy_casting" /></Button>
-						<Button class="TargetOption" value="ally_hp_lowest"><Label text="#dota2_rpg_target_ally_hp_lowest" /></Button>
-						<Button class="TargetOption" value="ally_hp_pct_lowest"><Label text="#dota2_rpg_target_ally_hp_pct_lowest" /></Button>
-						<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
-					</Panel>
+					<Button class="TargetOption" value="enemy_hp_lowest"><Label text="#dota2_rpg_target_enemy_hp_lowest" /></Button>
+					<Button class="TargetOption" value="enemy_hp_pct_lowest"><Label text="#dota2_rpg_target_enemy_hp_pct_lowest" /></Button>
+					<Button class="TargetOption" value="enemy_hp_highest"><Label text="#dota2_rpg_target_enemy_hp_highest" /></Button>
+					<Button class="TargetOption" value="enemy_hp_pct_highest"><Label text="#dota2_rpg_target_enemy_hp_pct_highest" /></Button>
+					<Button class="TargetOption" value="enemy_nearest"><Label text="#dota2_rpg_target_enemy_nearest" /></Button>
+					<Button class="TargetOption" value="enemy_farthest"><Label text="#dota2_rpg_target_enemy_farthest" /></Button>
+					<Button class="TargetOption" value="enemy_attack_highest"><Label text="#dota2_rpg_target_enemy_attack_highest" /></Button>
+					<Button class="TargetOption" value="enemy_casting"><Label text="#dota2_rpg_target_enemy_casting" /></Button>
+					<Button class="TargetOption" value="ally_hp_lowest"><Label text="#dota2_rpg_target_ally_hp_lowest" /></Button>
+					<Button class="TargetOption" value="ally_hp_pct_lowest"><Label text="#dota2_rpg_target_ally_hp_pct_lowest" /></Button>
+					<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
 				</Panel>
 			</Panel>
 		</snippet>
@@ -77,7 +64,7 @@
 		<Panel id="BattleHeader">
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
 			<Label id="LevelProgress" text="1/20" />
-			<Label id="BuildTag" text="BUILD shop-lineup-v3" />
+			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
 			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>
 
@@ -101,14 +88,17 @@
 
 		<Panel id="BattleControls" hittest="true">
 			<Panel id="ShopPanel" class="ShopPanel">
-				<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
+				<Panel class="ShopHeaderRow">
+					<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
+					<Label id="GoldLabel" text="#dota2_rpg_shop_gold_syncing" />
+				</Panel>
 				<Panel id="ShopOffer" class="ShopOffer" />
 				<Panel class="ShopButtons">
 					<Button id="RefreshShopButton" class="ShopButton">
-						<Label text="#dota2_rpg_shop_refresh" />
+						<Label id="RefreshShopLabel" text="#dota2_rpg_shop_refresh" />
 					</Button>
 					<Button id="BenchBuyButton" class="ShopButton">
-						<Label text="#dota2_rpg_bench_buy" />
+						<Label id="BenchBuyLabel" text="#dota2_rpg_bench_buy" />
 					</Button>
 				</Panel>
 				<Panel id="LineupPanel" class="LineupPanel">
@@ -116,12 +106,11 @@
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
 			</Panel>
-			<Label id="VersusLabel" text="VS" />
+			<Label id="VersusLabel" text="#dota2_rpg_versus" />
 			<Button id="StartBattleButton">
 				<Label text="#dota2_rpg_start_battle" />
 			</Button>
 			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
-			<Label id="GoldLabel" text="" />
 		</Panel>
 
 		<Panel id="DireEditor" class="TeamEditor DireEditor" hittest="true">

@@ -182,6 +182,73 @@ foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_ba
 }
 
 $conditionSource = $javascript + "`n" + $hudLayout
+$hudXml = [xml]$hudLayout
+$expectedConditionValues = @(
+    "always",
+    "self_hp_below",
+    "self_mp_above",
+    "enemy_exists",
+    "ally_exists",
+    "enemy_count_ge",
+    "battle_time_ge"
+)
+$actualConditionValues = @(
+    $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |
+        ForEach-Object { $_.GetAttribute("value") }
+)
+$conditionDifference = @(Compare-Object -ReferenceObject $expectedConditionValues -DifferenceObject $actualConditionValues)
+if ($conditionDifference.Count -gt 0) {
+    throw "Condition dropdown values must exactly match the conditions supported by Panorama JavaScript"
+}
+
+$expectedTargetValues = @(
+    "enemy_hp_lowest",
+    "enemy_hp_pct_lowest",
+    "enemy_hp_highest",
+    "enemy_hp_pct_highest",
+    "enemy_nearest",
+    "enemy_farthest",
+    "enemy_attack_highest",
+    "enemy_casting",
+    "ally_hp_lowest",
+    "ally_hp_pct_lowest",
+    "self"
+)
+$actualTargetValues = @(
+    $hudXml.SelectNodes("//Panel[@id='TargetMenu']//Button") |
+        ForEach-Object { $_.GetAttribute("value") }
+)
+$targetDifference = @(Compare-Object -ReferenceObject $expectedTargetValues -DifferenceObject $actualTargetValues)
+if ($targetDifference.Count -gt 0) {
+    throw "Target dropdown values must exactly match the targets supported by Panorama JavaScript"
+}
+if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
+    throw "Condition and target dropdowns must use the readable single-column layout"
+}
+
+$shopPanelNode = $hudXml.SelectSingleNode("//Panel[@id='ShopPanel']")
+if ($null -eq $shopPanelNode -or $null -eq $shopPanelNode.SelectSingleNode(".//Label[@id='GoldLabel']")) {
+    throw "The authoritative gold display must be inside the shop panel"
+}
+
+$localizationFiles = @(
+    "game\dota_addons\dota2_rpg\resource\addon_english.txt",
+    "game\dota_addons\dota2_rpg\resource\addon_schinese.txt"
+)
+$referencedTokens = @(
+    [regex]::Matches($conditionSource, "#(dota2_rpg_[a-z0-9_]+)") |
+        ForEach-Object { $_.Groups[1].Value } |
+        Sort-Object -Unique
+)
+foreach ($localizationFile in $localizationFiles) {
+    $localizationText = Get-Content -LiteralPath (Join-Path $repoRoot $localizationFile) -Raw
+    foreach ($token in $referencedTokens) {
+        if ($localizationText -notmatch ('"' + [regex]::Escape($token) + '"')) {
+            throw "Missing localization token $token in $localizationFile"
+        }
+    }
+}
+
 foreach ($conditionName in @(
     'always:',
     'self_hp_below:',
@@ -226,7 +293,7 @@ foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
     }
 }
 
-foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="BenchBuyButton"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+foreach ($shopPattern in @('id="ShopOffer"', 'id="GoldLabel"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }

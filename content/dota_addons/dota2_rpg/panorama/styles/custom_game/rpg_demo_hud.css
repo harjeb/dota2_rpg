@@ -87,12 +87,12 @@
 
 .TeamEditor
 {
-	width: 544px;
-	height: 620px;
+	width: 620px;
+	height: 650px;
 	vertical-align: center;
 	flow-children: down;
-	margin-top: 32px;
-	padding: 14px;
+	margin-top: 18px;
+	padding: 16px;
 	background-color: #111820f2;
 	border: 1px solid #657078;
 	box-shadow: #000000bb 0px 5px 18px 0px;
@@ -100,22 +100,35 @@
 	transition-duration: 0.18s;
 }
 
-.TeamEditor.MenuExpanded
+.TeamEditor.ConditionMenuExpanded
 {
-	height: 812px;
+	height: 888px;
+	margin-top: 0px;
+}
+
+.TeamEditor.EffectMenuExpanded
+{
+	height: 802px;
+	margin-top: 0px;
+}
+
+.TeamEditor.TargetMenuExpanded
+{
+	height: 1032px;
+	margin-top: 0px;
 }
 
 .RadiantEditor
 {
 	horizontal-align: left;
-	margin-left: 24px;
+	margin-left: 18px;
 	border-left: 4px solid #4bb99f;
 }
 
 .DireEditor
 {
 	horizontal-align: right;
-	margin-right: 24px;
+	margin-right: 18px;
 	border-right: 4px solid #d65e56;
 }
 
@@ -132,7 +145,7 @@
 .TeamHeader
 {
 	width: 100%;
-	height: 74px;
+	height: 84px;
 	flow-children: right;
 	padding-bottom: 10px;
 	border-bottom: 1px solid #4d5860;
@@ -150,7 +163,7 @@
 {
 	width: 100%;
 	font-family: titleFont;
-	font-size: 22px;
+	font-size: 24px;
 	font-weight: bold;
 	color: #f4eee2;
 	text-overflow: shrink;
@@ -166,7 +179,7 @@
 .SelectedHeroName
 {
 	margin-top: 2px;
-	font-size: 14px;
+	font-size: 16px;
 	font-weight: bold;
 	color: #d9bd6b;
 }
@@ -179,9 +192,9 @@
 
 .HeroPortrait
 {
-	width: 54px;
-	height: 54px;
-	margin-left: 5px;
+	width: 64px;
+	height: 64px;
+	margin-left: 6px;
 	border: 1px solid #909ba2;
 	brightness: 0.55;
 	saturation: 0.55;
@@ -216,14 +229,14 @@
 .ColumnHeader
 {
 	width: 100%;
-	height: 28px;
+	height: 32px;
 	flow-children: right;
 	margin-top: 8px;
 }
 
 .ColumnHeader Label
 {
-	font-size: 12px;
+	font-size: 14px;
 	color: #829099;
 	text-transform: uppercase;
 	vertical-align: center;
@@ -231,23 +244,23 @@
 
 .PriorityColumn
 {
-	width: 34px;
+	width: 38px;
 	text-align: center;
 }
 
 .ActionColumn
 {
-	width: 108px;
+	width: 112px;
 }
 
 .ConditionColumn
 {
-	width: 244px;
+	width: 300px;
 }
 
 .ForceColumn
 {
-	width: 64px;
+	width: 68px;
 	text-align: center;
 }
 
@@ -260,14 +273,14 @@
 .RuleRow
 {
 	width: 100%;
-	height: 92px;
+	height: 100px;
 	flow-children: right;
 	border-bottom: 1px solid #303b43;
 }
 
 .PriorityNumber
 {
-	width: 34px;
+	width: 38px;
 	vertical-align: center;
 	font-family: titleFont;
 	font-size: 19px;
@@ -278,9 +291,9 @@
 
 .ActionName
 {
-	width: 108px;
+	width: 112px;
 	vertical-align: center;
-	font-size: 16px;
+	font-size: 17px;
 	font-weight: bold;
 	color: #e8edf0;
 	text-overflow: shrink;
@@ -288,15 +301,29 @@
 
 .ConditionEditor
 {
-	width: 244px;
+	width: 300px;
 	height: 100%;
 	flow-children: down;
 }
 
 .RuleRow.MenuOpen
 {
-	height: 284px;
 	z-index: 100;
+}
+
+.RuleRow.ConditionMenuOpen
+{
+	height: 338px;
+}
+
+.RuleRow.EffectMenuOpen
+{
+	height: 252px;
+}
+
+.RuleRow.TargetMenuOpen
+{
+	height: 482px;
 }
 
 .RuleRow.MenuOpen .PriorityNumber,
@@ -310,15 +337,15 @@
 
 .ConditionTop
 {
-	width: 244px;
-	height: 57px;
+	width: 300px;
+	height: 62px;
 	flow-children: right;
 }
 
 .ConditionSelect
 {
-	width: 146px;
-	height: 36px;
+	width: 198px;
+	height: 42px;
 	vertical-align: center;
 	margin-right: 5px;
 	flow-children: right;
@@ -330,17 +357,17 @@
 {
 	width: fill-parent-flow(1);
 	vertical-align: center;
-	padding-left: 7px;
-	font-size: 14px;
+	padding-left: 9px;
+	font-size: 15px;
 	color: #d7dfe3;
 	text-overflow: shrink;
 }
 
 .SelectChevron
 {
-	width: 22px;
+	width: 28px;
 	vertical-align: center;
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: bold;
 	color: #aeb9bf;
 	text-align: center;
@@ -357,28 +384,27 @@
 	brightness: 0.65;
 }
 
+.ConditionEditor.WideConditionSelect .ConditionSelect
+{
+	width: 300px;
+	margin-right: 0px;
+}
+
 .ConditionMenu
 {
-	width: 330px;
-	height: 192px;
-	flow-children: right;
+	width: 300px;
+	height: 238px;
+	flow-children: down;
 	background-color: #141d23;
 	border: 1px solid #8b989f;
 	box-shadow: #000000dd 0px 4px 12px 0px;
 	z-index: 200;
 }
 
-.ConditionMenuColumn
-{
-	width: 165px;
-	height: 192px;
-	flow-children: down;
-}
-
 .ConditionOption
 {
 	width: 100%;
-	height: 32px;
+	height: 34px;
 	background-color: #1c272e;
 	border-bottom: 1px solid #39454d;
 }
@@ -398,23 +424,23 @@
 {
 	width: 100%;
 	vertical-align: center;
-	padding-left: 8px;
-	font-size: 13px;
+	padding-left: 10px;
+	font-size: 15px;
 	color: #e1e7e9;
 	text-overflow: shrink;
 }
 
 .ThresholdControls
 {
-	width: 93px;
-	height: 57px;
+	width: 97px;
+	height: 62px;
 	flow-children: right;
 }
 
 .ThresholdEntry
 {
-	width: 58px;
-	height: 36px;
+	width: 64px;
+	height: 42px;
 	vertical-align: center;
 	padding: 5px 6px 3px 6px;
 	background-color: #202a31;
@@ -438,7 +464,7 @@
 
 .PercentLabel
 {
-	width: 28px;
+	width: 33px;
 	vertical-align: center;
 	font-size: 15px;
 	font-weight: bold;
@@ -448,8 +474,8 @@
 
 .EffectSelect
 {
-	width: 93px;
-	height: 36px;
+	width: 97px;
+	height: 42px;
 	vertical-align: center;
 	flow-children: right;
 	background-color: #202a31;
@@ -481,8 +507,8 @@
 
 .EffectMenu
 {
-	width: 190px;
-	height: 128px;
+	width: 300px;
+	height: 136px;
 	flow-children: down;
 	background-color: #141d23;
 	border: 1px solid #8b989f;
@@ -493,7 +519,7 @@
 .EffectOption
 {
 	width: 100%;
-	height: 32px;
+	height: 34px;
 	background-color: #1c272e;
 	border-bottom: 1px solid #39454d;
 }
@@ -521,15 +547,15 @@
 
 .TargetTop
 {
-	width: 244px;
-	height: 34px;
+	width: 300px;
+	height: 38px;
 	flow-children: right;
 }
 
 .TargetSelect
 {
-	width: 244px;
-	height: 32px;
+	width: 300px;
+	height: 36px;
 	flow-children: right;
 	background-color: #1d262d;
 	border: 1px solid #4d5a63;
@@ -539,8 +565,8 @@
 {
 	width: fill-parent-flow(1);
 	vertical-align: center;
-	padding-left: 7px;
-	font-size: 13px;
+	padding-left: 9px;
+	font-size: 14px;
 	color: #c8d2d7;
 	text-overflow: shrink;
 }
@@ -558,26 +584,19 @@
 
 .TargetMenu
 {
-	width: 330px;
-	height: 160px;
-	flow-children: right;
+	width: 300px;
+	height: 374px;
+	flow-children: down;
 	background-color: #141d23;
 	border: 1px solid #8b989f;
 	box-shadow: #000000dd 0px 4px 12px 0px;
 	z-index: 200;
 }
 
-.TargetMenuColumn
-{
-	width: 165px;
-	height: 160px;
-	flow-children: down;
-}
-
 .TargetOption
 {
 	width: 100%;
-	height: 32px;
+	height: 34px;
 	background-color: #1c272e;
 	border-bottom: 1px solid #39454d;
 }
@@ -597,16 +616,16 @@
 {
 	width: 100%;
 	vertical-align: center;
-	padding-left: 8px;
-	font-size: 13px;
+	padding-left: 10px;
+	font-size: 15px;
 	color: #e1e7e9;
 	text-overflow: shrink;
 }
 
 .ForceToggle
 {
-	width: 62px;
-	height: 32px;
+	width: 66px;
+	height: 36px;
 	vertical-align: center;
 	margin-left: 2px;
 	background-color: #29333a;
@@ -649,8 +668,8 @@
 
 .MoveButton
 {
-	width: 28px;
-	height: 28px;
+	width: 30px;
+	height: 30px;
 	vertical-align: center;
 	margin-left: 2px;
 	background-color: #28343c;
@@ -684,8 +703,8 @@
 
 #BattleControls
 {
-	width: 300px;
-	height: 560px;
+	width: 420px;
+	height: 700px;
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
@@ -696,32 +715,52 @@
 {
 	width: 100%;
 	flow-children: down;
-	padding: 8px;
+	padding: 12px;
 	background-color: #10161deb;
 	border: 1px solid #d7b85a;
 }
 
-#ShopHeader
+.ShopHeaderRow
 {
 	width: 100%;
-	font-size: 14px;
+	height: 28px;
+	flow-children: right;
+}
+
+#ShopHeader
+{
+	width: fill-parent-flow(1);
+	vertical-align: center;
+	font-size: 18px;
 	font-weight: bold;
 	color: #d9bd6b;
+}
+
+#GoldLabel
+{
+	width: 150px;
+	vertical-align: center;
+	font-size: 17px;
+	font-weight: bold;
+	color: #f2d982;
+	text-align: right;
+	text-overflow: shrink;
 }
 
 .ShopOffer
 {
 	width: 100%;
-	height: 62px;
+	height: 110px;
 	flow-children: right;
-	margin-top: 4px;
+	margin-top: 8px;
 }
 
 .ShopOfferSlot
 {
-	width: 52px;
-	height: 100%;
-	margin-right: 4px;
+	width: 72px;
+	height: 110px;
+	flow-children: down;
+	margin-right: 5px;
 	border: 1px solid #5a6871;
 	background-color: #1c272e;
 }
@@ -729,30 +768,31 @@
 .ShopPortrait
 {
 	width: 100%;
-	height: 44px;
-	vertical-align: top;
+	height: 70px;
 }
 
 .ShopName
 {
 	width: 100%;
-	height: 12px;
-	vertical-align: bottom;
-	font-size: 9px;
-	color: #c8d2d7;
+	height: 22px;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #e4ebee;
 	text-align: center;
-	text-overflow: clip;
+	text-overflow: shrink;
 }
 
 .ShopPrice
 {
 	width: 100%;
-	height: 10px;
-	vertical-align: bottom;
-	font-size: 9px;
+	height: 18px;
+	vertical-align: center;
+	font-size: 13px;
 	font-weight: bold;
 	color: #f2d982;
 	text-align: center;
+	text-overflow: shrink;
 }
 
 .ShopOfferSlot.Owned
@@ -771,12 +811,17 @@
 	opacity: 0.3;
 }
 
+.ShopOfferSlot.Owned:disabled
+{
+	opacity: 0.72;
+}
+
 .ShopButtons
 {
 	width: 100%;
-	height: 34px;
+	height: 46px;
 	flow-children: right;
-	margin-top: 6px;
+	margin-top: 8px;
 }
 
 .ShopButton
@@ -798,7 +843,7 @@
 	width: 100%;
 	horizontal-align: center;
 	vertical-align: center;
-	font-size: 12px;
+	font-size: 15px;
 	color: #f5eddd;
 	text-overflow: shrink;
 }
@@ -807,19 +852,19 @@
 {
 	width: 100%;
 	flow-children: down;
-	margin-top: 6px;
+	margin-top: 10px;
 }
 
 .LineupHeader
 {
-	font-size: 12px;
+	font-size: 14px;
 	color: #9facb4;
 }
 
 .LineupPanel .HeroPortrait
 {
-	width: 34px;
-	height: 34px;
+	width: 48px;
+	height: 48px;
 }
 
 #LevelSection
@@ -879,16 +924,6 @@
 	font-size: 12px;
 	color: #dfe6e9;
 	text-overflow: shrink;
-}
-
-#GoldLabel
-{
-	width: 100%;
-	margin-top: 10px;
-	font-size: 16px;
-	font-weight: bold;
-	color: #f2d982;
-	text-align: center;
 }
 
 #RewardLabel
