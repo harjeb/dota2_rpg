@@ -868,8 +868,8 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 	for index, hero in ipairs(heroes) do
 		if TacticEngine.IsValidUnit(hero) then
 			info["radiant_" .. index] = {
-				name = self.lineup[index],
-				actions = BuildHeroActionSlots(hero),
+				name = self.lineup[index] or "",
+				actions_text = table.concat(BuildHeroActionSlots(hero), ";"),
 			}
 		end
 	end
@@ -877,12 +877,13 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 end
 
 function CDota2RpgDemo:BroadcastShopState()
+	-- CEM 载荷不传输 Lua 数组（数字键会被丢弃），一律用分隔符字符串
 	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
 		gold = self.gold,
 		player_level = self.playerLevel,
-		offer = self.shopOffer,
-		owned = self.ownedHeroes,
-		lineup = self.lineup,
+		offer_text = table.concat(self.shopOffer, ";"),
+		owned_text = table.concat(self.ownedHeroes, ";"),
+		lineup_text = table.concat(self.lineup, ";"),
 		bench_slots = self.benchSlots,
 		costs = {
 			hero = self.shopCosts.hero,
@@ -906,7 +907,7 @@ function CDota2RpgDemo:BroadcastLevelInfo()
 		})
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_levels_state", {
-		levels = list,
+		level_ids = table.concat(self.orderedLevels, ";"),
 		current = self.currentLevelId,
 	})
 end

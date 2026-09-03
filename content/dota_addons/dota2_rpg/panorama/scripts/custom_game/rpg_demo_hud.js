@@ -82,9 +82,10 @@
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots ? heroSlots[key] : null;
         var actions = [];
-        if (entry && entry.actions) {
-            for (var actionKey in entry.actions) {
-                var action = String(entry.actions[actionKey]);
+        if (entry && entry.actions_text) {
+            var rawActions = splitList(entry.actions_text);
+            for (var actionKey = 0; actionKey < rawActions.length; actionKey++) {
+                var action = String(rawActions[actionKey]);
                 if (DEFAULT_RULE_BY_ACTION[action]) {
                     actions.push(action);
                 }
@@ -506,6 +507,14 @@
         $("#ControlStatus").text = text;
     }
 
+    // CEM 载荷不传输数组：服务端用分号分隔字符串，这里拆回数组
+    function splitList(text) {
+        if (!text || text === "") {
+            return [];
+        }
+        return String(text).split(";");
+    }
+
     // CEM 事件里的数组会变成 {1:..,2:..} 对象，统一转回数组
     function cemList(t) {
         var out = [];
@@ -548,9 +557,9 @@
             data = shopState;
         }
         shopState.gold = Number(data.gold !== undefined ? data.gold : shopState.gold);
-        shopState.offer = cemList(data.offer);
-        shopState.owned = cemList(data.owned);
-        shopState.lineup = cemList(data.lineup);
+        shopState.offer = splitList(data.offer_text);
+        shopState.owned = splitList(data.owned_text);
+        shopState.lineup = splitList(data.lineup_text);
         shopState.bench_slots = Number(data.bench_slots || 0);
         if (data.costs) {
             shopState.costs = data.costs;
@@ -883,7 +892,7 @@
     function onLevelsState(data) {
         data = data || {};
         currentLevelId = data.current || currentLevelId;
-        levelList = cemList(data.levels);
+        levelList = splitList(data.level_ids);
         updateLevelProgress();
     }
 
