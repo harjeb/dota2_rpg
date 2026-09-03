@@ -107,11 +107,16 @@
 		</Panel>
 
 		<Panel id="BattleControls" hittest="true">
+			<Panel id="LevelSection">
+				<Label id="LevelHeader" text="#dota2_rpg_level_select" />
+				<Panel id="LevelList" class="LevelList" />
+			</Panel>
 			<Label id="VersusLabel" text="VS" />
 			<Button id="StartBattleButton">
 				<Label text="#dota2_rpg_start_battle" />
 			</Button>
 			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
+			<Label id="GoldLabel" text="" />
 		</Panel>
 
 		<Panel id="DireEditor" class="TeamEditor DireEditor" hittest="true">
@@ -138,6 +143,7 @@
 
 		<Panel id="BattleResult" class="BattleResult Hidden">
 			<Label id="BattleResultLabel" />
+			<Label id="RewardLabel" />
 		</Panel>
 	</Panel>
 </root>

@@ -668,12 +668,91 @@
 
 #BattleControls
 {
-	width: 205px;
-	height: 220px;
+	width: 260px;
+	height: 330px;
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
 	margin-top: 22px;
+}
+
+#LevelSection
+{
+	width: 100%;
+	flow-children: down;
+	padding: 6px 8px;
+	background-color: #10161deb;
+	border: 1px solid #66717a;
+}
+
+#LevelHeader
+{
+	width: 100%;
+	font-size: 13px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.LevelList
+{
+	width: 100%;
+	flow-children: down;
+	margin-top: 4px;
+}
+
+.LevelOption
+{
+	width: 100%;
+	height: 26px;
+	margin-bottom: 2px;
+	background-color: #1c272e;
+	border: 1px solid #4d5a63;
+}
+
+.LevelOption:hover
+{
+	brightness: 1.3;
+}
+
+.LevelOption:disabled
+{
+	brightness: 0.55;
+}
+
+.LevelOption.Selected
+{
+	background-color: #4a3d22;
+	border-color: #d7b85a;
+}
+
+.LevelOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 6px;
+	font-size: 12px;
+	color: #dfe6e9;
+	text-overflow: shrink;
+}
+
+#GoldLabel
+{
+	width: 100%;
+	margin-top: 10px;
+	font-size: 16px;
+	font-weight: bold;
+	color: #f2d982;
+	text-align: center;
+}
+
+#RewardLabel
+{
+	width: 100%;
+	horizontal-align: center;
+	font-size: 15px;
+	color: #bfe3c0;
+	text-align: center;
+	text-overflow: shrink;
 }
 
 #VersusLabel

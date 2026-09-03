@@ -495,6 +495,71 @@
         $("#ControlStatus").text = text;
     }
 
+    // ---------------- 关卡选择（数据来自 CustomNetTables） ----------------
+    var levelList = [];
+    var currentLevelId = "demo_3v3";
+
+    function renderLevelList() {
+        var container = $("#LevelList");
+        container.RemoveAndDeleteChildren();
+        for (var index = 0; index < levelList.length; index++) {
+            (function (level) {
+                var option = $.CreatePanel("Button", container, "Level_" + level.id);
+                option.AddClass("LevelOption");
+                option.SetHasClass("Selected", level.id === currentLevelId);
+                createLabel(option, "LevelOptionLabel", level.name);
+                option.SetPanelEvent("onactivate", function () {
+                    if (phase !== "setup") {
+                        return;
+                    }
+                    GameEvents.SendCustomGameEventToServer("rpg_select_level", { level: level.id });
+                });
+            }(levelList[index]));
+        }
+    }
+
+    // ---------------- 金币存档（LocalStorage，MVP） ----------------
+    var SAVE_KEY = "dota2_rpg_save_v1";
+
+    function loadSave() {
+        var saved = null;
+        try {
+            saved = JSON.parse($.LocalStorage.Get(SAVE_KEY) || "null");
+        } catch (e) {
+            saved = null;
+        }
+        if (!saved || typeof saved !== "object") {
+            saved = {};
+        }
+        if (!saved.gold) {
+            saved.gold = 0;
+        }
+        if (!saved.cleared || typeof saved.cleared !== "object") {
+            saved.cleared = {};
+        }
+        return saved;
+    }
+
+    function persistSave() {
+        try {
+            $.LocalStorage.Set(SAVE_KEY, JSON.stringify(saveData));
+        } catch (e) {
+            // 存档失败不阻断游戏
+        }
+    }
+
+    function grantSettlement(settlement) {
+        if (!settlement || settlement.winner !== "radiant") {
+            return;
+        }
+        saveData.gold += Number(settlement.gold || 0);
+        saveData.cleared[settlement.level] = true;
+        persistSave();
+        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+    }
+
+    var saveData = loadSave();
+
     function updateResult(winner) {
         var resultPanel = $("#BattleResult");
         var resultLabel = $("#BattleResultLabel");
@@ -516,6 +581,9 @@
     function onBattleState(data) {
         phase = data.phase || "setup";
         serverReady = Number(data.ready || 0) === 1;
+        if (data.level) {
+            currentLevelId = data.level;
+        }
         $("#RadiantAlive").text = String(data.radiant_alive === undefined ? 3 : data.radiant_alive);
         $("#DireAlive").text = String(data.dire_alive === undefined ? 3 : data.dire_alive);
 
@@ -524,6 +592,8 @@
             setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
             startButton.enabled = serverReady;
             startButton.SetHasClass("Hidden", false);
+            $("#BattleResult").SetHasClass("Hidden", true);
+            $("#RewardLabel").text = "";
         } else if (phase === "fight" || phase === "battle") {
             setStatus("#dota2_rpg_status_running");
             startButton.enabled = false;
@@ -535,12 +605,45 @@
             updateResult(data.winner || "draw");
         }
 
+        renderLevelList();
+
         if (phase !== "setup") {
             closeEditorMenus();
         }
 
         renderSide("Radiant");
         renderSide("Dire");
+    }
+
+    function onLevelsTable(tableName, tableKey) {
+        if (tableKey !== "levels") {
+            return;
+        }
+        var table = CustomNetTables.GetTableValue("rpg_rules_config", "levels");
+        var data = table || {};
+        var rawLevels = data.levels || {};
+        currentLevelId = data.current || currentLevelId;
+        levelList = [];
+        for (var key in rawLevels) {
+            var level = rawLevels[key];
+            levelList.push({
+                id: String(level.id || key),
+                name: level.name || String(key),
+                type: level.type || "creep"
+            });
+        }
+        levelList.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+        renderLevelList();
+    }
+
+    function onSettlement(settlement) {
+        grantSettlement(settlement);
+        var rewardLabel = $("#RewardLabel");
+        if (settlement && settlement.winner === "radiant") {
+            rewardLabel.text = $.Localize("#dota2_rpg_reward_gold") + " " + Number(settlement.gold || 0);
+        } else {
+            rewardLabel.text = "";
+        }
     }
 
     createRuleRows("Radiant");
@@ -556,15 +659,20 @@
     });
 
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
-    // 英雄动作槽就绪后按服务端数据重建规则行
+    GameEvents.Subscribe("rpg_settlement", onSettlement);
+    // 英雄动作槽/关卡列表就绪后重建对应 UI
     CustomNetTables.SubscribeNetTableListener("rpg_rules_config", function (tableName, tableKey) {
-        if (tableKey !== "heroes") {
+        if (tableKey === "levels") {
+            onLevelsTable(tableName, tableKey);
             return;
         }
-        rulesBySide.Radiant = [];
-        rulesBySide.Dire = [];
-        renderSide("Radiant");
-        renderSide("Dire");
+        if (tableKey === "heroes") {
+            rulesBySide.Radiant = [];
+            rulesBySide.Dire = [];
+            renderSide("Radiant");
+            renderSide("Dire");
+        }
     });
+    $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());
