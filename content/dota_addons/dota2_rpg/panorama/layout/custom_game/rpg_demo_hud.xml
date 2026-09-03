@@ -78,11 +78,6 @@
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
 			<Label id="LevelProgress" text="1/20" />
 			<Label id="BuildTag" text="BUILD shop-lineup-v3" />
-			<Panel id="BattleScore">
-				<Label id="RadiantAlive" class="RadiantText" text="3" />
-				<Label class="ScoreDivider" text="-" />
-				<Label id="DireAlive" class="DireText" text="3" />
-			</Panel>
 			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>
 

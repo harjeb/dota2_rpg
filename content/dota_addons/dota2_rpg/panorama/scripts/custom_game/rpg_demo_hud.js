@@ -578,6 +578,8 @@
                 portrait.AddClass("ShopPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
+                var nameLabel = createLabel(slot, "ShopName", heroName.replace("npc_dota_hero_", ""));
+                createLabel(slot, "ShopPrice", "100g");
                 if (!owned) {
                     slot.SetPanelEvent("onactivate", function () {
                         GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
@@ -822,8 +824,6 @@
         if (data.level) {
             currentLevelId = data.level;
         }
-        $("#RadiantAlive").text = String(data.radiant_alive === undefined ? 3 : data.radiant_alive);
-        $("#DireAlive").text = String(data.dire_alive === undefined ? 3 : data.dire_alive);
 
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
