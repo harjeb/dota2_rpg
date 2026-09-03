@@ -536,6 +536,14 @@
     };
 
     function onShopState(data) {
+        try {
+            onShopStateInner(data);
+        } catch (e) {
+            $("#ControlStatus").text = "ShopStateErr: " + e;
+        }
+    }
+
+    function onShopStateInner(data) {
         if (!data) {
             data = shopState;
         }
@@ -560,6 +568,14 @@
     }
 
     function renderShop() {
+        try {
+            renderShopInner();
+        } catch (e) {
+            $("#ShopHeader").text = "ShopErr: " + e;
+        }
+    }
+
+    function renderShopInner() {
         var container = $("#ShopOffer");
         container.RemoveAndDeleteChildren();
         for (var index = 0; index < shopState.offer.length; index++) {
@@ -590,6 +606,8 @@
                 }
             }(shopState.offer[index]));
         }
+        $("#ShopHeader").text = $.Localize("#dota2_rpg_shop_title") +
+            "  [offer=" + shopState.offer.length + " owned=" + shopState.owned.length + "]";
     }
 
     function wireShopButtons() {
