@@ -561,8 +561,14 @@
         shopState.owned = splitList(data.owned_text);
         shopState.lineup = splitList(data.lineup_text);
         shopState.bench_slots = Number(data.bench_slots || 0);
-        if (data.costs) {
-            shopState.costs = data.costs;
+        if (data.cost_hero !== undefined) {
+            shopState.costs = {
+                hero: Number(data.cost_hero),
+                refresh: Number(data.cost_refresh),
+                bench_slot: Number(data.cost_bench_slot),
+                bench_slot_max: Number(data.bench_slot_max),
+                lineup_max: Number(data.lineup_max)
+            };
         }
         saveData.gold = shopState.gold;
         saveData.owned = shopState.owned;
@@ -946,7 +952,13 @@
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {
-        heroSlots = (data && data.slots) || {};
+        if (!data || !data.slot_key) {
+            return;
+        }
+        heroSlots[String(data.slot_key)] = {
+            name: String(data.hero_name || ""),
+            actions_text: String(data.actions_text || "")
+        };
         rulesBySide.Radiant = [];
         rulesBySide.Dire = [];
         renderSide("Radiant");

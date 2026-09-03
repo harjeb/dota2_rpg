@@ -824,7 +824,6 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		repeat_xp = 0,
 		time_bonus = winner == "radiant" and timeBonus or 0,
 		clear_time = math.floor(self.battleManager:GetBattleTime()),
-		items = {},
 	}
 	if winner == "radiant" and level ~= nil then
 		local firstReward = level.first_reward or {}
@@ -833,7 +832,6 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		settlement.repeat_gold = tonumber(repeatReward ~= nil and repeatReward.gold or 0) or 0
 		settlement.first_xp = tonumber(firstReward.xp or 0) or 0
 		settlement.repeat_xp = tonumber(repeatReward ~= nil and repeatReward.xp or 0) or 0
-		settlement.items = firstReward.items or {}
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
 
@@ -863,21 +861,21 @@ end
 
 -- 每个英雄的可用动作槽（含主动装备）同步给前端
 function CDota2RpgDemo:BroadcastHeroInfo()
-	local info = {}
 	local heroes = self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]
 	for index, hero in ipairs(heroes) do
 		if TacticEngine.IsValidUnit(hero) then
-			info["radiant_" .. index] = {
-				name = self.lineup[index] or "",
+			CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
+				slot_key = "radiant_" .. index,
+				hero_name = self.lineup[index] or "",
 				actions_text = table.concat(BuildHeroActionSlots(hero), ";"),
-			}
+			})
 		end
 	end
-	CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", { slots = info })
 end
 
 function CDota2RpgDemo:BroadcastShopState()
 	-- CEM 载荷不传输 Lua 数组（数字键会被丢弃），一律用分隔符字符串
+	-- 注意：CEM 载荷不允许嵌套表（嵌套会导致整个载荷被丢弃），一律拍平
 	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
 		gold = self.gold,
 		player_level = self.playerLevel,
@@ -885,13 +883,11 @@ function CDota2RpgDemo:BroadcastShopState()
 		owned_text = table.concat(self.ownedHeroes, ";"),
 		lineup_text = table.concat(self.lineup, ";"),
 		bench_slots = self.benchSlots,
-		costs = {
-			hero = self.shopCosts.hero,
-			refresh = self.shopCosts.refresh,
-			bench_slot = self.shopCosts.bench_slot,
-			bench_slot_max = self.shopCosts.bench_slot_max,
-			lineup_max = self.shopCosts.lineup_max,
-		},
+		cost_hero = self.shopCosts.hero,
+		cost_refresh = self.shopCosts.refresh,
+		cost_bench_slot = self.shopCosts.bench_slot,
+		bench_slot_max = self.shopCosts.bench_slot_max,
+		lineup_max = self.shopCosts.lineup_max,
 	})
 end
 
