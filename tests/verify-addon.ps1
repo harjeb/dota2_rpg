@@ -151,14 +151,15 @@ foreach ($dataCheck in $dataChecks) {
     if (-not (Test-Path -LiteralPath $dataPath)) {
         throw "Missing data table: $($dataCheck.File)"
     }
-    if ((Get-Content -LiteralPath $dataPath -Raw) -notmatch '"ch\d{2}"' -and $dataCheck.Required -eq $null) {
-        throw "Data table looks empty: $($dataCheck.File)"
-    }
+    $dataText = Get-Content -LiteralPath $dataPath -Raw
     if ($dataCheck.Required -ne $null) {
-        $levelCount = ($jsonData.PSObject.Properties | Measure-Object).Count
-        if ($levelCount -lt $dataCheck.Required) {
-            throw "levels.kv must contain at least $($dataCheck.Required) levels, found $levelCount"
+        $levelMatches = [regex]::Matches($dataText, '"ch\d\d"')
+        if ($levelMatches.Count -lt $dataCheck.Required) {
+            throw "levels.kv must contain at least $($dataCheck.Required) levels, found $($levelMatches.Count)"
         }
+    }
+    elseif ($dataText.Length -lt 100) {
+        throw "Data table looks empty: $($dataCheck.File)"
     }
 }
 
