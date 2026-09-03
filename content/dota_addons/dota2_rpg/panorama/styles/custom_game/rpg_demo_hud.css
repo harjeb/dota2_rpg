@@ -18,6 +18,14 @@
 	box-shadow: #000000aa 0px 4px 16px 0px;
 }
 
+#BuildTag
+{
+	horizontal-align: center;
+	margin-top: 2px;
+	font-size: 10px;
+	color: #8fc98f;
+}
+
 #BattleTitle
 {
 	horizontal-align: center;

@@ -76,6 +76,7 @@
 	<Panel class="RpgDemoHudRoot" hittest="false">
 		<Panel id="BattleHeader">
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
+			<Label id="BuildTag" text="BUILD shop-lineup-v3" />
 			<Panel id="BattleScore">
 				<Label id="RadiantAlive" class="RadiantText" text="3" />
 				<Label class="ScoreDivider" text="-" />

@@ -141,10 +141,10 @@ foreach ($luaCheck in $luaChecks) {
 
 # --- 数据表检查 ---
 $dataChecks = @(
-    @{ File = "game\dota_addons\dota2_rpg\scripts\data\levels.json"; Required = 20 },
-    @{ File = "game\dota_addons\dota2_rpg\scripts\data\heroes.json"; Required = $null },
-    @{ File = "game\dota_addons\dota2_rpg\scripts\data\enemy_ai.json"; Required = $null },
-    @{ File = "game\dota_addons\dota2_rpg\scripts\data\loot.json"; Required = $null }
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\levels.kv"; Required = 20 },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\heroes.kv"; Required = $null },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\enemy_ai.kv"; Required = $null },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\loot.kv"; Required = $null }
 )
 foreach ($dataCheck in $dataChecks) {
     $dataPath = Join-Path $repoRoot $dataCheck.File
@@ -160,7 +160,7 @@ foreach ($dataCheck in $dataChecks) {
     if ($dataCheck.Required -ne $null) {
         $levelCount = ($jsonData.PSObject.Properties | Measure-Object).Count
         if ($levelCount -lt $dataCheck.Required) {
-            throw "levels.json must contain at least $($dataCheck.Required) levels, found $levelCount"
+            throw "levels.kv must contain at least $($dataCheck.Required) levels, found $levelCount"
         }
     }
 }

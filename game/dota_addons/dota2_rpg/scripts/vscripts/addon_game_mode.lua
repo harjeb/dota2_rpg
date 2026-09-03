@@ -1,6 +1,8 @@
-require("battle.tactic_engine")
-require("battle.battle_manager")
-require("data.data_loader")
+local okEngine = pcall(require, "battle.tactic_engine")
+local okBattle = pcall(require, "battle.battle_manager")
+local okData = pcall(require, "data.data_loader")
+print(string.format("[Dota2Rpg] requires: tactic_engine=%s battle_manager=%s data_loader=%s",
+	tostring(okEngine), tostring(okBattle), tostring(okData)))
 
 if CDota2RpgDemo == nil then
 	_G.CDota2RpgDemo = class({})
@@ -107,7 +109,7 @@ end
 function Precache(context)
 	PrecacheUnitByNameSync(PLAYER_PLACEHOLDER_HERO, context)
 	-- 数据驱动：预缓存英雄池与所有关卡单位
-	local sources = { "scripts/data/heroes.json", "scripts/data/levels.json" }
+	local sources = { "scripts/data/heroes.kv", "scripts/data/levels.kv" }
 	for _, source in ipairs(sources) do
 		local data = LoadKeyValues(source)
 		if data ~= nil and data ~= "" then
@@ -228,11 +230,12 @@ function CDota2RpgDemo:InitGameMode()
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
 	self:RollShop()
+	print("[Dota2Rpg] BUILD rpg-shop-lineup-v2 loaded. Setup disabled, shop enabled.")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
 function CDota2RpgDemo:LoadHeroPool()
-	local data = LoadKeyValues("scripts/data/heroes.json")
+	local data = LoadKeyValues("scripts/data/heroes.kv")
 	self.heroPool = { strength = {}, agility = {}, intelligence = {}, universal = {} }
 	self.shopCosts = {
 		hero = tonumber(data.hero_cost) or SHOP_HERO_COST,
@@ -684,6 +687,9 @@ function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
 	if player ~= nil then
 		CustomGameEventManager:Send_ServerToPlayer(player, "rpg_battle_state", self:BuildBattleState())
 	end
+	self:BroadcastShopState()
+	self:BroadcastLevelInfo()
+	self:BroadcastHeroInfo()
 end
 
 function CDota2RpgDemo:OnSelectLevel(_, payload)
@@ -839,11 +845,11 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 			}
 		end
 	end
-	CustomNetTables:SetTableValue("rpg_rules_config", "heroes", info)
+	CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", { slots = info })
 end
 
 function CDota2RpgDemo:BroadcastShopState()
-	CustomNetTables:SetTableValue("rpg_rules_config", "shop", {
+	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
 		gold = self.gold,
 		player_level = self.playerLevel,
 		offer = self.shopOffer,
@@ -870,7 +876,7 @@ function CDota2RpgDemo:BroadcastLevelInfo()
 			recommended_level = level.recommended_level or 1,
 		})
 	end
-	CustomNetTables:SetTableValue("rpg_rules_config", "levels", {
+	CustomGameEventManager:Send_ServerToAllClients("rpg_levels_state", {
 		levels = list,
 		current = self.currentLevelId,
 	})

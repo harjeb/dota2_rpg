@@ -1,0 +1,164 @@
+"enemy_ai"
+{
+	"demo_default"
+{
+		"name" "默认索敌"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "always"
+				}
+				"action"
+{
+					"type" "attack"
+				}
+				"target" "enemy_nearest"
+				"mode" "range_only"
+			}
+		}
+	}
+	"simple_nearest"
+{
+		"name" "简单模式：攻击最近敌人"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "always"
+				}
+				"action"
+{
+					"type" "attack"
+				}
+				"target" "enemy_nearest"
+				"mode" "range_only"
+			}
+		}
+	}
+	"focus_lowest_hp"
+{
+		"name" "集火模式：优先血量最低"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "enemy_exists"
+				}
+				"action"
+{
+					"type" "attack"
+				}
+				"target" "enemy_hp_pct_lowest"
+				"mode" "forced_chase"
+			}
+		}
+	}
+	"protect_healer"
+{
+		"name" "保排模式：治疗最低血友军"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "ally_exists"
+				}
+				"action"
+{
+					"type" "ability_1"
+				}
+				"target" "ally_hp_pct_lowest"
+				"mode" "range_only"
+			}
+		}
+	}
+	"aggro_front"
+{
+		"name" "坦克模式：顶在最前，血量低开保命"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "self_hp_below"
+					"value" "30"
+				}
+				"action"
+{
+					"type" "ability_1"
+				}
+				"target" "self"
+				"mode" "range_only"
+			}
+			"2"
+{
+				"cond"
+{
+					"type" "enemy_exists"
+				}
+				"action"
+{
+					"type" "attack"
+				}
+				"target" "enemy_nearest"
+				"mode" "range_only"
+			}
+		}
+	}
+	"ai_healer_protect"
+{
+		"name" "辅助模式：治疗血量最低友军，自身危险先保命"
+		"rules"
+{
+			"1"
+{
+				"cond"
+{
+					"type" "ally_exists"
+				}
+				"action"
+{
+					"type" "ability_1"
+				}
+				"target" "ally_hp_pct_lowest"
+				"mode" "range_only"
+			}
+			"2"
+{
+				"cond"
+{
+					"type" "self_hp_below"
+					"value" "25"
+				}
+				"action"
+{
+					"type" "ultimate"
+				}
+				"target" "self"
+				"mode" "forced_chase"
+			}
+			"3"
+{
+				"cond"
+{
+					"type" "always"
+				}
+				"action"
+{
+					"type" "attack"
+				}
+				"target" "enemy_nearest"
+				"mode" "range_only"
+			}
+		}
+	}
+}

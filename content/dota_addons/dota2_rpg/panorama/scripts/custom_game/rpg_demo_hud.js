@@ -75,12 +75,12 @@
     };
 
     var MAX_RULE_ROWS = 5;
+    var heroSlots = {};
     var FALLBACK_SLOT_ACTIONS = ["ability_1", "ability_2", "ability_3", "ultimate", "attack"];
 
     function getSlotActions(side, heroIndex) {
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
-        var table = CustomNetTables.GetTableValue("rpg_rules_config", "heroes");
-        var entry = table ? table[key] : null;
+        var entry = heroSlots ? heroSlots[key] : null;
         var actions = [];
         if (entry && entry.actions) {
             for (var actionKey in entry.actions) {
@@ -516,11 +516,10 @@
         costs: { hero: 100, refresh: 20, bench_slot: 200, bench_slot_max: 5, lineup_max: 5 }
     };
 
-    function onShopTable(tableName, tableKey) {
-        if (tableKey !== "shop") {
-            return;
+    function onShopState(data) {
+        if (!data) {
+            data = shopState;
         }
-        var data = CustomNetTables.GetTableValue("rpg_rules_config", "shop") || shopState;
         shopState.gold = Number(data.gold !== undefined ? data.gold : shopState.gold);
         shopState.offer = data.offer || [];
         shopState.owned = data.owned || [];
@@ -852,12 +851,8 @@
         renderSide("Dire");
     }
 
-    function onLevelsTable(tableName, tableKey) {
-        if (tableKey !== "levels") {
-            return;
-        }
-        var table = CustomNetTables.GetTableValue("rpg_rules_config", "levels");
-        var data = table || {};
+    function onLevelsState(data) {
+        data = data || {};
         var rawLevels = data.levels || {};
         currentLevelId = data.current || currentLevelId;
         levelList = [];
@@ -906,22 +901,15 @@
 
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
-    // 英雄动作槽/关卡列表/商店就绪后重建对应 UI
-    CustomNetTables.SubscribeNetTableListener("rpg_rules_config", function (tableName, tableKey) {
-        if (tableKey === "shop") {
-            onShopTable(tableName, tableKey);
-            return;
-        }
-        if (tableKey === "levels") {
-            onLevelsTable(tableName, tableKey);
-            return;
-        }
-        if (tableKey === "heroes") {
-            rulesBySide.Radiant = [];
-            rulesBySide.Dire = [];
-            renderSide("Radiant");
-            renderSide("Dire");
-        }
+    // 服务端数据（商店/关卡/动作槽）通过 CEM 事件推送
+    GameEvents.Subscribe("rpg_shop_state", onShopState);
+    GameEvents.Subscribe("rpg_levels_state", onLevelsState);
+    GameEvents.Subscribe("rpg_hero_slots", function (data) {
+        heroSlots = (data && data.slots) || {};
+        rulesBySide.Radiant = [];
+        rulesBySide.Dire = [];
+        renderSide("Radiant");
+        renderSide("Dire");
     });
     wireShopButtons();
     $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;

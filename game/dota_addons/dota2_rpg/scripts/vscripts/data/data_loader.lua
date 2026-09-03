@@ -2,7 +2,7 @@
 	DataLoader
 	加载 scripts/data 下的数据表（levels / enemy_ai / loot），策划改表不改码。
 
-	说明：Dota 的 LoadKeyValues 同时支持 KV 与 JSON 文本。
+	说明：Dota 的 仅支持 KV 文本；JSON 源表已转换为 .kv。
 ]]
 
 if DataLoader == nil then
@@ -16,9 +16,9 @@ function DataLoader:constructor()
 end
 
 function DataLoader:Init()
-	self.levels = self:LoadTable("scripts/data/levels.json", "levels")
-	self.enemyAI = self:LoadTable("scripts/data/enemy_ai.json", "enemy_ai")
-	self.loot = self:LoadTable("scripts/data/loot.json", "loot")
+	self.levels = self:LoadTable("scripts/data/levels.kv", "levels")
+	self.enemyAI = self:LoadTable("scripts/data/enemy_ai.kv", "enemy_ai")
+	self.loot = self:LoadTable("scripts/data/loot.kv", "loot")
 	print(string.format(
 		"[Dota2Rpg] Data loaded: %d levels, %d ai presets, %d loot tables.",
 		self:Count(self.levels), self:Count(self.enemyAI), self:Count(self.loot)
