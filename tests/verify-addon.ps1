@@ -72,7 +72,6 @@ $luaChecks = @(
            'SetRespawnsDisabled\(true\)',
            'SetExecuteOrderFilter',
            'issuerPlayerId >= 0',
-           'GameRules:SetGameWinner\(winnerTeam\)',
            'local SHOP_HERO_COST = 100',
            'local SHOP_REFRESH_COST = 20',
            'local SHOP_BENCH_SLOT_COST = 200',

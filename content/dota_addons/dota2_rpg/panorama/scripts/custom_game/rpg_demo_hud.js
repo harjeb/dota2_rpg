@@ -141,12 +141,25 @@
         return getRules(side, selectedHeroIndex[side]);
     }
 
+    function setAbilityImage(panel, abilityName) {
+        if (abilityName && abilityName !== "" && abilityName !== "attack") {
+            panel.abilityname = abilityName;
+            panel.SetHasClass("Empty", false);
+        } else {
+            panel.abilityname = "";
+            panel.SetHasClass("Empty", true);
+        }
+    }
+
+    // CEM 事件里的数组会变成 {1:..,2:..} 对象，统一转回数组
+
     function createLabel(parent, className, text) {
         var label = $.CreatePanel("Label", parent, "");
         label.AddClass(className);
         label.text = text || "";
         return label;
     }
+
 
     function localizeFormat(token, value) {
         return $.Localize(token).replace("%s1", String(value));
@@ -259,13 +272,18 @@
             var row = $.CreatePanel("Panel", container, side + "Rule" + index);
             row.AddClass("RuleRow");
             createLabel(row, "PriorityNumber", String(index + 1));
-            var actionLabel = createLabel(row, "ActionName", "");
+            var actionIcon = $.CreatePanel("Panel", row, side + "ActionIcon" + index);
+            actionIcon.AddClass("ActionIcon");
+            var abilityImage = $.CreatePanel("DOTAAbilityImage", actionIcon, side + "ActionAbility" + index);
+            abilityImage.AddClass("ActionAbilityImage");
+            var actionFallback = createLabel(actionIcon, "ActionName", "");
             var conditionEditor = createConditionEditor(row, side, index);
             var forceToggle = createForceToggle(row, side, index);
             var upButton = createMoveButton(row, side, index, "Up", "^");
             var downButton = createMoveButton(row, side, index, "Down", "v");
             rowPanels[side].push({
-                actionLabel: actionLabel,
+                actionAbilityImage: abilityImage,
+                actionFallback: actionFallback,
                 row: row,
                 conditionEditor: conditionEditor.editor,
                 conditionSelect: conditionEditor.selectButton,
@@ -485,6 +503,7 @@
 
     function renderSide(side) {
         var locked = phase !== "setup";
+        var hidePanels = phase !== "setup";
         var rules = getSelectedRules(side);
         for (var index = 0; index < MAX_RULE_ROWS; index++) {
             var panels = rowPanels[side][index];
@@ -494,13 +513,38 @@
                 continue;
             }
             var definition = rules[index];
-            panels.actionLabel.text = $.Localize(ACTION_TOKENS[definition.action]);
+            var heroIndex = selectedHeroIndex[side];
+            var slotEntry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
+            var detailName = "";
+            if (slotEntry && slotEntry.actions_text) {
+                var details = splitList(slotEntry.actions_text);
+                if (details[index]) {
+                    detailName = details[index];
+                }
+            }
+            if (panels.actionAbilityImage) {
+                if (detailName && detailName !== "" && definition.action !== "attack") {
+                    panels.actionAbilityImage.abilityname = detailName;
+                    panels.actionAbilityImage.SetHasClass("Empty", false);
+                } else {
+                    panels.actionAbilityImage.abilityname = "";
+                    panels.actionAbilityImage.SetHasClass("Empty", true);
+                }
+            }
+            if (definition.action === "attack") {
+                panels.actionFallback.text = $.Localize("#dota2_rpg_action_attack");
+            } else if (!detailName || detailName === "") {
+                panels.actionFallback.text = $.Localize(ACTION_TOKENS[definition.action] || definition.action);
+            } else {
+                panels.actionFallback.text = "";
+            }
             panels.thresholdEntry.text = String(definition.value);
             updateConditionSelector(side, index, locked);
             updateForcedToggle(side, index, locked);
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
         }
+        $("#" + side + "Editor").SetHasClass("Hidden", hidePanels);
         $("#" + side + "Editor").SetHasClass("Locked", locked);
         updateHeroSelection(side);
     }
@@ -944,6 +988,8 @@
             updateResult(data.winner || "draw");
         }
 
+        $("#ShopPanel").SetHasClass("Hidden", phase !== "setup");
+        $("#LevelSection").SetHasClass("Hidden", phase !== "setup");
         renderLevelList();
         updateLevelProgress();
         updateShopEconomyLabels(shopState.gold);

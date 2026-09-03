@@ -289,7 +289,39 @@
 	text-align: center;
 }
 
+.ActionIcon
+{
+	width: 44px;
+	height: 44px;
+	vertical-align: center;
+}
+
+.ActionAbilityImage
+{
+	width: 40px;
+	height: 40px;
+	horizontal-align: center;
+	vertical-align: center;
+	border: 1px solid #5a6871;
+	background-color: #141b21;
+}
+
+.ActionAbilityImage.Empty
+{
+	visibility: collapse;
+}
+
 .ActionName
+{
+	width: 60px;
+	vertical-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	color: #e8edf0;
+	text-overflow: shrink;
+}
+
+.ActionNameLegacy
 {
 	width: 112px;
 	vertical-align: center;
@@ -744,16 +776,6 @@
 	background-color: #2a2415;
 	border: 1px solid #d7b85a;
 	box-shadow: inset #00000088 0px 1px 4px 0px;
-}
-
-#GoldLabel
-{
-	horizontal-align: left;
-	vertical-align: center;
-	margin-left: 12px;
-	font-size: 16px;
-	font-weight: bold;
-	color: #f0e3bd;
 }
 
 #GoldValue

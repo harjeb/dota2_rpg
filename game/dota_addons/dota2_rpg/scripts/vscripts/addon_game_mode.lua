@@ -406,6 +406,16 @@ function CDota2RpgDemo:RollShop()
 	self:BroadcastShopState()
 end
 
+-- 金币写入玩家钱包，Dota 原版 HUD 经济面板即可正常显示
+function CDota2RpgDemo:SyncGoldToPlayer()
+	if self.playerId >= 0 then
+		local player = PlayerResource:GetPlayer(self.playerId)
+		if player ~= nil then
+			player:SetGold(0, self.gold)
+		end
+	end
+end
+
 function CDota2RpgDemo:OnShopRefresh(_, payload)
 	if self.phase ~= "setup" then
 		return
@@ -693,12 +703,16 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 		hero:HeroLevelUp(false)
 	end
 
-	-- 技能加点：满级英雄直接拉满；低级敌方英雄按等级比例加点
-	local abilityLevel
-	if wantedLevel >= HERO_LEVEL then
-		abilityLevel = nil
-	else
-		abilityLevel = math.max(1, math.floor(wantedLevel / 2))
+	-- 技能加点：与正常模式一致——普通技能可用等级=ceil(level/2)，大招需 6/12/18 级；
+	-- 加点后清空技能点，避免 1 级英雄带满技能+剩余点数
+	local basicLevel = math.max(1, math.min(4, math.ceil(wantedLevel / 2)))
+	local ultimateLevel = 0
+	if wantedLevel >= 18 then
+		ultimateLevel = 3
+	elseif wantedLevel >= 12 then
+		ultimateLevel = 2
+	elseif wantedLevel >= 6 then
+		ultimateLevel = 1
 	end
 	for slot = 0, hero:GetAbilityCount() - 1 do
 		local ability = hero:GetAbilityByIndex(slot)
@@ -706,7 +720,11 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 			local abilityName = ability:GetAbilityName()
 			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
 			if not isTalent and ability:GetMaxLevel() > 0 then
-				ability:SetLevel(abilityLevel == nil and ability:GetMaxLevel() or math.min(ability:GetMaxLevel(), abilityLevel))
+				if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
+					ability:SetLevel(math.min(ability:GetMaxLevel(), ultimateLevel))
+				else
+					ability:SetLevel(math.min(ability:GetMaxLevel(), basicLevel))
+				end
 			end
 		end
 	end
@@ -795,6 +813,14 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 		end
 	end
 
+	-- 野怪关的敌方小怪没有规则行，也要解除开战前的静止状态
+	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
+		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() then
+			unit:SetIdleAcquire(true)
+			unit:SetAcquisitionRange(BATTLE_ACQUISITION_RANGE)
+		end
+	end
+
 	self.battleManager:StartBattle(self.battleManager.teamRules)
 	self:BroadcastBattleState()
 	print("[Dota2Rpg] Battle started on level " .. self.currentLevelId .. ".")
@@ -877,12 +903,6 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		end
 	end
 
-	if winnerTeam ~= nil then
-		GameRules:GetGameModeEntity():SetContextThink("Dota2RpgDeclareWinner", function()
-			GameRules:SetGameWinner(winnerTeam)
-			return nil
-		end, 1.0)
-	end
 	print(string.format("[Dota2Rpg] Battle finished. Result=%s ClearTime=%.0f TimeBonus=%d",
 		winner, self.battleManager:GetBattleTime(), timeBonus))
 end
@@ -892,20 +912,60 @@ end
 ------------------------------------------------------------------
 
 -- 每个英雄的可用动作槽（含主动装备）同步给前端
+-- 把 action（ability_N / item_N / ultimate / attack）解析成可显示的名字
+local function DescribeAction(hero, action)
+	if action == "attack" then
+		return "attack", ""
+	end
+	if action == "ultimate" then
+		for slot = 0, hero:GetAbilityCount() - 1 do
+			local ability = hero:GetAbilityByIndex(slot)
+			if ability ~= nil and not ability:IsNull() and ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
+				return "ultimate", ability:GetAbilityName()
+			end
+		end
+		return "ultimate", ""
+	end
+	local abilitySlot = tonumber(string.match(action, "ability_(%d)"))
+	if abilitySlot ~= nil then
+		local ability = hero:GetAbilityByIndex(abilitySlot - 1)
+		if ability ~= nil and not ability:IsNull() then
+			return "ability", ability:GetAbilityName()
+		end
+		return "ability", ""
+	end
+	local itemSlot = tonumber(string.match(action, "item_(%d)"))
+	if itemSlot ~= nil and hero.GetItemInSlot ~= nil then
+		local item = hero:GetItemInSlot(itemSlot - 1)
+		if item ~= nil and not item:IsNull() then
+			return "item", item:GetAbilityName()
+		end
+		return "item", ""
+	end
+	return "attack", ""
+end
+
 function CDota2RpgDemo:BroadcastHeroInfo()
 	local heroes = self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]
 	for index, hero in ipairs(heroes) do
 		if TacticEngine.IsValidUnit(hero) then
+			local descriptions = {}
+			for _, action in ipairs(BuildHeroActionSlots(hero)) do
+				local _, detail = DescribeAction(hero, action)
+				table.insert(descriptions, detail ~= "" and detail or action)
+			end
 			CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
 				slot_key = "radiant_" .. index,
 				hero_name = self.lineup[index] or "",
 				actions_text = table.concat(BuildHeroActionSlots(hero), ";"),
+				details_text = table.concat(descriptions, ";"),
 			})
 		end
 	end
 end
 
 function CDota2RpgDemo:BroadcastShopState()
+	self:SyncGoldToPlayer()
 	-- CEM 载荷不传输 Lua 数组（数字键会被丢弃），一律用分隔符字符串
 	-- 注意：CEM 载荷不允许嵌套表（嵌套会导致整个载荷被丢弃），一律拍平
 	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
@@ -947,6 +1007,7 @@ function CDota2RpgDemo:BuildBattleState()
 		radiant_alive = self.battleManager:GetAliveCount(DOTA_TEAM_GOODGUYS),
 		dire_alive = self.battleManager:GetAliveCount(DOTA_TEAM_BADGUYS),
 		winner = self.winner,
+		hide_ui = self.phase ~= "setup",
 		battle_time = math.floor(self.battleManager:GetBattleTime()),
 		time_limit = tonumber(self.dataLoader:GetLevel(self.currentLevelId) ~= nil and self.dataLoader:GetLevel(self.currentLevelId).time_limit or 120) or 120,
 		level = self.currentLevelId,
