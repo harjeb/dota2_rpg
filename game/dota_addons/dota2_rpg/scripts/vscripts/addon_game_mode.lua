@@ -76,7 +76,7 @@ local DEFAULT_RULES = {
 	{ action = "ability_2", condition = "enemy_exists", value = 50, target = "enemy_hp_pct_lowest", forced = false },
 	{ action = "ability_3", condition = "self_hp_below", value = 50, target = "self", forced = false },
 	{ action = "ultimate", condition = "enemy_count_ge", value = 2, target = "enemy_hp_pct_lowest", forced = true },
-	{ action = "attack", condition = "always", value = 50, target = "enemy_nearest", forced = false },
+	{ action = "attack", condition = "always", value = 50, target = "enemy_nearest", forced = true },
 }
 
 local RULE_COUNT = #DEFAULT_RULES

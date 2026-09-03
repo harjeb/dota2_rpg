@@ -71,7 +71,7 @@
         ability_1: { condition: "enemy_exists", value: 50, target: "enemy_nearest", forced: false },
         ability_2: { condition: "enemy_exists", value: 50, target: "enemy_hp_pct_lowest", forced: false },
         ability_3: { condition: "self_hp_below", value: 50, target: "self", forced: false },
-        attack: { condition: "always", value: 50, target: "enemy_nearest", forced: false }
+        attack: { condition: "always", value: 50, target: "enemy_nearest", forced: true }
     };
 
     var MAX_RULE_ROWS = 5;
