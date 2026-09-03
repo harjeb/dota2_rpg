@@ -44,9 +44,9 @@ if ($LASTEXITCODE -ne 0) {
 $luaChecks = @(
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua";
        Patterns = @(
-           'require\("battle\.tactic_engine"\)',
-           'require\("battle\.battle_manager"\)',
-           'require\("data\.data_loader"\)',
+           'pcall\(require, .battle\.tactic_engine.\)',
+           'pcall\(require, .battle\.battle_manager.\)',
+           'pcall\(require, .data\.data_loader.\)',
            'RegisterListener\("rpg_start_battle"',
            'RegisterListener\("rpg_request_battle_state"',
            'RegisterListener\("rpg_select_level"',
@@ -119,9 +119,9 @@ $luaChecks = @(
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\data\data_loader.lua";
        Patterns = @(
-           'levels\.json',
-           'enemy_ai\.json',
-           'loot\.json',
+           'levels\.kv',
+           'enemy_ai\.kv',
+           'loot\.kv',
            'LoadKeyValues'
        ) }
 )
