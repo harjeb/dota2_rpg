@@ -669,7 +669,7 @@
                     if (!wasIn && next.length < shopState.costs.lineup_max) {
                         next.push(heroName);
                     }
-                    GameEvents.SendCustomGameEventToServer("rpg_lineup_set", { lineup: next });
+                    GameEvents.SendCustomGameEventToServer("rpg_lineup_set", { lineup_text: next.join(";") });
                 });
             }(shopState.owned[index]));
         }
@@ -709,6 +709,8 @@
 
     // ---------------- 金币/经验/挑战次数存档（LocalStorage，MVP） ----------------
     var SAVE_KEY = "dota2_rpg_save_v1";
+    var SAVE_VERSION = 2;
+    var INITIAL_GOLD = 300;
     var HERO_MAX_LEVEL = 30;
     var MAX_ATTEMPTS = 5;
 
@@ -716,6 +718,15 @@
     // 首通 1~15 关合计 13500 xp ≈ 累计需求 14210 → 15 关左右满级 30
     function xpToNext(level) {
         return 40 + 30 * level;
+    }
+
+    function hasEntries(value) {
+        for (var key in value) {
+            if (value.hasOwnProperty(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function loadSave() {
@@ -728,30 +739,39 @@
         if (!saved || typeof saved !== "object") {
             saved = {};
         }
-        if (!saved.gold) {
-            saved.gold = 0;
-        }
+        var previousVersion = Number(saved.version || 0);
+        var parsedGold = Number(saved.gold);
+        saved.gold = saved.gold !== undefined && isFinite(parsedGold)
+            ? Math.max(0, parsedGold)
+            : INITIAL_GOLD;
         if (!saved.cleared || typeof saved.cleared !== "object") {
             saved.cleared = {};
         }
         if (!saved.attempts || typeof saved.attempts !== "object") {
             saved.attempts = {};
         }
-        if (!saved.level) {
-            saved.level = 1; // 全队统一等级
-        }
+        saved.level = Math.max(1, Math.floor(Number(saved.level) || 1)); // 全队统一等级
         if (!saved.owned || typeof saved.owned !== "object") {
             saved.owned = [];   // 英雄池（可含场下英雄）
+        } else {
+            saved.owned = cemList(saved.owned);
         }
         if (!saved.lineup || typeof saved.lineup !== "object") {
             saved.lineup = [];
+        } else {
+            saved.lineup = cemList(saved.lineup);
         }
-        if (!saved.bench_slots) {
-            saved.bench_slots = 0; // 替补格子（需金币购买）
-        }
+        saved.bench_slots = Math.max(0, Math.floor(Number(saved.bench_slots) || 0)); // 替补格子
         if (!saved.current_level) {
             saved.current_level = "ch01"; // 闯关进度
         }
+        // v1 首次存档曾错误写入 0 金币；只修复完全无进度的受影响存档。
+        if (previousVersion < SAVE_VERSION && saved.gold === 0 && saved.level === 1 &&
+                saved.owned.length === 0 && saved.lineup.length === 0 && saved.bench_slots === 0 &&
+                !hasEntries(saved.cleared) && !hasEntries(saved.attempts) && saved.current_level === "ch01") {
+            saved.gold = INITIAL_GOLD;
+        }
+        saved.version = SAVE_VERSION;
         return saved;
     }
 
@@ -761,6 +781,18 @@
         } catch (e) {
             // 存档失败不阻断游戏
         }
+    }
+
+    function syncSaveToServer() {
+        // CEM 嵌套数组会导致载荷丢失，列表统一拍平成分号分隔字符串。
+        GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
+            gold: saveData.gold,
+            level: saveData.level,
+            bench_slots: saveData.bench_slots,
+            owned_text: saveData.owned.join(";"),
+            lineup_text: saveData.lineup.join(";"),
+            current_level: saveData.current_level
+        });
     }
 
     function attemptsLeft(levelId) {
@@ -814,14 +846,7 @@
         gold += Number(settlement.time_bonus || 0);
         saveData.gold += gold;
         // 服务端是金币权威，把存档金币推回去
-        GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
-            gold: saveData.gold,
-            level: saveData.level,
-            bench_slots: saveData.bench_slots,
-            owned: saveData.owned,
-            lineup: saveData.lineup,
-            current_level: saveData.current_level
-        });
+        syncSaveToServer();
         persistSave();
         return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
     }
@@ -968,13 +993,6 @@
     $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
     updateTeamLevelLabels();
     sendHeroLevels();
-    GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
-        gold: saveData.gold,
-        level: saveData.level,
-        bench_slots: saveData.bench_slots,
-        owned: saveData.owned,
-        lineup: saveData.lineup,
-        current_level: saveData.current_level
-    });
+    syncSaveToServer();
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

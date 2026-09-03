@@ -46,6 +46,28 @@ local BENCH_SLOT_MAX = 5
 local LINEUP_MAX = 5
 local INITIAL_GOLD = 300
 local SHOP_OFFER_SIZE = 5
+local SHOP_CATEGORIES = { "strength", "agility", "intelligence", "universal" }
+
+local function ReadPayloadList(payload, textKey, legacyKey)
+	if payload == nil then
+		return nil
+	end
+	if payload[textKey] ~= nil then
+		local values = {}
+		for value in string.gmatch(tostring(payload[textKey]), "([^;]+)") do
+			table.insert(values, value)
+		end
+		return values
+	end
+	if type(payload[legacyKey]) == "table" then
+		local values = {}
+		for _, value in pairs(payload[legacyKey]) do
+			table.insert(values, tostring(value))
+		end
+		return values
+	end
+	return nil
+end
 
 -- 默认规则模板（条件 → 动作 → 目标选择器），玩家可套用后微调
 local DEFAULT_RULES = {
@@ -161,7 +183,7 @@ function CDota2RpgDemo:InitGameMode()
 	self.orderedLevels = levelIds
 
 	-- 经济/商店/阵容（服务端为金币权威，客户端存档仅镜像）
-	self.gold = 300
+	self.gold = self.shopCosts.initial_gold
 	self.playerLevel = 1
 	self.ownedHeroes = {}
 	self.lineup = {}
@@ -245,21 +267,25 @@ end
 
 function CDota2RpgDemo:LoadHeroPool()
 	local data = LoadKeyValues("scripts/data/heroes.kv")
+	if type(data) ~= "table" then
+		data = {}
+	end
 	self.heroPool = { strength = {}, agility = {}, intelligence = {}, universal = {} }
 	self.shopCosts = {
 		hero = tonumber(data.hero_cost) or SHOP_HERO_COST,
 		refresh = tonumber(data.refresh_cost) or SHOP_REFRESH_COST,
 		bench_slot = tonumber(data.bench_slot_cost) or SHOP_BENCH_SLOT_COST,
 		bench_slot_max = tonumber(data.bench_slot_max) or BENCH_SLOT_MAX,
-		lineup_max = tonumber(data.lineup_max) or 5,
-		initial_gold = tonumber(data.initial_gold) or 300,
+		lineup_max = tonumber(data.lineup_max) or LINEUP_MAX,
+		initial_gold = tonumber(data.initial_gold) or INITIAL_GOLD,
 	}
-	if data ~= nil and data ~= "" then
-		for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
-			for _, hero in ipairs(data[category] or {}) do
-				table.insert(self.heroPool[category], hero.name)
+	for _, category in ipairs(SHOP_CATEGORIES) do
+		for _, hero in pairs(data[category] or {}) do
+			if type(hero) == "table" and hero.name ~= nil then
+				table.insert(self.heroPool[category], tostring(hero.name))
 			end
 		end
+		table.sort(self.heroPool[category])
 	end
 end
 
@@ -336,35 +362,33 @@ end
 
 function CDota2RpgDemo:RollShop()
 	local offer = {}
-	for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
+	local offered = {}
+	local allHeroes = {}
+	for _, category in ipairs(SHOP_CATEGORIES) do
 		local pool = self.heroPool[category]
 		if #pool > 0 then
-			table.insert(offer, pool[math.random(#pool)].name)
+			local heroName = pool[math.random(#pool)]
+			table.insert(offer, heroName)
+			offered[heroName] = true
+		end
+		for _, heroName in ipairs(pool) do
+			table.insert(allHeroes, heroName)
 		end
 	end
-	-- 第 5 个：全池随机（可与前 4 重复，重复则补抽）
-	local allHeroes = {}
-	for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
-		for _, hero in ipairs(self.heroPool[category]) do
-			table.insert(allHeroes, hero.name)
+
+	local remaining = {}
+	for _, heroName in ipairs(allHeroes) do
+		if not offered[heroName] then
+			table.insert(remaining, heroName)
 		end
 	end
-	for _ = 1, 8 do
-		local candidate = allHeroes[math.random(#allHeroes)]
-		local isDuplicate = false
-		for _, owned in ipairs(offer) do
-			if owned == candidate then
-				isDuplicate = true
-				break
-			end
-		end
-		if not isDuplicate then
-			table.insert(offer, candidate)
-			break
-		end
+	while #offer < SHOP_OFFER_SIZE and #remaining > 0 do
+		local index = math.random(#remaining)
+		table.insert(offer, remaining[index])
+		table.remove(remaining, index)
 	end
-	if #offer < SHOP_OFFER_SIZE then
-		table.insert(offer, allHeroes[math.random(#allHeroes)])
+	if #offer == 0 then
+		print("[Dota2Rpg] WARNING: hero shop pool is empty; check scripts/data/heroes.kv.")
 	end
 	self.shopOffer = offer
 	self:BroadcastShopState()
@@ -449,11 +473,11 @@ function CDota2RpgDemo:OnLineupSet(_, payload)
 	local lineup = {}
 	local ownedSet = {}
 	for _, owned in ipairs(self.ownedHeroes) do
-		owned[owned] = true
+		ownedSet[owned] = true
 	end
-	for _, heroName in pairs((payload ~= nil and payload.lineup) or {}) do
+	for _, heroName in ipairs(ReadPayloadList(payload, "lineup_text", "lineup") or {}) do
 		heroName = tostring(heroName)
-		if owned[heroName] and #lineup < self.shopCosts.lineup_max then
+		if ownedSet[heroName] and #lineup < self.shopCosts.lineup_max then
 			table.insert(lineup, heroName)
 		end
 	end
@@ -482,17 +506,13 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 	if payload.bench_slots ~= nil then
 		self.benchSlots = math.max(0, math.min(self.shopCosts.bench_slot_max, math.floor(tonumber(payload.bench_slots) or 0)))
 	end
-	if payload.owned ~= nil then
-		self.ownedHeroes = {}
-		for _, heroName in pairs(payload.owned) do
-			table.insert(self.ownedHeroes, tostring(heroName))
-		end
+	local owned = ReadPayloadList(payload, "owned_text", "owned")
+	if owned ~= nil then
+		self.ownedHeroes = owned
 	end
-	if payload.lineup ~= nil then
-		self.lineup = {}
-		for _, heroName in pairs(payload.lineup) do
-			table.insert(self.lineup, tostring(heroName))
-		end
+	local lineup = ReadPayloadList(payload, "lineup_text", "lineup")
+	if lineup ~= nil then
+		self.lineup = lineup
 	end
 	if payload.current_level ~= nil then
 		local levelId = tostring(payload.current_level)

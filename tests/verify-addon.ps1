@@ -19,7 +19,10 @@ $requiredFiles = @(
     "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua",
     "game\dota_addons\dota2_rpg\resource\addon_english.txt",
     "game\dota_addons\dota2_rpg\resource\addon_schinese.txt",
-    "scripts\generate-minimap.ps1"
+    "scripts\generate-minimap.ps1",
+    "tests\panorama-save.test.js",
+    "tests\shop-state.test.lua",
+    "tests\fixtures\save-v1-zero-gold.json"
 )
 
 foreach ($relativePath in $requiredFiles) {
@@ -38,6 +41,10 @@ $javascriptPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\sc
 & node --check $javascriptPath
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama JavaScript syntax validation failed"
+}
+& node (Join-Path $repoRoot "tests\panorama-save.test.js")
+if ($LASTEXITCODE -ne 0) {
+    throw "Panorama save-state regression test failed"
 }
 
 # --- Lua 模块化架构检查（TacticEngine / BattleManager / DataLoader / 主入口） ---
@@ -223,6 +230,36 @@ foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="Benc
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }
+}
+
+foreach ($shopStatePattern in @(
+    'self\.gold = self\.shopCosts\.initial_gold',
+    'local heroName = pool\[math\.random\(#pool\)\]',
+    'ReadPayloadList\(payload, "owned_text", "owned"\)',
+    'ReadPayloadList\(payload, "lineup_text", "lineup"\)',
+    'ownedSet\[owned\] = true'
+)) {
+    if ($gameModeText -notmatch $shopStatePattern) {
+        throw "Lua shop state is missing regression protection: $shopStatePattern"
+    }
+}
+if ($gameModeText -match 'pool\[math\.random\(#pool\)\]\.name' -or $gameModeText -match 'owned\[owned\] = true') {
+    throw "Lua shop state contains the old string/object mismatch"
+}
+foreach ($saveStatePattern in @(
+    'var SAVE_VERSION = 2;',
+    'var INITIAL_GOLD = 300;',
+    'saved\.gold = INITIAL_GOLD;',
+    'owned_text: saveData\.owned\.join\(";"\)',
+    'lineup_text: saveData\.lineup\.join\(";"\)',
+    'lineup_text: next\.join\(";"\)'
+)) {
+    if ($javascript -notmatch $saveStatePattern) {
+        throw "Panorama save state is missing regression protection: $saveStatePattern"
+    }
+}
+if ($javascript -match 'owned: saveData\.owned' -or $javascript -match 'lineup: saveData\.lineup') {
+    throw "Panorama save sync still sends nested arrays"
 }
 
 foreach ($forcedPattern in @('dota2_rpg_force_column', 'forced: true', 'ForceToggle', 'toggleForced', '"_forced_"', 'dota2_rpg_force_enabled', 'dota2_rpg_force_disabled')) {
