@@ -6,6 +6,12 @@
         ability_1: "#dota2_rpg_action_1",
         ability_2: "#dota2_rpg_action_2",
         ability_3: "#dota2_rpg_action_3",
+        item_1: "#dota2_rpg_action_item_1",
+        item_2: "#dota2_rpg_action_item_2",
+        item_3: "#dota2_rpg_action_item_3",
+        item_4: "#dota2_rpg_action_item_4",
+        item_5: "#dota2_rpg_action_item_5",
+        item_6: "#dota2_rpg_action_item_6",
         attack: "#dota2_rpg_action_attack"
     };
 
@@ -434,11 +440,20 @@
 
     function updateHeroSelection(side) {
         var heroes = HEROES[side];
+        if (!heroes || !heroes.length) {
+            // 尚未购买/上阵英雄时英雄条为空，仅显示提示
+            $("#" + side + "SelectedHero").text = side === "Radiant"
+                ? $.Localize("#dota2_rpg_no_lineup")
+                : "";
+            return;
+        }
         for (var index = 0; index < heroes.length; index++) {
             $("#" + heroes[index].panelId).SetHasClass("Selected", selectedHeroIndex[side] === index);
         }
         var selectedHero = heroes[selectedHeroIndex[side]];
-        $("#" + side + "SelectedHero").text = $.Localize("#" + selectedHero.name);
+        if (selectedHero) {
+            $("#" + side + "SelectedHero").text = $.Localize("#" + selectedHero.name);
+        }
     }
 
     function renderSide(side) {

@@ -40,121 +40,190 @@ if ($LASTEXITCODE -ne 0) {
     throw "Panorama JavaScript syntax validation failed"
 }
 
-$luaPath = Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua"
-$lua = Get-Content -LiteralPath $luaPath -Raw
-$requiredLuaPatterns = @(
-    'RegisterListener\("rpg_start_battle"',
-    'RegisterListener\("rpg_request_battle_state"',
-    'SetCustomGameForceHero\(PLAYER_PLACEHOLDER_HERO\)',
-    'local HERO_LEVEL = 30',
-    'npc_dota_hero_sven',
-    'npc_dota_hero_lina',
-    'npc_dota_hero_dazzle',
-    'npc_dota_hero_axe',
-    'npc_dota_hero_lion',
-    'npc_dota_hero_crystal_maiden',
-    'SetFogOfWarDisabled\(true\)',
-    'SetUnseenFogOfWarEnabled\(false\)',
-    'SetHeroRespawnEnabled\(false\)',
-    'SetRespawnsDisabled\(true\)',
-    'SetExecuteOrderFilter',
-    'issuerPlayerId >= 0',
-    'MoveToTargetToAttack\(target\)',
-    'ABILITY_TYPE_ULTIMATE',
-    'enemy_below = true',
-    'self_below = true',
-    'ally_below = true',
-    'enemy_in_range = true',
-    'enemy_highest_hp = true',
-    'enemy_lowest_hp = true',
-    'enemy_nearest = true',
-    'enemy_farthest = true',
-    'enemy_has_effect = true',
-    'enemy_lacks_effect = true',
-    'enemy_channeling = true',
-    'magic_immune = true',
-    'stunned = true',
-    'silenced = true',
-    'rooted = true',
-    'self\.heroRules',
-    'teamIndex = index',
-    'heroPrefix = string\.format\("%s_hero_%d"',
-    'UnitHasEffect',
-    'Script_GetAttackRange',
-    'IsDebuffImmune',
-    'IsMagicImmune',
-    'IsStunned',
-    'IsSilenced',
-    'IsRooted',
-    'IsChanneling',
-    'ClampThreshold',
-    'ParseBoolean',
-    '_threshold_',
-    '_effect_',
-    '_forced_',
-    'forced = true',
-    'forcedRuleIndex',
-    'forcedTargetIndex',
-    'ClearForcedRule',
-    'GetUnitsInActionRange',
-    'IsUnitWithinActionRange',
-    'Vector\(-1100, -650, 128\)',
-    'Vector\(1100, 650, 128\)',
-    'DOTA_UNIT_ORDER_CAST_TARGET',
-    'DOTA_UNIT_ORDER_CAST_POSITION',
-    'DOTA_UNIT_ORDER_CAST_NO_TARGET',
-    'GameRules:SetGameWinner\(winnerTeam\)'
+# --- Lua 模块化架构检查（TacticEngine / BattleManager / DataLoader / 主入口） ---
+$luaChecks = @(
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua";
+       Patterns = @(
+           'require\("battle\.tactic_engine"\)',
+           'require\("battle\.battle_manager"\)',
+           'require\("data\.data_loader"\)',
+           'RegisterListener\("rpg_start_battle"',
+           'RegisterListener\("rpg_request_battle_state"',
+           'RegisterListener\("rpg_select_level"',
+           'RegisterListener\("rpg_shop_buy"',
+           'RegisterListener\("rpg_lineup_set"',
+           'SetCustomGameForceHero\(PLAYER_PLACEHOLDER_HERO\)',
+           'local HERO_LEVEL = 30',
+           'SetFogOfWarDisabled\(true\)',
+           'SetUnseenFogOfWarEnabled\(false\)',
+           'SetHeroRespawnEnabled\(false\)',
+           'SetRespawnsDisabled\(true\)',
+           'SetExecuteOrderFilter',
+           'issuerPlayerId >= 0',
+           'GameRules:SetGameWinner\(winnerTeam\)',
+           'local SHOP_HERO_COST = 100',
+           'local SHOP_REFRESH_COST = 20',
+           'local SHOP_BENCH_SLOT_COST = 200',
+           'local INITIAL_GOLD = 300',
+           'local BENCH_SLOT_MAX = 5',
+           'local LINEUP_MAX = 5',
+           'self\.currentLevelId',
+           'RollShop',
+           'time_bonus_rate',
+           'Vector\(-1100, -650, 128\)',
+           'Vector\(1100, 650, 128\)'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\tactic_engine.lua";
+       Patterns = @(
+           'always = true',
+           'self_hp_below = true',
+           'self_mp_above = true',
+           'enemy_exists = true',
+           'ally_exists = true',
+           'enemy_count_ge = true',
+           'battle_time_ge = true',
+           'enemy_hp_lowest = true',
+           'enemy_hp_pct_lowest = true',
+           'enemy_hp_highest = true',
+           'enemy_hp_pct_highest = true',
+           'enemy_nearest = true',
+           'enemy_farthest = true',
+           'enemy_attack_highest = true',
+           'enemy_casting = true',
+           'ally_hp_lowest = true',
+           'ally_hp_pct_lowest = true',
+           'self = true',
+           'item_1 = true',
+           'item_6 = true',
+           'forcedRuleIndex',
+           'forcedTargetIndex',
+           'ClearForcedLock',
+           'CountAlive',
+           'IsChanneling',
+           'rule\.enabled == false',
+           '"_enabled_"',
+           '"_target_"',
+           '"_value_"',
+           '"_forced_"'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\battle_manager.lua";
+       Patterns = @(
+           'MoveToTargetToAttack\(target\)',
+           'ABILITY_TYPE_ULTIMATE',
+           'DOTA_UNIT_ORDER_CAST_TARGET',
+           'DOTA_UNIT_ORDER_CAST_POSITION',
+           'DOTA_UNIT_ORDER_CAST_NO_TARGET',
+           'Script_GetAttackRange',
+           'GetItemInSlot',
+           'BATTLE_TIME_LIMIT'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\data\data_loader.lua";
+       Patterns = @(
+           'levels\.json',
+           'enemy_ai\.json',
+           'loot\.json',
+           'LoadKeyValues'
+       ) }
 )
 
-foreach ($pattern in $requiredLuaPatterns) {
-    if ($lua -notmatch $pattern) {
-        throw "Lua implementation is missing required behavior: $pattern"
+foreach ($luaCheck in $luaChecks) {
+    $modulePath = Join-Path $repoRoot $luaCheck.File
+    if (-not (Test-Path -LiteralPath $modulePath)) {
+        throw "Missing Lua module: $($luaCheck.File)"
+    }
+    $moduleText = Get-Content -LiteralPath $modulePath -Raw
+    foreach ($pattern in $luaCheck.Patterns) {
+        if ($moduleText -notmatch $pattern) {
+            throw "Lua module $($luaCheck.File) is missing required behavior: $pattern"
+        }
     }
 }
 
+# --- 数据表检查 ---
+$dataChecks = @(
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\levels.json"; Required = 20 },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\heroes.json"; Required = $null },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\enemy_ai.json"; Required = $null },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\data\loot.json"; Required = $null }
+)
+foreach ($dataCheck in $dataChecks) {
+    $dataPath = Join-Path $repoRoot $dataCheck.File
+    if (-not (Test-Path -LiteralPath $dataPath)) {
+        throw "Missing data table: $($dataCheck.File)"
+    }
+    try {
+        $jsonData = Get-Content -LiteralPath $dataPath -Raw | ConvertFrom-Json
+    }
+    catch {
+        throw "Data table is not valid JSON: $($dataCheck.File)"
+    }
+    if ($dataCheck.Required -ne $null) {
+        $levelCount = ($jsonData.PSObject.Properties | Measure-Object).Count
+        if ($levelCount -lt $dataCheck.Required) {
+            throw "levels.json must contain at least $($dataCheck.Required) levels, found $levelCount"
+        }
+    }
+}
+
+# --- Panorama 事件与新系统接线 ---
 $javascript = Get-Content -LiteralPath $javascriptPath -Raw
 $hudLayout = Get-Content -LiteralPath $hudPath -Raw
-foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state")) {
-    if ($javascript -notmatch [regex]::Escape($eventName)) {
-        throw "Panorama JavaScript is missing event wiring: $eventName"
+$gameModeText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua") -Raw
+foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_hero_levels", "rpg_save_sync", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set")) {
+    $combined = $javascript + "`n" + $gameModeText
+    if ($combined -notmatch [regex]::Escape($eventName)) {
+        throw "Missing event wiring: $eventName"
     }
 }
 
 $conditionSource = $javascript + "`n" + $hudLayout
 foreach ($conditionName in @(
-    '"always"',
-    '"enemy_below"',
-    '"self_below"',
-    '"ally_below"',
-    '"enemy_in_range"',
-    '"enemy_highest_hp"',
-    '"enemy_lowest_hp"',
-    '"enemy_nearest"',
-    '"enemy_farthest"',
-    '"enemy_has_effect"',
-    '"enemy_lacks_effect"',
-    '"enemy_channeling"'
+    'always:',
+    'self_hp_below:',
+    'self_mp_above:',
+    'enemy_exists:',
+    'ally_exists:',
+    'enemy_count_ge:',
+    'battle_time_ge:'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($conditionName)) {
         throw "Panorama UI is missing condition: $conditionName"
     }
 }
 
-foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"', 'id="ConditionMenu"', 'id="EffectSelect"', 'id="EffectMenu"', 'id="AlwaysOption"', 'id="EnemyInRangeOption"', 'id="EnemyHighestHpOption"', 'id="EnemyLowestHpOption"', 'id="EnemyNearestOption"', 'id="EnemyFarthestOption"', 'id="EnemyHasEffectOption"', 'id="EnemyLacksEffectOption"', 'id="EnemyChannelingOption"', 'BLoadLayoutSnippet("RpgConditionEditor")', 'toggleEditorMenu', 'chooseCondition', 'chooseEffect')) {
+foreach ($targetName in @(
+    'enemy_hp_lowest:',
+    'enemy_hp_pct_lowest:',
+    'enemy_hp_highest:',
+    'enemy_hp_pct_highest:',
+    'enemy_nearest:',
+    'enemy_farthest:',
+    'enemy_attack_highest:',
+    'enemy_casting:',
+    'ally_hp_lowest:',
+    'ally_hp_pct_lowest:',
+    'self:'
+)) {
+    if ($conditionSource -notmatch [regex]::Escape($targetName)) {
+        throw "Panorama UI is missing target selector: $targetName"
+    }
+}
+
+foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"', 'id="ConditionMenu"', 'id="EffectSelect"', 'id="EffectMenu"', 'id="TargetSelect"', 'id="TargetMenu"', 'BLoadLayoutSnippet("RpgConditionEditor")', 'toggleEditorMenu', 'chooseCondition', 'chooseTarget', 'chooseEffect')) {
     if ($conditionSource -notmatch [regex]::Escape($snippetPattern)) {
         throw "Panorama UI is missing declarative dropdown behavior: $snippetPattern"
     }
 }
 
-foreach ($thresholdPattern in @("ThresholdEntry", "clampThreshold", '"_threshold_"')) {
+foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
     if ($javascript -notmatch [regex]::Escape($thresholdPattern)) {
-        throw "Panorama JavaScript is missing configurable threshold behavior: $thresholdPattern"
+        throw "Panorama JavaScript is missing configurable value behavior: $thresholdPattern"
     }
 }
 
-foreach ($heroPattern in @('id="RadiantHero1"', 'id="RadiantHero2"', 'id="RadiantHero3"', 'id="DireHero1"', 'id="DireHero2"', 'id="DireHero3"', 'buildHeroRuleSets', 'selectedHeroIndex', 'selectHero', 'wireHeroPortraits', '"_hero_"', '"_effect_"')) {
-    if ($conditionSource -notmatch [regex]::Escape($heroPattern)) {
-        throw "Panorama UI is missing per-hero rule behavior: $heroPattern"
+foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="BenchBuyButton"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+    if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
+        throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }
 }
 
@@ -265,4 +334,4 @@ finally {
     }
 }
 
-Write-Host "PASS: per-hero forced/range-only rules, advanced conditions, no-respawn battle flow, minimap contrast, Panorama wiring, and the 64x64 flat VMAP are valid."
+Write-Host "PASS: modular TacticEngine/BattleManager/DataLoader, hero shop + lineup economy, unified levels, 20 data-driven levels, target selectors, forced/range modes, minimap contrast, Panorama wiring, and the 64x64 flat VMAP are valid."

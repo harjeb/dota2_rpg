@@ -174,6 +174,14 @@ function CDota2RpgDemo:InitGameMode()
 	GameRules:SetCustomGameTeamMaxPlayers(DOTA_TEAM_GOODGUYS, 1)
 	GameRules:SetCustomGameTeamMaxPlayers(DOTA_TEAM_BADGUYS, 0)
 	GameRules:SetCustomGameSetupTimeout(0)
+	GameRules:SetCustomGameSetupAutoLaunchDelay(0)
+	if GameRules.SetCustomGameSetupEnabled ~= nil then
+		-- 单人 PVE：跳过队伍/英雄选择界面，直接进入游戏
+		GameRules:SetCustomGameSetupEnabled(false)
+	end
+	if GameRules.LockCustomGameSetupTeamAssignment ~= nil then
+		GameRules:LockCustomGameSetupTeamAssignment(true)
+	end
 	GameRules:SetHeroSelectionTime(0)
 	GameRules:SetStrategyTime(0)
 	GameRules:SetShowcaseTime(0)
@@ -190,22 +198,33 @@ function CDota2RpgDemo:InitGameMode()
 	ListenToGameEvent("game_rules_state_change", Dynamic_Wrap(CDota2RpgDemo, "OnGameRulesStateChange"), self)
 	ListenToGameEvent("entity_killed", Dynamic_Wrap(CDota2RpgDemo, "OnEntityKilled"), self)
 
-	local listeners = {
-		"rpg_start_battle",
-		"rpg_request_battle_state",
-		"rpg_select_level",
-		"rpg_hero_levels",
-		"rpg_save_sync",
-		"rpg_shop_refresh",
-		"rpg_shop_buy",
-		"rpg_bench_buy",
-		"rpg_lineup_set",
-	}
-	for _, eventName in ipairs(listeners) do
-		CustomGameEventManager:RegisterListener(eventName, function(eventSourceIndex, payload)
-			return self[eventName](self, eventSourceIndex, payload)
-		end)
-	end
+	CustomGameEventManager:RegisterListener("rpg_start_battle", function(eventSourceIndex, payload)
+		return self:OnStartBattle(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_request_battle_state", function(eventSourceIndex, payload)
+		return self:OnRequestBattleState(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_select_level", function(eventSourceIndex, payload)
+		return self:OnSelectLevel(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_hero_levels", function(eventSourceIndex, payload)
+		return self:OnHeroLevels(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_save_sync", function(eventSourceIndex, payload)
+		return self:OnSaveSync(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_shop_refresh", function(eventSourceIndex, payload)
+		return self:OnShopRefresh(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_shop_buy", function(eventSourceIndex, payload)
+		return self:OnShopBuy(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_bench_buy", function(eventSourceIndex, payload)
+		return self:OnBenchBuy(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_lineup_set", function(eventSourceIndex, payload)
+		return self:OnLineupSet(eventSourceIndex, payload)
+	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
 	self:RollShop()
@@ -264,13 +283,21 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 		return
 	end
 
-	if unit:GetUnitName() ~= PLAYER_PLACEHOLDER_HERO or unit.rpgPlaceholderReady then
+	-- 玩家本体的英雄（无论选中谁）都隐藏并停靠到地图外；
+	-- 战斗由商店购买的上阵英雄进行，玩家英雄不参战
+	local ownerId = unit:GetPlayerOwnerID()
+	if ownerId == nil or ownerId < 0 then
+		return
+	end
+	if unit.rpgPlaceholderReady then
 		return
 	end
 
 	unit.rpgPlaceholderReady = true
-	self.placeholderHero = unit
-	self.playerId = math.max(self.playerId, unit:GetPlayerOwnerID())
+	if unit:GetUnitName() == PLAYER_PLACEHOLDER_HERO then
+		self.placeholderHero = unit
+	end
+	self.playerId = math.max(self.playerId, ownerId)
 	unit:SetRespawnsDisabled(true)
 	unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
 	unit:AddNewModifier(unit, nil, "modifier_rooted", {})
@@ -473,31 +500,6 @@ end
 -- 战场生成
 ------------------------------------------------------------------
 
-function CDota2RpgDemo:OnNpcSpawned(event)
-	local unit = EntIndexToHScript(event.entindex or -1)
-	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
-		return
-	end
-
-	if unit:GetUnitName() ~= PLAYER_PLACEHOLDER_HERO or unit.rpgPlaceholderReady then
-		return
-	end
-
-	unit.rpgPlaceholderReady = true
-	self.placeholderHero = unit
-	self.playerId = math.max(self.playerId, unit:GetPlayerOwnerID())
-	unit:SetRespawnsDisabled(true)
-	unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
-	unit:AddNewModifier(unit, nil, "modifier_rooted", {})
-	unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
-	unit:AddNewModifier(unit, nil, "modifier_silence", {})
-	if unit.AddNoDraw ~= nil then
-		unit:AddNoDraw()
-	end
-	FindClearSpaceForUnit(unit, Vector(-7600, -7600, 128), true)
-	self:EnsureBattlefield()
-	print(string.format("[Dota2Rpg] Hidden placeholder ready for player %d.", self.playerId))
-end
 
 function CDota2RpgDemo:OnGameRulesStateChange()
 	local state = GameRules:State_Get()
