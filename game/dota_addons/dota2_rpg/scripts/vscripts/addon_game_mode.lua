@@ -80,11 +80,11 @@ local VALID_EFFECTS = {
 }
 
 local DEFAULT_RULES = {
-	{ action = "ultimate", condition = "always", threshold = 50, effect = "magic_immune" },
-	{ action = "ability_1", condition = "enemy_below", threshold = 50, effect = "magic_immune" },
-	{ action = "ability_2", condition = "always", threshold = 50, effect = "magic_immune" },
-	{ action = "ability_3", condition = "self_below", threshold = 50, effect = "magic_immune" },
-	{ action = "attack", condition = "always", threshold = 50, effect = "magic_immune" },
+	{ action = "ultimate", condition = "always", threshold = 50, effect = "magic_immune", forced = true },
+	{ action = "ability_1", condition = "enemy_below", threshold = 50, effect = "magic_immune", forced = true },
+	{ action = "ability_2", condition = "always", threshold = 50, effect = "magic_immune", forced = true },
+	{ action = "ability_3", condition = "self_below", threshold = 50, effect = "magic_immune", forced = true },
+	{ action = "attack", condition = "always", threshold = 50, effect = "magic_immune", forced = true },
 }
 
 local function IsValidUnit(unit)
@@ -107,6 +107,24 @@ local function ClampThreshold(value)
 	return math.max(1, math.min(100, threshold))
 end
 
+local function ParseBoolean(value, defaultValue)
+	if value == nil then
+		return defaultValue
+	end
+	if type(value) == "boolean" then
+		return value
+	end
+
+	local normalized = string.lower(tostring(value))
+	if normalized == "1" or normalized == "true" or normalized == "yes" or normalized == "on" then
+		return true
+	end
+	if normalized == "0" or normalized == "false" or normalized == "no" or normalized == "off" then
+		return false
+	end
+	return defaultValue
+end
+
 local function CloneDefaultRules()
 	local rules = {}
 	for _, rule in ipairs(DEFAULT_RULES) do
@@ -115,6 +133,7 @@ local function CloneDefaultRules()
 			condition = rule.condition,
 			threshold = rule.threshold,
 			effect = rule.effect,
+			forced = rule.forced,
 		})
 	end
 	return rules
@@ -272,6 +291,8 @@ function CDota2RpgDemo:EnsureBattlefield()
 				self.heroStates[hero:GetEntityIndex()] = {
 					nextActionAt = 0,
 					teamIndex = index,
+					forcedRuleIndex = nil,
+					forcedTargetIndex = nil,
 				}
 			else
 				print(string.format("[Dota2RpgDemo] Failed to spawn %s.", heroName))
@@ -362,7 +383,9 @@ function CDota2RpgDemo:OnStartBattle(eventSourceIndex, payload)
 				hero:SetMana(hero:GetMaxMana())
 				hero:SetIdleAcquire(true)
 				hero:SetAcquisitionRange(2400)
-				self.heroStates[hero:GetEntityIndex()].nextActionAt = now + 0.15 + (index * 0.08)
+				local heroState = self.heroStates[hero:GetEntityIndex()]
+				heroState.nextActionAt = now + 0.15 + (index * 0.08)
+				self:ClearForcedRule(heroState)
 			end
 		end
 	end
@@ -380,6 +403,7 @@ function CDota2RpgDemo:ParseRules(payload, prefix)
 		local condition = tostring(payload[prefix .. "_condition_" .. index] or "")
 		local threshold = ClampThreshold(payload[prefix .. "_threshold_" .. index])
 		local effect = tostring(payload[prefix .. "_effect_" .. index] or "")
+		local forced = ParseBoolean(payload[prefix .. "_forced_" .. index], true)
 		if not VALID_ACTIONS[action] or usedActions[action] then
 			action = nil
 			for _, fallbackAction in ipairs(ACTION_KEYS) do
@@ -402,6 +426,7 @@ function CDota2RpgDemo:ParseRules(payload, prefix)
 			condition = condition,
 			threshold = threshold,
 			effect = effect,
+			forced = forced,
 		})
 	end
 
@@ -451,6 +476,52 @@ function CDota2RpgDemo:OnThink()
 	return THINK_INTERVAL
 end
 
+function CDota2RpgDemo:ClearForcedRule(state)
+	if state == nil then
+		return
+	end
+	state.forcedRuleIndex = nil
+	state.forcedTargetIndex = nil
+end
+
+function CDota2RpgDemo:SetForcedRule(state, ruleIndex, target)
+	if state == nil or not IsValidUnit(target) or not target:IsAlive() then
+		return
+	end
+	state.forcedRuleIndex = ruleIndex
+	state.forcedTargetIndex = target:GetEntityIndex()
+end
+
+function CDota2RpgDemo:GetForcedTarget(state)
+	if state == nil or state.forcedTargetIndex == nil then
+		return nil
+	end
+	local target = EntIndexToHScript(state.forcedTargetIndex)
+	if not IsValidUnit(target) or not target:IsAlive() then
+		return nil
+	end
+	return target
+end
+
+function CDota2RpgDemo:ApplyActionResult(state, ruleIndex, result, target, now, ability)
+	if result == "moving" then
+		self:SetForcedRule(state, ruleIndex, target)
+		state.nextActionAt = now + ORDER_RETRY_INTERVAL
+		return true
+	end
+
+	self:ClearForcedRule(state)
+	if result == "cast" then
+		state.nextActionAt = now + math.max(0.65, ability:GetCastPoint() + 0.35)
+		return true
+	end
+	if result == "attack" then
+		state.nextActionAt = now + 0.7
+		return true
+	end
+	return false
+end
+
 function CDota2RpgDemo:ThinkHero(team, hero, now)
 	local state = self.heroStates[hero:GetEntityIndex()]
 	if state == nil or now < state.nextActionAt then
@@ -463,28 +534,49 @@ function CDota2RpgDemo:ThinkHero(team, hero, now)
 	end
 
 	local rules = self.heroRules[team] and self.heroRules[team][state.teamIndex]
-	for _, rule in ipairs(rules or DEFAULT_RULES) do
-		local ability = rule.action == "attack" and nil or self:GetActionAbility(hero, rule.action)
-		if self:EvaluateCondition(team, hero, rule, ability) then
+	rules = rules or DEFAULT_RULES
+
+	if state.forcedRuleIndex ~= nil then
+		local ruleIndex = state.forcedRuleIndex
+		local rule = rules[ruleIndex]
+		local target = self:GetForcedTarget(state)
+		if rule == nil or not rule.forced or target == nil then
+			self:ClearForcedRule(state)
+		else
+			local ability = rule.action == "attack" and nil or self:GetActionAbility(hero, rule.action)
+			local result = "skip"
+			local actionTarget = target
 			if rule.action == "attack" then
-				local target = self:SelectEnemyTarget(team, hero, rule, nil)
-				if IsValidUnit(target) then
-					hero:MoveToTargetToAttack(target)
-					state.nextActionAt = now + 0.7
+				result, actionTarget = self:IssueAttackOrder(hero, target, true)
+			else
+				if not self:IsAbilityReady(hero, ability) then
+					state.nextActionAt = now + ORDER_RETRY_INTERVAL
 					return
 				end
+				result, actionTarget = self:IssueAbilityOrder(team, hero, ability, rule, target)
+			end
+
+			if self:ApplyActionResult(state, ruleIndex, result, actionTarget, now, ability) then
+				return
+			end
+		end
+	end
+
+	for ruleIndex, rule in ipairs(rules) do
+		local ability = rule.action == "attack" and nil or self:GetActionAbility(hero, rule.action)
+		local actionReady = rule.action == "attack" or self:IsAbilityReady(hero, ability)
+		if actionReady and self:EvaluateCondition(team, hero, rule, ability) then
+			local result = "skip"
+			local target = nil
+			if rule.action == "attack" then
+				target = self:SelectEnemyTarget(team, hero, rule, nil)
+				result, target = self:IssueAttackOrder(hero, target, rule.forced)
 			else
-				if self:IsAbilityReady(hero, ability) then
-					local result = self:IssueAbilityOrder(team, hero, ability, rule)
-					if result == "moving" then
-						state.nextActionAt = now + ORDER_RETRY_INTERVAL
-						return
-					end
-					if result == "cast" then
-						state.nextActionAt = now + math.max(0.65, ability:GetCastPoint() + 0.35)
-						return
-					end
-				end
+				result, target = self:IssueAbilityOrder(team, hero, ability, rule, nil)
+			end
+
+			if self:ApplyActionResult(state, ruleIndex, result, target, now, ability) then
+				return
 			end
 		end
 	end
@@ -502,10 +594,10 @@ function CDota2RpgDemo:EvaluateCondition(team, hero, rule, ability)
 		return HealthPercent(hero) < threshold
 	end
 	if condition == "enemy_below" then
-		return self:GetLowestHealthUnit(self:GetEnemyHeroes(team), threshold) ~= nil
+		return self:SelectEnemyTarget(team, hero, rule, ability) ~= nil
 	end
 	if condition == "ally_below" then
-		return self:GetLowestHealthUnit(self.teamHeroes[team], threshold) ~= nil
+		return self:SelectFriendlyTarget(team, hero, rule, ability) ~= nil
 	end
 	return self:SelectEnemyTarget(team, hero, rule, ability) ~= nil
 end
@@ -611,12 +703,12 @@ function CDota2RpgDemo:UnitHasEffect(unit, effect)
 	return false
 end
 
-function CDota2RpgDemo:IsEnemyWithinActionRange(hero, ability, action, enemy)
-	if not IsValidUnit(enemy) then
+function CDota2RpgDemo:IsUnitWithinActionRange(hero, ability, action, unit)
+	if not IsValidUnit(unit) then
 		return false
 	end
 
-	local distance = (hero:GetAbsOrigin() - enemy:GetAbsOrigin()):Length2D()
+	local distance = (hero:GetAbsOrigin() - unit:GetAbsOrigin()):Length2D()
 	if action == "attack" then
 		local attackRange = 150
 		if hero.Script_GetAttackRange ~= nil then
@@ -640,7 +732,7 @@ function CDota2RpgDemo:IsEnemyWithinActionRange(hero, ability, action, enemy)
 		return distance <= radius + CAST_RANGE_BUFFER
 	end
 
-	local castRange = ability:GetCastRange(hero:GetAbsOrigin(), enemy)
+	local castRange = ability:GetCastRange(hero:GetAbsOrigin(), unit)
 	if castRange <= 0 then
 		local radius = ability:GetAOERadius()
 		castRange = radius > 0 and radius or 600
@@ -648,9 +740,22 @@ function CDota2RpgDemo:IsEnemyWithinActionRange(hero, ability, action, enemy)
 	return distance <= castRange + CAST_RANGE_BUFFER
 end
 
+function CDota2RpgDemo:GetUnitsInActionRange(hero, ability, action, units)
+	local inRange = {}
+	for _, unit in ipairs(units or {}) do
+		if IsValidUnit(unit) and unit:IsAlive() and self:IsUnitWithinActionRange(hero, ability, action, unit) then
+			table.insert(inRange, unit)
+		end
+	end
+	return inRange
+end
+
 function CDota2RpgDemo:SelectEnemyTarget(team, hero, rule, ability)
 	local enemies = self:GetEnemyHeroes(team)
 	local condition = rule.condition
+	if not rule.forced or condition == "enemy_in_range" then
+		enemies = self:GetUnitsInActionRange(hero, ability, rule.action, enemies)
+	end
 	if condition == "enemy_below" then
 		return self:GetLowestHealthUnit(enemies, ClampThreshold(rule.threshold) / 100)
 	end
@@ -664,9 +769,7 @@ function CDota2RpgDemo:SelectEnemyTarget(team, hero, rule, ability)
 		return self:GetFarthestUnit(hero:GetAbsOrigin(), enemies)
 	end
 	if condition == "enemy_in_range" then
-		return self:GetNearestMatchingUnit(hero:GetAbsOrigin(), enemies, function(enemy)
-			return self:IsEnemyWithinActionRange(hero, ability, rule.action, enemy)
-		end)
+		return self:GetNearestUnit(hero:GetAbsOrigin(), enemies)
 	end
 	if condition == "enemy_has_effect" then
 		return self:GetNearestMatchingUnit(hero:GetAbsOrigin(), enemies, function(enemy)
@@ -686,15 +789,20 @@ function CDota2RpgDemo:SelectEnemyTarget(team, hero, rule, ability)
 	return self:GetNearestUnit(hero:GetAbsOrigin(), enemies)
 end
 
-function CDota2RpgDemo:SelectFriendlyTarget(team, hero, rule)
+function CDota2RpgDemo:SelectFriendlyTarget(team, hero, rule, ability)
 	local condition = rule.condition
 	if condition == "self_below" then
 		return hero
 	end
-	if condition == "ally_below" then
-		return self:GetLowestHealthUnit(self.teamHeroes[team], ClampThreshold(rule.threshold) / 100)
+
+	local friendlies = self.teamHeroes[team]
+	if not rule.forced then
+		friendlies = self:GetUnitsInActionRange(hero, ability, rule.action, friendlies)
 	end
-	return self:GetLowestHealthUnit(self.teamHeroes[team], nil) or hero
+	if condition == "ally_below" then
+		return self:GetLowestHealthUnit(friendlies, ClampThreshold(rule.threshold) / 100)
+	end
+	return self:GetLowestHealthUnit(friendlies, nil) or hero
 end
 
 function CDota2RpgDemo:GetActionAbility(hero, action)
@@ -734,17 +842,35 @@ function CDota2RpgDemo:IsAbilityReady(hero, ability)
 	return hero:IsAlive()
 end
 
-function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
+function CDota2RpgDemo:IssueAttackOrder(hero, target, forced)
+	if not IsValidUnit(target) or not target:IsAlive() then
+		return "skip", nil
+	end
+
+	if not self:IsUnitWithinActionRange(hero, nil, "attack", target) then
+		if not forced then
+			return "skip", target
+		end
+		hero:MoveToTargetToAttack(target)
+		return "moving", target
+	end
+
+	hero:MoveToTargetToAttack(target)
+	return "attack", target
+end
+
+function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule, lockedTarget)
 	local behavior = ability:GetBehaviorInt()
 	local targetTeam = ability:GetAbilityTargetTeam()
 	local targetsEnemy = HasFlag(targetTeam, DOTA_UNIT_TARGET_TEAM_ENEMY)
 	local targetsFriendly = HasFlag(targetTeam, DOTA_UNIT_TARGET_TEAM_FRIENDLY)
-	local enemy = self:SelectEnemyTarget(team, hero, rule, ability)
-	local friendly = self:SelectFriendlyTarget(team, hero, rule)
+	local validLockedTarget = IsValidUnit(lockedTarget) and lockedTarget:IsAlive()
+	local enemy = validLockedTarget and targetsEnemy and lockedTarget or self:SelectEnemyTarget(team, hero, rule, ability)
+	local friendly = validLockedTarget and targetsFriendly and not targetsEnemy and lockedTarget or self:SelectFriendlyTarget(team, hero, rule, ability)
 
 	if HasFlag(behavior, DOTA_ABILITY_BEHAVIOR_TOGGLE) then
 		if ability.GetToggleState ~= nil and ability:GetToggleState() then
-			return "skip"
+			return "skip", nil
 		end
 		ExecuteOrderFromTable({
 			UnitIndex = hero:GetEntityIndex(),
@@ -753,17 +879,20 @@ function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
 			Queue = false,
 			IssuerPlayerID = -1,
 		})
-		return "cast"
+		return "cast", nil
 	end
 
 	if HasFlag(behavior, DOTA_ABILITY_BEHAVIOR_UNIT_TARGET) then
 		local target = targetsEnemy and enemy or friendly
 		if not IsValidUnit(target) or not target:IsAlive() then
-			return "skip"
+			return "skip", nil
 		end
 		if not self:IsWithinCastRange(hero, ability, target:GetAbsOrigin(), target) then
+			if not rule.forced then
+				return "skip", target
+			end
 			hero:MoveToPosition(target:GetAbsOrigin())
-			return "moving"
+			return "moving", target
 		end
 		ExecuteOrderFromTable({
 			UnitIndex = hero:GetEntityIndex(),
@@ -773,18 +902,21 @@ function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
 			Queue = false,
 			IssuerPlayerID = -1,
 		})
-		return "cast"
+		return "cast", target
 	end
 
 	if HasFlag(behavior, DOTA_ABILITY_BEHAVIOR_POINT) then
 		local target = targetsEnemy and enemy or friendly
 		if not IsValidUnit(target) then
-			return "skip"
+			return "skip", nil
 		end
 		local position = target:GetAbsOrigin()
 		if not self:IsWithinCastRange(hero, ability, position, target) then
+			if not rule.forced then
+				return "skip", target
+			end
 			hero:MoveToPosition(position)
-			return "moving"
+			return "moving", target
 		end
 		ExecuteOrderFromTable({
 			UnitIndex = hero:GetEntityIndex(),
@@ -794,7 +926,7 @@ function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
 			Queue = false,
 			IssuerPlayerID = -1,
 		})
-		return "cast"
+		return "cast", target
 	end
 
 	if HasFlag(behavior, DOTA_ABILITY_BEHAVIOR_NO_TARGET) then
@@ -805,11 +937,14 @@ function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
 			end
 			local distance = (hero:GetAbsOrigin() - enemy:GetAbsOrigin()):Length2D()
 			if distance > radius + CAST_RANGE_BUFFER then
+				if not rule.forced then
+					return "skip", enemy
+				end
 				hero:MoveToPosition(enemy:GetAbsOrigin())
-				return "moving"
+				return "moving", enemy
 			end
 		elseif targetsEnemy then
-			return "skip"
+			return "skip", nil
 		end
 
 		ExecuteOrderFromTable({
@@ -819,13 +954,13 @@ function CDota2RpgDemo:IssueAbilityOrder(team, hero, ability, rule)
 			Queue = false,
 			IssuerPlayerID = -1,
 		})
-		return "cast"
+		return "cast", enemy
 	end
 
 	if targetsFriendly and IsValidUnit(friendly) then
-		return "skip"
+		return "skip", friendly
 	end
-	return "skip"
+	return "skip", nil
 end
 
 function CDota2RpgDemo:IsWithinCastRange(hero, ability, position, target)

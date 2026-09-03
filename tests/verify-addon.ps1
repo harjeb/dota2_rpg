@@ -80,7 +80,6 @@ $requiredLuaPatterns = @(
     'teamIndex = index',
     'heroPrefix = string\.format\("%s_hero_%d"',
     'UnitHasEffect',
-    'IsEnemyWithinActionRange',
     'Script_GetAttackRange',
     'IsDebuffImmune',
     'IsMagicImmune',
@@ -89,8 +88,16 @@ $requiredLuaPatterns = @(
     'IsRooted',
     'IsChanneling',
     'ClampThreshold',
+    'ParseBoolean',
     '_threshold_',
     '_effect_',
+    '_forced_',
+    'forced = true',
+    'forcedRuleIndex',
+    'forcedTargetIndex',
+    'ClearForcedRule',
+    'GetUnitsInActionRange',
+    'IsUnitWithinActionRange',
     'Vector\(-1100, -650, 128\)',
     'Vector\(1100, 650, 128\)',
     'DOTA_UNIT_ORDER_CAST_TARGET',
@@ -148,6 +155,12 @@ foreach ($thresholdPattern in @("ThresholdEntry", "clampThreshold", '"_threshold
 foreach ($heroPattern in @('id="RadiantHero1"', 'id="RadiantHero2"', 'id="RadiantHero3"', 'id="DireHero1"', 'id="DireHero2"', 'id="DireHero3"', 'buildHeroRuleSets', 'selectedHeroIndex', 'selectHero', 'wireHeroPortraits', '"_hero_"', '"_effect_"')) {
     if ($conditionSource -notmatch [regex]::Escape($heroPattern)) {
         throw "Panorama UI is missing per-hero rule behavior: $heroPattern"
+    }
+}
+
+foreach ($forcedPattern in @('dota2_rpg_force_column', 'forced: true', 'ForceToggle', 'toggleForced', '"_forced_"', 'dota2_rpg_force_enabled', 'dota2_rpg_force_disabled')) {
+    if ($conditionSource -notmatch [regex]::Escape($forcedPattern)) {
+        throw "Panorama UI is missing forced execution toggle behavior: $forcedPattern"
     }
 }
 
@@ -252,4 +265,4 @@ finally {
     }
 }
 
-Write-Host "PASS: per-hero 3v3 rules, advanced conditions, no-respawn battle flow, minimap contrast, Panorama wiring, and the 64x64 flat VMAP are valid."
+Write-Host "PASS: per-hero forced/range-only rules, advanced conditions, no-respawn battle flow, minimap contrast, Panorama wiring, and the 64x64 flat VMAP are valid."

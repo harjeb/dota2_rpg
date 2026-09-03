@@ -71,7 +71,7 @@
 
 .TeamEditor
 {
-	width: 486px;
+	width: 544px;
 	height: 446px;
 	vertical-align: center;
 	flow-children: down;
@@ -229,6 +229,12 @@
 	width: 244px;
 }
 
+.ForceColumn
+{
+	width: 64px;
+	text-align: center;
+}
+
 .RulesContainer
 {
 	width: 100%;
@@ -279,6 +285,7 @@
 
 .RuleRow.MenuOpen .PriorityNumber,
 .RuleRow.MenuOpen .ActionName,
+.RuleRow.MenuOpen .ForceToggle,
 .RuleRow.MenuOpen .MoveButton
 {
 	vertical-align: top;
@@ -493,6 +500,50 @@
 	padding-left: 8px;
 	font-size: 14px;
 	color: #e1e7e9;
+	text-overflow: shrink;
+}
+
+.ForceToggle
+{
+	width: 62px;
+	height: 32px;
+	vertical-align: center;
+	margin-left: 2px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+	transition-property: brightness, background-color, border;
+	transition-duration: 0.12s;
+}
+
+.ForceToggle.Forced
+{
+	background-color: #76582b;
+	border-color: #d5b665;
+}
+
+.ForceToggle:hover
+{
+	brightness: 1.3;
+}
+
+.ForceToggle:active
+{
+	brightness: 0.8;
+}
+
+.ForceToggle:disabled
+{
+	brightness: 0.6;
+}
+
+.ForceToggleValue
+{
+	width: 100%;
+	vertical-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	color: #e7edf0;
+	text-align: center;
 	text-overflow: shrink;
 }
 

@@ -57,11 +57,11 @@
 
     function buildDefaultRules() {
         return [
-            { action: "ultimate", condition: "always", threshold: 50, effect: "magic_immune" },
-            { action: "ability_1", condition: "enemy_below", threshold: 50, effect: "magic_immune" },
-            { action: "ability_2", condition: "always", threshold: 50, effect: "magic_immune" },
-            { action: "ability_3", condition: "self_below", threshold: 50, effect: "magic_immune" },
-            { action: "attack", condition: "always", threshold: 50, effect: "magic_immune" }
+            { action: "ultimate", condition: "always", threshold: 50, effect: "magic_immune", forced: true },
+            { action: "ability_1", condition: "enemy_below", threshold: 50, effect: "magic_immune", forced: true },
+            { action: "ability_2", condition: "always", threshold: 50, effect: "magic_immune", forced: true },
+            { action: "ability_3", condition: "self_below", threshold: 50, effect: "magic_immune", forced: true },
+            { action: "attack", condition: "always", threshold: 50, effect: "magic_immune", forced: true }
         ];
     }
 
@@ -103,6 +103,19 @@
             moveRule(side, index, direction === "Up" ? -1 : 1);
         });
         return button;
+    }
+
+    function createForceToggle(parent, side, index) {
+        var button = $.CreatePanel("Button", parent, side + "ForceToggle" + index);
+        button.AddClass("ForceToggle");
+        var valueLabel = createLabel(button, "ForceToggleValue", "");
+        button.SetPanelEvent("onactivate", function () {
+            toggleForced(side, index);
+        });
+        return {
+            button: button,
+            valueLabel: valueLabel
+        };
     }
 
     function wireValueButtons(panel, callback) {
@@ -168,6 +181,7 @@
             createLabel(row, "PriorityNumber", String(index + 1));
             var actionLabel = createLabel(row, "ActionName", "");
             var conditionEditor = createConditionEditor(row, side, index);
+            var forceToggle = createForceToggle(row, side, index);
             var upButton = createMoveButton(row, side, index, "Up", "^");
             var downButton = createMoveButton(row, side, index, "Down", "v");
             rowPanels[side].push({
@@ -182,6 +196,8 @@
                 effectSelect: conditionEditor.effectSelect,
                 effectValue: conditionEditor.effectValue,
                 effectMenu: conditionEditor.effectMenu,
+                forceToggle: forceToggle.button,
+                forceToggleValue: forceToggle.valueLabel,
                 upButton: upButton,
                 downButton: downButton
             });
@@ -227,6 +243,23 @@
         rules[index].effect = EFFECT_TOKENS[effect] ? effect : "magic_immune";
         closeEditorMenus();
         updateConditionSelector(side, index, false);
+    }
+
+    function toggleForced(side, index) {
+        if (phase !== "setup") {
+            return;
+        }
+        var rule = getSelectedRules(side)[index];
+        rule.forced = !rule.forced;
+        updateForcedToggle(side, index, false);
+    }
+
+    function updateForcedToggle(side, index, locked) {
+        var panels = rowPanels[side][index];
+        var forced = Boolean(getSelectedRules(side)[index].forced);
+        panels.forceToggleValue.text = $.Localize(forced ? "#dota2_rpg_force_enabled" : "#dota2_rpg_force_disabled");
+        panels.forceToggle.SetHasClass("Forced", forced);
+        panels.forceToggle.enabled = !locked;
     }
 
     function updateConditionSelector(side, index, locked) {
@@ -325,6 +358,7 @@
             panels.actionLabel.text = $.Localize(ACTION_TOKENS[definition.action]);
             panels.thresholdEntry.text = String(definition.threshold);
             updateConditionSelector(side, index, locked);
+            updateForcedToggle(side, index, locked);
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
         }
@@ -346,6 +380,7 @@
                     payload[prefix + "_condition_" + (ruleIndex + 1)] = rules[ruleIndex].condition;
                     payload[prefix + "_threshold_" + (ruleIndex + 1)] = rules[ruleIndex].threshold;
                     payload[prefix + "_effect_" + (ruleIndex + 1)] = rules[ruleIndex].effect;
+                    payload[prefix + "_forced_" + (ruleIndex + 1)] = rules[ruleIndex].forced ? 1 : 0;
                 }
             }
         }

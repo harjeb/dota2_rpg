@@ -9,8 +9,9 @@ This repository contains a real Dota 2 Workshop Tools custom-game addon named `d
 - Both teams are frozen and invulnerable until the center **Start Battle** button is pressed.
 - Click any hero portrait to switch the active editor. All six heroes keep independent five-rule priority lists for ultimate, abilities 1-3, and basic attack.
 - Rules can be reordered and use HP thresholds, current action range, highest/lowest HP enemy, nearest/farthest enemy, selected enemy effects, or enemy channeling as execution and target-selection conditions. HP thresholds accept integers from 1 to 100.
+- Every rule has an independent **Forced / In range** mode toggle. Forced mode selects from all matching battlefield targets, locks the selected target, and keeps chasing without evaluating lower-priority rules until the attack or cast order is issued. In-range mode only selects matching targets already inside the current attack or ability range and immediately falls through when none are available.
 - Effect rules provide BKB/magic immunity, stunned, silenced, and rooted selectors, with separate "has effect" and "lacks effect" conditions.
-- Heroes automatically select enemy/friendly targets, move into cast range, cast ready abilities, and fall through to lower-priority rules when a rule cannot run.
+- Heroes automatically select enemy/friendly targets, move into range for forced rules, cast ready abilities, and fall through to lower-priority rules when an in-range rule cannot run.
 - The two formations start near the center, roughly half the previous distance apart, so combat begins quickly after pressing Start Battle.
 - Respawning and buyback are disabled. The first team with no living battle heroes loses.
 - Fog of war is disabled for the entire match.
@@ -75,7 +76,9 @@ dota_launch_custom_game dota2_rpg dota2_rpg_demo
 & "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta\game\bin\win64\dota2.exe" -tools -addon dota2_rpg -novid -console +dota_launch_custom_game dota2_rpg dota2_rpg_demo
 ```
 
-正常结果：双方各 3 名 30 级英雄在地图中央附近等待；左右显示我方/敌方行动逻辑编辑器；点击任意英雄头像可切换该英雄自己的 5 条规则；只有点击中间“开始战斗”后双方才自动行动。
+正常结果：双方各 3 名 30 级英雄在地图中央附近等待；左右显示我方/敌方行动逻辑编辑器；点击任意英雄头像可切换该英雄自己的 5 条规则；每条规则可独立切换“强制/范围内”；只有点击中间“开始战斗”后双方才自动行动。
+
+“强制”会从全场符合条件的目标中选择并锁定目标，追到可以攻击或施法为止，追击期间不会判断低优先级规则。“范围内”只从当前攻击/技能范围内的目标中选择，例如“HP 最低敌人”只比较范围内敌人；范围内没有目标时直接判断下一条规则。
 
 ## 运行监听方式
 
