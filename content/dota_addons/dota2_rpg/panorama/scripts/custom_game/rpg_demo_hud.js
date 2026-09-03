@@ -51,11 +51,7 @@
     var EFFECT_CONDITIONS = {}; // v1 条件为单一条件，状态类条件 v2 预留
 
     var HEROES = {
-        Radiant: [
-            { panelId: "RadiantHero1", name: "npc_dota_hero_sven" },
-            { panelId: "RadiantHero2", name: "npc_dota_hero_lina" },
-            { panelId: "RadiantHero3", name: "npc_dota_hero_dazzle" }
-        ],
+        Radiant: [],  // 动态：由商店/阵容决定（CustomNetTables shop 表）
         Dire: [
             { panelId: "DireHero1", name: "npc_dota_hero_axe" },
             { panelId: "DireHero2", name: "npc_dota_hero_lion" },
@@ -495,6 +491,146 @@
         $("#ControlStatus").text = text;
     }
 
+    // ---------------- 英雄商店 + 阵容（服务端权威，net 表镜像） ----------------
+    var shopState = {
+        gold: 300,
+        offer: [],
+        owned: [],
+        lineup: [],
+        bench_slots: 0,
+        costs: { hero: 100, refresh: 20, bench_slot: 200, bench_slot_max: 5, lineup_max: 5 }
+    };
+
+    function onShopTable(tableName, tableKey) {
+        if (tableKey !== "shop") {
+            return;
+        }
+        var data = CustomNetTables.GetTableValue("rpg_rules_config", "shop") || shopState;
+        shopState.gold = Number(data.gold !== undefined ? data.gold : shopState.gold);
+        shopState.offer = data.offer || [];
+        shopState.owned = data.owned || [];
+        shopState.lineup = data.lineup || [];
+        shopState.bench_slots = Number(data.bench_slots || 0);
+        if (data.costs) {
+            shopState.costs = data.costs;
+        }
+        saveData.gold = shopState.gold;
+        saveData.owned = shopState.owned;
+        saveData.lineup = shopState.lineup;
+        saveData.bench_slots = shopState.bench_slots;
+        persistSave();
+        renderShop();
+        renderLineupStrip();
+        renderRadiantHeroStrip();
+        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + shopState.gold;
+        updateTeamLevelLabels();
+    }
+
+    function renderShop() {
+        var container = $("#ShopOffer");
+        container.RemoveAndDeleteChildren();
+        for (var index = 0; index < shopState.offer.length; index++) {
+            (function (heroName) {
+                var owned = false;
+                for (var i = 0; i < shopState.owned.length; i++) {
+                    if (shopState.owned[i] === heroName) {
+                        owned = true;
+                        break;
+                    }
+                }
+                var slot = $.CreatePanel("Button", container, "Shop_" + heroName);
+                slot.AddClass("ShopOfferSlot");
+                slot.SetHasClass("Owned", owned);
+                var portrait = $.CreatePanel("DOTAHeroImage", slot, "");
+                portrait.AddClass("ShopPortrait");
+                portrait.heroname = heroName;
+                portrait.heroimagestyle = "portrait";
+                if (!owned) {
+                    slot.SetPanelEvent("onactivate", function () {
+                        GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
+                    });
+                    slot.enabled = shopState.gold >= shopState.costs.hero;
+                } else {
+                    slot.enabled = false;
+                }
+            }(shopState.offer[index]));
+        }
+    }
+
+    function wireShopButtons() {
+        var refresh = $("#RefreshShopButton");
+        refresh.SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_shop_refresh", {});
+        });
+        var bench = $("#BenchBuyButton");
+        bench.SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_bench_buy", {});
+        });
+    }
+
+    function renderLineupStrip() {
+        var container = $("#LineupStrip");
+        container.RemoveAndDeleteChildren();
+        for (var index = 0; index < shopState.owned.length; index++) {
+            (function (heroName) {
+                var inLineup = false;
+                for (var i = 0; i < shopState.lineup.length; i++) {
+                    if (shopState.lineup[i] === heroName) {
+                        inLineup = true;
+                        break;
+                    }
+                }
+                var portrait = $.CreatePanel("DOTAHeroImage", container, "Lineup_" + heroName);
+                portrait.AddClass("HeroPortrait");
+                portrait.heroname = heroName;
+                portrait.heroimagestyle = "portrait";
+                portrait.SetHasClass("Selected", inLineup);
+                portrait.SetPanelEvent("onactivate", function () {
+                    if (phase !== "setup") {
+                        return;
+                    }
+                    var next = [];
+                    var wasIn = false;
+                    for (var j = 0; j < shopState.lineup.length; j++) {
+                        if (shopState.lineup[j] === heroName) {
+                            wasIn = true;
+                            continue;
+                        }
+                        next.push(shopState.lineup[j]);
+                    }
+                    if (!wasIn && next.length < shopState.costs.lineup_max) {
+                        next.push(heroName);
+                    }
+                    GameEvents.SendCustomGameEventToServer("rpg_lineup_set", { lineup: next });
+                });
+            }(shopState.owned[index]));
+        }
+    }
+
+    function renderRadiantHeroStrip() {
+        var container = $("#RadiantHeroStrip");
+        if (!container) {
+            return;
+        }
+        container.RemoveAndDeleteChildren();
+        HEROES.Radiant = [];
+        for (var index = 0; index < shopState.lineup.length; index++) {
+            (function (heroIndex, heroName) {
+                var portrait = $.CreatePanel("DOTAHeroImage", container, "RadiantHeroDyn" + (heroIndex + 1));
+                portrait.AddClass("HeroPortrait");
+                portrait.heroname = heroName;
+                portrait.heroimagestyle = "portrait";
+                portrait.SetPanelEvent("onactivate", function () {
+                    selectHero("Radiant", heroIndex);
+                });
+                HEROES.Radiant.push({ panelId: portrait.id, name: heroName });
+            }(index, shopState.lineup[index]));
+        }
+        if (selectedHeroIndex.Radiant >= shopState.lineup.length) {
+            selectedHeroIndex.Radiant = 0;
+        }
+    }
+
     // ---------------- 关卡选择（数据来自 CustomNetTables） ----------------
     var levelList = [];
     var currentLevelId = "demo_3v3";
@@ -529,9 +665,10 @@
     var HERO_MAX_LEVEL = 30;
     var MAX_ATTEMPTS = 5;
 
-    // 升到下一级所需经验（经验全队共享，DESIGN.md §2.1）
+    // 升到下一级所需经验（经验全队共享、全员统一等级）
+    // 首通 1~15 关合计 13500 xp ≈ 累计需求 14210 → 15 关左右满级 30
     function xpToNext(level) {
-        return 80 + 40 * level;
+        return 40 + 30 * level;
     }
 
     function loadSave() {
@@ -553,8 +690,17 @@
         if (!saved.attempts || typeof saved.attempts !== "object") {
             saved.attempts = {};
         }
-        if (!saved.hero_levels || typeof saved.hero_levels !== "object") {
-            saved.hero_levels = [5, 5, 5];
+        if (!saved.level) {
+            saved.level = 1; // 全队统一等级
+        }
+        if (!saved.owned || typeof saved.owned !== "object") {
+            saved.owned = [];   // 英雄池（可含场下英雄）
+        }
+        if (!saved.lineup || typeof saved.lineup !== "object") {
+            saved.lineup = [];
+        }
+        if (!saved.bench_slots) {
+            saved.bench_slots = 0; // 替补格子（需金币购买）
         }
         return saved;
     }
@@ -573,33 +719,24 @@
     }
 
     function sendHeroLevels() {
-        GameEvents.SendCustomGameEventToServer("rpg_hero_levels", { levels: saveData.hero_levels });
+        GameEvents.SendCustomGameEventToServer("rpg_hero_levels", { level: saveData.level });
     }
 
     function updateTeamLevelLabels() {
-        var playerText = "Lv " + saveData.hero_levels.join(" / ");
-        $("#RadiantTeamLevel").text = playerText + " · 无法复活";
-        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_level_30");
+        $("#RadiantTeamLevel").text = $.Localize("#dota2_rpg_level_unified") + " " + saveData.level;
+        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
     }
 
     function applySharedXp(xp) {
-        var gained = Number(xp || 0);
+        var pool = Number(xp || 0);
         var levelUps = 0;
-        for (var index = 0; index < saveData.hero_levels.length; index++) {
-            var level = saveData.hero_levels[index];
-            var pool = gained;
-            while (pool > 0 && level < HERO_MAX_LEVEL) {
-                var need = xpToNext(level);
-                if (pool >= need) {
-                    pool -= need;
-                    level++;
-                    levelUps++;
-                } else {
-                    break;
-                }
-            }
-            saveData.hero_levels[index] = level;
+        var level = saveData.level;
+        while (level < HERO_MAX_LEVEL && pool >= xpToNext(level)) {
+            pool -= xpToNext(level);
+            level++;
+            levelUps++;
         }
+        saveData.level = level;
         return levelUps;
     }
 
@@ -610,14 +747,23 @@
         var firstClear = !saveData.cleared[settlement.level];
         var gold = Number(firstClear ? settlement.first_gold : settlement.repeat_gold) || 0;
         var xp = Number(firstClear ? settlement.first_xp : settlement.repeat_xp) || 0;
-        saveData.gold += gold;
         if (firstClear) {
             saveData.cleared[settlement.level] = true;
         }
         saveData.attempts[settlement.level] = 0;
         var levelUps = applySharedXp(xp);
+        // 时间奖励：越快越多（服务端已算好 time_bonus）
+        gold += Number(settlement.time_bonus || 0);
+        saveData.gold += gold;
+        // 服务端是金币权威，把存档金币推回去
+        GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
+            gold: saveData.gold,
+            level: saveData.level,
+            bench_slots: saveData.bench_slots,
+            owned: saveData.owned,
+            lineup: saveData.lineup
+        });
         persistSave();
-        sendHeroLevels();
         return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
     }
 
@@ -745,8 +891,12 @@
 
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
-    // 英雄动作槽/关卡列表就绪后重建对应 UI
+    // 英雄动作槽/关卡列表/商店就绪后重建对应 UI
     CustomNetTables.SubscribeNetTableListener("rpg_rules_config", function (tableName, tableKey) {
+        if (tableKey === "shop") {
+            onShopTable(tableName, tableKey);
+            return;
+        }
         if (tableKey === "levels") {
             onLevelsTable(tableName, tableKey);
             return;
@@ -758,8 +908,16 @@
             renderSide("Dire");
         }
     });
+    wireShopButtons();
     $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
     updateTeamLevelLabels();
     sendHeroLevels();
+    GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
+        gold: saveData.gold,
+        level: saveData.level,
+        bench_slots: saveData.bench_slots,
+        owned: saveData.owned,
+        lineup: saveData.lineup
+    });
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

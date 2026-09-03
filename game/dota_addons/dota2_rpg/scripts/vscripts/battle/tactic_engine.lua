@@ -22,6 +22,12 @@ local ACTION_KEYS = {
 	"ability_1",
 	"ability_2",
 	"ability_3",
+	"item_1",
+	"item_2",
+	"item_3",
+	"item_4",
+	"item_5",
+	"item_6",
 	"attack",
 }
 
@@ -30,6 +36,12 @@ local VALID_ACTIONS = {
 	ability_1 = true,
 	ability_2 = true,
 	ability_3 = true,
+	item_1 = true,
+	item_2 = true,
+	item_3 = true,
+	item_4 = true,
+	item_5 = true,
+	item_6 = true,
 	attack = true,
 }
 
@@ -225,6 +237,12 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 		value = math.max(1, math.min(999, math.floor(value + 0.5)))
 		local target = tostring(payload[prefix .. "_target_" .. index] or "")
 		local forced = payload[prefix .. "_forced_" .. index]
+		local enabled = payload[prefix .. "_enabled_" .. index]
+		if enabled == nil then
+			enabled = fallbackRules[index] ~= nil and fallbackRules[index].enabled ~= false or true
+		else
+			enabled = tonumber(enabled) ~= 0
+		end
 
 		if not VALID_TARGETS[target] then
 			target = fallbackRules[index] ~= nil and fallbackRules[index].target or "enemy_nearest"
@@ -253,6 +271,7 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 			value = value,
 			target = target,
 			forced = forced,
+			enabled = enabled,
 		})
 	end
 
@@ -286,6 +305,9 @@ function TacticEngine:Think(hero, state, rules, env)
 	end
 
 	for ruleIndex, rule in ipairs(rules) do
+		if rule.enabled == false then
+			-- 规则被玩家停用（如关闭发球技能）时直接跳过
+		else
 		local action = self:ResolveAction(hero, rule)
 		if action ~= nil then
 			local ctx = self:BuildContext(hero, rule, action, env)
@@ -294,6 +316,7 @@ function TacticEngine:Think(hero, state, rules, env)
 					return
 				end
 			end
+		end
 		end
 	end
 
@@ -490,7 +513,7 @@ function TacticEngine:ProcessForcedLock(hero, state, rules, env)
 	local rule = rules[ruleIndex]
 	local target = self:GetForcedTarget(state)
 
-	if rule == nil or not rule.forced or target == nil then
+	if rule == nil or not rule.forced or rule.enabled == false or target == nil then
 		self:ClearForcedLock(state)
 		return false
 	end

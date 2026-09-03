@@ -1,0 +1,36 @@
+{
+	"strength": [
+		{ "name": "npc_dota_hero_axe", "label": "axe" },
+		{ "name": "npc_dota_hero_sven", "label": "sven" },
+		{ "name": "npc_dota_hero_dragon_knight", "label": "dragon_knight" },
+		{ "name": "npc_dota_hero_sand_king", "label": "sand_king" },
+		{ "name": "npc_dota_hero_huskar", "label": "huskar" }
+	],
+	"agility": [
+		{ "name": "npc_dota_hero_juggernaut", "label": "juggernaut" },
+		{ "name": "npc_dota_hero_phantom_assassin", "label": "phantom_assassin" },
+		{ "name": "npc_dota_hero_sniper", "label": "sniper" },
+		{ "name": "npc_dota_hero_riki", "label": "riki" },
+		{ "name": "npc_dota_hero_phantom_lancer", "label": "phantom_lancer" }
+	],
+	"intelligence": [
+		{ "name": "npc_dota_hero_lina", "label": "lina" },
+		{ "name": "npc_dota_hero_lion", "label": "lion" },
+		{ "name": "npc_dota_hero_crystal_maiden", "label": "crystal_maiden" },
+		{ "name": "npc_dota_hero_witch_doctor", "label": "witch_doctor" },
+		{ "name": "npc_dota_hero_dazzle", "label": "dazzle" }
+	],
+	"universal": [
+		{ "name": "npc_dota_hero_marci", "label": "marci" },
+		{ "name": "npc_dota_hero_primal_beast", "label": "primal_beast" },
+		{ "name": "npc_dota_hero_muerta", "label": "muerta" },
+		{ "name": "npc_dota_hero_dawnbreaker", "label": "dawnbreaker" },
+		{ "name": "npc_dota_hero_kez", "label": "kez" }
+	],
+	"hero_cost": 100,
+	"refresh_cost": 20,
+	"bench_slot_cost": 200,
+	"bench_slot_max": 5,
+	"lineup_max": 5,
+	"initial_gold": 300
+}

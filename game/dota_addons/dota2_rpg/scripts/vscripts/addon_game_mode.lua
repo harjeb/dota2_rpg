@@ -10,23 +10,20 @@ local PLAYER_PLACEHOLDER_HERO = "npc_dota_hero_wisp"
 local HERO_LEVEL = 30
 local THINK_INTERVAL = 0.1
 
--- 玩家小队（MVP 固定 3 人）；敌方阵容完全由 levels.json 数据驱动
-local PLAYER_ROSTER = {
-	"npc_dota_hero_sven",
-	"npc_dota_hero_lina",
-	"npc_dota_hero_dazzle",
-}
-
 local TEAM_SPAWNS = {
 	[DOTA_TEAM_GOODGUYS] = {
 		Vector(-1100, -650, 128),
 		Vector(-1350, 0, 128),
 		Vector(-1100, 650, 128),
+		Vector(-750, -850, 128),
+		Vector(-750, 850, 128),
 	},
 	[DOTA_TEAM_BADGUYS] = {
 		Vector(1100, 650, 128),
 		Vector(1350, 0, 128),
 		Vector(1100, -650, 128),
+		Vector(750, 850, 128),
+		Vector(750, -850, 128),
 	},
 }
 
@@ -39,9 +36,18 @@ local PRE_BATTLE_MODIFIERS = {
 
 local ENEMY_SPAWN_SPACING = 220
 
--- 默认规则模板（条件 → 动作 → 目标选择器），玩家可一键套用后微调
+-- 商店与阵容经济（需求：开局 300 金币，英雄 100/个，刷新 20/次，替补格 200/个）
+local SHOP_HERO_COST = 100
+local SHOP_REFRESH_COST = 20
+local SHOP_BENCH_SLOT_COST = 200
+local BENCH_SLOT_MAX = 5
+local LINEUP_MAX = 5
+local INITIAL_GOLD = 300
+local SHOP_OFFER_SIZE = 5
+
+-- 默认规则模板（条件 → 动作 → 目标选择器），玩家可套用后微调
 local DEFAULT_RULES = {
-	{ action = "ability_1", condition = "enemy_exists", value = 50, target = "enemy_nearest", forced = false },
+	{ action = "ability_1", condition = "enemy_exists", value = 50, target = "enemy_nearest", forced = false, enabled = true },
 	{ action = "ability_2", condition = "enemy_exists", value = 50, target = "enemy_hp_pct_lowest", forced = false },
 	{ action = "ability_3", condition = "self_hp_below", value = 50, target = "self", forced = false },
 	{ action = "ultimate", condition = "enemy_count_ge", value = 2, target = "enemy_hp_pct_lowest", forced = true },
@@ -59,13 +65,15 @@ local function CloneDefaultRules()
 			value = rule.value,
 			target = rule.target,
 			forced = rule.forced,
+			enabled = true,
 		})
 	end
 	return rules
 end
 
 -- 规则槽数量 = 主动技能数 + 主动装备数 + 1 条普通攻击（DESIGN.md §2.2）
--- 被动技能不生成规则槽；ability_1..3 对应技能栏 0..2，大招单独成槽
+-- 被动技能不生成规则槽；A 杖/魔晶解锁的新技能、新买入的主动装备会自动增加槽位；
+-- item_N 对应物品栏 N-1 的当前物品
 local function BuildHeroActionSlots(hero)
 	local actions = {}
 	for slot = 0, hero:GetAbilityCount() - 1 do
@@ -82,24 +90,39 @@ local function BuildHeroActionSlots(hero)
 			end
 		end
 	end
+
+	if hero.GetItemInSlot ~= nil then
+		for slot = 0, 5 do
+			local item = hero:GetItemInSlot(slot)
+			if item ~= nil and not item:IsNull() and not item:IsHidden() and not item:IsPassive() then
+				table.insert(actions, "item_" .. (slot + 1))
+			end
+		end
+	end
+
 	table.insert(actions, "attack")
 	return actions
 end
 
 function Precache(context)
 	PrecacheUnitByNameSync(PLAYER_PLACEHOLDER_HERO, context)
-	for _, heroName in ipairs(PLAYER_ROSTER) do
-		PrecacheUnitByNameSync(heroName, context)
-	end
-	-- 数据驱动：预缓存所有关卡用到的单位
-	local levels = LoadKeyValues("scripts/data/levels.json")
-	if levels ~= nil and levels ~= "" then
-		for _, level in pairs(levels) do
-			local enemies = type(level) == "table" and level.enemies or nil
-			if enemies ~= nil then
-				for _, entry in pairs(enemies) do
-					if type(entry) == "table" and entry.unit ~= nil then
-						PrecacheUnitByNameSync(entry.unit, context)
+	-- 数据驱动：预缓存英雄池与所有关卡单位
+	local sources = { "scripts/data/heroes.json", "scripts/data/levels.json" }
+	for _, source in ipairs(sources) do
+		local data = LoadKeyValues(source)
+		if data ~= nil and data ~= "" then
+			for _, entry in pairs(data) do
+				if type(entry) == "table" then
+					if entry.name ~= nil then
+						PrecacheUnitByNameSync(entry.name, context)
+					end
+					local enemies = entry.enemies
+					if enemies ~= nil then
+						for _, enemy in pairs(enemies) do
+							if type(enemy) == "table" and enemy.unit ~= nil then
+								PrecacheUnitByNameSync(enemy.unit, context)
+							end
+						end
 					end
 				end
 			end
@@ -120,19 +143,22 @@ function CDota2RpgDemo:InitGameMode()
 	self.phase = "setup"
 	self.winner = ""
 	self.teamsSpawned = false
-	self.currentLevelId = "demo_3v3"
+	self.currentLevelId = "ch01"
 	self.battleManager = BattleManager(self)
 	self.dataLoader = DataLoader()
 	self.dataLoader:Init()
+	self:LoadHeroPool()
 
-	self.heroRules = {
-		[DOTA_TEAM_GOODGUYS] = {},
-	}
-	-- 玩家英雄等级由存档驱动（经验全队共享，DESIGN.md §2.1），默认 5 级
-	self.playerLevels = { 5, 5, 5 }
-	for heroIndex = 1, #PLAYER_ROSTER do
-		self.heroRules[DOTA_TEAM_GOODGUYS][heroIndex] = CloneDefaultRules()
-	end
+	-- 经济/商店/阵容（服务端为金币权威，客户端存档仅镜像）
+	self.gold = 300
+	self.playerLevel = 1
+	self.ownedHeroes = {}
+	self.lineup = {}
+	self.benchSlots = 0
+	self.shopOffer = {}
+	self.heroRulesByName = {}
+
+	self.battleManager = BattleManager(self)
 
 	gameMode:SetCustomGameForceHero(PLAYER_PLACEHOLDER_HERO)
 	gameMode:SetBuybackEnabled(false)
@@ -164,21 +190,46 @@ function CDota2RpgDemo:InitGameMode()
 	ListenToGameEvent("game_rules_state_change", Dynamic_Wrap(CDota2RpgDemo, "OnGameRulesStateChange"), self)
 	ListenToGameEvent("entity_killed", Dynamic_Wrap(CDota2RpgDemo, "OnEntityKilled"), self)
 
-	CustomGameEventManager:RegisterListener("rpg_start_battle", function(eventSourceIndex, payload)
-		return self:OnStartBattle(eventSourceIndex, payload)
-	end)
-	CustomGameEventManager:RegisterListener("rpg_request_battle_state", function(eventSourceIndex, payload)
-		return self:OnRequestBattleState(eventSourceIndex, payload)
-	end)
-	CustomGameEventManager:RegisterListener("rpg_select_level", function(eventSourceIndex, payload)
-		return self:OnSelectLevel(eventSourceIndex, payload)
-	end)
-	CustomGameEventManager:RegisterListener("rpg_hero_levels", function(eventSourceIndex, payload)
-		return self:OnHeroLevels(eventSourceIndex, payload)
-	end)
+	local listeners = {
+		"rpg_start_battle",
+		"rpg_request_battle_state",
+		"rpg_select_level",
+		"rpg_hero_levels",
+		"rpg_save_sync",
+		"rpg_shop_refresh",
+		"rpg_shop_buy",
+		"rpg_bench_buy",
+		"rpg_lineup_set",
+	}
+	for _, eventName in ipairs(listeners) do
+		CustomGameEventManager:RegisterListener(eventName, function(eventSourceIndex, payload)
+			return self[eventName](self, eventSourceIndex, payload)
+		end)
+	end
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
-	print("[Dota2Rpg] TacticEngine + BattleManager initialized.")
+	self:RollShop()
+	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
+end
+
+function CDota2RpgDemo:LoadHeroPool()
+	local data = LoadKeyValues("scripts/data/heroes.json")
+	self.heroPool = { strength = {}, agility = {}, intelligence = {}, universal = {} }
+	self.shopCosts = {
+		hero = tonumber(data.hero_cost) or SHOP_HERO_COST,
+		refresh = tonumber(data.refresh_cost) or SHOP_REFRESH_COST,
+		bench_slot = tonumber(data.bench_slot_cost) or SHOP_BENCH_SLOT_COST,
+		bench_slot_max = tonumber(data.bench_slot_max) or BENCH_SLOT_MAX,
+		lineup_max = tonumber(data.lineup_max) or 5,
+		initial_gold = tonumber(data.initial_gold) or 300,
+	}
+	if data ~= nil and data ~= "" then
+		for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
+			for _, hero in ipairs(data[category] or {}) do
+				table.insert(self.heroPool[category], hero.name)
+			end
+		end
+	end
 end
 
 function CDota2RpgDemo:ResolvePlayerId(payload)
@@ -240,41 +291,268 @@ function CDota2RpgDemo:OnGameRulesStateChange()
 	end
 end
 
+------------------------------------------------------------------
+-- 商店与阵容
+------------------------------------------------------------------
+
+function CDota2RpgDemo:RollShop()
+	local offer = {}
+	for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
+		local pool = self.heroPool[category]
+		if #pool > 0 then
+			table.insert(offer, pool[math.random(#pool)].name)
+		end
+	end
+	-- 第 5 个：全池随机（可与前 4 重复，重复则补抽）
+	local allHeroes = {}
+	for _, category in ipairs({ "strength", "agility", "intelligence", "universal" }) do
+		for _, hero in ipairs(self.heroPool[category]) do
+			table.insert(allHeroes, hero.name)
+		end
+	end
+	for _ = 1, 8 do
+		local candidate = allHeroes[math.random(#allHeroes)]
+		local isDuplicate = false
+		for _, owned in ipairs(offer) do
+			if owned == candidate then
+				isDuplicate = true
+				break
+			end
+		end
+		if not isDuplicate then
+			table.insert(offer, candidate)
+			break
+		end
+	end
+	if #offer < SHOP_OFFER_SIZE then
+		table.insert(offer, allHeroes[math.random(#allHeroes)])
+	end
+	self.shopOffer = offer
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnShopRefresh(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	if self.gold < self.shopCosts.refresh then
+		return
+	end
+	self.gold = self.gold - self.shopCosts.refresh
+	self:RollShop()
+end
+
+function CDota2RpgDemo:OnShopBuy(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local inOffer = false
+	for _, offerName in ipairs(self.shopOffer) do
+		if offerName == heroName then
+			inOffer = true
+			break
+		end
+	end
+	if not inOffer then
+		return
+	end
+	for _, owned in ipairs(self.ownedHeroes) do
+		if owned == heroName then
+			return -- 已拥有
+		end
+	end
+	if self.gold < self.shopCosts.hero then
+		return
+	end
+	if #self.ownedHeroes >= self.shopCosts.lineup_max + self.shopCosts.bench_slot_max then
+		return -- 10 格上限
+	end
+
+	self.gold = self.gold - self.shopCosts.hero
+	table.insert(self.ownedHeroes, heroName)
+	if #self.lineup < self.shopCosts.lineup_max then
+		table.insert(self.lineup, heroName)
+		self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
+	else
+		-- 购满首发后自动进入替补；替补格子不足时买入失败
+		local benchCount = #self.ownedHeroes - #self.lineup
+		if benchCount > self.benchSlots then
+			table.remove(self.ownedHeroes) -- 撤销购买
+			self.gold = self.gold + self.shopCosts.hero
+			return
+		end
+		self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnBenchBuy(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	if self.benchSlots >= self.shopCosts.bench_slot_max then
+		return
+	end
+	if self.gold < self.shopCosts.bench_slot then
+		return
+	end
+	self.gold = self.gold - self.shopCosts.bench_slot
+	self.benchSlots = self.benchSlots + 1
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnLineupSet(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local lineup = {}
+	local ownedSet = {}
+	for _, owned in ipairs(self.ownedHeroes) do
+		owned[owned] = true
+	end
+	for _, heroName in pairs((payload ~= nil and payload.lineup) or {}) do
+		heroName = tostring(heroName)
+		if owned[heroName] and #lineup < self.shopCosts.lineup_max then
+			table.insert(lineup, heroName)
+		end
+	end
+	if #lineup == 0 then
+		return
+	end
+	self.lineup = lineup
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+-- 客户端存档同步（单人 MVP：信任客户端 LocalStorage，覆盖服务端状态）
+function CDota2RpgDemo:OnSaveSync(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	if payload == nil then
+		return
+	end
+	if payload.gold ~= nil then
+		self.gold = math.max(0, math.floor(tonumber(payload.gold) or 0))
+	end
+	if payload.level ~= nil then
+		self.playerLevel = math.max(1, math.min(HERO_LEVEL, math.floor(tonumber(payload.level) or 1)))
+	end
+	if payload.bench_slots ~= nil then
+		self.benchSlots = math.max(0, math.min(self.shopCosts.bench_slot_max, math.floor(tonumber(payload.bench_slots) or 0)))
+	end
+	if payload.owned ~= nil then
+		self.ownedHeroes = {}
+		for _, heroName in pairs(payload.owned) do
+			table.insert(self.ownedHeroes, tostring(heroName))
+		end
+	end
+	if payload.lineup ~= nil then
+		self.lineup = {}
+		for _, heroName in pairs(payload.lineup) do
+			table.insert(self.lineup, tostring(heroName))
+		end
+	end
+	self:RollShop()
+	self:RespawnPlayerRoster()
+end
+
+function CDota2RpgDemo:OnHeroLevels(_, payload)
+	if payload == nil or payload.level == nil then
+		return
+	end
+	self.playerLevel = math.max(1, math.min(HERO_LEVEL, math.floor(tonumber(payload.level) or 1)))
+	if self.phase == "setup" and self.teamsSpawned then
+		self:RespawnPlayerRoster()
+	end
+end
+
+------------------------------------------------------------------
+-- 战场生成
+------------------------------------------------------------------
+
+function CDota2RpgDemo:OnNpcSpawned(event)
+	local unit = EntIndexToHScript(event.entindex or -1)
+	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
+		return
+	end
+
+	if unit:GetUnitName() ~= PLAYER_PLACEHOLDER_HERO or unit.rpgPlaceholderReady then
+		return
+	end
+
+	unit.rpgPlaceholderReady = true
+	self.placeholderHero = unit
+	self.playerId = math.max(self.playerId, unit:GetPlayerOwnerID())
+	unit:SetRespawnsDisabled(true)
+	unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
+	unit:AddNewModifier(unit, nil, "modifier_rooted", {})
+	unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
+	unit:AddNewModifier(unit, nil, "modifier_silence", {})
+	if unit.AddNoDraw ~= nil then
+		unit:AddNoDraw()
+	end
+	FindClearSpaceForUnit(unit, Vector(-7600, -7600, 128), true)
+	self:EnsureBattlefield()
+	print(string.format("[Dota2Rpg] Hidden placeholder ready for player %d.", self.playerId))
+end
+
+function CDota2RpgDemo:OnGameRulesStateChange()
+	local state = GameRules:State_Get()
+	if state == DOTA_GAMERULES_STATE_PRE_GAME or state == DOTA_GAMERULES_STATE_GAME_IN_PROGRESS then
+		self:EnsureBattlefield()
+	end
+end
+
 function CDota2RpgDemo:EnsureBattlefield()
 	if self.teamsSpawned then
 		return
 	end
 
 	self.teamsSpawned = true
-	for index, heroName in ipairs(PLAYER_ROSTER) do
+	self:SpawnLevelEnemies(self.currentLevelId)
+	self:RespawnPlayerRoster()
+
+	self:BroadcastShopState()
+	self:BroadcastLevelInfo()
+	self:BroadcastBattleState()
+	print("[Dota2Rpg] Battlefield ready for level " .. self.currentLevelId .. ".")
+end
+
+-- 玩家阵容：按 lineup 顺序在己方出生点生成，统一等级 self.playerLevel
+function CDota2RpgDemo:RespawnPlayerRoster()
+	if self.phase ~= "setup" then
+		return
+	end
+	local battleManager = self.battleManager
+	for _, hero in ipairs(battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) then
+			battleManager.heroStates[hero:GetEntityIndex()] = nil
+			hero:RemoveSelf()
+		end
+	end
+	battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
+	battleManager.teamRules[DOTA_TEAM_GOODGUYS] = {}
+
+	for index, heroName in ipairs(self.lineup) do
+		if index > #TEAM_SPAWNS[DOTA_TEAM_GOODGUYS] then
+			break
+		end
 		local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
 		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
-			self:PrepareBattleHero(hero, self.playerLevels[index] or 1)
-			self.battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
-			self.battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRules[DOTA_TEAM_GOODGUYS][index]
+			self:PrepareBattleHero(hero, self.playerLevel)
+			battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
+			self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
+			battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRulesByName[heroName]
 		else
-			print(string.format("[Dota2Rpg] Failed to spawn %s.", heroName))
+			print(string.format("[Dota2Rpg] Failed to spawn lineup hero %s.", heroName))
 		end
 	end
-
-	self:SpawnLevelEnemies(self.currentLevelId)
-
-	local cameraTarget = self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS][2]
-		or self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS][1]
-	if self.playerId >= 0 and TacticEngine.IsValidUnit(cameraTarget) then
-		PlayerResource:SetCameraTarget(self.playerId, cameraTarget)
-		GameRules:GetGameModeEntity():SetContextThink("ReleaseRpgBattleCamera", function()
-			PlayerResource:SetCameraTarget(self.playerId, nil)
-			return nil
-		end, 0.5)
-	end
-
 	self:BroadcastHeroInfo()
-	self:BroadcastLevelInfo()
-	self:BroadcastBattleState()
-	print("[Dota2Rpg] Player roster spawned; enemies loaded for level " .. self.currentLevelId .. ".")
 end
 
 -- 从 levels.json 生成关卡敌方阵容（英雄/野怪混编，随关卡切换重建）
@@ -345,6 +623,7 @@ function CDota2RpgDemo:BuildEnemyRules(aiId)
 			value = tonumber(cond.value) or 50,
 			target = presetRule.target or "enemy_nearest",
 			forced = presetRule.mode == "forced_chase",
+			enabled = true,
 		})
 	end
 	if #rules == 0 then
@@ -362,7 +641,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	-- 技能加点：满级英雄直接拉满；低级敌方英雄按等级比例加点
 	local abilityLevel
 	if wantedLevel >= HERO_LEVEL then
-		abilityLevel = nil -- 拉满
+		abilityLevel = nil
 	else
 		abilityLevel = math.max(1, math.floor(wantedLevel / 2))
 	end
@@ -405,7 +684,7 @@ function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
 	end
 end
 
-function CDota2RpgDemo:OnSelectLevel(eventSourceIndex, payload)
+function CDota2RpgDemo:OnSelectLevel(_, payload)
 	if self.phase ~= "setup" or not self.teamsSpawned then
 		return
 	end
@@ -421,58 +700,26 @@ function CDota2RpgDemo:OnSelectLevel(eventSourceIndex, payload)
 	self:BroadcastBattleState()
 end
 
--- 经验全队共享：前端持久化英雄等级，战斗前同步给服务端用于生成玩家英雄
-function CDota2RpgDemo:OnHeroLevels(eventSourceIndex, payload)
-	if payload == nil or payload.levels == nil then
-		return
-	end
-	for index = 1, #PLAYER_ROSTER do
-		local level = tonumber(payload.levels[index]) or tonumber(payload.levels[tostring(index)]) or 1
-		self.playerLevels[index] = math.max(1, math.min(HERO_LEVEL, math.floor(level + 0.5)))
-	end
+------------------------------------------------------------------
+-- 战斗流程
+------------------------------------------------------------------
 
-	-- 准备阶段可即时按新等级重铸玩家英雄（保留当前规则）
-	if self.phase == "setup" and self.teamsSpawned then
-		self:RespawnPlayerRoster()
-	end
-end
-
-function CDota2RpgDemo:RespawnPlayerRoster()
-	local battleManager = self.battleManager
-	for _, hero in ipairs(battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
-		if TacticEngine.IsValidUnit(hero) then
-			battleManager.heroStates[hero:GetEntityIndex()] = nil
-			hero:RemoveSelf()
-		end
-	end
-	for index, heroName in ipairs(PLAYER_ROSTER) do
-		local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
-		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
-		if TacticEngine.IsValidUnit(hero) then
-			FindClearSpaceForUnit(hero, spawnPosition, true)
-			self:PrepareBattleHero(hero, self.playerLevels[index] or 1)
-			battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
-			battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRules[DOTA_TEAM_GOODGUYS][index]
-		end
-	end
-	self:BroadcastHeroInfo()
-end
-
-function CDota2RpgDemo:OnStartBattle(eventSourceIndex, payload)
+function CDota2RpgDemo:OnStartBattle(_, payload)
 	if self.phase ~= "setup" or not self.teamsSpawned then
 		return
 	end
+	if #self.lineup == 0 then
+		return -- 必须先购买英雄并上阵
+	end
 
 	local battlePayload = payload or {}
-	for heroIndex = 1, #PLAYER_ROSTER do
+	for heroIndex, heroName in ipairs(self.lineup) do
 		local heroPrefix = string.format("radiant_hero_%d", heroIndex)
-		-- 槽数由前端按英雄可用动作上报；缺失时退回默认模板槽数
 		local ruleCount = tonumber(battlePayload[heroPrefix .. "_count"]) or RULE_COUNT
 		ruleCount = math.max(1, math.min(RULE_COUNT, math.floor(ruleCount + 0.5)))
-		self.heroRules[DOTA_TEAM_GOODGUYS][heroIndex] = TacticEngine:ParseRules(
-			battlePayload, heroPrefix, ruleCount, self.heroRules[DOTA_TEAM_GOODGUYS][heroIndex]
-		)
-		self.battleManager.teamRules[DOTA_TEAM_GOODGUYS][heroIndex] = self.heroRules[DOTA_TEAM_GOODGUYS][heroIndex]
+		local existing = self.heroRulesByName[heroName] or CloneDefaultRules()
+		self.heroRulesByName[heroName] = TacticEngine:ParseRules(battlePayload, heroPrefix, ruleCount, existing)
+		self.battleManager.teamRules[DOTA_TEAM_GOODGUYS][heroIndex] = self.heroRulesByName[heroName]
 	end
 	self.phase = "fight"
 
@@ -530,13 +777,18 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		return
 	end
 
+	-- 时间奖励：越快越多（clearTime 越短 → bonus 越大）
+	local clearTime = self.battleManager:GetBattleTime()
+	local level = self.dataLoader:GetLevel(self.currentLevelId)
+	local timeLimit = tonumber(level ~= nil and level.time_limit or 120) or 120
+	local timeRate = tonumber(level ~= nil and level.time_bonus_rate or 0) or 0
+	local timeBonus = math.floor(math.max(0, timeLimit - self.battleManager:GetBattleTime()) * timeRate + 0.5)
+
 	self.phase = "result"
 	self.winner = winner
 	self.battleManager:StopBattle()
 	self:BroadcastBattleState()
 
-	-- 结算：胜利发放关卡奖励（数据驱动）。首通/重复奖励都下发，
-	-- 由前端按存档的首通记录决定实际入账（金币+经验）。
 	local settlement = {
 		level = self.currentLevelId,
 		winner = winner,
@@ -544,17 +796,18 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		repeat_gold = 0,
 		first_xp = 0,
 		repeat_xp = 0,
+		time_bonus = winner == "radiant" and timeBonus or 0,
+		clear_time = math.floor(self.battleManager:GetBattleTime()),
 		items = {},
 	}
-	if winner == "radiant" then
-		local level = self.dataLoader:GetLevel(self.currentLevelId)
-		local firstReward = level ~= nil and level.first_reward or nil
-		local repeatReward = level ~= nil and level.repeat_reward or nil
-		settlement.first_gold = tonumber(firstReward ~= nil and firstReward.gold or 0) or 0
+	if winner == "radiant" and level ~= nil then
+		local firstReward = level.first_reward or {}
+		local repeatReward = level.repeat_reward or {}
+		settlement.first_gold = tonumber(firstReward.gold) or 0
 		settlement.repeat_gold = tonumber(repeatReward ~= nil and repeatReward.gold or 0) or 0
-		settlement.first_xp = tonumber(firstReward ~= nil and firstReward.xp or 0) or 0
+		settlement.first_xp = tonumber(firstReward.xp or 0) or 0
 		settlement.repeat_xp = tonumber(repeatReward ~= nil and repeatReward.xp or 0) or 0
-		settlement.items = (firstReward ~= nil and firstReward.items) or {}
+		settlement.items = firstReward.items or {}
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
 
@@ -564,23 +817,45 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 			return nil
 		end, 1.0)
 	end
-	print(string.format("[Dota2Rpg] Battle finished. Result=%s FirstGold=%d", winner, settlement.first_gold))
+	print(string.format("[Dota2Rpg] Battle finished. Result=%s ClearTime=%.0f TimeBonus=%d",
+		winner, self.battleManager:GetBattleTime(), timeBonus))
 end
 
--- 把英雄可用动作槽同步给前端，编辑器据此动态生成规则行
+------------------------------------------------------------------
+-- 状态广播
+------------------------------------------------------------------
+
+-- 每个英雄的可用动作槽（含主动装备）同步给前端
 function CDota2RpgDemo:BroadcastHeroInfo()
 	local info = {}
-	for team, heroes in pairs(self.battleManager.teamHeroes) do
-		local teamPrefix = team == DOTA_TEAM_GOODGUYS and "radiant" or "dire"
-		for index, hero in ipairs(heroes) do
-			if TacticEngine.IsValidUnit(hero) then
-				info[teamPrefix .. "_" .. index] = {
-					actions = BuildHeroActionSlots(hero),
-				}
-			end
+	local heroes = self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]
+	for index, hero in ipairs(heroes) do
+		if TacticEngine.IsValidUnit(hero) then
+			info["radiant_" .. index] = {
+				name = self.lineup[index],
+				actions = BuildHeroActionSlots(hero),
+			}
 		end
 	end
 	CustomNetTables:SetTableValue("rpg_rules_config", "heroes", info)
+end
+
+function CDota2RpgDemo:BroadcastShopState()
+	CustomNetTables:SetTableValue("rpg_rules_config", "shop", {
+		gold = self.gold,
+		player_level = self.playerLevel,
+		offer = self.shopOffer,
+		owned = self.ownedHeroes,
+		lineup = self.lineup,
+		bench_slots = self.benchSlots,
+		costs = {
+			hero = self.shopCosts.hero,
+			refresh = self.shopCosts.refresh,
+			bench_slot = self.shopCosts.bench_slot,
+			bench_slot_max = self.shopCosts.bench_slot_max,
+			lineup_max = self.shopCosts.lineup_max,
+		},
+	})
 end
 
 function CDota2RpgDemo:BroadcastLevelInfo()
@@ -607,8 +882,10 @@ function CDota2RpgDemo:BuildBattleState()
 		dire_alive = self.battleManager:GetAliveCount(DOTA_TEAM_BADGUYS),
 		winner = self.winner,
 		battle_time = math.floor(self.battleManager:GetBattleTime()),
-		time_limit = 120,
+		time_limit = tonumber(self.dataLoader:GetLevel(self.currentLevelId) ~= nil and self.dataLoader:GetLevel(self.currentLevelId).time_limit or 120) or 120,
 		level = self.currentLevelId,
+		gold = self.gold,
+		player_level = self.playerLevel,
 	}
 end
 

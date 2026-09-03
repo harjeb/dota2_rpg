@@ -668,12 +668,113 @@
 
 #BattleControls
 {
-	width: 260px;
-	height: 330px;
+	width: 300px;
+	height: 560px;
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
 	margin-top: 22px;
+}
+
+.ShopPanel
+{
+	width: 100%;
+	flow-children: down;
+	padding: 8px;
+	background-color: #10161deb;
+	border: 1px solid #d7b85a;
+}
+
+#ShopHeader
+{
+	width: 100%;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.ShopOffer
+{
+	width: 100%;
+	height: 62px;
+	flow-children: right;
+	margin-top: 4px;
+}
+
+.ShopOfferSlot
+{
+	width: 52px;
+	height: 100%;
+	margin-right: 4px;
+	border: 1px solid #5a6871;
+	background-color: #1c272e;
+}
+
+.ShopOfferSlot.Owned
+{
+	border-color: #4bb99f;
+	brightness: 0.6;
+}
+
+.ShopOfferSlot.Selected
+{
+	border: 2px solid #f2d982;
+}
+
+.ShopOfferSlot:disabled
+{
+	opacity: 0.3;
+}
+
+.ShopButtons
+{
+	width: 100%;
+	height: 34px;
+	flow-children: right;
+	margin-top: 6px;
+}
+
+.ShopButton
+{
+	width: fill-parent-flow(1);
+	height: 100%;
+	margin-right: 4px;
+	background-color: #4a3d22;
+	border: 1px solid #d7b85a;
+}
+
+.ShopButton:disabled
+{
+	brightness: 0.45;
+}
+
+.ShopButton Label
+{
+	width: 100%;
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 12px;
+	color: #f5eddd;
+	text-overflow: shrink;
+}
+
+.LineupPanel
+{
+	width: 100%;
+	flow-children: down;
+	margin-top: 6px;
+}
+
+.LineupHeader
+{
+	font-size: 12px;
+	color: #9facb4;
+}
+
+.LineupPanel .HeroPortrait
+{
+	width: 34px;
+	height: 34px;
 }
 
 #LevelSection

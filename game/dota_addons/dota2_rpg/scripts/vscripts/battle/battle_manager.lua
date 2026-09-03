@@ -177,6 +177,11 @@ function BattleManager:GetActionAbility(hero, action)
 
 	local abilitySlot = tonumber(string.match(action, "ability_(%d)"))
 	if abilitySlot == nil then
+		-- 主动装备槽位：item_N → 物品栏 N-1
+		local itemSlot = tonumber(string.match(action, "item_(%d)"))
+		if itemSlot ~= nil and hero.GetItemInSlot ~= nil then
+			return hero:GetItemInSlot(itemSlot - 1)
+		end
 		return nil
 	end
 	return hero:GetAbilityByIndex(abilitySlot - 1)

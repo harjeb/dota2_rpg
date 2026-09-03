@@ -86,16 +86,12 @@
 
 		<Panel id="RadiantEditor" class="TeamEditor RadiantEditor" hittest="true">
 			<Panel class="TeamHeader">
-					<Panel class="TeamIdentity">
-						<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
-						<Label id="RadiantTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
-						<Label id="RadiantSelectedHero" class="SelectedHeroName" />
-					</Panel>
-				<Panel class="HeroStrip">
-					<DOTAHeroImage id="RadiantHero1" class="HeroPortrait" heroname="npc_dota_hero_sven" heroimagestyle="portrait" hittest="true" />
-					<DOTAHeroImage id="RadiantHero2" class="HeroPortrait" heroname="npc_dota_hero_lina" heroimagestyle="portrait" hittest="true" />
-					<DOTAHeroImage id="RadiantHero3" class="HeroPortrait" heroname="npc_dota_hero_dazzle" heroimagestyle="portrait" hittest="true" />
+				<Panel class="TeamIdentity">
+					<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
+					<Label id="RadiantTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
+					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
 				</Panel>
+				<Panel id="RadiantHeroStrip" class="HeroStrip" />
 			</Panel>
 			<Panel class="ColumnHeader">
 				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
@@ -107,6 +103,22 @@
 		</Panel>
 
 		<Panel id="BattleControls" hittest="true">
+			<Panel id="ShopPanel" class="ShopPanel">
+				<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
+				<Panel id="ShopOffer" class="ShopOffer" />
+				<Panel class="ShopButtons">
+					<Button id="RefreshShopButton" class="ShopButton">
+						<Label text="#dota2_rpg_shop_refresh" />
+					</Button>
+					<Button id="BenchBuyButton" class="ShopButton">
+						<Label text="#dota2_rpg_bench_buy" />
+					</Button>
+				</Panel>
+				<Panel id="LineupPanel" class="LineupPanel">
+					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
+					<Panel id="LineupStrip" class="HeroStrip" />
+				</Panel>
+			</Panel>
 			<Panel id="LevelSection">
 				<Label id="LevelHeader" text="#dota2_rpg_level_select" />
 				<Panel id="LevelList" class="LevelList" />
