@@ -3,24 +3,55 @@
 		"name": "试炼场 · 3v3",
 		"type": "hero",
 		"enemies": [
-			{ "unit": "npc_dota_hero_axe", "level": 30, "items": [], "ai": "demo_default" },
-			{ "unit": "npc_dota_hero_lion", "level": 30, "items": [], "ai": "demo_default" },
-			{ "unit": "npc_dota_hero_crystal_maiden", "level": 30, "items": [], "ai": "demo_default" }
+			{
+				"unit": "npc_dota_hero_axe",
+				"level": 30,
+				"items": [],
+				"ai": "demo_default"
+			},
+			{
+				"unit": "npc_dota_hero_lion",
+				"level": 30,
+				"items": [],
+				"ai": "demo_default"
+			},
+			{
+				"unit": "npc_dota_hero_crystal_maiden",
+				"level": 30,
+				"items": [],
+				"ai": "demo_default"
+			}
 		],
-		"first_reward": { "gold": 200 },
-		"repeat_reward": { "gold": 40 },
+		"first_reward": {
+			"gold": 200,
+			"xp": 300
+		},
+		"repeat_reward": {
+			"gold": 40,
+			"xp": 60
+		},
 		"max_attempts": 5,
 		"time_limit": 120
 	},
-
 	"ch1_1": {
 		"name": "第一章 · 初次巡逻",
 		"type": "creep",
 		"enemies": [
-			{ "unit": "npc_dota_neutral_kobold", "level": 1, "count": 4, "ai": "simple_nearest" }
+			{
+				"unit": "npc_dota_neutral_kobold",
+				"level": 1,
+				"count": 4,
+				"ai": "simple_nearest"
+			}
 		],
-		"first_reward": { "gold": 60 },
-		"repeat_reward": { "gold": 20 },
+		"first_reward": {
+			"gold": 60,
+			"xp": 80
+		},
+		"repeat_reward": {
+			"gold": 20,
+			"xp": 15
+		},
 		"loot": "demo_basic",
 		"max_attempts": 5,
 		"time_limit": 120,
@@ -30,11 +61,27 @@
 		"name": "第一章 · 狗头人营地",
 		"type": "creep",
 		"enemies": [
-			{ "unit": "npc_dota_neutral_kobold", "level": 2, "count": 3, "ai": "simple_nearest" },
-			{ "unit": "npc_dota_neutral_kobold_taskmaster", "level": 2, "count": 1, "ai": "focus_lowest_hp" }
+			{
+				"unit": "npc_dota_neutral_kobold",
+				"level": 2,
+				"count": 3,
+				"ai": "simple_nearest"
+			},
+			{
+				"unit": "npc_dota_neutral_kobold_taskmaster",
+				"level": 2,
+				"count": 1,
+				"ai": "focus_lowest_hp"
+			}
 		],
-		"first_reward": { "gold": 90 },
-		"repeat_reward": { "gold": 25 },
+		"first_reward": {
+			"gold": 90,
+			"xp": 120
+		},
+		"repeat_reward": {
+			"gold": 25,
+			"xp": 20
+		},
 		"loot": "demo_basic",
 		"max_attempts": 5,
 		"time_limit": 120,
@@ -44,11 +91,27 @@
 		"name": "第一章 · 幽灵沼泽",
 		"type": "creep",
 		"enemies": [
-			{ "unit": "npc_dota_neutral_ghost", "level": 3, "count": 3, "ai": "simple_nearest" },
-			{ "unit": "npc_dota_neutral_gnoll_assassin", "level": 3, "count": 2, "ai": "focus_lowest_hp" }
+			{
+				"unit": "npc_dota_neutral_ghost",
+				"level": 3,
+				"count": 3,
+				"ai": "simple_nearest"
+			},
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
+				"level": 3,
+				"count": 2,
+				"ai": "focus_lowest_hp"
+			}
 		],
-		"first_reward": { "gold": 120 },
-		"repeat_reward": { "gold": 30 },
+		"first_reward": {
+			"gold": 120,
+			"xp": 160
+		},
+		"repeat_reward": {
+			"gold": 30,
+			"xp": 25
+		},
 		"loot": "demo_basic",
 		"max_attempts": 5,
 		"time_limit": 120,
@@ -58,11 +121,27 @@
 		"name": "第一章 · 半人马猎场",
 		"type": "creep",
 		"enemies": [
-			{ "unit": "npc_dota_neutral_centaur_outrunner", "level": 4, "count": 2, "ai": "focus_lowest_hp" },
-			{ "unit": "npc_dota_neutral_dark_troll_warlord", "level": 4, "count": 1, "ai": "protect_healer" }
+			{
+				"unit": "npc_dota_neutral_centaur_outrunner",
+				"level": 4,
+				"count": 2,
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_neutral_dark_troll_warlord",
+				"level": 4,
+				"count": 1,
+				"ai": "protect_healer"
+			}
 		],
-		"first_reward": { "gold": 160 },
-		"repeat_reward": { "gold": 35 },
+		"first_reward": {
+			"gold": 160,
+			"xp": 200
+		},
+		"repeat_reward": {
+			"gold": 35,
+			"xp": 30
+		},
 		"loot": "demo_elite",
 		"max_attempts": 5,
 		"time_limit": 120,
@@ -72,12 +151,38 @@
 		"name": "第一章 · 精英突袭",
 		"type": "hero",
 		"enemies": [
-			{ "unit": "npc_dota_hero_axe", "level": 6, "items": ["item_vanguard"], "ai": "aggro_front" },
-			{ "unit": "npc_dota_hero_witch_doctor", "level": 6, "items": [], "ai": "ai_healer_protect" },
-			{ "unit": "npc_dota_hero_sniper", "level": 6, "items": [], "ai": "focus_lowest_hp" }
+			{
+				"unit": "npc_dota_hero_axe",
+				"level": 6,
+				"items": [
+					"item_vanguard"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_witch_doctor",
+				"level": 6,
+				"items": [],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_sniper",
+				"level": 6,
+				"items": [],
+				"ai": "focus_lowest_hp"
+			}
 		],
-		"first_reward": { "gold": 500, "items": ["item_boots"] },
-		"repeat_reward": { "gold": 80 },
+		"first_reward": {
+			"gold": 500,
+			"items": [
+				"item_boots"
+			],
+			"xp": 300
+		},
+		"repeat_reward": {
+			"gold": 80,
+			"xp": 40
+		},
 		"loot": "demo_elite",
 		"max_attempts": 5,
 		"time_limit": 120,

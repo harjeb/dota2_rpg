@@ -507,7 +507,13 @@
                 var option = $.CreatePanel("Button", container, "Level_" + level.id);
                 option.AddClass("LevelOption");
                 option.SetHasClass("Selected", level.id === currentLevelId);
-                createLabel(option, "LevelOptionLabel", level.name);
+                var optionText = level.name;
+                if (attemptsLeft(level.id) <= 0) {
+                    optionText += " · " + $.Localize("#dota2_rpg_no_attempts");
+                } else if (saveData.cleared[level.id]) {
+                    optionText += " ✓";
+                }
+                createLabel(option, "LevelOptionLabel", optionText);
                 option.SetPanelEvent("onactivate", function () {
                     if (phase !== "setup") {
                         return;
@@ -518,8 +524,15 @@
         }
     }
 
-    // ---------------- 金币存档（LocalStorage，MVP） ----------------
+    // ---------------- 金币/经验/挑战次数存档（LocalStorage，MVP） ----------------
     var SAVE_KEY = "dota2_rpg_save_v1";
+    var HERO_MAX_LEVEL = 30;
+    var MAX_ATTEMPTS = 5;
+
+    // 升到下一级所需经验（经验全队共享，DESIGN.md §2.1）
+    function xpToNext(level) {
+        return 80 + 40 * level;
+    }
 
     function loadSave() {
         var saved = null;
@@ -537,6 +550,12 @@
         if (!saved.cleared || typeof saved.cleared !== "object") {
             saved.cleared = {};
         }
+        if (!saved.attempts || typeof saved.attempts !== "object") {
+            saved.attempts = {};
+        }
+        if (!saved.hero_levels || typeof saved.hero_levels !== "object") {
+            saved.hero_levels = [5, 5, 5];
+        }
         return saved;
     }
 
@@ -548,14 +567,63 @@
         }
     }
 
+    function attemptsLeft(levelId) {
+        var used = Number(saveData.attempts[levelId] || 0);
+        return Math.max(0, MAX_ATTEMPTS - used);
+    }
+
+    function sendHeroLevels() {
+        GameEvents.SendCustomGameEventToServer("rpg_hero_levels", { levels: saveData.hero_levels });
+    }
+
+    function updateTeamLevelLabels() {
+        var playerText = "Lv " + saveData.hero_levels.join(" / ");
+        $("#RadiantTeamLevel").text = playerText + " · 无法复活";
+        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_level_30");
+    }
+
+    function applySharedXp(xp) {
+        var gained = Number(xp || 0);
+        var levelUps = 0;
+        for (var index = 0; index < saveData.hero_levels.length; index++) {
+            var level = saveData.hero_levels[index];
+            var pool = gained;
+            while (pool > 0 && level < HERO_MAX_LEVEL) {
+                var need = xpToNext(level);
+                if (pool >= need) {
+                    pool -= need;
+                    level++;
+                    levelUps++;
+                } else {
+                    break;
+                }
+            }
+            saveData.hero_levels[index] = level;
+        }
+        return levelUps;
+    }
+
     function grantSettlement(settlement) {
         if (!settlement || settlement.winner !== "radiant") {
-            return;
+            return null;
         }
-        saveData.gold += Number(settlement.gold || 0);
-        saveData.cleared[settlement.level] = true;
+        var firstClear = !saveData.cleared[settlement.level];
+        var gold = Number(firstClear ? settlement.first_gold : settlement.repeat_gold) || 0;
+        var xp = Number(firstClear ? settlement.first_xp : settlement.repeat_xp) || 0;
+        saveData.gold += gold;
+        if (firstClear) {
+            saveData.cleared[settlement.level] = true;
+        }
+        saveData.attempts[settlement.level] = 0;
+        var levelUps = applySharedXp(xp);
         persistSave();
-        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+        sendHeroLevels();
+        return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
+    }
+
+    function registerFailure(levelId) {
+        saveData.attempts[levelId] = Math.min(MAX_ATTEMPTS, Number(saveData.attempts[levelId] || 0) + 1);
+        persistSave();
     }
 
     var saveData = loadSave();
@@ -589,8 +657,14 @@
 
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
-            setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
-            startButton.enabled = serverReady;
+            var attempts = attemptsLeft(currentLevelId);
+            if (attempts <= 0) {
+                setStatus("#dota2_rpg_no_attempts");
+                startButton.enabled = false;
+            } else {
+                setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
+                startButton.enabled = serverReady;
+            }
             startButton.SetHasClass("Hidden", false);
             $("#BattleResult").SetHasClass("Hidden", true);
             $("#RewardLabel").text = "";
@@ -606,6 +680,8 @@
         }
 
         renderLevelList();
+        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+        updateTeamLevelLabels();
 
         if (phase !== "setup") {
             closeEditorMenus();
@@ -637,13 +713,22 @@
     }
 
     function onSettlement(settlement) {
-        grantSettlement(settlement);
+        var reward = grantSettlement(settlement);
         var rewardLabel = $("#RewardLabel");
-        if (settlement && settlement.winner === "radiant") {
-            rewardLabel.text = $.Localize("#dota2_rpg_reward_gold") + " " + Number(settlement.gold || 0);
-        } else {
-            rewardLabel.text = "";
+        if (settlement && settlement.winner === "radiant" && reward) {
+            var parts = [$.Localize("#dota2_rpg_reward_gold") + " " + reward.gold];
+            if (reward.levelUps > 0) {
+                parts.push($.Localize("#dota2_rpg_reward_level_up") + " " + reward.levelUps);
+            }
+            rewardLabel.text = parts.join("   ");
+        } else if (settlement) {
+            registerFailure(settlement.level);
+            rewardLabel.text = attemptsLeft(settlement.level) > 0
+                ? $.Localize("#dota2_rpg_attempts_left") + " " + attemptsLeft(settlement.level)
+                : $.Localize("#dota2_rpg_no_attempts");
         }
+        $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+        updateTeamLevelLabels();
     }
 
     createRuleRows("Radiant");
@@ -674,5 +759,7 @@
         }
     });
     $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
+    updateTeamLevelLabels();
+    sendHeroLevels();
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

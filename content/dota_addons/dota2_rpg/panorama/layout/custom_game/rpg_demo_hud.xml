@@ -86,11 +86,11 @@
 
 		<Panel id="RadiantEditor" class="TeamEditor RadiantEditor" hittest="true">
 			<Panel class="TeamHeader">
-				<Panel class="TeamIdentity">
-					<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
-					<Label class="TeamLevel" text="#dota2_rpg_level_30" />
-					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
-				</Panel>
+					<Panel class="TeamIdentity">
+						<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
+						<Label id="RadiantTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
+						<Label id="RadiantSelectedHero" class="SelectedHeroName" />
+					</Panel>
 				<Panel class="HeroStrip">
 					<DOTAHeroImage id="RadiantHero1" class="HeroPortrait" heroname="npc_dota_hero_sven" heroimagestyle="portrait" hittest="true" />
 					<DOTAHeroImage id="RadiantHero2" class="HeroPortrait" heroname="npc_dota_hero_lina" heroimagestyle="portrait" hittest="true" />
@@ -121,11 +121,11 @@
 
 		<Panel id="DireEditor" class="TeamEditor DireEditor" hittest="true">
 			<Panel class="TeamHeader">
-				<Panel class="TeamIdentity">
-					<Label class="TeamName" text="#dota2_rpg_dire_logic" />
-					<Label class="TeamLevel" text="#dota2_rpg_level_30" />
-					<Label id="DireSelectedHero" class="SelectedHeroName" />
-				</Panel>
+					<Panel class="TeamIdentity">
+						<Label class="TeamName" text="#dota2_rpg_dire_logic" />
+						<Label id="DireTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
+						<Label id="DireSelectedHero" class="SelectedHeroName" />
+					</Panel>
 				<Panel class="HeroStrip">
 					<DOTAHeroImage id="DireHero1" class="HeroPortrait" heroname="npc_dota_hero_axe" heroimagestyle="portrait" hittest="true" />
 					<DOTAHeroImage id="DireHero2" class="HeroPortrait" heroname="npc_dota_hero_lion" heroimagestyle="portrait" hittest="true" />

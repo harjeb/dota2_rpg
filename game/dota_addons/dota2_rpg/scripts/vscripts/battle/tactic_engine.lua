@@ -185,6 +185,16 @@ function TacticEngine:ExtremeUnit(units, metric, wantMinimum, origin)
 	return selected
 end
 
+function TacticEngine:CountAlive(units)
+	local count = 0
+	for _, unit in ipairs(units or {}) do
+		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() then
+			count = count + 1
+		end
+	end
+	return count
+end
+
 function TacticEngine:NearestMatching(origin, units, predicate)
 	local selected = nil
 	local bestDistance = nil
@@ -324,7 +334,7 @@ function TacticEngine:SelectTarget(hero, rule, ctx, side)
 
 	-- 范围内模式：只在当前动作有效范围内筛选
 	if not rule.forced then
-		units = self.adapter.FilterUnitsInActionRange(hero, ctx.action, units)
+		units = self.adapter:FilterUnitsInActionRange(hero, ctx.action, units)
 	end
 
 	local selector = self.targets[selectorId]
@@ -339,7 +349,7 @@ function TacticEngine:ResolveAction(hero, rule)
 		return { kind = "attack" }
 	end
 
-	local ability = self.adapter.GetActionAbility(hero, rule.action)
+	local ability = self.adapter:GetActionAbility(hero, rule.action)
 	if ability == nil then
 		return nil
 	end
@@ -350,7 +360,7 @@ function TacticEngine:IsActionExecutable(hero, action, rule, ctx)
 	if action.kind == "attack" then
 		return true
 	end
-	return self.adapter.IsAbilityReady(hero, action.ability)
+	return self.adapter:IsAbilityReady(hero, action.ability)
 end
 
 function TacticEngine:ExecuteRule(hero, state, ruleIndex, rule, action, ctx)
@@ -364,7 +374,7 @@ function TacticEngine:ExecuteRule(hero, state, ruleIndex, rule, action, ctx)
 	end
 
 	local ability = action.ability
-	local side = self.adapter.GetAbilityTargetSide(ability)
+	local side = self.adapter:GetAbilityTargetSide(ability)
 	-- 目标选择器与技能阵营不匹配时规则不可执行（如对治疗技能选了敌方选择器）
 	local selectorSide = TARGET_SIDE[rule.target]
 	if side == "enemy" and selectorSide ~= nil and selectorSide ~= "enemy" then
@@ -385,13 +395,13 @@ function TacticEngine:ExecuteRule(hero, state, ruleIndex, rule, action, ctx)
 
 	if side ~= "self" and target == nil then
 		-- 无目标可选：若能力不需要目标（无目标/AOE），仍可直接施放
-		if not self.adapter.IsAbilityNoTarget(ability) then
+		if not self.adapter:IsAbilityNoTarget(ability) then
 			return false
 		end
 		target = nil
 	end
 
-	if side == "self" and not self.adapter.IsAbilitySelfCastableAt(hero, ability, target) then
+	if side == "self" and not self.adapter:IsAbilitySelfCastableAt(hero, ability, target) then
 		return false
 	end
 
@@ -401,52 +411,52 @@ end
 
 function TacticEngine:PerformAttack(hero, state, ruleIndex, rule, target, ctx)
 	local now = ctx.env.now
-	if not self.adapter.IsUnitInAttackRange(hero, target) then
+	if not self.adapter:IsUnitInAttackRange(hero, target) then
 		if not rule.forced then
 			return false
 		end
 		self:LockForcedRule(hero, state, ruleIndex, target, now)
-		self.adapter.OrderAttackMove(hero, target)
+		self.adapter:OrderAttackMove(hero, target)
 		state.nextActionAt = now + ORDER_RETRY_INTERVAL
 		return true
 	end
 
 	self:ClearForcedLock(state)
-	self.adapter.OrderAttackMove(hero, target)
+	self.adapter:OrderAttackMove(hero, target)
 	state.nextActionAt = now + 0.7
 	return true
 end
 
 function TacticEngine:PerformCast(hero, state, ruleIndex, rule, ability, target, ctx)
 	local now = ctx.env.now
-	local behavior = self.adapter.GetAbilityBehavior(ability)
+	local behavior = self.adapter:GetAbilityBehavior(ability)
 
-	if self.adapter.IsToggleAbility(ability) then
-		if self.adapter.GetToggleState(ability) then
+	if self.adapter:IsToggleAbility(ability) then
+		if self.adapter:GetToggleState(ability) then
 			return false
 		end
 		self:ClearForcedLock(state)
-		self.adapter.OrderCastToggle(hero, ability)
-		state.nextActionAt = now + math.max(0.65, self.adapter.GetCastPoint(ability) + 0.35)
+		self.adapter:OrderCastToggle(hero, ability)
+		state.nextActionAt = now + math.max(0.65, self.adapter:GetCastPoint(ability) + 0.35)
 		return true
 	end
 
-	if self.adapter.IsNoTargetAbility(ability) then
+	if self.adapter:IsNoTargetAbility(ability) then
 		-- 敌方无目标技能（如 AOE）：若强制追击则需要先接近
 		if target ~= nil and target ~= hero then
-			if not self.adapter.IsUnitInAbilityRange(hero, ability, target) then
+			if not self.adapter:IsUnitInAbilityRange(hero, ability, target) then
 				if not rule.forced then
 					return false
 				end
 				self:LockForcedRule(hero, state, ruleIndex, target, now)
-				self.adapter.OrderMove(hero, target:GetAbsOrigin())
+				self.adapter:OrderMove(hero, target:GetAbsOrigin())
 				state.nextActionAt = now + ORDER_RETRY_INTERVAL
 				return true
 			end
 		end
 		self:ClearForcedLock(state)
-		self.adapter.OrderCastNoTarget(hero, ability)
-		state.nextActionAt = now + math.max(0.65, self.adapter.GetCastPoint(ability) + 0.35)
+		self.adapter:OrderCastNoTarget(hero, ability)
+		state.nextActionAt = now + math.max(0.65, self.adapter:GetCastPoint(ability) + 0.35)
 		return true
 	end
 
@@ -454,23 +464,23 @@ function TacticEngine:PerformCast(hero, state, ruleIndex, rule, ability, target,
 		return false
 	end
 
-	if not self.adapter.IsUnitInAbilityRange(hero, ability, target) then
+	if not self.adapter:IsUnitInAbilityRange(hero, ability, target) then
 		if not rule.forced then
 			return false
 		end
 		self:LockForcedRule(hero, state, ruleIndex, target, now)
-		self.adapter.OrderMove(hero, target:GetAbsOrigin())
+		self.adapter:OrderMove(hero, target:GetAbsOrigin())
 		state.nextActionAt = now + ORDER_RETRY_INTERVAL
 		return true
 	end
 
 	self:ClearForcedLock(state)
-	if self.adapter.IsPointTargetAbility(ability) then
-		self.adapter.OrderCastPosition(hero, ability, target:GetAbsOrigin())
+	if self.adapter:IsPointTargetAbility(ability) then
+		self.adapter:OrderCastPosition(hero, ability, target:GetAbsOrigin())
 	else
-		self.adapter.OrderCastTarget(hero, ability, target)
+		self.adapter:OrderCastTarget(hero, ability, target)
 	end
-	state.nextActionAt = now + math.max(0.65, self.adapter.GetCastPoint(ability) + 0.35)
+	state.nextActionAt = now + math.max(0.65, self.adapter:GetCastPoint(ability) + 0.35)
 	return true
 end
 

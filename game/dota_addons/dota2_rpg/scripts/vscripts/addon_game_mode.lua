@@ -128,6 +128,8 @@ function CDota2RpgDemo:InitGameMode()
 	self.heroRules = {
 		[DOTA_TEAM_GOODGUYS] = {},
 	}
+	-- 玩家英雄等级由存档驱动（经验全队共享，DESIGN.md §2.1），默认 5 级
+	self.playerLevels = { 5, 5, 5 }
 	for heroIndex = 1, #PLAYER_ROSTER do
 		self.heroRules[DOTA_TEAM_GOODGUYS][heroIndex] = CloneDefaultRules()
 	end
@@ -170,6 +172,9 @@ function CDota2RpgDemo:InitGameMode()
 	end)
 	CustomGameEventManager:RegisterListener("rpg_select_level", function(eventSourceIndex, payload)
 		return self:OnSelectLevel(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_hero_levels", function(eventSourceIndex, payload)
+		return self:OnHeroLevels(eventSourceIndex, payload)
 	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
@@ -246,7 +251,7 @@ function CDota2RpgDemo:EnsureBattlefield()
 		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
-			self:PrepareBattleHero(hero)
+			self:PrepareBattleHero(hero, self.playerLevels[index] or 1)
 			self.battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
 			self.battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRules[DOTA_TEAM_GOODGUYS][index]
 		else
@@ -416,6 +421,43 @@ function CDota2RpgDemo:OnSelectLevel(eventSourceIndex, payload)
 	self:BroadcastBattleState()
 end
 
+-- 经验全队共享：前端持久化英雄等级，战斗前同步给服务端用于生成玩家英雄
+function CDota2RpgDemo:OnHeroLevels(eventSourceIndex, payload)
+	if payload == nil or payload.levels == nil then
+		return
+	end
+	for index = 1, #PLAYER_ROSTER do
+		local level = tonumber(payload.levels[index]) or tonumber(payload.levels[tostring(index)]) or 1
+		self.playerLevels[index] = math.max(1, math.min(HERO_LEVEL, math.floor(level + 0.5)))
+	end
+
+	-- 准备阶段可即时按新等级重铸玩家英雄（保留当前规则）
+	if self.phase == "setup" and self.teamsSpawned then
+		self:RespawnPlayerRoster()
+	end
+end
+
+function CDota2RpgDemo:RespawnPlayerRoster()
+	local battleManager = self.battleManager
+	for _, hero in ipairs(battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) then
+			battleManager.heroStates[hero:GetEntityIndex()] = nil
+			hero:RemoveSelf()
+		end
+	end
+	for index, heroName in ipairs(PLAYER_ROSTER) do
+		local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
+		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
+		if TacticEngine.IsValidUnit(hero) then
+			FindClearSpaceForUnit(hero, spawnPosition, true)
+			self:PrepareBattleHero(hero, self.playerLevels[index] or 1)
+			battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
+			battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRules[DOTA_TEAM_GOODGUYS][index]
+		end
+	end
+	self:BroadcastHeroInfo()
+end
+
 function CDota2RpgDemo:OnStartBattle(eventSourceIndex, payload)
 	if self.phase ~= "setup" or not self.teamsSpawned then
 		return
@@ -493,18 +535,26 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	self.battleManager:StopBattle()
 	self:BroadcastBattleState()
 
-	-- 结算：胜利发放关卡首通/重复奖励（数据驱动），存档由前端处理
+	-- 结算：胜利发放关卡奖励（数据驱动）。首通/重复奖励都下发，
+	-- 由前端按存档的首通记录决定实际入账（金币+经验）。
 	local settlement = {
 		level = self.currentLevelId,
 		winner = winner,
-		gold = 0,
+		first_gold = 0,
+		repeat_gold = 0,
+		first_xp = 0,
+		repeat_xp = 0,
 		items = {},
 	}
 	if winner == "radiant" then
 		local level = self.dataLoader:GetLevel(self.currentLevelId)
-		local reward = level ~= nil and level.first_reward or nil
-		settlement.gold = tonumber(reward ~= nil and reward.gold or 0) or 0
-		settlement.items = (reward ~= nil and reward.items) or {}
+		local firstReward = level ~= nil and level.first_reward or nil
+		local repeatReward = level ~= nil and level.repeat_reward or nil
+		settlement.first_gold = tonumber(firstReward ~= nil and firstReward.gold or 0) or 0
+		settlement.repeat_gold = tonumber(repeatReward ~= nil and repeatReward.gold or 0) or 0
+		settlement.first_xp = tonumber(firstReward ~= nil and firstReward.xp or 0) or 0
+		settlement.repeat_xp = tonumber(repeatReward ~= nil and repeatReward.xp or 0) or 0
+		settlement.items = (firstReward ~= nil and firstReward.items) or {}
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
 
@@ -514,7 +564,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 			return nil
 		end, 1.0)
 	end
-	print(string.format("[Dota2Rpg] Battle finished. Result=%s Gold=%d", winner, settlement.gold))
+	print(string.format("[Dota2Rpg] Battle finished. Result=%s FirstGold=%d", winner, settlement.first_gold))
 end
 
 -- 把英雄可用动作槽同步给前端，编辑器据此动态生成规则行
