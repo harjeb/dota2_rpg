@@ -1,4 +1,0 @@
-﻿"custom_net_tables"
-{
-	"rpg_rules_config"		"1"
-}
