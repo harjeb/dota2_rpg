@@ -11,17 +11,26 @@
 
     var CONDITION_TOKENS = {
         always: "#dota2_rpg_condition_always",
-        enemy_below: "#dota2_rpg_condition_enemy_below",
-        self_below: "#dota2_rpg_condition_self_below",
-        ally_below: "#dota2_rpg_condition_ally_below",
-        enemy_in_range: "#dota2_rpg_condition_enemy_in_range",
-        enemy_highest_hp: "#dota2_rpg_condition_enemy_highest_hp",
-        enemy_lowest_hp: "#dota2_rpg_condition_enemy_lowest_hp",
-        enemy_nearest: "#dota2_rpg_condition_enemy_nearest",
-        enemy_farthest: "#dota2_rpg_condition_enemy_farthest",
-        enemy_has_effect: "#dota2_rpg_condition_enemy_has_effect",
-        enemy_lacks_effect: "#dota2_rpg_condition_enemy_lacks_effect",
-        enemy_channeling: "#dota2_rpg_condition_enemy_channeling"
+        self_hp_below: "#dota2_rpg_condition_self_hp_below",
+        self_mp_above: "#dota2_rpg_condition_self_mp_above",
+        enemy_exists: "#dota2_rpg_condition_enemy_exists",
+        ally_exists: "#dota2_rpg_condition_ally_exists",
+        enemy_count_ge: "#dota2_rpg_condition_enemy_count_ge",
+        battle_time_ge: "#dota2_rpg_condition_battle_time_ge"
+    };
+
+    var TARGET_TOKENS = {
+        enemy_hp_lowest: "#dota2_rpg_target_enemy_hp_lowest",
+        enemy_hp_pct_lowest: "#dota2_rpg_target_enemy_hp_pct_lowest",
+        enemy_hp_highest: "#dota2_rpg_target_enemy_hp_highest",
+        enemy_hp_pct_highest: "#dota2_rpg_target_enemy_hp_pct_highest",
+        enemy_nearest: "#dota2_rpg_target_enemy_nearest",
+        enemy_farthest: "#dota2_rpg_target_enemy_farthest",
+        enemy_attack_highest: "#dota2_rpg_target_enemy_attack_highest",
+        enemy_casting: "#dota2_rpg_target_enemy_casting",
+        ally_hp_lowest: "#dota2_rpg_target_ally_hp_lowest",
+        ally_hp_pct_lowest: "#dota2_rpg_target_ally_hp_pct_lowest",
+        self: "#dota2_rpg_target_self"
     };
 
     var EFFECT_TOKENS = {
@@ -31,16 +40,15 @@
         rooted: "#dota2_rpg_effect_rooted"
     };
 
-    var HP_CONDITIONS = {
-        enemy_below: true,
-        self_below: true,
-        ally_below: true
+    // 条件参数语义：pct 显示 %，count/seconds 显示纯数字
+    var VALUE_CONDITIONS = {
+        self_hp_below: "pct",
+        self_mp_above: "pct",
+        enemy_count_ge: "count",
+        battle_time_ge: "seconds"
     };
 
-    var EFFECT_CONDITIONS = {
-        enemy_has_effect: true,
-        enemy_lacks_effect: true
-    };
+    var EFFECT_CONDITIONS = {}; // v1 条件为单一条件，状态类条件 v2 预留
 
     var HEROES = {
         Radiant: [
@@ -57,11 +65,11 @@
 
     function buildDefaultRules() {
         return [
-            { action: "ultimate", condition: "always", threshold: 50, effect: "magic_immune", forced: true },
-            { action: "ability_1", condition: "enemy_below", threshold: 50, effect: "magic_immune", forced: true },
-            { action: "ability_2", condition: "always", threshold: 50, effect: "magic_immune", forced: true },
-            { action: "ability_3", condition: "self_below", threshold: 50, effect: "magic_immune", forced: true },
-            { action: "attack", condition: "always", threshold: 50, effect: "magic_immune", forced: true }
+            { action: "ability_1", condition: "enemy_exists", value: 50, target: "enemy_nearest", forced: false },
+            { action: "ability_2", condition: "enemy_exists", value: 50, target: "enemy_hp_pct_lowest", forced: false },
+            { action: "ability_3", condition: "self_hp_below", value: 50, target: "self", forced: false },
+            { action: "ultimate", condition: "enemy_count_ge", value: 2, target: "enemy_hp_pct_lowest", forced: true },
+            { action: "attack", condition: "always", value: 50, target: "enemy_nearest", forced: false }
         ];
     }
 
@@ -141,9 +149,13 @@
         var menu = editor.FindChildTraverse("ConditionMenu");
         var thresholdControls = editor.FindChildTraverse("ThresholdControls");
         var thresholdEntry = editor.FindChildTraverse("ThresholdEntry");
+        var percentLabel = editor.FindChildTraverse("PercentLabel");
         var effectSelect = editor.FindChildTraverse("EffectSelect");
         var effectValue = editor.FindChildTraverse("EffectValue");
         var effectMenu = editor.FindChildTraverse("EffectMenu");
+        var targetSelect = editor.FindChildTraverse("TargetSelect");
+        var targetValue = editor.FindChildTraverse("TargetValue");
+        var targetMenu = editor.FindChildTraverse("TargetMenu");
 
         selectButton.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "condition");
@@ -151,11 +163,17 @@
         effectSelect.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "effect");
         });
+        targetSelect.SetPanelEvent("onactivate", function () {
+            toggleEditorMenu(side, index, "target");
+        });
         wireValueButtons(menu, function (condition) {
             chooseCondition(side, index, condition);
         });
         wireValueButtons(effectMenu, function (effect) {
             chooseEffect(side, index, effect);
+        });
+        wireValueButtons(targetMenu, function (target) {
+            chooseTarget(side, index, target);
         });
         thresholdEntry.SetPanelEvent("oninputsubmit", function () {
             syncThreshold(side, index, true);
@@ -167,9 +185,13 @@
             menu: menu,
             thresholdControls: thresholdControls,
             thresholdEntry: thresholdEntry,
+            percentLabel: percentLabel,
             effectSelect: effectSelect,
             effectValue: effectValue,
-            effectMenu: effectMenu
+            effectMenu: effectMenu,
+            targetSelect: targetSelect,
+            targetValue: targetValue,
+            targetMenu: targetMenu
         };
     }
 
@@ -193,9 +215,13 @@
                 conditionMenu: conditionEditor.menu,
                 thresholdControls: conditionEditor.thresholdControls,
                 thresholdEntry: conditionEditor.thresholdEntry,
+                percentLabel: conditionEditor.percentLabel,
                 effectSelect: conditionEditor.effectSelect,
                 effectValue: conditionEditor.effectValue,
                 effectMenu: conditionEditor.effectMenu,
+                targetSelect: conditionEditor.targetSelect,
+                targetValue: conditionEditor.targetValue,
+                targetMenu: conditionEditor.targetMenu,
                 forceToggle: forceToggle.button,
                 forceToggleValue: forceToggle.valueLabel,
                 upButton: upButton,
@@ -210,9 +236,11 @@
         for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
             var side = sides[sideIndex];
             for (var index = 0; index < rowPanels[side].length; index++) {
-                rowPanels[side][index].conditionMenu.SetHasClass("Hidden", true);
-                rowPanels[side][index].effectMenu.SetHasClass("Hidden", true);
-                rowPanels[side][index].row.SetHasClass("MenuOpen", false);
+                var panels = rowPanels[side][index];
+                panels.conditionMenu.SetHasClass("Hidden", true);
+                panels.effectMenu.SetHasClass("Hidden", true);
+                panels.targetMenu.SetHasClass("Hidden", true);
+                panels.row.SetHasClass("MenuOpen", false);
             }
             $("#" + side + "Editor").SetHasClass("MenuExpanded", false);
         }
@@ -223,7 +251,14 @@
             return;
         }
         var panels = rowPanels[side][index];
-        var menu = menuType === "effect" ? panels.effectMenu : panels.conditionMenu;
+        var menu;
+        if (menuType === "effect") {
+            menu = panels.effectMenu;
+        } else if (menuType === "target") {
+            menu = panels.targetMenu;
+        } else {
+            menu = panels.conditionMenu;
+        }
         var shouldOpen = menu.BHasClass("Hidden");
         closeEditorMenus();
         menu.SetHasClass("Hidden", !shouldOpen);
@@ -234,6 +269,13 @@
     function chooseCondition(side, index, condition) {
         var rules = getSelectedRules(side);
         rules[index].condition = CONDITION_TOKENS[condition] ? condition : "always";
+        closeEditorMenus();
+        updateConditionSelector(side, index, false);
+    }
+
+    function chooseTarget(side, index, target) {
+        var rules = getSelectedRules(side);
+        rules[index].target = TARGET_TOKENS[target] ? target : "enemy_nearest";
         closeEditorMenus();
         updateConditionSelector(side, index, false);
     }
@@ -266,21 +308,33 @@
         var panels = rowPanels[side][index];
         var rule = getSelectedRules(side)[index];
         panels.conditionValue.text = $.Localize(CONDITION_TOKENS[rule.condition] || CONDITION_TOKENS.always);
-        panels.effectValue.text = $.Localize(EFFECT_TOKENS[rule.effect] || EFFECT_TOKENS.magic_immune);
+        panels.targetValue.text = $.Localize(TARGET_TOKENS[rule.target] || TARGET_TOKENS.enemy_nearest);
+        if (EFFECT_TOKENS[rule.effect]) {
+            panels.effectValue.text = $.Localize(EFFECT_TOKENS[rule.effect]);
+        }
         panels.conditionSelect.enabled = !locked;
+        panels.targetSelect.enabled = !locked;
 
-        var usesThreshold = Boolean(HP_CONDITIONS[rule.condition]);
+        var valueKind = VALUE_CONDITIONS[rule.condition];
         var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);
-        panels.thresholdControls.SetHasClass("Hidden", !usesThreshold);
+        panels.thresholdControls.SetHasClass("Hidden", !valueKind);
         panels.effectSelect.SetHasClass("Hidden", !usesEffect);
-        panels.thresholdEntry.enabled = !locked && usesThreshold;
+        panels.thresholdEntry.enabled = !locked && Boolean(valueKind);
         panels.effectSelect.enabled = !locked && usesEffect;
+        panels.percentLabel.SetHasClass("Hidden", valueKind !== "pct");
+        panels.percentLabel.text = valueKind === "seconds" ? "s" : "%";
     }
 
-    function clampThreshold(value, fallback) {
+    function clampValue(value, fallback, kind) {
         var parsed = Number(value);
         if (!isFinite(parsed)) {
             return fallback;
+        }
+        if (kind === "count") {
+            return Math.max(1, Math.min(10, Math.round(parsed)));
+        }
+        if (kind === "seconds") {
+            return Math.max(1, Math.min(300, Math.round(parsed)));
         }
         return Math.max(1, Math.min(100, Math.round(parsed)));
     }
@@ -288,9 +342,9 @@
     function syncThreshold(side, index, normalizeText) {
         var rule = getSelectedRules(side)[index];
         var entry = rowPanels[side][index].thresholdEntry;
-        rule.threshold = clampThreshold(entry.text, rule.threshold || 50);
+        rule.value = clampValue(entry.text, rule.value || 50, VALUE_CONDITIONS[rule.condition]);
         if (normalizeText) {
-            entry.text = String(rule.threshold);
+            entry.text = String(rule.value);
         }
     }
 
@@ -356,7 +410,7 @@
             var definition = rules[index];
             var panels = rowPanels[side][index];
             panels.actionLabel.text = $.Localize(ACTION_TOKENS[definition.action]);
-            panels.thresholdEntry.text = String(definition.threshold);
+            panels.thresholdEntry.text = String(definition.value);
             updateConditionSelector(side, index, locked);
             updateForcedToggle(side, index, locked);
             panels.upButton.enabled = !locked && index > 0;
@@ -378,8 +432,8 @@
                 for (var ruleIndex = 0; ruleIndex < rules.length; ruleIndex++) {
                     payload[prefix + "_action_" + (ruleIndex + 1)] = rules[ruleIndex].action;
                     payload[prefix + "_condition_" + (ruleIndex + 1)] = rules[ruleIndex].condition;
-                    payload[prefix + "_threshold_" + (ruleIndex + 1)] = rules[ruleIndex].threshold;
-                    payload[prefix + "_effect_" + (ruleIndex + 1)] = rules[ruleIndex].effect;
+                    payload[prefix + "_value_" + (ruleIndex + 1)] = rules[ruleIndex].value;
+                    payload[prefix + "_target_" + (ruleIndex + 1)] = rules[ruleIndex].target;
                     payload[prefix + "_forced_" + (ruleIndex + 1)] = rules[ruleIndex].forced ? 1 : 0;
                 }
             }
@@ -396,19 +450,18 @@
     function updateResult(winner) {
         var resultPanel = $("#BattleResult");
         var resultLabel = $("#BattleResultLabel");
+        var token = "#dota2_rpg_result_draw";
+        var winnerClass = "";
         if (winner === "radiant") {
-            resultLabel.text = $.Localize("#dota2_rpg_result_radiant");
-            resultPanel.SetHasClass("RadiantVictory", true);
-            resultPanel.SetHasClass("DireVictory", false);
-        } else if (winner === "dire") {
-            resultLabel.text = $.Localize("#dota2_rpg_result_dire");
-            resultPanel.SetHasClass("RadiantVictory", false);
-            resultPanel.SetHasClass("DireVictory", true);
-        } else {
-            resultLabel.text = $.Localize("#dota2_rpg_result_draw");
-            resultPanel.SetHasClass("RadiantVictory", false);
-            resultPanel.SetHasClass("DireVictory", false);
+            token = "#dota2_rpg_result_radiant";
+            winnerClass = "RadiantVictory";
+        } else if (winner === "dire" || winner === "timeout") {
+            token = winner === "timeout" ? "#dota2_rpg_result_timeout" : "#dota2_rpg_result_dire";
+            winnerClass = "DireVictory";
         }
+        resultLabel.text = $.Localize(token);
+        resultPanel.SetHasClass("RadiantVictory", winnerClass === "RadiantVictory");
+        resultPanel.SetHasClass("DireVictory", winnerClass === "DireVictory");
         resultPanel.SetHasClass("Hidden", false);
     }
 
@@ -423,7 +476,7 @@
             setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
             startButton.enabled = serverReady;
             startButton.SetHasClass("Hidden", false);
-        } else if (phase === "battle") {
+        } else if (phase === "fight" || phase === "battle") {
             setStatus("#dota2_rpg_status_running");
             startButton.enabled = false;
             startButton.SetHasClass("Hidden", true);

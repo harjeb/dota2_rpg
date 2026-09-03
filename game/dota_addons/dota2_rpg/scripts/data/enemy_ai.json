@@ -1,0 +1,20 @@
+{
+	"demo_default": {
+		"name": "默认索敌",
+		"rules": [
+			{ "cond": { "type": "always" }, "action": { "type": "attack" }, "target": "enemy_nearest", "mode": "range_only" }
+		]
+	},
+	"focus_lowest_hp": {
+		"name": "集火模式：优先血量最低",
+		"rules": [
+			{ "cond": { "type": "enemy_exists" }, "action": { "type": "attack" }, "target": "enemy_hp_pct_lowest", "mode": "forced_chase" }
+		]
+	},
+	"protect_healer": {
+		"name": "保排模式：治疗最低血友军",
+		"rules": [
+			{ "cond": { "type": "ally_exists" }, "action": { "type": "ability_1" }, "target": "ally_hp_pct_lowest", "mode": "range_only" }
+		]
+	}
+}

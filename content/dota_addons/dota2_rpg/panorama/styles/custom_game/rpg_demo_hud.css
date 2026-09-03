@@ -72,7 +72,7 @@
 .TeamEditor
 {
 	width: 544px;
-	height: 446px;
+	height: 620px;
 	vertical-align: center;
 	flow-children: down;
 	margin-top: 32px;
@@ -86,7 +86,7 @@
 
 .TeamEditor.MenuExpanded
 {
-	height: 638px;
+	height: 812px;
 }
 
 .RadiantEditor
@@ -244,7 +244,7 @@
 .RuleRow
 {
 	width: 100%;
-	height: 57px;
+	height: 92px;
 	flow-children: right;
 	border-bottom: 1px solid #303b43;
 }
@@ -279,7 +279,7 @@
 
 .RuleRow.MenuOpen
 {
-	height: 249px;
+	height: 284px;
 	z-index: 100;
 }
 
@@ -289,7 +289,7 @@
 .RuleRow.MenuOpen .MoveButton
 {
 	vertical-align: top;
-	margin-top: 14px;
+	margin-top: 24px;
 }
 
 .ConditionTop
@@ -499,6 +499,90 @@
 	vertical-align: center;
 	padding-left: 8px;
 	font-size: 14px;
+	color: #e1e7e9;
+	text-overflow: shrink;
+}
+
+.TargetTop
+{
+	width: 244px;
+	height: 34px;
+	flow-children: right;
+}
+
+.TargetSelect
+{
+	width: 244px;
+	height: 32px;
+	flow-children: right;
+	background-color: #1d262d;
+	border: 1px solid #4d5a63;
+}
+
+.TargetValue
+{
+	width: fill-parent-flow(1);
+	vertical-align: center;
+	padding-left: 7px;
+	font-size: 13px;
+	color: #c8d2d7;
+	text-overflow: shrink;
+}
+
+.TargetSelect:hover
+{
+	brightness: 1.25;
+	border-color: #aab5bb;
+}
+
+.TargetSelect:disabled
+{
+	brightness: 0.65;
+}
+
+.TargetMenu
+{
+	width: 330px;
+	height: 160px;
+	flow-children: right;
+	background-color: #141d23;
+	border: 1px solid #8b989f;
+	box-shadow: #000000dd 0px 4px 12px 0px;
+	z-index: 200;
+}
+
+.TargetMenuColumn
+{
+	width: 165px;
+	height: 160px;
+	flow-children: down;
+}
+
+.TargetOption
+{
+	width: 100%;
+	height: 32px;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.TargetOption:hover
+{
+	brightness: 1.35;
+	background-color: #314049;
+}
+
+.TargetOption:active
+{
+	brightness: 0.8;
+}
+
+.TargetOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 8px;
+	font-size: 13px;
 	color: #e1e7e9;
 	text-overflow: shrink;
 }

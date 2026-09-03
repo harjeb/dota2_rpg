@@ -15,7 +15,7 @@
 					</Button>
 					<Panel id="ThresholdControls" class="ThresholdControls">
 						<TextEntry id="ThresholdEntry" class="ThresholdEntry" text="50" maxchars="3" />
-						<Label class="PercentLabel" text="%" />
+						<Label id="PercentLabel" class="PercentLabel" text="%" />
 					</Panel>
 					<Button id="EffectSelect" class="EffectSelect Hidden">
 						<Label id="EffectValue" class="EffectValue" />
@@ -45,6 +45,29 @@
 					<Button id="StunnedOption" class="EffectOption" value="stunned"><Label text="#dota2_rpg_effect_stunned" /></Button>
 					<Button id="SilencedOption" class="EffectOption" value="silenced"><Label text="#dota2_rpg_effect_silenced" /></Button>
 					<Button id="RootedOption" class="EffectOption" value="rooted"><Label text="#dota2_rpg_effect_rooted" /></Button>
+				</Panel>
+				<Panel class="TargetTop">
+					<Button id="TargetSelect" class="TargetSelect">
+						<Label id="TargetValue" class="TargetValue" />
+						<Label class="SelectChevron" text="v" />
+					</Button>
+				</Panel>
+				<Panel id="TargetMenu" class="TargetMenu Hidden">
+					<Panel class="TargetMenuColumn">
+						<Button class="TargetOption" value="enemy_hp_lowest"><Label text="#dota2_rpg_target_enemy_hp_lowest" /></Button>
+						<Button class="TargetOption" value="enemy_hp_pct_lowest"><Label text="#dota2_rpg_target_enemy_hp_pct_lowest" /></Button>
+						<Button class="TargetOption" value="enemy_hp_highest"><Label text="#dota2_rpg_target_enemy_hp_highest" /></Button>
+						<Button class="TargetOption" value="enemy_hp_pct_highest"><Label text="#dota2_rpg_target_enemy_hp_pct_highest" /></Button>
+						<Button class="TargetOption" value="enemy_nearest"><Label text="#dota2_rpg_target_enemy_nearest" /></Button>
+						<Button class="TargetOption" value="enemy_farthest"><Label text="#dota2_rpg_target_enemy_farthest" /></Button>
+					</Panel>
+					<Panel class="TargetMenuColumn">
+						<Button class="TargetOption" value="enemy_attack_highest"><Label text="#dota2_rpg_target_enemy_attack_highest" /></Button>
+						<Button class="TargetOption" value="enemy_casting"><Label text="#dota2_rpg_target_enemy_casting" /></Button>
+						<Button class="TargetOption" value="ally_hp_lowest"><Label text="#dota2_rpg_target_ally_hp_lowest" /></Button>
+						<Button class="TargetOption" value="ally_hp_pct_lowest"><Label text="#dota2_rpg_target_ally_hp_pct_lowest" /></Button>
+						<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
+					</Panel>
 				</Panel>
 			</Panel>
 		</snippet>

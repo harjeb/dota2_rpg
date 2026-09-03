@@ -1,0 +1,15 @@
+{
+	"demo_3v3": {
+		"name": "试炼场 · 3v3",
+		"type": "hero",
+		"enemies": [
+			{ "unit": "npc_dota_hero_axe", "level": 30, "items": [], "ai": "demo_default" },
+			{ "unit": "npc_dota_hero_lion", "level": 30, "items": [], "ai": "demo_default" },
+			{ "unit": "npc_dota_hero_crystal_maiden", "level": 30, "items": [], "ai": "demo_default" }
+		],
+		"first_reward": { "gold": 200 },
+		"repeat_reward": { "gold": 40 },
+		"max_attempts": 5,
+		"time_limit": 120
+	}
+}

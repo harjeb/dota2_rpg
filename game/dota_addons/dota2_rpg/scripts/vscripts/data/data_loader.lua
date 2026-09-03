@@ -1,0 +1,59 @@
+--[[
+	DataLoader
+	加载 scripts/data 下的数据表（levels / enemy_ai / loot），策划改表不改码。
+
+	说明：Dota 的 LoadKeyValues 同时支持 KV 与 JSON 文本。
+]]
+
+if DataLoader == nil then
+	_G.DataLoader = class({})
+end
+
+function DataLoader:constructor()
+	self.levels = {}
+	self.enemyAI = {}
+	self.loot = {}
+end
+
+function DataLoader:Init()
+	self.levels = self:LoadTable("scripts/data/levels.json", "levels")
+	self.enemyAI = self:LoadTable("scripts/data/enemy_ai.json", "enemy_ai")
+	self.loot = self:LoadTable("scripts/data/loot.json", "loot")
+	print(string.format(
+		"[Dota2Rpg] Data loaded: %d levels, %d ai presets, %d loot tables.",
+		self:Count(self.levels), self:Count(self.enemyAI), self:Count(self.loot)
+	))
+end
+
+function DataLoader:LoadTable(relativePath, label)
+	local loaded = LoadKeyValues(relativePath)
+	if loaded == nil or loaded == "" then
+		print(string.format("[Dota2Rpg] WARNING: data table '%s' missing (%s).", label, relativePath))
+		return {}
+	end
+	return loaded
+end
+
+function DataLoader:Count(t)
+	local count = 0
+	for _ in pairs(t or {}) do
+		count = count + 1
+	end
+	return count
+end
+
+function DataLoader:GetLevel(levelId)
+	return self.levels[levelId]
+end
+
+function DataLoader:GetAllLevels()
+	return self.levels
+end
+
+function DataLoader:GetEnemyAI(aiId)
+	return self.enemyAI[aiId]
+end
+
+function DataLoader:GetLoot(lootId)
+	return self.loot[lootId]
+end
