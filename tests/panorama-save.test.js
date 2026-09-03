@@ -119,8 +119,8 @@ fresh.subscriptions.rpg_shop_state({
     bench_slot_max: 5,
     lineup_max: 5
 });
-assert(fresh.panels["#GoldLabel"].text === "Gold: 300",
-    "shop header must show the authoritative shop-state gold");
+assert(fresh.panels["#GoldValue"].text === "300",
+    "shop gold bar must show the authoritative shop-state gold as a direct numeric value");
 assert(fresh.panels["#RefreshShopLabel"].text === "Refresh (20 gold)",
     "refresh label must be localized with the server-configured cost");
 var localizedHeroFound = fresh.createdPanels.some(function (panel) {
@@ -129,8 +129,8 @@ var localizedHeroFound = fresh.createdPanels.some(function (panel) {
 assert(localizedHeroFound, "shop hero names must use Dota hero localization");
 
 fresh.subscriptions.rpg_battle_state({ phase: "setup", ready: 1, gold: 180, level: "ch01" });
-assert(fresh.panels["#GoldLabel"].text === "Gold: 180",
-    "battle-state gold must refresh the shop header instead of leaving a stale save value");
+assert(fresh.panels["#GoldValue"].text === "180",
+    "battle-state gold must refresh the shop gold bar instead of leaving a stale save value");
 
 var brokenV1 = runHud(JSON.parse(fs.readFileSync(brokenV1Path, "utf8")));
 assert(brokenV1.payload.gold === 300, "empty v1 save affected by the zero-gold bug must migrate to 300 gold");

@@ -22,6 +22,7 @@ $requiredFiles = @(
     "scripts\generate-minimap.ps1",
     "tests\panorama-save.test.js",
     "tests\shop-state.test.lua",
+    "tests\precache-battlefield.test.lua",
     "tests\fixtures\save-v1-zero-gold.json"
 )
 
@@ -61,6 +62,10 @@ $luaChecks = @(
            'RegisterListener\("rpg_lineup_set"',
            'SetCustomGameForceHero\(PLAYER_PLACEHOLDER_HERO\)',
            'local HERO_LEVEL = 30',
+           'local BATTLE_ACQUISITION_RANGE = 4000',
+           'seenUnits\[unitName\]',
+           'PrecacheUnit\(heroEntry\.name\)',
+           'PrecacheUnit\(enemyEntry\.unit\)',
            'SetFogOfWarDisabled\(true\)',
            'SetUnseenFogOfWarEnabled\(false\)',
            'SetHeroRespawnEnabled\(false\)',
@@ -77,8 +82,9 @@ $luaChecks = @(
            'self\.currentLevelId',
            'RollShop',
            'time_bonus_rate',
-           'Vector\(-1100, -650, 128\)',
-           'Vector\(1100, 650, 128\)'
+           'Vector\(-650, -420, 128\)',
+           'Vector\(650, 420, 128\)',
+           'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\tactic_engine.lua";
        Patterns = @(
@@ -227,8 +233,11 @@ if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
 }
 
 $shopPanelNode = $hudXml.SelectSingleNode("//Panel[@id='ShopPanel']")
-if ($null -eq $shopPanelNode -or $null -eq $shopPanelNode.SelectSingleNode(".//Label[@id='GoldLabel']")) {
-    throw "The authoritative gold display must be inside the shop panel"
+$goldBarNode = if ($null -ne $shopPanelNode) { $shopPanelNode.SelectSingleNode(".//Panel[@id='GoldBar']") } else { $null }
+if ($null -eq $goldBarNode -or
+    $null -eq $goldBarNode.SelectSingleNode("./Label[@id='GoldLabel']") -or
+    $null -eq $goldBarNode.SelectSingleNode("./Label[@id='GoldValue']")) {
+    throw "The shop must contain a dedicated gold bar with a caption and direct numeric value"
 }
 
 $localizationFiles = @(
@@ -293,7 +302,7 @@ foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
     }
 }
 
-foreach ($shopPattern in @('id="ShopOffer"', 'id="GoldLabel"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+foreach ($shopPattern in @('id="ShopOffer"', 'id="GoldBar"', 'id="GoldLabel"', 'id="GoldValue"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', '$("#GoldValue").text', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }

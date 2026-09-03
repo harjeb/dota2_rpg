@@ -11,21 +11,22 @@ end
 local PLAYER_PLACEHOLDER_HERO = "npc_dota_hero_wisp"
 local HERO_LEVEL = 30
 local THINK_INTERVAL = 0.1
+local BATTLE_ACQUISITION_RANGE = 4000
 
 local TEAM_SPAWNS = {
 	[DOTA_TEAM_GOODGUYS] = {
-		Vector(-1100, -650, 128),
-		Vector(-1350, 0, 128),
-		Vector(-1100, 650, 128),
-		Vector(-750, -850, 128),
-		Vector(-750, 850, 128),
+		Vector(-650, -420, 128),
+		Vector(-800, 0, 128),
+		Vector(-650, 420, 128),
+		Vector(-500, -700, 128),
+		Vector(-500, 700, 128),
 	},
 	[DOTA_TEAM_BADGUYS] = {
-		Vector(1100, 650, 128),
-		Vector(1350, 0, 128),
-		Vector(1100, -650, 128),
-		Vector(750, 850, 128),
-		Vector(750, -850, 128),
+		Vector(650, 420, 128),
+		Vector(800, 0, 128),
+		Vector(650, -420, 128),
+		Vector(500, 700, 128),
+		Vector(500, -700, 128),
 	},
 }
 
@@ -129,24 +130,35 @@ local function BuildHeroActionSlots(hero)
 end
 
 function Precache(context)
-	PrecacheUnitByNameSync(PLAYER_PLACEHOLDER_HERO, context)
-	-- 数据驱动：预缓存英雄池与所有关卡单位
-	local sources = { "scripts/data/heroes.kv", "scripts/data/levels.kv" }
-	for _, source in ipairs(sources) do
-		local data = LoadKeyValues(source)
-		if data ~= nil and data ~= "" then
-			for _, entry in pairs(data) do
-				if type(entry) == "table" then
-					if entry.name ~= nil then
-						PrecacheUnitByNameSync(entry.name, context)
-					end
-					local enemies = entry.enemies
-					if enemies ~= nil then
-						for _, enemy in pairs(enemies) do
-							if type(enemy) == "table" and enemy.unit ~= nil then
-								PrecacheUnitByNameSync(enemy.unit, context)
-							end
-						end
+	local seenUnits = {}
+	local function PrecacheUnit(unitName)
+		if type(unitName) ~= "string" or string.sub(unitName, 1, 9) ~= "npc_dota_" or seenUnits[unitName] then
+			return
+		end
+		seenUnits[unitName] = true
+		PrecacheUnitByNameSync(unitName, context)
+	end
+
+	PrecacheUnit(PLAYER_PLACEHOLDER_HERO)
+
+	local heroData = LoadKeyValues("scripts/data/heroes.kv")
+	if type(heroData) == "table" then
+		for _, categoryName in ipairs(SHOP_CATEGORIES) do
+			for _, heroEntry in pairs(heroData[categoryName] or {}) do
+				if type(heroEntry) == "table" then
+					PrecacheUnit(heroEntry.name)
+				end
+			end
+		end
+	end
+
+	local levelData = LoadKeyValues("scripts/data/levels.kv")
+	if type(levelData) == "table" then
+		for _, levelEntry in pairs(levelData) do
+			if type(levelEntry) == "table" then
+				for _, enemyEntry in pairs(levelEntry.enemies or {}) do
+					if type(enemyEntry) == "table" then
+						PrecacheUnit(enemyEntry.unit)
 					end
 				end
 			end
@@ -778,7 +790,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 				hero:SetHealth(hero:GetMaxHealth())
 				hero:SetMana(hero:GetMaxMana())
 				hero:SetIdleAcquire(true)
-				hero:SetAcquisitionRange(2400)
+				hero:SetAcquisitionRange(BATTLE_ACQUISITION_RANGE)
 			end
 		end
 	end

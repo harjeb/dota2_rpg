@@ -579,7 +579,8 @@
     }
 
     function updateShopEconomyLabels(gold) {
-        $("#GoldLabel").text = localizeFormat("#dota2_rpg_shop_gold", gold);
+        var normalizedGold = Number(gold);
+        $("#GoldValue").text = String(isFinite(normalizedGold) ? Math.max(0, Math.floor(normalizedGold)) : 0);
         $("#RefreshShopLabel").text = localizeFormat("#dota2_rpg_shop_refresh", shopState.costs.refresh);
         $("#BenchBuyLabel").text = localizeFormat("#dota2_rpg_bench_buy", shopState.costs.bench_slot);
     }

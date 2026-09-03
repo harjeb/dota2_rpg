@@ -90,7 +90,10 @@
 			<Panel id="ShopPanel" class="ShopPanel">
 				<Panel class="ShopHeaderRow">
 					<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
-					<Label id="GoldLabel" text="#dota2_rpg_shop_gold_syncing" />
+				</Panel>
+				<Panel id="GoldBar" class="GoldBar">
+					<Label id="GoldLabel" text="#dota2_rpg_gold" />
+					<Label id="GoldValue" text="300" />
 				</Panel>
 				<Panel id="ShopOffer" class="ShopOffer" />
 				<Panel class="ShopButtons">
