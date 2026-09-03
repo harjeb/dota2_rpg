@@ -409,10 +409,8 @@ end
 -- 金币写入玩家钱包，Dota 原版 HUD 经济面板即可正常显示
 function CDota2RpgDemo:SyncGoldToPlayer()
 	if self.playerId >= 0 then
-		local player = PlayerResource:GetPlayer(self.playerId)
-		if player ~= nil then
-			player:SetGold(0, self.gold)
-		end
+		-- PlayerResource:SetGold(playerId, gold, reliable)
+		PlayerResource:SetGold(self.playerId, self.gold, true)
 	end
 end
 
