@@ -1,0 +1,5 @@
+<root>
+	<Panel>
+		<CustomUIElement type="Hud" layoutfile="file://{resources}/layout/custom_game/rpg_demo_hud.xml" />
+	</Panel>
+</root>

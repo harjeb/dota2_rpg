@@ -1,0 +1,12 @@
+"AddonInfo"
+{
+	"maps"			"dota2_rpg_demo"
+	"IsPlayable"		"1"
+	"MinimalPrecache"	"0"
+	"HeroGuidesSupported"	"0"
+	"DrawCustomTeamHeroesOnMinimap"	"1"
+	"dota2_rpg_demo"
+	{
+		"MaxPlayers"	"1"
+	}
+}

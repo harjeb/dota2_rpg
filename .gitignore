@@ -1,0 +1,27 @@
+.beads/dolt/
+.beads/*.lock
+.claude/settings.local.json
+*.log
+
+# Local credentials and private keys
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+*.jks
+*.keystore
+.htpasswd
+.netrc
+.pgpass
+id_rsa
+id_ed25519
+*.secret
+token.json
+secrets.yml
+secrets.yaml
+.boto
+.s3cfg
+kubeconfig

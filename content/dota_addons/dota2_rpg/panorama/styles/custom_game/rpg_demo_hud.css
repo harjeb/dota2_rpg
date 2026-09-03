@@ -1,0 +1,641 @@
+.RpgDemoHudRoot
+{
+	width: 100%;
+	height: 100%;
+}
+
+#BattleHeader
+{
+	width: 560px;
+	height: 92px;
+	horizontal-align: center;
+	flow-children: down;
+	margin-top: 14px;
+	padding: 8px 18px;
+	background-color: #10161deb;
+	border-top: 3px solid #d7b85a;
+	border-bottom: 1px solid #66717a;
+	box-shadow: #000000aa 0px 4px 16px 0px;
+}
+
+#BattleTitle
+{
+	horizontal-align: center;
+	font-family: titleFont;
+	font-size: 22px;
+	font-weight: bold;
+	color: #f3ead9;
+	letter-spacing: 0px;
+}
+
+#BattleScore
+{
+	horizontal-align: center;
+	flow-children: right;
+	margin-top: 1px;
+}
+
+#BattleScore Label
+{
+	width: 46px;
+	font-family: titleFont;
+	font-size: 24px;
+	font-weight: bold;
+	text-align: center;
+}
+
+#BattleScore .ScoreDivider
+{
+	width: 22px;
+	color: #89939b;
+}
+
+.RadiantText
+{
+	color: #72d5bd;
+}
+
+.DireText
+{
+	color: #ee7b70;
+}
+
+#BattleStatus
+{
+	width: 100%;
+	font-size: 14px;
+	color: #bac4ca;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.TeamEditor
+{
+	width: 486px;
+	height: 446px;
+	vertical-align: center;
+	flow-children: down;
+	margin-top: 32px;
+	padding: 14px;
+	background-color: #111820f2;
+	border: 1px solid #657078;
+	box-shadow: #000000bb 0px 5px 18px 0px;
+	transition-property: opacity, brightness;
+	transition-duration: 0.18s;
+}
+
+.TeamEditor.MenuExpanded
+{
+	height: 638px;
+}
+
+.RadiantEditor
+{
+	horizontal-align: left;
+	margin-left: 24px;
+	border-left: 4px solid #4bb99f;
+}
+
+.DireEditor
+{
+	horizontal-align: right;
+	margin-right: 24px;
+	border-right: 4px solid #d65e56;
+}
+
+.TeamEditor.Locked
+{
+	opacity: 0.34;
+}
+
+.TeamEditor.Locked:hover
+{
+	opacity: 0.9;
+}
+
+.TeamHeader
+{
+	width: 100%;
+	height: 74px;
+	flow-children: right;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #4d5860;
+}
+
+.TeamIdentity
+{
+	width: fill-parent-flow(1);
+	height: 100%;
+	flow-children: down;
+	vertical-align: center;
+}
+
+.TeamName
+{
+	width: 100%;
+	font-family: titleFont;
+	font-size: 22px;
+	font-weight: bold;
+	color: #f4eee2;
+	text-overflow: shrink;
+}
+
+.TeamLevel
+{
+	margin-top: 3px;
+	font-size: 14px;
+	color: #9facb4;
+}
+
+.SelectedHeroName
+{
+	margin-top: 2px;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.HeroStrip
+{
+	flow-children: right;
+	vertical-align: center;
+}
+
+.HeroPortrait
+{
+	width: 54px;
+	height: 54px;
+	margin-left: 5px;
+	border: 1px solid #909ba2;
+	brightness: 0.55;
+	saturation: 0.55;
+	transition-property: brightness, saturation, border, pre-transform-scale2d;
+	transition-duration: 0.12s;
+}
+
+.HeroPortrait:hover
+{
+	brightness: 0.9;
+	saturation: 0.85;
+}
+
+.HeroPortrait.Selected
+{
+	brightness: 1.2;
+	saturation: 1;
+	pre-transform-scale2d: 1.06;
+	border: 2px solid #f2d982;
+}
+
+.RadiantEditor .HeroPortrait.Selected
+{
+	border-bottom: 3px solid #4bb99f;
+}
+
+.DireEditor .HeroPortrait.Selected
+{
+	border-bottom: 3px solid #d65e56;
+}
+
+.ColumnHeader
+{
+	width: 100%;
+	height: 28px;
+	flow-children: right;
+	margin-top: 8px;
+}
+
+.ColumnHeader Label
+{
+	font-size: 12px;
+	color: #829099;
+	text-transform: uppercase;
+	vertical-align: center;
+}
+
+.PriorityColumn
+{
+	width: 34px;
+	text-align: center;
+}
+
+.ActionColumn
+{
+	width: 108px;
+}
+
+.ConditionColumn
+{
+	width: 244px;
+}
+
+.RulesContainer
+{
+	width: 100%;
+	flow-children: down;
+}
+
+.RuleRow
+{
+	width: 100%;
+	height: 57px;
+	flow-children: right;
+	border-bottom: 1px solid #303b43;
+}
+
+.PriorityNumber
+{
+	width: 34px;
+	vertical-align: center;
+	font-family: titleFont;
+	font-size: 19px;
+	font-weight: bold;
+	color: #d9bd6b;
+	text-align: center;
+}
+
+.ActionName
+{
+	width: 108px;
+	vertical-align: center;
+	font-size: 16px;
+	font-weight: bold;
+	color: #e8edf0;
+	text-overflow: shrink;
+}
+
+.ConditionEditor
+{
+	width: 244px;
+	height: 100%;
+	flow-children: down;
+}
+
+.RuleRow.MenuOpen
+{
+	height: 249px;
+	z-index: 100;
+}
+
+.RuleRow.MenuOpen .PriorityNumber,
+.RuleRow.MenuOpen .ActionName,
+.RuleRow.MenuOpen .MoveButton
+{
+	vertical-align: top;
+	margin-top: 14px;
+}
+
+.ConditionTop
+{
+	width: 244px;
+	height: 57px;
+	flow-children: right;
+}
+
+.ConditionSelect
+{
+	width: 146px;
+	height: 36px;
+	vertical-align: center;
+	margin-right: 5px;
+	flow-children: right;
+	background-color: #202a31;
+	border: 1px solid #5a6871;
+}
+
+.ConditionValue
+{
+	width: fill-parent-flow(1);
+	vertical-align: center;
+	padding-left: 7px;
+	font-size: 14px;
+	color: #d7dfe3;
+	text-overflow: shrink;
+}
+
+.SelectChevron
+{
+	width: 22px;
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #aeb9bf;
+	text-align: center;
+}
+
+.ConditionSelect:hover
+{
+	brightness: 1.25;
+	border-color: #aab5bb;
+}
+
+.ConditionSelect:disabled
+{
+	brightness: 0.65;
+}
+
+.ConditionMenu
+{
+	width: 330px;
+	height: 192px;
+	flow-children: right;
+	background-color: #141d23;
+	border: 1px solid #8b989f;
+	box-shadow: #000000dd 0px 4px 12px 0px;
+	z-index: 200;
+}
+
+.ConditionMenuColumn
+{
+	width: 165px;
+	height: 192px;
+	flow-children: down;
+}
+
+.ConditionOption
+{
+	width: 100%;
+	height: 32px;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.ConditionOption:hover
+{
+	brightness: 1.35;
+	background-color: #314049;
+}
+
+.ConditionOption:active
+{
+	brightness: 0.8;
+}
+
+.ConditionOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 8px;
+	font-size: 13px;
+	color: #e1e7e9;
+	text-overflow: shrink;
+}
+
+.ThresholdControls
+{
+	width: 93px;
+	height: 57px;
+	flow-children: right;
+}
+
+.ThresholdEntry
+{
+	width: 58px;
+	height: 36px;
+	vertical-align: center;
+	padding: 5px 6px 3px 6px;
+	background-color: #202a31;
+	border: 1px solid #5a6871;
+	font-size: 16px;
+	font-weight: bold;
+	color: #f1e6c8;
+	text-align: right;
+}
+
+.ThresholdEntry:hover
+{
+	brightness: 1.25;
+	border-color: #aab5bb;
+}
+
+.ThresholdEntry:focus
+{
+	border-color: #d7b85a;
+}
+
+.PercentLabel
+{
+	width: 28px;
+	vertical-align: center;
+	font-size: 15px;
+	font-weight: bold;
+	color: #b6c1c7;
+	text-align: center;
+}
+
+.EffectSelect
+{
+	width: 93px;
+	height: 36px;
+	vertical-align: center;
+	flow-children: right;
+	background-color: #202a31;
+	border: 1px solid #5a6871;
+	transition-property: brightness, border;
+	transition-duration: 0.12s;
+}
+
+.EffectSelect:hover
+{
+	brightness: 1.25;
+	border-color: #aab5bb;
+}
+
+.EffectSelect:disabled
+{
+	brightness: 0.65;
+}
+
+.EffectValue
+{
+	width: fill-parent-flow(1);
+	vertical-align: center;
+	padding-left: 6px;
+	font-size: 13px;
+	color: #f1e6c8;
+	text-overflow: shrink;
+}
+
+.EffectMenu
+{
+	width: 190px;
+	height: 128px;
+	flow-children: down;
+	background-color: #141d23;
+	border: 1px solid #8b989f;
+	box-shadow: #000000dd 0px 4px 12px 0px;
+	z-index: 200;
+}
+
+.EffectOption
+{
+	width: 100%;
+	height: 32px;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.EffectOption:hover
+{
+	brightness: 1.35;
+	background-color: #314049;
+}
+
+.EffectOption:active
+{
+	brightness: 0.8;
+}
+
+.EffectOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 8px;
+	font-size: 14px;
+	color: #e1e7e9;
+	text-overflow: shrink;
+}
+
+.MoveButton
+{
+	width: 28px;
+	height: 28px;
+	vertical-align: center;
+	margin-left: 2px;
+	background-color: #28343c;
+	border: 1px solid #5d6971;
+}
+
+.MoveButton:hover
+{
+	brightness: 1.4;
+	border-color: #d6dce0;
+}
+
+.MoveButton:active
+{
+	brightness: 0.8;
+}
+
+.MoveButton:disabled
+{
+	opacity: 0.22;
+}
+
+.MoveGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 15px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+#BattleControls
+{
+	width: 205px;
+	height: 220px;
+	horizontal-align: center;
+	vertical-align: center;
+	flow-children: down;
+	margin-top: 22px;
+}
+
+#VersusLabel
+{
+	horizontal-align: center;
+	font-family: titleFont;
+	font-size: 48px;
+	font-weight: bold;
+	color: #e8d289;
+	text-shadow: 0px 2px 6px 3 #000000;
+}
+
+#StartBattleButton
+{
+	width: 198px;
+	height: 64px;
+	horizontal-align: center;
+	margin-top: 15px;
+	background-color: #9b342f;
+	border: 2px solid #f0c46b;
+	box-shadow: #000000cc 0px 4px 12px 0px;
+	transition-property: brightness, pre-transform-scale2d;
+	transition-duration: 0.12s;
+}
+
+#StartBattleButton:hover
+{
+	brightness: 1.35;
+}
+
+#StartBattleButton:active
+{
+	brightness: 0.85;
+	pre-transform-scale2d: 0.98;
+}
+
+#StartBattleButton:disabled
+{
+	brightness: 0.45;
+}
+
+#StartBattleButton Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-family: titleFont;
+	font-size: 22px;
+	font-weight: bold;
+	color: #fff4d8;
+}
+
+#ControlStatus
+{
+	width: 100%;
+	margin-top: 12px;
+	font-size: 14px;
+	color: #bac4ca;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.BattleResult
+{
+	width: 560px;
+	height: 92px;
+	horizontal-align: center;
+	vertical-align: center;
+	margin-top: 275px;
+	background-color: #151b20f5;
+	border: 2px solid #d3bb73;
+	box-shadow: #000000dd 0px 5px 20px 0px;
+}
+
+.BattleResult.RadiantVictory
+{
+	border-color: #61d0b5;
+}
+
+.BattleResult.DireVictory
+{
+	border-color: #e96e64;
+}
+
+#BattleResultLabel
+{
+	width: 100%;
+	horizontal-align: center;
+	vertical-align: center;
+	font-family: titleFont;
+	font-size: 31px;
+	font-weight: bold;
+	color: #f5eddd;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.Hidden
+{
+	visibility: collapse;
+}

@@ -1,0 +1,118 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
+	</styles>
+	<scripts>
+		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
+	</scripts>
+	<snippets>
+		<snippet name="RpgConditionEditor">
+			<Panel class="ConditionEditor">
+				<Panel class="ConditionTop">
+					<Button id="ConditionSelect" class="ConditionSelect">
+						<Label id="ConditionValue" class="ConditionValue" />
+						<Label class="SelectChevron" text="v" />
+					</Button>
+					<Panel id="ThresholdControls" class="ThresholdControls">
+						<TextEntry id="ThresholdEntry" class="ThresholdEntry" text="50" maxchars="3" />
+						<Label class="PercentLabel" text="%" />
+					</Panel>
+					<Button id="EffectSelect" class="EffectSelect Hidden">
+						<Label id="EffectValue" class="EffectValue" />
+						<Label class="SelectChevron" text="v" />
+					</Button>
+				</Panel>
+				<Panel id="ConditionMenu" class="ConditionMenu Hidden">
+					<Panel class="ConditionMenuColumn">
+						<Button id="AlwaysOption" class="ConditionOption" value="always"><Label text="#dota2_rpg_condition_always" /></Button>
+						<Button id="EnemyBelowOption" class="ConditionOption" value="enemy_below"><Label text="#dota2_rpg_condition_enemy_below" /></Button>
+						<Button id="SelfBelowOption" class="ConditionOption" value="self_below"><Label text="#dota2_rpg_condition_self_below" /></Button>
+						<Button id="AllyBelowOption" class="ConditionOption" value="ally_below"><Label text="#dota2_rpg_condition_ally_below" /></Button>
+						<Button id="EnemyInRangeOption" class="ConditionOption" value="enemy_in_range"><Label text="#dota2_rpg_condition_enemy_in_range" /></Button>
+						<Button id="EnemyChannelingOption" class="ConditionOption" value="enemy_channeling"><Label text="#dota2_rpg_condition_enemy_channeling" /></Button>
+					</Panel>
+					<Panel class="ConditionMenuColumn">
+						<Button id="EnemyHighestHpOption" class="ConditionOption" value="enemy_highest_hp"><Label text="#dota2_rpg_condition_enemy_highest_hp" /></Button>
+						<Button id="EnemyLowestHpOption" class="ConditionOption" value="enemy_lowest_hp"><Label text="#dota2_rpg_condition_enemy_lowest_hp" /></Button>
+						<Button id="EnemyNearestOption" class="ConditionOption" value="enemy_nearest"><Label text="#dota2_rpg_condition_enemy_nearest" /></Button>
+						<Button id="EnemyFarthestOption" class="ConditionOption" value="enemy_farthest"><Label text="#dota2_rpg_condition_enemy_farthest" /></Button>
+						<Button id="EnemyHasEffectOption" class="ConditionOption" value="enemy_has_effect"><Label text="#dota2_rpg_condition_enemy_has_effect" /></Button>
+						<Button id="EnemyLacksEffectOption" class="ConditionOption" value="enemy_lacks_effect"><Label text="#dota2_rpg_condition_enemy_lacks_effect" /></Button>
+					</Panel>
+				</Panel>
+				<Panel id="EffectMenu" class="EffectMenu Hidden">
+					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
+					<Button id="StunnedOption" class="EffectOption" value="stunned"><Label text="#dota2_rpg_effect_stunned" /></Button>
+					<Button id="SilencedOption" class="EffectOption" value="silenced"><Label text="#dota2_rpg_effect_silenced" /></Button>
+					<Button id="RootedOption" class="EffectOption" value="rooted"><Label text="#dota2_rpg_effect_rooted" /></Button>
+				</Panel>
+			</Panel>
+		</snippet>
+	</snippets>
+
+	<Panel class="RpgDemoHudRoot" hittest="false">
+		<Panel id="BattleHeader">
+			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
+			<Panel id="BattleScore">
+				<Label id="RadiantAlive" class="RadiantText" text="3" />
+				<Label class="ScoreDivider" text="-" />
+				<Label id="DireAlive" class="DireText" text="3" />
+			</Panel>
+			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
+		</Panel>
+
+		<Panel id="RadiantEditor" class="TeamEditor RadiantEditor" hittest="true">
+			<Panel class="TeamHeader">
+				<Panel class="TeamIdentity">
+					<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
+					<Label class="TeamLevel" text="#dota2_rpg_level_30" />
+					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
+				</Panel>
+				<Panel class="HeroStrip">
+					<DOTAHeroImage id="RadiantHero1" class="HeroPortrait" heroname="npc_dota_hero_sven" heroimagestyle="portrait" hittest="true" />
+					<DOTAHeroImage id="RadiantHero2" class="HeroPortrait" heroname="npc_dota_hero_lina" heroimagestyle="portrait" hittest="true" />
+					<DOTAHeroImage id="RadiantHero3" class="HeroPortrait" heroname="npc_dota_hero_dazzle" heroimagestyle="portrait" hittest="true" />
+				</Panel>
+			</Panel>
+			<Panel class="ColumnHeader">
+				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
+				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
+				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
+			</Panel>
+			<Panel id="RadiantRules" class="RulesContainer" />
+		</Panel>
+
+		<Panel id="BattleControls" hittest="true">
+			<Label id="VersusLabel" text="VS" />
+			<Button id="StartBattleButton">
+				<Label text="#dota2_rpg_start_battle" />
+			</Button>
+			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
+		</Panel>
+
+		<Panel id="DireEditor" class="TeamEditor DireEditor" hittest="true">
+			<Panel class="TeamHeader">
+				<Panel class="TeamIdentity">
+					<Label class="TeamName" text="#dota2_rpg_dire_logic" />
+					<Label class="TeamLevel" text="#dota2_rpg_level_30" />
+					<Label id="DireSelectedHero" class="SelectedHeroName" />
+				</Panel>
+				<Panel class="HeroStrip">
+					<DOTAHeroImage id="DireHero1" class="HeroPortrait" heroname="npc_dota_hero_axe" heroimagestyle="portrait" hittest="true" />
+					<DOTAHeroImage id="DireHero2" class="HeroPortrait" heroname="npc_dota_hero_lion" heroimagestyle="portrait" hittest="true" />
+					<DOTAHeroImage id="DireHero3" class="HeroPortrait" heroname="npc_dota_hero_crystal_maiden" heroimagestyle="portrait" hittest="true" />
+				</Panel>
+			</Panel>
+			<Panel class="ColumnHeader">
+				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
+				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
+				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
+			</Panel>
+			<Panel id="DireRules" class="RulesContainer" />
+		</Panel>
+
+		<Panel id="BattleResult" class="BattleResult Hidden">
+			<Label id="BattleResultLabel" />
+		</Panel>
+	</Panel>
+</root>
