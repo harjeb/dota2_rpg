@@ -68,6 +68,28 @@ local function CloneDefaultRules()
 	return rules
 end
 
+-- 规则槽数量 = 主动技能数 + 主动装备数 + 1 条普通攻击（DESIGN.md §2.2）
+-- 被动技能不生成规则槽；ability_1..3 对应技能栏 0..2，大招单独成槽
+local function BuildHeroActionSlots(hero)
+	local actions = {}
+	for slot = 0, hero:GetAbilityCount() - 1 do
+		local ability = hero:GetAbilityByIndex(slot)
+		if ability ~= nil and not ability:IsNull() then
+			local abilityName = ability:GetAbilityName()
+			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
+			if not isTalent and not ability:IsHidden() and not ability:IsPassive() and ability:GetMaxLevel() > 0 then
+				if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
+					table.insert(actions, "ultimate")
+				elseif slot <= 2 then
+					table.insert(actions, "ability_" .. (slot + 1))
+				end
+			end
+		end
+	end
+	table.insert(actions, "attack")
+	return actions
+end
+
 function Precache(context)
 	PrecacheUnitByNameSync(PLAYER_PLACEHOLDER_HERO, context)
 	for _, roster in pairs(TEAM_ROSTERS) do
@@ -232,8 +254,25 @@ function CDota2RpgDemo:EnsureBattlefield()
 		end, 0.5)
 	end
 
+	self:BroadcastHeroInfo()
 	self:BroadcastBattleState()
 	print("[Dota2Rpg] Spawned three level-30 heroes for each team.")
+end
+
+-- 把每个英雄的可用动作槽同步给前端，编辑器据此动态生成规则行
+function CDota2RpgDemo:BroadcastHeroInfo()
+	local info = {}
+	for team, heroes in pairs(self.battleManager.teamHeroes) do
+		local teamPrefix = team == DOTA_TEAM_GOODGUYS and "radiant" or "dire"
+		for index, hero in ipairs(heroes) do
+			if TacticEngine.IsValidUnit(hero) then
+				info[teamPrefix .. "_" .. index] = {
+					actions = BuildHeroActionSlots(hero),
+				}
+			end
+		end
+	end
+	CustomNetTables:SetTableValue("rpg_rules_config", "heroes", info)
 end
 
 function CDota2RpgDemo:PrepareBattleHero(hero)
@@ -290,8 +329,11 @@ function CDota2RpgDemo:OnStartBattle(eventSourceIndex, payload)
 		local teamPrefix = team == DOTA_TEAM_GOODGUYS and "radiant" or "dire"
 		for heroIndex = 1, #roster do
 			local heroPrefix = string.format("%s_hero_%d", teamPrefix, heroIndex)
+			-- 槽数由前端按英雄可用动作上报；缺失时退回默认模板槽数
+			local ruleCount = tonumber(battlePayload[heroPrefix .. "_count"]) or RULE_COUNT
+			ruleCount = math.max(1, math.min(RULE_COUNT, math.floor(ruleCount + 0.5)))
 			self.heroRules[team][heroIndex] = TacticEngine:ParseRules(
-				battlePayload, heroPrefix, RULE_COUNT, self.heroRules[team][heroIndex]
+				battlePayload, heroPrefix, ruleCount, self.heroRules[team][heroIndex]
 			)
 		end
 	end

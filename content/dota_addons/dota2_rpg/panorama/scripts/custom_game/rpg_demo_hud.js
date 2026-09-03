@@ -63,23 +63,65 @@
         ]
     };
 
-    function buildDefaultRules() {
-        return [
-            { action: "ability_1", condition: "enemy_exists", value: 50, target: "enemy_nearest", forced: false },
-            { action: "ability_2", condition: "enemy_exists", value: 50, target: "enemy_hp_pct_lowest", forced: false },
-            { action: "ability_3", condition: "self_hp_below", value: 50, target: "self", forced: false },
-            { action: "ultimate", condition: "enemy_count_ge", value: 2, target: "enemy_hp_pct_lowest", forced: true },
-            { action: "attack", condition: "always", value: 50, target: "enemy_nearest", forced: false }
-        ];
+    // 每个动作槽的默认规则模板（玩家可套用后微调）
+    var DEFAULT_RULE_BY_ACTION = {
+        ultimate: { condition: "enemy_count_ge", value: 2, target: "enemy_hp_pct_lowest", forced: true },
+        ability_1: { condition: "enemy_exists", value: 50, target: "enemy_nearest", forced: false },
+        ability_2: { condition: "enemy_exists", value: 50, target: "enemy_hp_pct_lowest", forced: false },
+        ability_3: { condition: "self_hp_below", value: 50, target: "self", forced: false },
+        attack: { condition: "always", value: 50, target: "enemy_nearest", forced: false }
+    };
+
+    var MAX_RULE_ROWS = 5;
+    var FALLBACK_SLOT_ACTIONS = ["ability_1", "ability_2", "ability_3", "ultimate", "attack"];
+
+    function getSlotActions(side, heroIndex) {
+        var key = side.toLowerCase() + "_" + (heroIndex + 1);
+        var table = CustomNetTables.GetTableValue("rpg_rules_config", "heroes");
+        var entry = table ? table[key] : null;
+        var actions = [];
+        if (entry && entry.actions) {
+            for (var actionKey in entry.actions) {
+                var action = String(entry.actions[actionKey]);
+                if (DEFAULT_RULE_BY_ACTION[action]) {
+                    actions.push(action);
+                }
+            }
+        }
+        if (!actions.length) {
+            for (var fallbackIndex = 0; fallbackIndex < FALLBACK_SLOT_ACTIONS.length; fallbackIndex++) {
+                actions.push(FALLBACK_SLOT_ACTIONS[fallbackIndex]);
+            }
+        }
+        return actions;
     }
 
-    function buildHeroRuleSets() {
-        return [buildDefaultRules(), buildDefaultRules(), buildDefaultRules()];
+    function buildRulesForHero(side, heroIndex) {
+        var actions = getSlotActions(side, heroIndex);
+        var rules = [];
+        for (var index = 0; index < actions.length; index++) {
+            var defaults = DEFAULT_RULE_BY_ACTION[actions[index]];
+            rules.push({
+                action: actions[index],
+                condition: defaults.condition,
+                value: defaults.value,
+                target: defaults.target,
+                forced: defaults.forced
+            });
+        }
+        return rules;
+    }
+
+    function getRules(side, heroIndex) {
+        if (!rulesBySide[side][heroIndex]) {
+            rulesBySide[side][heroIndex] = buildRulesForHero(side, heroIndex);
+        }
+        return rulesBySide[side][heroIndex];
     }
 
     var rulesBySide = {
-        Radiant: buildHeroRuleSets(),
-        Dire: buildHeroRuleSets()
+        Radiant: [],
+        Dire: []
     };
     var selectedHeroIndex = {
         Radiant: 0,
@@ -93,7 +135,7 @@
     var serverReady = false;
 
     function getSelectedRules(side) {
-        return rulesBySide[side][selectedHeroIndex[side]];
+        return getRules(side, selectedHeroIndex[side]);
     }
 
     function createLabel(parent, className, text) {
@@ -197,7 +239,7 @@
 
     function createRuleRows(side) {
         var container = $("#" + side + "Rules");
-        for (var index = 0; index < 5; index++) {
+        for (var index = 0; index < MAX_RULE_ROWS; index++) {
             var row = $.CreatePanel("Panel", container, side + "Rule" + index);
             row.AddClass("RuleRow");
             createLabel(row, "PriorityNumber", String(index + 1));
@@ -373,7 +415,7 @@
     }
 
     function selectHero(side, index) {
-        if (index < 0 || index >= rulesBySide[side].length || selectedHeroIndex[side] === index) {
+        if (index < 0 || index >= HEROES[side].length || selectedHeroIndex[side] === index) {
             return;
         }
         if (phase === "setup") {
@@ -406,9 +448,14 @@
     function renderSide(side) {
         var locked = phase !== "setup";
         var rules = getSelectedRules(side);
-        for (var index = 0; index < rules.length; index++) {
-            var definition = rules[index];
+        for (var index = 0; index < MAX_RULE_ROWS; index++) {
             var panels = rowPanels[side][index];
+            // 规则槽数量随英雄可用动作动态变化，多余行隐藏
+            panels.row.SetHasClass("Hidden", index >= rules.length);
+            if (index >= rules.length) {
+                continue;
+            }
+            var definition = rules[index];
             panels.actionLabel.text = $.Localize(ACTION_TOKENS[definition.action]);
             panels.thresholdEntry.text = String(definition.value);
             updateConditionSelector(side, index, locked);
@@ -426,9 +473,10 @@
         for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
             var side = sides[sideIndex];
             syncAllRuleInputs(side);
-            for (var heroIndex = 0; heroIndex < rulesBySide[side].length; heroIndex++) {
-                var rules = rulesBySide[side][heroIndex];
+            for (var heroIndex = 0; heroIndex < HEROES[side].length; heroIndex++) {
+                var rules = getRules(side, heroIndex);
                 var prefix = side.toLowerCase() + "_hero_" + (heroIndex + 1);
+                payload[prefix + "_count"] = rules.length;
                 for (var ruleIndex = 0; ruleIndex < rules.length; ruleIndex++) {
                     payload[prefix + "_action_" + (ruleIndex + 1)] = rules[ruleIndex].action;
                     payload[prefix + "_condition_" + (ruleIndex + 1)] = rules[ruleIndex].condition;
@@ -508,5 +556,15 @@
     });
 
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
+    // 英雄动作槽就绪后按服务端数据重建规则行
+    CustomNetTables.SubscribeNetTableListener("rpg_rules_config", function (tableName, tableKey) {
+        if (tableKey !== "heroes") {
+            return;
+        }
+        rulesBySide.Radiant = [];
+        rulesBySide.Dire = [];
+        renderSide("Radiant");
+        renderSide("Dire");
+    });
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

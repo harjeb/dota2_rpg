@@ -11,5 +11,76 @@
 		"repeat_reward": { "gold": 40 },
 		"max_attempts": 5,
 		"time_limit": 120
+	},
+
+	"ch1_1": {
+		"name": "第一章 · 初次巡逻",
+		"type": "creep",
+		"enemies": [
+			{ "unit": "npc_dota_neutral_kobold", "level": 1, "count": 4, "ai": "simple_nearest" }
+		],
+		"first_reward": { "gold": 60 },
+		"repeat_reward": { "gold": 20 },
+		"loot": "demo_basic",
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 1
+	},
+	"ch1_2": {
+		"name": "第一章 · 狗头人营地",
+		"type": "creep",
+		"enemies": [
+			{ "unit": "npc_dota_neutral_kobold", "level": 2, "count": 3, "ai": "simple_nearest" },
+			{ "unit": "npc_dota_neutral_kobold_taskmaster", "level": 2, "count": 1, "ai": "focus_lowest_hp" }
+		],
+		"first_reward": { "gold": 90 },
+		"repeat_reward": { "gold": 25 },
+		"loot": "demo_basic",
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 2
+	},
+	"ch1_3": {
+		"name": "第一章 · 幽灵沼泽",
+		"type": "creep",
+		"enemies": [
+			{ "unit": "npc_dota_neutral_ghost", "level": 3, "count": 3, "ai": "simple_nearest" },
+			{ "unit": "npc_dota_neutral_gnoll_assassin", "level": 3, "count": 2, "ai": "focus_lowest_hp" }
+		],
+		"first_reward": { "gold": 120 },
+		"repeat_reward": { "gold": 30 },
+		"loot": "demo_basic",
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 3
+	},
+	"ch1_4": {
+		"name": "第一章 · 半人马猎场",
+		"type": "creep",
+		"enemies": [
+			{ "unit": "npc_dota_neutral_centaur_outrunner", "level": 4, "count": 2, "ai": "focus_lowest_hp" },
+			{ "unit": "npc_dota_neutral_dark_troll_warlord", "level": 4, "count": 1, "ai": "protect_healer" }
+		],
+		"first_reward": { "gold": 160 },
+		"repeat_reward": { "gold": 35 },
+		"loot": "demo_elite",
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 4
+	},
+	"ch1_5": {
+		"name": "第一章 · 精英突袭",
+		"type": "hero",
+		"enemies": [
+			{ "unit": "npc_dota_hero_axe", "level": 6, "items": ["item_vanguard"], "ai": "aggro_front" },
+			{ "unit": "npc_dota_hero_witch_doctor", "level": 6, "items": [], "ai": "ai_healer_protect" },
+			{ "unit": "npc_dota_hero_sniper", "level": 6, "items": [], "ai": "focus_lowest_hp" }
+		],
+		"first_reward": { "gold": 500, "items": ["item_boots"] },
+		"repeat_reward": { "gold": 80 },
+		"loot": "demo_elite",
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 5
 	}
 }
