@@ -68,6 +68,14 @@
 	color: #ee7b70;
 }
 
+#LevelProgress
+{
+	horizontal-align: center;
+	font-size: 15px;
+	font-weight: bold;
+	color: #d7b85a;
+}
+
 #BattleStatus
 {
 	width: 100%;

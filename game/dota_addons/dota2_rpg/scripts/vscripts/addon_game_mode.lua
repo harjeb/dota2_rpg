@@ -151,6 +151,15 @@ function CDota2RpgDemo:InitGameMode()
 	self.dataLoader:Init()
 	self:LoadHeroPool()
 
+	-- 有序关卡表（闯关制：胜利自动进入下一关）
+	self.orderedLevels = {}
+	local levelIds = {}
+	for levelId in pairs(self.dataLoader:GetAllLevels()) do
+		table.insert(levelIds, levelId)
+	end
+	table.sort(levelIds)
+	self.orderedLevels = levelIds
+
 	-- 经济/商店/阵容（服务端为金币权威，客户端存档仅镜像）
 	self.gold = 300
 	self.playerLevel = 1
@@ -483,6 +492,15 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 		self.lineup = {}
 		for _, heroName in pairs(payload.lineup) do
 			table.insert(self.lineup, tostring(heroName))
+		end
+	end
+	if payload.current_level ~= nil then
+		local levelId = tostring(payload.current_level)
+		if self.dataLoader:GetLevel(levelId) ~= nil then
+			self.currentLevelId = levelId
+			if self.teamsSpawned then
+				self:SpawnLevelEnemies(levelId)
+			end
 		end
 	end
 	self:RollShop()
@@ -819,6 +837,16 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
 
+	-- 闯关推进：胜利后指向下一关
+	if winner == "radiant" then
+		for index, levelId in ipairs(self.orderedLevels) do
+			if levelId == self.currentLevelId and self.orderedLevels[index + 1] ~= nil then
+				self.currentLevelId = self.orderedLevels[index + 1]
+				break
+			end
+		end
+	end
+
 	if winnerTeam ~= nil then
 		GameRules:GetGameModeEntity():SetContextThink("Dota2RpgDeclareWinner", function()
 			GameRules:SetGameWinner(winnerTeam)
@@ -868,12 +896,13 @@ end
 
 function CDota2RpgDemo:BroadcastLevelInfo()
 	local list = {}
-	for levelId, level in pairs(self.dataLoader:GetAllLevels()) do
+	for _, levelId in ipairs(self.orderedLevels) do
+		local level = self.dataLoader:GetLevel(levelId)
 		table.insert(list, {
 			id = levelId,
-			name = level.name or levelId,
-			type = level.type or "creep",
-			recommended_level = level.recommended_level or 1,
+			name = (level ~= nil and level.name) or levelId,
+			type = (level ~= nil and level.type) or "creep",
+			recommended_level = (level ~= nil and level.recommended_level) or 1,
 		})
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_levels_state", {

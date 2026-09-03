@@ -76,6 +76,7 @@
 	<Panel class="RpgDemoHudRoot" hittest="false">
 		<Panel id="BattleHeader">
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
+			<Label id="LevelProgress" text="1/20" />
 			<Label id="BuildTag" text="BUILD shop-lineup-v3" />
 			<Panel id="BattleScore">
 				<Label id="RadiantAlive" class="RadiantText" text="3" />
@@ -119,10 +120,6 @@
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
-			</Panel>
-			<Panel id="LevelSection">
-				<Label id="LevelHeader" text="#dota2_rpg_level_select" />
-				<Panel id="LevelList" class="LevelList" />
 			</Panel>
 			<Label id="VersusLabel" text="VS" />
 			<Button id="StartBattleButton">

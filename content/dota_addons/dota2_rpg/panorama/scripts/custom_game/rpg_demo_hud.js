@@ -506,7 +506,26 @@
         $("#ControlStatus").text = text;
     }
 
-    // ---------------- 英雄商店 + 阵容（服务端权威，net 表镜像） ----------------
+    // CEM 事件里的数组会变成 {1:..,2:..} 对象，统一转回数组
+    function cemList(t) {
+        var out = [];
+        if (!t) {
+            return out;
+        }
+        var keys = [];
+        for (var k in t) {
+            if (t.hasOwnProperty(k)) {
+                keys.push(k);
+            }
+        }
+        keys.sort(function (a, b) { return Number(a) - Number(b); });
+        for (var i = 0; i < keys.length; i++) {
+            out.push(t[keys[i]]);
+        }
+        return out;
+    }
+
+    // ---------------- 英雄商店 + 阵容（服务端权威，事件镜像） ----------------
     var shopState = {
         gold: 300,
         offer: [],
@@ -521,9 +540,9 @@
             data = shopState;
         }
         shopState.gold = Number(data.gold !== undefined ? data.gold : shopState.gold);
-        shopState.offer = data.offer || [];
-        shopState.owned = data.owned || [];
-        shopState.lineup = data.lineup || [];
+        shopState.offer = cemList(data.offer);
+        shopState.owned = cemList(data.owned);
+        shopState.lineup = cemList(data.lineup);
         shopState.bench_slots = Number(data.bench_slots || 0);
         if (data.costs) {
             shopState.costs = data.costs;
@@ -647,31 +666,10 @@
 
     // ---------------- 关卡选择（数据来自 CustomNetTables） ----------------
     var levelList = [];
-    var currentLevelId = "demo_3v3";
+    var currentLevelId = saveData ? saveData.current_level || "ch01" : "ch01";
 
     function renderLevelList() {
-        var container = $("#LevelList");
-        container.RemoveAndDeleteChildren();
-        for (var index = 0; index < levelList.length; index++) {
-            (function (level) {
-                var option = $.CreatePanel("Button", container, "Level_" + level.id);
-                option.AddClass("LevelOption");
-                option.SetHasClass("Selected", level.id === currentLevelId);
-                var optionText = level.name;
-                if (attemptsLeft(level.id) <= 0) {
-                    optionText += " · " + $.Localize("#dota2_rpg_no_attempts");
-                } else if (saveData.cleared[level.id]) {
-                    optionText += " ✓";
-                }
-                createLabel(option, "LevelOptionLabel", optionText);
-                option.SetPanelEvent("onactivate", function () {
-                    if (phase !== "setup") {
-                        return;
-                    }
-                    GameEvents.SendCustomGameEventToServer("rpg_select_level", { level: level.id });
-                });
-            }(levelList[index]));
-        }
+        // 关卡按顺序推进，不再提供自由选择（进度显示在顶部）
     }
 
     // ---------------- 金币/经验/挑战次数存档（LocalStorage，MVP） ----------------
@@ -715,6 +713,9 @@
         }
         if (!saved.bench_slots) {
             saved.bench_slots = 0; // 替补格子（需金币购买）
+        }
+        if (!saved.current_level) {
+            saved.current_level = "ch01"; // 闯关进度
         }
         return saved;
     }
@@ -765,6 +766,14 @@
             saveData.cleared[settlement.level] = true;
         }
         saveData.attempts[settlement.level] = 0;
+        // 闯关推进：存档指向下一关
+        for (var li = 0; li < levelList.length; li++) {
+            var lid = String(levelList[li].id || levelList[li]);
+            if (lid === String(settlement.level) && levelList[li + 1]) {
+                saveData.current_level = String(levelList[li + 1].id || levelList[li + 1]);
+                break;
+            }
+        }
         var levelUps = applySharedXp(xp);
         // 时间奖励：越快越多（服务端已算好 time_bonus）
         gold += Number(settlement.time_bonus || 0);
@@ -775,7 +784,8 @@
             level: saveData.level,
             bench_slots: saveData.bench_slots,
             owned: saveData.owned,
-            lineup: saveData.lineup
+            lineup: saveData.lineup,
+            current_level: saveData.current_level
         });
         persistSave();
         return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
@@ -840,6 +850,7 @@
         }
 
         renderLevelList();
+        updateLevelProgress();
         $("#GoldLabel").text = $.Localize("#dota2_rpg_gold") + " " + saveData.gold;
         updateTeamLevelLabels();
 
@@ -853,19 +864,22 @@
 
     function onLevelsState(data) {
         data = data || {};
-        var rawLevels = data.levels || {};
         currentLevelId = data.current || currentLevelId;
-        levelList = [];
-        for (var key in rawLevels) {
-            var level = rawLevels[key];
-            levelList.push({
-                id: String(level.id || key),
-                name: level.name || String(key),
-                type: level.type || "creep"
-            });
+        levelList = cemList(data.levels);
+        updateLevelProgress();
+    }
+
+    function updateLevelProgress() {
+        var total = Math.max(levelList.length, 1);
+        var index = 1;
+        for (var i = 0; i < levelList.length; i++) {
+            if (String(levelList[i].id || levelList[i]) === String(currentLevelId)) {
+                index = i + 1;
+                break;
+            }
         }
-        levelList.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
-        renderLevelList();
+        $("#LevelProgress").text = $.Localize("#dota2_rpg_level_progress")
+            .replace("%s1", String(index)).replace("%s2", String(total));
     }
 
     function onSettlement(settlement) {
@@ -920,7 +934,8 @@
         level: saveData.level,
         bench_slots: saveData.bench_slots,
         owned: saveData.owned,
-        lineup: saveData.lineup
+        lineup: saveData.lineup,
+        current_level: saveData.current_level
     });
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

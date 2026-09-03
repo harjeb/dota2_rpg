@@ -3,6 +3,7 @@
 	"Language"	"schinese"
 	"Tokens"
 	{
+		"dota2_rpg_level_progress"		"第 %s1 / %s2 关"
 		"dota2_rpg_battle_title"		"3 对 3 自动战斗"
 		"dota2_rpg_radiant_logic"		"我方行动逻辑"
 		"dota2_rpg_dire_logic"			"敌方行动逻辑"
