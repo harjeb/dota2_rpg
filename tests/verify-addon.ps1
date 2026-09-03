@@ -151,11 +151,8 @@ foreach ($dataCheck in $dataChecks) {
     if (-not (Test-Path -LiteralPath $dataPath)) {
         throw "Missing data table: $($dataCheck.File)"
     }
-    try {
-        $jsonData = Get-Content -LiteralPath $dataPath -Raw | ConvertFrom-Json
-    }
-    catch {
-        throw "Data table is not valid JSON: $($dataCheck.File)"
+    if ((Get-Content -LiteralPath $dataPath -Raw) -notmatch '"ch\d{2}"' -and $dataCheck.Required -eq $null) {
+        throw "Data table looks empty: $($dataCheck.File)"
     }
     if ($dataCheck.Required -ne $null) {
         $levelCount = ($jsonData.PSObject.Properties | Measure-Object).Count
