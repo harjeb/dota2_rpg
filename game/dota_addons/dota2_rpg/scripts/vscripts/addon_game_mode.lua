@@ -375,8 +375,15 @@ function CDota2RpgDemo:LoadHeroPool()
 	}
 	for _, category in ipairs(SHOP_CATEGORIES) do
 		for _, hero in pairs(data[category] or {}) do
-			if type(hero) == "table" and hero.name ~= nil then
-				table.insert(self.heroPool[category], tostring(hero.name))
+			-- 兼容两种目录格式：纯字符串（全英雄目录）或 { name = ... } 表
+			local heroName = nil
+			if type(hero) == "string" then
+				heroName = hero
+			elseif type(hero) == "table" and hero.name ~= nil then
+				heroName = tostring(hero.name)
+			end
+			if heroName ~= nil then
+				table.insert(self.heroPool[category], heroName)
 			end
 		end
 		table.sort(self.heroPool[category])
