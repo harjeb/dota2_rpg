@@ -903,39 +903,6 @@
 	color: #9facb4;
 }
 
-.SaveCodePanel
-{
-	width: 100%;
-	flow-children: down;
-	margin-top: 6px;
-	padding: 6px;
-	background-color: #0d1216cc;
-	border: 1px solid #4d5a63;
-}
-
-.SaveCodeText
-{
-	width: 100%;
-	max-height: 40px;
-	overflow: squish scroll;
-	margin-top: 4px;
-	font-size: 9px;
-	color: #9fd6a0;
-	word-break: break-all;
-}
-
-.SaveCodeEntry
-{
-	width: 100%;
-	height: 28px;
-	margin-top: 4px;
-	padding: 4px 6px;
-	background-color: #1c272e;
-	border: 1px solid #5a6871;
-	font-size: 11px;
-	color: #dfe6e9;
-}
-
 .LineupPanel .HeroPortrait
 {
 	width: 48px;

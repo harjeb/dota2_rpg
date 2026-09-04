@@ -863,29 +863,6 @@
                 GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: "low", hero: target });
             }
         });
-        $("#SaveCodeExportButton").SetPanelEvent("onactivate", function () {
-            $("#SaveCodeText").text = encodeSaveCode(saveData);
-        });
-        $("#SaveCodeImportButton").SetPanelEvent("onactivate", function () {
-            var code = $("#SaveCodeEntry").text;
-            var imported = decodeSaveCode(code);
-            if (!imported || typeof imported.gold !== "number") {
-                $("#ControlStatus").text = $.Localize("#dota2_rpg_savecode_bad");
-                return;
-            }
-            saveData = imported;
-            persistSave();
-            syncSaveToServer();
-            renderShop();
-            renderLineupStrip();
-            renderRadiantHeroStrip();
-            updateScrollLabels();
-            renderItemShop();
-            updateShopEconomyLabels(saveData.gold);
-            updateTeamLevelLabels();
-            updateLevelProgress();
-            $("#ControlStatus").text = $.Localize("#dota2_rpg_savecode_ok");
-        });
         $("#ScrollUseHigh").SetPanelEvent("onactivate", function () {
             var target = selectedHeroIndex.Radiant >= 0 && saveData.lineup[selectedHeroIndex.Radiant];
             if (target) {
@@ -939,104 +916,6 @@
                 });
                 buy.enabled = phase === "setup" && shopState.gold >= Number(parts[1]);
             }(catalog[ci], ci));
-        }
-    }
-
-    // 存档码：纯 JS Base64（UTF-8 安全）
-    var B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    function utf8Encode(str) {
-        var bytes = [];
-        for (var i = 0; i < str.length; i++) {
-            var code = str.charCodeAt(i);
-            if (code >= 0xd800 && code <= 0xdbff && i + 1 < str.length) {
-                var extra = str.charCodeAt(i + 1);
-                if (extra >= 0xdc00 && extra <= 0xdfff) {
-                    code = ((code - 0xd800) << 10) + (extra - 0xdc00) + 0x10000;
-                    i++;
-                }
-            }
-            if (code < 0x80) {
-                bytes.push(code);
-            } else if (code < 0x800) {
-                bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
-            } else if (code < 0x10000) {
-                bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
-            } else {
-                bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f),
-                    0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
-            }
-        }
-        return bytes;
-    }
-
-    function utf8Decode(bytes) {
-        var str = "";
-        var i = 0;
-        while (i < bytes.length) {
-            var b = bytes[i];
-            var code;
-            if (b < 0x80) {
-                code = b;
-                i++;
-            } else if ((b & 0xe0) === 0xc0) {
-                code = ((b & 0x1f) << 6) | (bytes[i + 1] & 0x3f);
-                i += 2;
-            } else if ((b & 0xf0) === 0xe0) {
-                code = ((b & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f);
-                i += 3;
-            } else {
-                code = ((b & 0x07) << 18) | ((bytes[i + 1] & 0x3f) << 12) |
-                    ((bytes[i + 2] & 0x3f) << 6) | (bytes[i + 3] & 0x3f);
-                i += 4;
-            }
-            if (code > 0xffff) {
-                code -= 0x10000;
-                str += String.fromCharCode(0xd800 + (code >> 10), 0xdc00 + (code & 0x3ff));
-            } else {
-                str += String.fromCharCode(code);
-            }
-        }
-        return str;
-    }
-
-    function encodeSaveCode(save) {
-        var bytes = utf8Encode(JSON.stringify(save));
-        var out = "";
-        for (var i = 0; i < bytes.length; i += 3) {
-            var b0 = bytes[i], b1 = i + 1 < bytes.length ? bytes[i + 1] : 0, b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
-            out += B64_CHARS[b0 >> 2];
-            out += B64_CHARS[((b0 & 3) << 4) | (b1 >> 4)];
-            out += i + 1 < bytes.length ? B64_CHARS[((b1 & 15) << 2) | (b2 >> 6)] : "=";
-            out += i + 2 < bytes.length ? B64_CHARS[b2 & 63] : "=";
-        }
-        return "RPGSAVE1:" + out;
-    }
-
-    function decodeSaveCode(code) {
-        code = String(code || "").trim();
-        if (code.indexOf("RPGSAVE1:") !== 0) {
-            return null;
-        }
-        var body = code.substring(9).replace(/=+$/, "");
-        var bytes = [];
-        var buffer = 0, bits = 0;
-        for (var i = 0; i < body.length; i++) {
-            var idx = B64_CHARS.indexOf(body[i]);
-            if (idx < 0) {
-                return null;
-            }
-            buffer = (buffer << 6) | idx;
-            bits += 6;
-            if (bits >= 8) {
-                bits -= 8;
-                bytes.push((buffer >> bits) & 0xff);
-            }
-        }
-        try {
-            return JSON.parse(utf8Decode(bytes));
-        } catch (e) {
-            return null;
         }
     }
 
