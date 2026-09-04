@@ -22,7 +22,8 @@
         enemy_exists: "#dota2_rpg_condition_enemy_exists",
         ally_exists: "#dota2_rpg_condition_ally_exists",
         enemy_count_ge: "#dota2_rpg_condition_enemy_count_ge",
-        battle_time_ge: "#dota2_rpg_condition_battle_time_ge"
+        battle_time_ge: "#dota2_rpg_condition_battle_time_ge",
+        ally_under_attack: "#dota2_rpg_condition_ally_under_attack"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -33,7 +34,10 @@
         attack: "#dota2_rpg_target_attr_attack",
         mr: "#dota2_rpg_target_attr_mr",
         distance: "#dota2_rpg_target_attr_distance",
-        casting: "#dota2_rpg_target_attr_casting"
+        casting: "#dota2_rpg_target_attr_casting",
+        boss: "#dota2_rpg_target_attr_boss",
+        healer: "#dota2_rpg_target_attr_healer",
+        controlled: "#dota2_rpg_target_attr_controlled"
     };
 
     var TARGET_SIDE_TOKENS = {
@@ -430,7 +434,7 @@
         var rules = getSelectedRules(side);
         var rule = rules[index];
         rule.target_attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
-        if (rule.target_attr === "casting" && rule.target_side !== "self") {
+        if ((rule.target_attr === "casting" || rule.target_attr === "boss" || rule.target_attr === "healer" || rule.target_attr === "controlled") && rule.target_side !== "self") {
             rule.target_side = "enemy_highest";
         }
         if (rule.target_attr === "distance" && rule.target_side !== "nearest" && rule.target_side !== "farthest" && rule.target_side !== "self") {
@@ -768,6 +772,7 @@
         renderRadiantHeroStrip();
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
+        renderItemShop();
         updateTeamLevelLabels();
     }
 
@@ -832,6 +837,15 @@
         $("#ScrollBuyHigh").SetPanelEvent("onactivate", function () {
             GameEvents.SendCustomGameEventToServer("rpg_scroll_buy", { kind: "high" });
         });
+        $("#Speed1Button").SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_battle_speed", { speed: 1 });
+        });
+        $("#Speed2Button").SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_battle_speed", { speed: 2 });
+        });
+        $("#SkipBattleButton").SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_battle_skip", {});
+        });
         $("#ScrollUseLow").SetPanelEvent("onactivate", function () {
             var target = selectedHeroIndex.Radiant >= 0 && saveData.lineup[selectedHeroIndex.Radiant];
             if (target) {
@@ -844,6 +858,54 @@
                 GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: "high", hero: target });
             }
         });
+    }
+
+    function renderItemShop() {
+        var stock = cemList(shopState.stock);
+        var catalog = cemList(shopState.item_catalog);
+        var stockList = $("#ItemStockList");
+        stockList.RemoveAndDeleteChildren();
+        for (var index = 0; index < stock.length; index++) {
+            (function (entry, i) {
+                var parts = entry.split("|");
+                var row = $.CreatePanel("Panel", stockList, "Stock" + i);
+                row.AddClass("ItemRow");
+                createLabel(row, "ItemRowName", parts[0].replace("item_", ""));
+                var sell = $.CreatePanel("Button", row, "Sell" + i);
+                sell.AddClass("ItemRowBtn");
+                createLabel(sell, "", $.Localize("#dota2_rpg_item_sell"));
+                sell.SetPanelEvent("onactivate", function () {
+                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { index: i + 1 });
+                });
+                var equip = $.CreatePanel("Button", row, "Eq" + i);
+                equip.AddClass("ItemRowBtn");
+                createLabel(equip, "", $.Localize("#dota2_rpg_item_equip"));
+                equip.SetPanelEvent("onactivate", function () {
+                    var hero = saveData.lineup[selectedHeroIndex.Radiant];
+                    if (hero) {
+                        GameEvents.SendCustomGameEventToServer("rpg_item_equip", { hero: hero, index: i + 1 });
+                    }
+                });
+            }(stock[index], index));
+        }
+        var catalogList = $("#ItemCatalogList");
+        catalogList.RemoveAndDeleteChildren();
+        for (var ci = 0; ci < catalog.length; ci++) {
+            (function (entry, i) {
+                var parts = entry.split("|");
+                var row = $.CreatePanel("Panel", catalogList, "Cat" + i);
+                row.AddClass("ItemRow");
+                createLabel(row, "ItemRowName", parts[0].replace("item_", ""));
+                createLabel(row, "ItemRowCost", parts[1] + "g");
+                var buy = $.CreatePanel("Button", row, "Buy" + i);
+                buy.AddClass("ItemRowBtn");
+                createLabel(buy, "", $.Localize("#dota2_rpg_item_buy"));
+                buy.SetPanelEvent("onactivate", function () {
+                    GameEvents.SendCustomGameEventToServer("rpg_item_buy", { item: parts[0] });
+                });
+                buy.enabled = phase === "setup" && shopState.gold >= Number(parts[1]);
+            }(catalog[ci], ci));
+        }
     }
 
     function updateScrollLabels() {
@@ -1207,11 +1269,13 @@
         }
 
         $("#ShopPanel").SetHasClass("Hidden", phase !== "setup");
+        $("#BattleSpeedRow").SetHasClass("Hidden", phase === "setup");
         $("#LevelSection").SetHasClass("Hidden", phase !== "setup");
         renderLevelList();
         updateLevelProgress();
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
+        renderItemShop();
         updateTeamLevelLabels();
 
         if (phase !== "setup") {
@@ -1262,6 +1326,7 @@
         }
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
+        renderItemShop();
         updateTeamLevelLabels();
     }
 

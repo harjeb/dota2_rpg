@@ -28,6 +28,40 @@ function BattleManager:constructor(gameMode)
 		[DOTA_TEAM_BADGUYS] = {},
 	}
 	self.tacticEngine = TacticEngine(self)
+	self.recentDamage = {}      -- entindex -> 最后受击时间
+	self.enemyTags = {}         -- entindex -> { tag, ... }
+	self.DAMAGE_WINDOW = 3.0
+end
+
+function BattleManager:RecordDamage(entindex)
+	if entindex ~= nil and entindex > 0 then
+		self.recentDamage[entindex] = GameRules:GetGameTime()
+	end
+end
+
+function BattleManager:RegisterEnemyTags(unit, tags)
+	if TacticEngine.IsValidUnit(unit) and tags ~= nil then
+		local tagList = {}
+		for _, tag in pairs(tags) do
+			table.insert(tagList, tostring(tag))
+		end
+		self.enemyTags[unit:GetEntityIndex()] = tagList
+	end
+end
+
+-- 最近 3 秒内受击的友军（供"友军正在被攻击"条件使用）
+function BattleManager:GetRecentlyAttackedAllies(team)
+	local result = {}
+	local now = GameRules:GetGameTime()
+	for _, hero in ipairs(self.teamHeroes[team] or {}) do
+		if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then
+			local hurtAt = self.recentDamage[hero:GetEntityIndex()]
+			if hurtAt ~= nil and now - hurtAt <= self.DAMAGE_WINDOW then
+				table.insert(result, hero)
+			end
+		end
+	end
+	return result
 end
 
 function BattleManager:SetPhase(phase)
@@ -111,6 +145,8 @@ function BattleManager:OnThink()
 					battleTime = self:GetBattleTime(),
 					enemies = enemies,
 					allies = allies,
+					recentlyAttackedAllies = self:GetRecentlyAttackedAllies(team),
+					enemyTags = self.enemyTags,
 				}
 				self.tacticEngine:Think(hero, state, rules, env)
 			end

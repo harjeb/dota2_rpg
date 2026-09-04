@@ -53,6 +53,7 @@ local VALID_CONDITIONS = {
 	ally_exists = true,
 	enemy_count_ge = true,
 	battle_time_ge = true,
+	ally_under_attack = true,
 }
 
 -- 目标选择器组合式 ID：{enemy|ally}_{hp|hp_pct|armor|attack|mr}_{highest|lowest}
@@ -63,6 +64,10 @@ local TARGET_METRICS = {
 	armor = true,
 	attack = true,
 	mr = true,
+	-- 标签/状态类目标（敌方限定，忽略 extremum，取最近匹配）
+	boss = true,
+	healer = true,
+	controlled = true,
 }
 
 local function splitSelector(selectorId)
@@ -169,10 +174,15 @@ function TacticEngine:RegisterConditions()
 	self.conditions.battle_time_ge = function(ctx)
 		return (ctx.env.battleTime or 0) >= ctx.value
 	end
+	self.conditions.ally_under_attack = function(ctx)
+		-- 任意友军最近 3 秒内受到伤害（宿主通过 entity_hurt 事件维护）
+		local attacked = ctx.env.recentlyAttackedAllies
+		return attacked ~= nil and #attacked > 0
+	end
 end
 
 -- 组合式目标选择：selectorId -> 单位
-function TacticEngine:SelectSelectorTarget(hero, selectorId, units)
+function TacticEngine:SelectSelectorTarget(hero, selectorId, units, env)
 	if selectorId == "enemy_casting" then
 		return self:NearestMatching(hero, units, function(unit)
 			return unit:IsChanneling()
@@ -186,6 +196,38 @@ function TacticEngine:SelectSelectorTarget(hero, selectorId, units)
 
 	if attr == "distance" then
 		return self:ExtremeUnit(units, "distance", extremum == "nearest", hero)
+	end
+
+	-- 标签类目标：Boss/精英、治疗者、被控制的敌人（取最近匹配）
+	if attr == "boss" or attr == "healer" or attr == "controlled" then
+		local wantedTag = attr == "boss" and "boss" or (attr == "boss" and "elite" or nil)
+		local function hasTag(unit)
+			local tags = env ~= nil and env.enemyTags ~= nil and env.enemyTags[unit:GetEntityIndex()] or nil
+			if tags == nil then
+				return false
+			end
+			for _, tag in ipairs(tags) do
+				if attr == "boss" and (tag == "boss" or tag == "elite") then
+					return true
+				end
+				if attr == "healer" and (tag == "healer" or tag == "support") then
+					return true
+				end
+			end
+			return false
+		end
+		if attr == "controlled" then
+			return self:NearestMatching(hero, units, function(unit)
+				if unit.IsStunned ~= nil and unit:IsStunned() then
+					return true
+				end
+				if unit.IsRooted ~= nil and unit:IsRooted() then
+					return true
+				end
+				return false
+			end)
+		end
+		return self:NearestMatching(hero, units, hasTag)
 	end
 
 	return self:ExtremeUnit(units, attr, extremum == "lowest")
@@ -389,7 +431,7 @@ function TacticEngine:SelectTarget(hero, rule, ctx, side)
 		units = self.adapter:FilterUnitsInActionRange(hero, ctx.action, units)
 	end
 
-	return self:SelectSelectorTarget(hero, selectorId, units)
+	return self:SelectSelectorTarget(hero, selectorId, units, ctx.env)
 end
 
 function TacticEngine:ResolveAction(hero, rule)

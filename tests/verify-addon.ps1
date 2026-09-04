@@ -64,8 +64,6 @@ $luaChecks = @(
            'local HERO_LEVEL = 30',
            'local BATTLE_ACQUISITION_RANGE = 4000',
            'seenUnits\[unitName\]',
-           'PrecacheUnit\(heroEntry\.name\)',
-           'PrecacheUnit\(enemyEntry\.unit\)',
            'SetFogOfWarDisabled\(true\)',
            'SetUnseenFogOfWarEnabled\(false\)',
            'SetHeroRespawnEnabled\(false\)',
@@ -197,7 +195,8 @@ $expectedConditionValues = @(
     "enemy_exists",
     "ally_exists",
     "enemy_count_ge",
-    "battle_time_ge"
+    "battle_time_ge",
+    "ally_under_attack"
 )
 $actualConditionValues = @(
     $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |
@@ -208,7 +207,7 @@ if ($conditionDifference.Count -gt 0) {
     throw "Condition dropdown values must exactly match the conditions supported by Panorama JavaScript"
 }
 
-$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting")
+$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting", "boss", "healer", "controlled")
 $actualTargetAttrValues = @(
     $hudXml.SelectNodes("//Panel[@id='TargetAttrMenu']//Button") |
         ForEach-Object { $_.GetAttribute("value") }

@@ -30,6 +30,7 @@
 					<Button id="AllyExistsOption" class="ConditionOption" value="ally_exists"><Label text="#dota2_rpg_condition_ally_exists" /></Button>
 					<Button id="EnemyCountOption" class="ConditionOption" value="enemy_count_ge"><Label text="#dota2_rpg_condition_enemy_count_ge" /></Button>
 					<Button id="BattleTimeOption" class="ConditionOption" value="battle_time_ge"><Label text="#dota2_rpg_condition_battle_time_ge" /></Button>
+					<Button id="AllyUnderAttackOption" class="ConditionOption" value="ally_under_attack"><Label text="#dota2_rpg_condition_ally_under_attack" /></Button>
 				</Panel>
 				<Panel id="EffectMenu" class="EffectMenu Hidden">
 					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
@@ -55,6 +56,9 @@
 					<Button class="TargetOption" value="mr"><Label text="#dota2_rpg_target_attr_mr" /></Button>
 					<Button class="TargetOption" value="distance"><Label text="#dota2_rpg_target_attr_distance" /></Button>
 					<Button class="TargetOption" value="casting"><Label text="#dota2_rpg_target_attr_casting" /></Button>
+					<Button class="TargetOption" value="boss"><Label text="#dota2_rpg_target_attr_boss" /></Button>
+					<Button class="TargetOption" value="healer"><Label text="#dota2_rpg_target_attr_healer" /></Button>
+					<Button class="TargetOption" value="controlled"><Label text="#dota2_rpg_target_attr_controlled" /></Button>
 				</Panel>
 				<Panel id="TargetSideMenu" class="TargetMenu Hidden">
 					<Button class="TargetOption" value="enemy_highest"><Label text="#dota2_rpg_target_side_enemy_highest" /></Button>
@@ -134,6 +138,17 @@
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
 			</Panel>
+			<Panel id="BattleSpeedRow" class="ShopButtons">
+					<Button id="Speed1Button" class="ShopButton"><Label text="1x" /></Button>
+					<Button id="Speed2Button" class="ShopButton"><Label text="2x" /></Button>
+					<Button id="SkipBattleButton" class="ShopButton"><Label text="#dota2_rpg_skip" /></Button>
+				</Panel>
+				<Panel id="ItemShopPanel" class="LineupPanel">
+					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
+					<Panel id="ItemStockList" class="LevelList" />
+					<Label class="LineupHeader" text="#dota2_rpg_item_catalog" />
+					<Panel id="ItemCatalogList" class="ItemCatalogList" />
+				</Panel>
 			<Label id="VersusLabel" text="#dota2_rpg_versus" />
 			<Button id="StartBattleButton">
 				<Label text="#dota2_rpg_start_battle" />

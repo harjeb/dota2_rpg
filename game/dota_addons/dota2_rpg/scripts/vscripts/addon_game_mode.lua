@@ -177,16 +177,7 @@ function Precache(context)
 
 	PrecacheUnit(PLAYER_PLACEHOLDER_HERO)
 
-	local heroData = LoadKeyValues("scripts/data/heroes.kv")
-	if type(heroData) == "table" then
-		for _, categoryName in ipairs(SHOP_CATEGORIES) do
-			for _, heroEntry in pairs(heroData[categoryName] or {}) do
-				if type(heroEntry) == "table" then
-					PrecacheUnit(heroEntry.name)
-				end
-			end
-		end
-	end
+	-- 官方英雄资源在游戏 VPK 内，无需逐个同步预缓存（112 个会拖慢加载）
 
 	local levelData = LoadKeyValues("scripts/data/levels.kv")
 	if type(levelData) == "table" then
@@ -246,6 +237,10 @@ function CDota2RpgDemo:InitGameMode()
 	self.attemptBuybacks = 0
 	self.encounterSeed = nil
 	self.heroRulesByName = {}
+	-- 装备商店：目录价格（运行时读取当前 Dota 物价）+ 队伍共享库存池
+	self.itemCatalog = {}
+	self.itemStock = {}
+	self.heroInventories = {}  -- heroData[hero].inventory = { item, ... } 由 heroData 持有
 
 	self.battleManager = BattleManager(self)
 
@@ -286,6 +281,7 @@ function CDota2RpgDemo:InitGameMode()
 	ListenToGameEvent("npc_spawned", Dynamic_Wrap(CDota2RpgDemo, "OnNpcSpawned"), self)
 	ListenToGameEvent("game_rules_state_change", Dynamic_Wrap(CDota2RpgDemo, "OnGameRulesStateChange"), self)
 	ListenToGameEvent("entity_killed", Dynamic_Wrap(CDota2RpgDemo, "OnEntityKilled"), self)
+	ListenToGameEvent("entity_hurt", Dynamic_Wrap(CDota2RpgDemo, "OnEntityHurt"), self)
 
 	CustomGameEventManager:RegisterListener("rpg_start_battle", function(eventSourceIndex, payload)
 		return self:OnStartBattle(eventSourceIndex, payload)
@@ -320,11 +316,53 @@ function CDota2RpgDemo:InitGameMode()
 	CustomGameEventManager:RegisterListener("rpg_scroll_use", function(eventSourceIndex, payload)
 		return self:OnScrollUse(eventSourceIndex, payload)
 	end)
+	CustomGameEventManager:RegisterListener("rpg_item_buy", function(eventSourceIndex, payload)
+		return self:OnItemBuy(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_item_sell", function(eventSourceIndex, payload)
+		return self:OnItemSell(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_item_equip", function(eventSourceIndex, payload)
+		return self:OnItemEquip(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_item_unequip", function(eventSourceIndex, payload)
+		return self:OnItemUnequip(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_battle_speed", function(eventSourceIndex, payload)
+		return self:OnBattleSpeed(eventSourceIndex, payload)
+	end)
+	CustomGameEventManager:RegisterListener("rpg_battle_skip", function(eventSourceIndex, payload)
+		return self:OnBattleSkip(eventSourceIndex, payload)
+	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
 	self:RollShop()
 	print("[Dota2Rpg] BUILD rpg-shop-lineup-v2 loaded. Setup disabled, shop enabled.")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
+end
+
+-- 读取当前 Dota 物品价格（目录内逐件创建临时物品取价）
+function CDota2RpgDemo:BuildItemPrices()
+	local data = LoadKeyValues("scripts/data/items.kv")
+	if data == nil or data.catalog == nil then
+		print("[Dota2Rpg] WARNING: items.kv catalog missing.")
+		return
+	end
+	-- 静态价格表（随 Dota 版本物价更新 items.kv）；运行时 CreateItemByName 在工具环境不可用
+	for _, entry in pairs(data.catalog) do
+		if type(entry) == "table" and type(entry.name) == "string" then
+			self.itemCatalog[entry.name] = tonumber(entry.cost) or 0
+		end
+	end
+	print("[Dota2Rpg] Item prices loaded: " .. self:CountTable(self.itemCatalog) .. " items.")
+end
+
+function CDota2RpgDemo:CountTable(t)
+	local count = 0
+	for _ in pairs(t or {}) do
+		count = count + 1
+	end
+	return count
 end
 
 function CDota2RpgDemo:LoadHeroPool()
@@ -588,7 +626,10 @@ end
 function CDota2RpgDemo:GetHeroData(heroName)
 	if self.heroData[heroName] == nil then
 		self.heroOrder = self.heroOrder + 1
-		self.heroData[heroName] = { level = 1, current_xp = 0, quality = "common", order = self.heroOrder }
+		self.heroData[heroName] = { level = 1, current_xp = 0, quality = "common", order = self.heroOrder, inventory = {} }
+	end
+	if self.heroData[heroName].inventory == nil then
+		self.heroData[heroName].inventory = {}
 	end
 	return self.heroData[heroName]
 end
@@ -679,6 +720,138 @@ function CDota2RpgDemo:OnScrollUse(_, payload)
 	self:AddXpToHero(heroName, SCROLL_XP[kind])
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
+end
+
+------------------------------------------------------------------
+-- 装备商店：原价购买 / 50% 回收 / 队伍共享库存 / 准备阶段穿脱
+------------------------------------------------------------------
+
+function CDota2RpgDemo:GetItemCost(itemName)
+	return self.itemCatalog[itemName] or 0
+end
+
+function CDota2RpgDemo:OnItemBuy(_, payload)
+	if self.phase ~= "setup" then
+		return -- 战斗进行中关闭装备购买
+	end
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	local cost = self:GetItemCost(itemName)
+	if cost <= 0 or self.gold < cost then
+		return
+	end
+	self.gold = self.gold - cost
+	table.insert(self.itemStock, itemName)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemSell(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local index = tonumber(payload ~= nil and payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil then
+		return
+	end
+	table.remove(self.itemStock, index)
+	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemEquip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local index = tonumber(payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil or self.heroData[heroName] == nil then
+		return
+	end
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil then
+		return
+	end
+	-- 找空物品栏（0..5，不含中立/储备）
+	for slot = 0, 5 do
+		if heroUnit:GetItemInSlot(slot) == nil then
+			local item = heroUnit:AddItemByName(itemName)
+			if item ~= nil and not item:IsNull() then
+				table.remove(self.itemStock, index)
+				table.insert(self.heroData[heroName].inventory, itemName)
+			end
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemUnequip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local slot = tonumber(payload.slot or -1) or -1
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil or slot < 0 or slot > 5 then
+		return
+	end
+	local item = heroUnit:GetItemInSlot(slot)
+	if item == nil then
+		return
+	end
+	table.insert(self.itemStock, item:GetAbilityName())
+	UTIL_Remove(item)
+	for i, name in ipairs(self.heroData[heroName].inventory) do
+		if name == item:GetAbilityName() then
+			table.remove(self.heroData[heroName].inventory, i)
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:FindLineupUnit(heroName)
+	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) and hero:GetUnitName() == heroName then
+			return hero
+		end
+	end
+	return nil
+end
+
+------------------------------------------------------------------
+-- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
+------------------------------------------------------------------
+
+function CDota2RpgDemo:SetBattleSpeed(speed)
+	if self.phase ~= "fight" then
+		return
+	end
+	self.battleSpeed = speed
+	SendToServerConsole("host_timescale " .. tostring(speed))
+end
+
+function CDota2RpgDemo:OnBattleSpeed(_, payload)
+	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
+	if speed ~= 1 and speed ~= 2 then
+		speed = 1
+	end
+	self:SetBattleSpeed(speed)
+end
+
+function CDota2RpgDemo:OnBattleSkip(_, payload)
+	if self.phase ~= "fight" then
+		return
+	end
+	self:SetBattleSpeed(10)
+end
+
+function CDota2RpgDemo:ResetBattleSpeed()
+	self.battleSpeed = 1
+	SendToServerConsole("host_timescale 1")
 end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
@@ -786,15 +959,20 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 		self.heroOrder = 0
 		self.lineup = {}
 		for entry in string.gmatch(tostring(payload.hero_data_text), "[^;]+") do
-			local name, level, xp, quality = string.match(entry, "^(.+):(%d+):(%d+):(%a+)$")
+			local name, level, xp, quality, itemsText = string.match(entry, "^(.+):(%d+):(%d+):(%a+):?(.*)$")
 			if name ~= nil then
 				table.insert(self.ownedHeroes, name)
 				self.heroOrder = self.heroOrder + 1
+				local inventory = {}
+				for itemName in string.gmatch(itemsText or "", "[^,]+") do
+					table.insert(inventory, itemName)
+				end
 				self.heroData[name] = {
 					level = math.max(1, math.min(HERO_LEVEL, tonumber(level) or 1)),
 					current_xp = math.max(0, tonumber(xp) or 0),
 					quality = quality,
 					order = self.heroOrder,
+					inventory = inventory,
 				}
 			end
 		end
@@ -869,6 +1047,138 @@ function CDota2RpgDemo:OnScrollUse(_, payload)
 	self:AddXpToHero(heroName, SCROLL_XP[kind])
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
+end
+
+------------------------------------------------------------------
+-- 装备商店：原价购买 / 50% 回收 / 队伍共享库存 / 准备阶段穿脱
+------------------------------------------------------------------
+
+function CDota2RpgDemo:GetItemCost(itemName)
+	return self.itemCatalog[itemName] or 0
+end
+
+function CDota2RpgDemo:OnItemBuy(_, payload)
+	if self.phase ~= "setup" then
+		return -- 战斗进行中关闭装备购买
+	end
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	local cost = self:GetItemCost(itemName)
+	if cost <= 0 or self.gold < cost then
+		return
+	end
+	self.gold = self.gold - cost
+	table.insert(self.itemStock, itemName)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemSell(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local index = tonumber(payload ~= nil and payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil then
+		return
+	end
+	table.remove(self.itemStock, index)
+	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemEquip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local index = tonumber(payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil or self.heroData[heroName] == nil then
+		return
+	end
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil then
+		return
+	end
+	-- 找空物品栏（0..5，不含中立/储备）
+	for slot = 0, 5 do
+		if heroUnit:GetItemInSlot(slot) == nil then
+			local item = heroUnit:AddItemByName(itemName)
+			if item ~= nil and not item:IsNull() then
+				table.remove(self.itemStock, index)
+				table.insert(self.heroData[heroName].inventory, itemName)
+			end
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemUnequip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local slot = tonumber(payload.slot or -1) or -1
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil or slot < 0 or slot > 5 then
+		return
+	end
+	local item = heroUnit:GetItemInSlot(slot)
+	if item == nil then
+		return
+	end
+	table.insert(self.itemStock, item:GetAbilityName())
+	UTIL_Remove(item)
+	for i, name in ipairs(self.heroData[heroName].inventory) do
+		if name == item:GetAbilityName() then
+			table.remove(self.heroData[heroName].inventory, i)
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:FindLineupUnit(heroName)
+	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) and hero:GetUnitName() == heroName then
+			return hero
+		end
+	end
+	return nil
+end
+
+------------------------------------------------------------------
+-- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
+------------------------------------------------------------------
+
+function CDota2RpgDemo:SetBattleSpeed(speed)
+	if self.phase ~= "fight" then
+		return
+	end
+	self.battleSpeed = speed
+	SendToServerConsole("host_timescale " .. tostring(speed))
+end
+
+function CDota2RpgDemo:OnBattleSpeed(_, payload)
+	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
+	if speed ~= 1 and speed ~= 2 then
+		speed = 1
+	end
+	self:SetBattleSpeed(speed)
+end
+
+function CDota2RpgDemo:OnBattleSkip(_, payload)
+	if self.phase ~= "fight" then
+		return
+	end
+	self:SetBattleSpeed(10)
+end
+
+function CDota2RpgDemo:ResetBattleSpeed()
+	self.battleSpeed = 1
+	SendToServerConsole("host_timescale 1")
 end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
@@ -1202,7 +1512,10 @@ end
 function CDota2RpgDemo:GetHeroData(heroName)
 	if self.heroData[heroName] == nil then
 		self.heroOrder = self.heroOrder + 1
-		self.heroData[heroName] = { level = 1, current_xp = 0, quality = "common", order = self.heroOrder }
+		self.heroData[heroName] = { level = 1, current_xp = 0, quality = "common", order = self.heroOrder, inventory = {} }
+	end
+	if self.heroData[heroName].inventory == nil then
+		self.heroData[heroName].inventory = {}
 	end
 	return self.heroData[heroName]
 end
@@ -1293,6 +1606,138 @@ function CDota2RpgDemo:OnScrollUse(_, payload)
 	self:AddXpToHero(heroName, SCROLL_XP[kind])
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
+end
+
+------------------------------------------------------------------
+-- 装备商店：原价购买 / 50% 回收 / 队伍共享库存 / 准备阶段穿脱
+------------------------------------------------------------------
+
+function CDota2RpgDemo:GetItemCost(itemName)
+	return self.itemCatalog[itemName] or 0
+end
+
+function CDota2RpgDemo:OnItemBuy(_, payload)
+	if self.phase ~= "setup" then
+		return -- 战斗进行中关闭装备购买
+	end
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	local cost = self:GetItemCost(itemName)
+	if cost <= 0 or self.gold < cost then
+		return
+	end
+	self.gold = self.gold - cost
+	table.insert(self.itemStock, itemName)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemSell(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local index = tonumber(payload ~= nil and payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil then
+		return
+	end
+	table.remove(self.itemStock, index)
+	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemEquip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local index = tonumber(payload.index or 0) or 0
+	local itemName = self.itemStock[index]
+	if itemName == nil or self.heroData[heroName] == nil then
+		return
+	end
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil then
+		return
+	end
+	-- 找空物品栏（0..5，不含中立/储备）
+	for slot = 0, 5 do
+		if heroUnit:GetItemInSlot(slot) == nil then
+			local item = heroUnit:AddItemByName(itemName)
+			if item ~= nil and not item:IsNull() then
+				table.remove(self.itemStock, index)
+				table.insert(self.heroData[heroName].inventory, itemName)
+			end
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnItemUnequip(_, payload)
+	if self.phase ~= "setup" then
+		return
+	end
+	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
+	local slot = tonumber(payload.slot or -1) or -1
+	local heroUnit = self:FindLineupUnit(heroName)
+	if heroUnit == nil or slot < 0 or slot > 5 then
+		return
+	end
+	local item = heroUnit:GetItemInSlot(slot)
+	if item == nil then
+		return
+	end
+	table.insert(self.itemStock, item:GetAbilityName())
+	UTIL_Remove(item)
+	for i, name in ipairs(self.heroData[heroName].inventory) do
+		if name == item:GetAbilityName() then
+			table.remove(self.heroData[heroName].inventory, i)
+			break
+		end
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:FindLineupUnit(heroName)
+	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) and hero:GetUnitName() == heroName then
+			return hero
+		end
+	end
+	return nil
+end
+
+------------------------------------------------------------------
+-- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
+------------------------------------------------------------------
+
+function CDota2RpgDemo:SetBattleSpeed(speed)
+	if self.phase ~= "fight" then
+		return
+	end
+	self.battleSpeed = speed
+	SendToServerConsole("host_timescale " .. tostring(speed))
+end
+
+function CDota2RpgDemo:OnBattleSpeed(_, payload)
+	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
+	if speed ~= 1 and speed ~= 2 then
+		speed = 1
+	end
+	self:SetBattleSpeed(speed)
+end
+
+function CDota2RpgDemo:OnBattleSkip(_, payload)
+	if self.phase ~= "fight" then
+		return
+	end
+	self:SetBattleSpeed(10)
+end
+
+function CDota2RpgDemo:ResetBattleSpeed()
+	self.battleSpeed = 1
+	SendToServerConsole("host_timescale 1")
 end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
@@ -1446,6 +1891,11 @@ function CDota2RpgDemo:EnsureBattlefield()
 	end
 
 	self.teamsSpawned = true
+	if next(self.itemCatalog) == nil then
+		pcall(function()
+			self:BuildItemPrices()
+		end)
+	end
 	self:SpawnLevelEnemies(self.currentLevelId)
 	self:RespawnPlayerRoster()
 
@@ -1463,6 +1913,29 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 	local battleManager = self.battleManager
 	for _, hero in ipairs(battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
 		if TacticEngine.IsValidUnit(hero) then
+			-- 重铸前把身上的装备收回个人库存记录，避免随单位销毁
+			local heroName = hero:GetUnitName()
+			local data = self.heroData[heroName]
+			if data ~= nil then
+				data.inventory = data.inventory or {}
+				for slot = 0, 5 do
+					local item = hero:GetItemInSlot(slot)
+					if item ~= nil and not item:IsNull() then
+						local itemName = item:GetAbilityName()
+						local alreadyRecorded = false
+						for _, recorded in ipairs(data.inventory) do
+							if recorded == itemName then
+								alreadyRecorded = true
+								break
+							end
+						end
+						if not alreadyRecorded then
+							table.insert(data.inventory, itemName)
+						end
+						UTIL_Remove(item)
+					end
+				end
+			end
 			battleManager.heroStates[hero:GetEntityIndex()] = nil
 			hero:RemoveSelf()
 		end
@@ -1480,6 +1953,13 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			FindClearSpaceForUnit(hero, spawnPosition, true)
 			local heroData = self.heroData[heroName]
 			self:PrepareBattleHero(hero, heroData ~= nil and heroData.level or 1)
+			-- 重新佩戴个人装备
+			heroData.inventory = heroData.inventory or {}
+			for _, itemName in ipairs(heroData.inventory) do
+				if #heroData.inventory <= 6 then
+					hero:AddItemByName(itemName)
+				end
+			end
 			-- 品质内置升级：魔晶/神杖（不占装备栏）
 			if heroData ~= nil and QUALITY_CONSUMED_MODIFIERS[heroData.quality] ~= nil then
 				for _, modifierName in ipairs(QUALITY_CONSUMED_MODIFIERS[heroData.quality]) do
@@ -1559,6 +2039,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 					end
 				end
 				battleManager:RegisterHero(DOTA_TEAM_BADGUYS, enemyIndex, unit)
+				battleManager:RegisterEnemyTags(unit, entry.tags)
 				battleManager.teamRules[DOTA_TEAM_BADGUYS][enemyIndex] = self:BuildEnemyRules(entry.ai)
 			else
 				print(string.format("[Dota2Rpg] Failed to spawn enemy %s.", tostring(entry.unit)))
@@ -1730,6 +2211,10 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	print("[Dota2Rpg] Battle started on level " .. self.currentLevelId .. ".")
 end
 
+function CDota2RpgDemo:OnEntityHurt(event)
+	self.battleManager:RecordDamage(tonumber(event.entindex_killed or -1))
+end
+
 function CDota2RpgDemo:OnEntityKilled(event)
 	if self.phase ~= "fight" then
 		return
@@ -1781,7 +2266,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 				survivors = survivors + 1
 			end
 		end
-		if survivors >= 5 then
+		if survivors >= math.max(1, #self.lineup) then
 			stars = 3
 		elseif survivors >= 1 and clearTime < 60 then
 			stars = 2
@@ -1833,6 +2318,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	-- 单人闯关：结算展示 3 秒后回到准备阶段（不结束整局游戏）
 	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
+		self:ResetBattleSpeed()
 		self.phase = "setup"
 		self.winner = ""
 		self:SpawnLevelEnemies(self.currentLevelId)
@@ -1918,7 +2404,21 @@ function CDota2RpgDemo:BroadcastShopState()
 	local heroEntries = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
 		local d = self.heroData[heroName]
-		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common"))
+		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common") .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
+	end
+	local stockParts = {}
+	for _, itemName in ipairs(self.itemStock) do
+		table.insert(stockParts, itemName .. "|" .. self:GetItemCost(itemName))
+	end
+	local catalogParts = {}
+	for itemName, cost in pairs(self.itemCatalog) do
+		table.insert(catalogParts, itemName .. "|" .. cost)
+	end
+	table.sort(catalogParts)
+	local inventoryParts = {}
+	for index, heroName in ipairs(self.lineup) do
+		local d = self.heroData[heroName]
+		table.insert(inventoryParts, heroName .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
 		gold = self.gold,
@@ -1932,6 +2432,9 @@ function CDota2RpgDemo:BroadcastShopState()
 		scroll_high_remaining = self:GetScrollRemaining("high"),
 		scroll_low_stock = self.scrollStock.low or 0,
 		scroll_high_stock = self.scrollStock.high or 0,
+		stock_text = table.concat(stockParts, ";"),
+		inventories_text = table.concat(inventoryParts, ";"),
+		item_catalog = table.concat(catalogParts, ";"),
 		cost_bench_slot = self.shopCosts.bench_slot,
 		bench_slot_max = self.shopCosts.bench_slot_max,
 		lineup_max = self.shopCosts.lineup_max,
