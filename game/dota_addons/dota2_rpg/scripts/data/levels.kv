@@ -8,31 +8,24 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_kobold"
+				"unit" "npc_dota_neutral_gnoll_assassin"
 				"level" "1"
-				"count" "2"
+				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
-			}
-			"2"
-{
-				"unit" "npc_dota_neutral_kobold_taskmaster"
-				"level" "1"
-				"count" "2"
-				"ai" "simple_nearest"
+				"hp_multiplier" "1.0"
+				"attack_multiplier" "1.0"
+				"bonus_armor" "0"
+				"magic_resistance" "25"
+				"status_resistance" "0"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "120"
-			"xp" "500"
+			"gold" "900"
+			"xp_pool" "200"
 		}
-		"repeat_reward"
-{
-			"gold" "30"
-			"xp" "500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_basic"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "1"
@@ -45,31 +38,37 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_kobold_taskmaster"
+				"unit" "npc_dota_neutral_gnoll_assassin"
 				"level" "2"
 				"count" "2"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.1"
+				"attack_multiplier" "1.05"
+				"bonus_armor" "1"
+				"magic_resistance" "26"
+				"status_resistance" "1"
 			}
 			"2"
 {
 				"unit" "npc_dota_neutral_kobold"
 				"level" "2"
 				"count" "2"
+				"template" "minion"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.1"
+				"attack_multiplier" "1.05"
+				"bonus_armor" "1"
+				"magic_resistance" "26"
+				"status_resistance" "1"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "140"
-			"xp" "500"
+			"gold" "1000"
+			"xp_pool" "225"
 		}
-		"repeat_reward"
-{
-			"gold" "35"
-			"xp" "500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_basic"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "2"
@@ -82,38 +81,50 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_kobold"
+				"unit" "npc_dota_neutral_gnoll_assassin"
 				"level" "3"
-				"count" "2"
+				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.2"
+				"attack_multiplier" "1.1"
+				"bonus_armor" "2"
+				"magic_resistance" "27"
+				"status_resistance" "2"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_kobold_taskmaster"
+				"unit" "npc_dota_neutral_dark_troll_warlord"
 				"level" "3"
-				"count" "2"
-				"ai" "simple_nearest"
+				"count" "1"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "1.2"
+				"attack_multiplier" "1.1"
+				"bonus_armor" "2"
+				"magic_resistance" "27"
+				"status_resistance" "2"
 			}
 			"3"
 {
-				"unit" "npc_dota_neutral_kobold_taskmaster"
-				"level" "5"
+				"unit" "npc_dota_neutral_kobold"
+				"level" "3"
 				"count" "1"
-				"ai" "focus_lowest_hp"
+				"template" "minion"
+				"ai" "simple_nearest"
+				"hp_multiplier" "1.2"
+				"attack_multiplier" "1.1"
+				"bonus_armor" "2"
+				"magic_resistance" "27"
+				"status_resistance" "2"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "160"
-			"xp" "500"
+			"gold" "1100"
+			"xp_pool" "250"
 		}
-		"repeat_reward"
-{
-			"gold" "40"
-			"xp" "500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_basic"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "3"
@@ -126,85 +137,112 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_kobold"
-				"level" "4"
-				"count" "2"
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "5"
+				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.35"
+				"attack_multiplier" "1.2"
+				"bonus_armor" "3"
+				"magic_resistance" "28"
+				"status_resistance" "3"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_kobold_taskmaster"
-				"level" "4"
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "5"
 				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "1.35"
+				"attack_multiplier" "1.2"
+				"bonus_armor" "3"
+				"magic_resistance" "28"
+				"status_resistance" "3"
+			}
+			"3"
+{
+				"unit" "npc_dota_neutral_kobold"
+				"level" "5"
+				"count" "1"
+				"template" "minion"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.35"
+				"attack_multiplier" "1.2"
+				"bonus_armor" "3"
+				"magic_resistance" "28"
+				"status_resistance" "3"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "180"
-			"xp" "500"
+			"gold" "1200"
+			"xp_pool" "275"
 		}
-		"repeat_reward"
-{
-			"gold" "45"
-			"xp" "500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_basic"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "4"
 	}
 	"ch05"
 {
-		"name" "第五关 · 精英突袭"
+		"name" "第05关 · 精英检查"
 		"type" "hero"
 		"enemies"
 {
 			"1"
 {
 				"unit" "npc_dota_hero_axe"
-				"level" "8"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_vanguard"
+"elite"
 				}
 				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_hero_witch_doctor"
-				"level" "8"
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
 				"items"
 {
 
 				}
-				"ai" "ai_healer_protect"
-			}
-			"3"
+				"tags"
 {
-				"unit" "npc_dota_hero_sniper"
-				"level" "8"
-				"items"
-{
-
+					"1"
+"hero"
 				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"3"
 {
-			"gold" "300"
-			"xp" "500"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
 {
-			"gold" "75"
-			"xp" "500"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "800"
+			"xp_pool" "1150"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "5"
@@ -217,211 +255,313 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_harpy_storm"
-				"level" "6"
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "8"
 				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "1.6"
+				"attack_multiplier" "1.35"
+				"bonus_armor" "5"
+				"magic_resistance" "30"
+				"status_resistance" "5"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_ghost"
-				"level" "6"
-				"count" "3"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "8"
+				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "1.6"
+				"attack_multiplier" "1.35"
+				"bonus_armor" "5"
+				"magic_resistance" "30"
+				"status_resistance" "5"
 			}
 			"3"
 {
-				"unit" "npc_dota_neutral_harpy_storm"
+				"unit" "npc_dota_neutral_polar_furbolg_champion"
 				"level" "8"
 				"count" "1"
-				"ai" "focus_lowest_hp"
+				"template" "elite"
+				"ai" "aggro_front"
+				"hp_multiplier" "1.6"
+				"attack_multiplier" "1.35"
+				"bonus_armor" "5"
+				"magic_resistance" "30"
+				"status_resistance" "5"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "260"
-			"xp" "900"
+			"gold" "3500"
+			"xp_pool" "400"
 		}
-		"repeat_reward"
-{
-			"gold" "65"
-			"xp" "900"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "6"
 	}
 	"ch07"
 {
-		"name" "第07关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第07关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_gnoll_assassin"
-				"level" "7"
-				"count" "3"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_dragon_knight"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_harpy_storm"
-				"level" "7"
-				"count" "3"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "280"
-			"xp" "900"
+			"gold" "1300"
+			"xp_pool" "600"
 		}
-		"repeat_reward"
-{
-			"gold" "70"
-			"xp" "900"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "7"
 	}
 	"ch08"
 {
-		"name" "第08关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第08关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_gnoll_assassin"
-				"level" "8"
-				"count" "3"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_huskar"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_harpy_storm"
-				"level" "8"
-				"count" "3"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_oracle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "300"
-			"xp" "900"
+			"gold" "1500"
+			"xp_pool" "700"
 		}
-		"repeat_reward"
-{
-			"gold" "75"
-			"xp" "900"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "8"
 	}
 	"ch09"
 {
-		"name" "第09关 · 野怪讨伐"
-		"type" "creep"
-		"enemies"
-{
-			"1"
-{
-				"unit" "npc_dota_neutral_forest_troll_berserker"
-				"level" "9"
-				"count" "3"
-				"ai" "simple_nearest"
-			}
-			"2"
-{
-				"unit" "npc_dota_neutral_dark_troll_warlord"
-				"level" "9"
-				"count" "3"
-				"ai" "simple_nearest"
-			}
-			"3"
-{
-				"unit" "npc_dota_neutral_dark_troll_warlord"
-				"level" "11"
-				"count" "1"
-				"ai" "focus_lowest_hp"
-			}
-		}
-		"first_reward"
-{
-			"gold" "320"
-			"xp" "900"
-		}
-		"repeat_reward"
-{
-			"gold" "80"
-			"xp" "900"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
-		"max_attempts" "5"
-		"time_limit" "120"
-		"recommended_level" "9"
-	}
-	"ch10"
-{
-		"name" "第十关 · 精英突袭"
+		"name" "第09关 · 英雄遭遇"
 		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_hero_sven"
-				"level" "14"
+				"unit" "npc_dota_hero_sand_king"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_blink"
+"hero"
 				}
 				"ai" "aggro_front"
 			}
 			"2"
 {
 				"unit" "npc_dota_hero_lina"
-				"level" "14"
-				"items"
-{
-					"1"
-"item_aether_lens"
-				}
-				"ai" "ai_healer_protect"
-			}
-			"3"
-{
-				"unit" "npc_dota_hero_dazzle"
-				"level" "14"
+				"level" "30"
 				"items"
 {
 
 				}
+				"tags"
+{
+					"1"
+"hero"
+				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"3"
 {
-			"gold" "500"
-			"xp" "900"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
 {
-			"gold" "125"
-			"xp" "900"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "1700"
+			"xp_pool" "800"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "9"
+	}
+	"ch10"
+{
+		"name" "第10关 · 章节 Boss"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_axe"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"boss"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "2000"
+			"xp_pool" "1100"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "10"
@@ -434,205 +574,386 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_dark_troll_warlord"
-				"level" "11"
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "15"
 				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "2.2"
+				"attack_multiplier" "1.65"
+				"bonus_armor" "8"
+				"magic_resistance" "34"
+				"status_resistance" "10"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_forest_troll_berserker"
-				"level" "11"
-				"count" "3"
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "15"
+				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "2.2"
+				"attack_multiplier" "1.65"
+				"bonus_armor" "8"
+				"magic_resistance" "34"
+				"status_resistance" "10"
+			}
+			"3"
+{
+				"unit" "npc_dota_neutral_polar_furbolg_champion"
+				"level" "15"
+				"count" "1"
+				"template" "elite"
+				"ai" "aggro_front"
+				"hp_multiplier" "2.2"
+				"attack_multiplier" "1.65"
+				"bonus_armor" "8"
+				"magic_resistance" "34"
+				"status_resistance" "10"
+			}
+			"4"
+{
+				"unit" "npc_dota_neutral_kobold"
+				"level" "15"
+				"count" "1"
+				"template" "minion"
 				"ai" "simple_nearest"
+				"hp_multiplier" "2.2"
+				"attack_multiplier" "1.65"
+				"bonus_armor" "8"
+				"magic_resistance" "34"
+				"status_resistance" "10"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "420"
-			"xp" "1300"
+			"gold" "6500"
+			"xp_pool" "500"
 		}
-		"repeat_reward"
-{
-			"gold" "105"
-			"xp" "1300"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "11"
 	}
 	"ch12"
 {
-		"name" "第12关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第12关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_dark_troll_warlord"
-				"level" "12"
-				"count" "4"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_dragon_knight"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_centaur_outrunner"
-				"level" "12"
-				"count" "4"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
 			}
 			"3"
 {
-				"unit" "npc_dota_neutral_dark_troll_warlord"
-				"level" "14"
-				"count" "1"
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"4"
 {
-			"gold" "440"
-			"xp" "1300"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
 {
-			"gold" "110"
-			"xp" "1300"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "2800"
+			"xp_pool" "1000"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "12"
 	}
 	"ch13"
 {
-		"name" "第13关 · 野怪讨伐"
-		"type" "creep"
-		"enemies"
-{
-			"1"
-{
-				"unit" "npc_dota_neutral_polar_furbolg_champion"
-				"level" "13"
-				"count" "4"
-				"ai" "simple_nearest"
-			}
-			"2"
-{
-				"unit" "npc_dota_neutral_hellbear_smasher"
-				"level" "13"
-				"count" "4"
-				"ai" "simple_nearest"
-			}
-		}
-		"first_reward"
-{
-			"gold" "460"
-			"xp" "1300"
-		}
-		"repeat_reward"
-{
-			"gold" "115"
-			"xp" "1300"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
-		"max_attempts" "5"
-		"time_limit" "120"
-		"recommended_level" "13"
-	}
-	"ch14"
-{
-		"name" "第14关 · 野怪讨伐"
-		"type" "creep"
-		"enemies"
-{
-			"1"
-{
-				"unit" "npc_dota_neutral_hellbear_smasher"
-				"level" "14"
-				"count" "4"
-				"ai" "simple_nearest"
-			}
-			"2"
-{
-				"unit" "npc_dota_neutral_polar_furbolg_champion"
-				"level" "14"
-				"count" "4"
-				"ai" "simple_nearest"
-			}
-		}
-		"first_reward"
-{
-			"gold" "480"
-			"xp" "1300"
-		}
-		"repeat_reward"
-{
-			"gold" "120"
-			"xp" "1300"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
-		"max_attempts" "5"
-		"time_limit" "120"
-		"recommended_level" "14"
-	}
-	"ch15"
-{
-		"name" "第15关 · 精英突袭"
+		"name" "第13关 · 英雄遭遇"
 		"type" "hero"
 		"enemies"
 {
 			"1"
 {
 				"unit" "npc_dota_hero_huskar"
-				"level" "20"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_heavens_halberd"
+"hero"
 				}
 				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_hero_phantom_assassin"
-				"level" "20"
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
 				"items"
 {
-					"1"
-"item_desolator"
+
 				}
-				"ai" "ai_healer_protect"
-			}
-			"3"
-{
-				"unit" "npc_dota_hero_crystal_maiden"
-				"level" "20"
-				"items"
+				"tags"
 {
 					"1"
-"item_glimmer_cape"
+"hero"
 				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"3"
 {
-			"gold" "800"
-			"xp" "1300"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_riki"
+				"level" "30"
+				"items"
 {
-			"gold" "200"
-			"xp" "1300"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "3200"
+			"xp_pool" "1100"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "13"
+	}
+	"ch14"
+{
+		"name" "第14关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_sand_king"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "3500"
+			"xp_pool" "1200"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "14"
+	}
+	"ch15"
+{
+		"name" "第15关 · 精英检查"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_axe"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"elite"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_juggernaut"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "4000"
+			"xp_pool" "1400"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "15"
@@ -645,218 +966,1517 @@
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_polar_furbolg_champion"
-				"level" "16"
-				"count" "4"
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "21"
+				"count" "3"
+				"template" "standard"
 				"ai" "simple_nearest"
+				"hp_multiplier" "2.9"
+				"attack_multiplier" "2.0"
+				"bonus_armor" "12"
+				"magic_resistance" "38"
+				"status_resistance" "15"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_hellbear_smasher"
-				"level" "16"
-				"count" "4"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "21"
+				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "2.9"
+				"attack_multiplier" "2.0"
+				"bonus_armor" "12"
+				"magic_resistance" "38"
+				"status_resistance" "15"
+			}
+			"3"
+{
+				"unit" "npc_dota_neutral_polar_furbolg_champion"
+				"level" "21"
+				"count" "2"
+				"template" "elite"
+				"ai" "aggro_front"
+				"hp_multiplier" "2.9"
+				"attack_multiplier" "2.0"
+				"bonus_armor" "12"
+				"magic_resistance" "38"
+				"status_resistance" "15"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "600"
-			"xp" "1500"
+			"gold" "9500"
+			"xp_pool" "600"
 		}
-		"repeat_reward"
-{
-			"gold" "150"
-			"xp" "1500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "16"
 	}
 	"ch17"
 {
-		"name" "第17关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第17关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_granite_golem"
-				"level" "17"
-				"count" "4"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_dragon_knight"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_big_thunder_lizard"
-				"level" "17"
-				"count" "4"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_riki"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "620"
-			"xp" "1500"
+			"gold" "4500"
+			"xp_pool" "1300"
 		}
-		"repeat_reward"
-{
-			"gold" "155"
-			"xp" "1500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "17"
 	}
 	"ch18"
 {
-		"name" "第18关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第18关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_black_dragon"
-				"level" "18"
-				"count" "5"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_huskar"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_big_thunder_lizard"
-				"level" "18"
-				"count" "5"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
 			}
 			"3"
 {
-				"unit" "npc_dota_neutral_big_thunder_lizard"
-				"level" "20"
-				"count" "1"
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"4"
 {
-			"gold" "640"
-			"xp" "1500"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
 {
-			"gold" "160"
-			"xp" "1500"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_oracle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "5000"
+			"xp_pool" "1400"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "18"
 	}
 	"ch19"
 {
-		"name" "第19关 · 野怪讨伐"
-		"type" "creep"
+		"name" "第19关 · 英雄遭遇"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_neutral_granite_golem"
-				"level" "19"
-				"count" "5"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_sand_king"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_neutral_black_dragon"
-				"level" "19"
-				"count" "5"
-				"ai" "simple_nearest"
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_juggernaut"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
 			}
 		}
-		"first_reward"
+		"reward"
 {
-			"gold" "660"
-			"xp" "1500"
+			"gold" "5200"
+			"xp_pool" "1500"
 		}
-		"repeat_reward"
-{
-			"gold" "165"
-			"xp" "1500"
-		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "19"
 	}
 	"ch20"
 {
-		"name" "第二十关 · 首领决战"
-		"type" "boss"
+		"name" "第20关 · 章节 Boss"
+		"type" "hero"
 		"enemies"
 {
 			"1"
 {
-				"unit" "npc_dota_hero_primal_beast"
-				"level" "28"
+				"unit" "npc_dota_hero_axe"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_black_king_bar"
+"boss"
 				}
 				"ai" "aggro_front"
 			}
 			"2"
 {
-				"unit" "npc_dota_hero_muerta"
-				"level" "28"
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
 				"items"
 {
-					"1"
-"item_satanic"
+
 				}
-				"ai" "ai_healer_protect"
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
 			}
 			"3"
 {
-				"unit" "npc_dota_hero_dawnbreaker"
-				"level" "28"
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_shivas_guard"
+"hero"
 				}
 				"ai" "focus_lowest_hp"
 			}
 			"4"
 {
-				"unit" "npc_dota_hero_kez"
-				"level" "28"
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
 				"items"
 {
+
+				}
+				"tags"
+{
 					"1"
-"item_butterfly"
+"hero"
 				}
 				"ai" "focus_lowest_hp"
 			}
-		}
-		"first_reward"
+			"5"
 {
-			"gold" "1500"
-			"xp" "1500"
-		}
-		"repeat_reward"
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
 {
-			"gold" "375"
-			"xp" "1500"
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
 		}
-		"time_bonus_rate" "3"
-		"loot" "demo_elite"
+		"reward"
+{
+			"gold" "5800"
+			"xp_pool" "2000"
+		}
+		"time_bonus_cap" "0.25"
 		"max_attempts" "5"
 		"time_limit" "120"
 		"recommended_level" "20"
+	}
+	"ch21"
+{
+		"name" "第21关 · 野怪讨伐"
+		"type" "creep"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "26"
+				"count" "3"
+				"template" "standard"
+				"ai" "simple_nearest"
+				"hp_multiplier" "3.7"
+				"attack_multiplier" "2.4"
+				"bonus_armor" "16"
+				"magic_resistance" "42"
+				"status_resistance" "20"
+			}
+			"2"
+{
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "26"
+				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "3.7"
+				"attack_multiplier" "2.4"
+				"bonus_armor" "16"
+				"magic_resistance" "42"
+				"status_resistance" "20"
+			}
+			"3"
+{
+				"unit" "npc_dota_neutral_polar_furbolg_champion"
+				"level" "26"
+				"count" "2"
+				"template" "elite"
+				"ai" "aggro_front"
+				"hp_multiplier" "3.7"
+				"attack_multiplier" "2.4"
+				"bonus_armor" "16"
+				"magic_resistance" "42"
+				"status_resistance" "20"
+			}
+			"4"
+{
+				"unit" "npc_dota_neutral_kobold"
+				"level" "26"
+				"count" "1"
+				"template" "minion"
+				"ai" "simple_nearest"
+				"hp_multiplier" "3.7"
+				"attack_multiplier" "2.4"
+				"bonus_armor" "16"
+				"magic_resistance" "42"
+				"status_resistance" "20"
+			}
+		}
+		"reward"
+{
+			"gold" "11000"
+			"xp_pool" "700"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "21"
+	}
+	"ch22"
+{
+		"name" "第22关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_dragon_knight"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_oracle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "5200"
+			"xp_pool" "1800"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "22"
+	}
+	"ch23"
+{
+		"name" "第23关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_huskar"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_juggernaut"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "5700"
+			"xp_pool" "1900"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "23"
+	}
+	"ch24"
+{
+		"name" "第24关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_sand_king"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "6100"
+			"xp_pool" "2100"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "24"
+	}
+	"ch25"
+{
+		"name" "第25关 · 精英检查"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_axe"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"elite"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_riki"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"7"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "7000"
+			"xp_pool" "2400"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "25"
+	}
+	"ch26"
+{
+		"name" "第26关 · 野怪讨伐"
+		"type" "creep"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_neutral_gnoll_assassin"
+				"level" "30"
+				"count" "2"
+				"template" "standard"
+				"ai" "simple_nearest"
+				"hp_multiplier" "4.6"
+				"attack_multiplier" "2.9"
+				"bonus_armor" "20"
+				"magic_resistance" "45"
+				"status_resistance" "25"
+			}
+			"2"
+{
+				"unit" "npc_dota_neutral_dark_troll_warlord"
+				"level" "30"
+				"count" "2"
+				"template" "specialist"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "4.6"
+				"attack_multiplier" "2.9"
+				"bonus_armor" "20"
+				"magic_resistance" "45"
+				"status_resistance" "25"
+			}
+			"3"
+{
+				"unit" "npc_dota_neutral_polar_furbolg_champion"
+				"level" "30"
+				"count" "2"
+				"template" "elite"
+				"ai" "aggro_front"
+				"hp_multiplier" "4.6"
+				"attack_multiplier" "2.9"
+				"bonus_armor" "20"
+				"magic_resistance" "45"
+				"status_resistance" "25"
+			}
+			"4"
+{
+				"unit" "npc_dota_neutral_black_dragon"
+				"level" "30"
+				"count" "1"
+				"template" "beast"
+				"ai" "focus_lowest_hp"
+				"hp_multiplier" "4.6"
+				"attack_multiplier" "2.9"
+				"bonus_armor" "20"
+				"magic_resistance" "45"
+				"status_resistance" "25"
+			}
+			"5"
+{
+				"unit" "npc_dota_neutral_kobold"
+				"level" "30"
+				"count" "1"
+				"template" "minion"
+				"ai" "simple_nearest"
+				"hp_multiplier" "4.6"
+				"attack_multiplier" "2.9"
+				"bonus_armor" "20"
+				"magic_resistance" "45"
+				"status_resistance" "25"
+			}
+		}
+		"reward"
+{
+			"gold" "18000"
+			"xp_pool" "900"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "26"
+	}
+	"ch27"
+{
+		"name" "第27关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_dragon_knight"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_juggernaut"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"7"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "8000"
+			"xp_pool" "2300"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "27"
+	}
+	"ch28"
+{
+		"name" "第28关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_huskar"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_juggernaut"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"7"
+{
+				"unit" "npc_dota_hero_oracle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "9000"
+			"xp_pool" "2500"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "28"
+	}
+	"ch29"
+{
+		"name" "第29关 · 英雄遭遇"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_sand_king"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_lina"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_riki"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_sniper"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_witch_doctor"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_phantom_assassin"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"7"
+{
+				"unit" "npc_dota_hero_crystal_maiden"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "10500"
+			"xp_pool" "2700"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "29"
+	}
+	"ch30"
+{
+		"name" "第30关 · 最终 Boss"
+		"type" "hero"
+		"enemies"
+{
+			"1"
+{
+				"unit" "npc_dota_hero_axe"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"boss"
+				}
+				"ai" "aggro_front"
+			}
+			"2"
+{
+				"unit" "npc_dota_hero_clinkz"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"3"
+{
+				"unit" "npc_dota_hero_sven"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"4"
+{
+				"unit" "npc_dota_hero_drow_ranger"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"5"
+{
+				"unit" "npc_dota_hero_oracle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+			"6"
+{
+				"unit" "npc_dota_hero_riki"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "focus_lowest_hp"
+			}
+			"7"
+{
+				"unit" "npc_dota_hero_dazzle"
+				"level" "30"
+				"items"
+{
+
+				}
+				"tags"
+{
+					"1"
+"hero"
+				}
+				"ai" "ai_healer_protect"
+			}
+		}
+		"reward"
+{
+			"gold" "14500"
+			"xp_pool" "3000"
+		}
+		"time_bonus_cap" "0.25"
+		"max_attempts" "5"
+		"time_limit" "120"
+		"recommended_level" "30"
 	}
 }

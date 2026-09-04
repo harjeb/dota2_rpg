@@ -80,7 +80,11 @@ $luaChecks = @(
            'local LINEUP_MAX = 5',
            'self\.currentLevelId',
            'RollShop',
-           'time_bonus_rate',
+           'TIME_BONUS_CAP = 0.25',
+           'DistributeXpPool',
+           'RollRecruitLevel',
+           'RollQuality',
+           'SCROLL_LIMIT_PER_STAGE',
            'Vector\(-650, -420, 128\)',
            'Vector\(650, 420, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'

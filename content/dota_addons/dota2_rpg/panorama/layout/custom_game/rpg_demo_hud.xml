@@ -113,6 +113,22 @@
 						<Label id="BenchBuyLabel" text="#dota2_rpg_bench_buy" />
 					</Button>
 				</Panel>
+				<Panel class="ShopButtons">
+					<Button id="ScrollBuyLow" class="ShopButton">
+						<Label id="ScrollBuyLowLabel" text="#dota2_rpg_scroll_low" />
+					</Button>
+					<Button id="ScrollBuyHigh" class="ShopButton">
+						<Label id="ScrollBuyHighLabel" text="#dota2_rpg_scroll_high" />
+					</Button>
+				</Panel>
+				<Panel class="ShopButtons">
+					<Button id="ScrollUseLow" class="ShopButton">
+						<Label id="ScrollUseLowLabel" text="#dota2_rpg_scroll_use_low" />
+					</Button>
+					<Button id="ScrollUseHigh" class="ShopButton">
+						<Label id="ScrollUseHighLabel" text="#dota2_rpg_scroll_use_high" />
+					</Button>
+				</Panel>
 				<Panel id="LineupPanel" class="LineupPanel">
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />

@@ -102,14 +102,14 @@ function assert(condition, message) {
 
 var fresh = runHud(null);
 assert(fresh.payload.gold === 300, "fresh save must start with 300 gold");
-assert(fresh.payload.owned_text === "", "fresh owned list must be serialized as an empty string");
+assert(fresh.payload.hero_data_text === "", "fresh hero data must be serialized as an empty string");
 assert(fresh.payload.lineup_text === "", "fresh lineup must be serialized as an empty string");
 assert(fresh.payload.owned === undefined && fresh.payload.lineup === undefined,
     "save sync must not contain nested list fields");
 
 fresh.subscriptions.rpg_shop_state({
     gold: 300,
-    offer_text: "npc_dota_hero_axe",
+    offer_text: "npc_dota_hero_axe|1|common|100",
     owned_text: "",
     lineup_text: "",
     bench_slots: 0,
@@ -123,10 +123,14 @@ assert(fresh.panels["#GoldValue"].text === "300",
     "shop gold bar must show the authoritative shop-state gold as a direct numeric value");
 assert(fresh.panels["#RefreshShopLabel"].text === "Refresh (20 gold)",
     "refresh label must be localized with the server-configured cost");
-var localizedHeroFound = fresh.createdPanels.some(function (panel) {
-    return panel.classes.ShopName && panel.text === "Localized Axe";
+var levelQualityFound = fresh.createdPanels.some(function (panel) {
+    return panel.classes.ShopName && panel.text === "Lv1 普通";
 });
-assert(localizedHeroFound, "shop hero names must use Dota hero localization");
+assert(levelQualityFound, "shop offer labels must show recruit level and quality");
+var priceFound = fresh.createdPanels.some(function (panel) {
+    return panel.classes.ShopPrice && panel.text === "100g";
+});
+assert(priceFound, "shop offer labels must show the composed price");
 
 fresh.subscriptions.rpg_battle_state({ phase: "setup", ready: 1, gold: 180, level: "ch01" });
 assert(fresh.panels["#GoldValue"].text === "180",
@@ -146,7 +150,8 @@ var progressedV1 = runHud({
     current_level: "ch02"
 });
 assert(progressedV1.payload.gold === 0, "a progressed save that legitimately has zero gold must stay at zero");
-assert(progressedV1.payload.owned_text === "npc_dota_hero_axe", "owned heroes must use the flat payload field");
+assert(progressedV1.payload.hero_data_text === "npc_dota_hero_axe:2:0:common",
+    "unified level must migrate into per-hero level/xp/quality data");
 assert(progressedV1.payload.lineup_text === "npc_dota_hero_axe", "lineup must use the flat payload field");
 
 var objectLists = runHud({
@@ -160,8 +165,8 @@ var objectLists = runHud({
     current_level: "ch01"
 });
 assert(objectLists.payload.gold === 100, "object-shaped old lists must not reset gold");
-assert(objectLists.payload.owned_text === "npc_dota_hero_axe;npc_dota_hero_sven",
-    "object-shaped owned list must be normalized without data loss");
+assert(objectLists.payload.hero_data_text === "npc_dota_hero_axe:1:0:common;npc_dota_hero_sven:1:0:common",
+    "object-shaped owned list must be normalized into per-hero data without loss");
 assert(objectLists.payload.lineup_text === "npc_dota_hero_sven",
     "object-shaped lineup must be normalized without data loss");
 

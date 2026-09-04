@@ -723,28 +723,51 @@
             data = shopState;
         }
         shopState.gold = Number(data.gold !== undefined ? data.gold : shopState.gold);
-        shopState.offer = splitList(data.offer_text);
+        // 报价："hero|level|quality|price"
+        shopState.offers = [];
+        var rawOffers = splitList(data.offer_text);
+        for (var offerIndex = 0; offerIndex < rawOffers.length; offerIndex++) {
+            var offerParts = rawOffers[offerIndex].split("|");
+            if (offerParts.length >= 4) {
+                shopState.offers.push({
+                    hero: offerParts[0], level: Number(offerParts[1]),
+                    quality: offerParts[2], price: Number(offerParts[3])
+                });
+            }
+        }
         shopState.owned = splitList(data.owned_text);
         shopState.lineup = splitList(data.lineup_text);
         shopState.bench_slots = Number(data.bench_slots || 0);
-        if (data.cost_hero !== undefined) {
-            shopState.costs = {
-                hero: Number(data.cost_hero),
-                refresh: Number(data.cost_refresh),
-                bench_slot: Number(data.cost_bench_slot),
-                bench_slot_max: Number(data.bench_slot_max),
-                lineup_max: Number(data.lineup_max)
-            };
+        // 个人等级/经验："name:level:xp:quality"
+        saveData.heroes = saveData.heroes || {};
+        var heroEntries = splitList(data.hero_data_text);
+        for (var hIndex = 0; hIndex < heroEntries.length; hIndex++) {
+            var hParts = heroEntries[hIndex].split(":");
+            if (hParts.length >= 4) {
+                saveData.heroes[hParts[0]] = {
+                    level: Number(hParts[1]), xp: Number(hParts[2]), quality: hParts[3]
+                };
+            }
         }
+        if (data.refresh_cost !== undefined) {
+            shopState.refresh_cost = Number(data.refresh_cost);
+            shopState.costs.refresh = shopState.refresh_cost;
+        }
+        shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
+        shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
+        shopState.scroll_low_stock = Number(data.scroll_low_stock || 0);
+        shopState.scroll_high_stock = Number(data.scroll_high_stock || 0);
         saveData.gold = shopState.gold;
         saveData.owned = shopState.owned;
         saveData.lineup = shopState.lineup;
         saveData.bench_slots = shopState.bench_slots;
+        saveData.scrolls = { low: shopState.scroll_low_stock, high: shopState.scroll_high_stock };
         persistSave();
         renderShop();
         renderLineupStrip();
         renderRadiantHeroStrip();
         updateShopEconomyLabels(shopState.gold);
+        updateScrollLabels();
         updateTeamLevelLabels();
     }
 
@@ -759,8 +782,9 @@
     function renderShopInner() {
         var container = $("#ShopOffer");
         container.RemoveAndDeleteChildren();
-        for (var index = 0; index < shopState.offer.length; index++) {
-            (function (heroName) {
+        for (var index = 0; index < shopState.offers.length; index++) {
+            (function (offer) {
+                var heroName = offer.hero;
                 var owned = false;
                 for (var i = 0; i < shopState.owned.length; i++) {
                     if (shopState.owned[i] === heroName) {
@@ -775,8 +799,11 @@
                 portrait.AddClass("ShopPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
-                createLabel(slot, "ShopName", localizeHeroName(heroName));
-                createLabel(slot, "ShopPrice", localizeFormat("#dota2_rpg_shop_price", shopState.costs.hero));
+                var qualityNames = { common: "普通", fine: "精良", epic: "史诗", legendary: "传说" };
+                var qualityColors = { common: "#c8d2d7", fine: "#6fc3ff", epic: "#c88bff", legendary: "#ffcc55" };
+                createLabel(slot, "ShopName", "Lv" + offer.level + " " + qualityNames[offer.quality]);
+                var priceLabel = createLabel(slot, "ShopPrice", offer.price + "g");
+                priceLabel.style.color = qualityColors[offer.quality] || "#f2d982";
                 if (!owned) {
                     slot.SetPanelEvent("onactivate", function () {
                         GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
@@ -785,7 +812,7 @@
                 } else {
                     slot.enabled = false;
                 }
-            }(shopState.offer[index]));
+            }(shopState.offers[index]));
         }
         $("#ShopHeader").text = $.Localize("#dota2_rpg_shop_title");
     }
@@ -799,6 +826,37 @@
         bench.SetPanelEvent("onactivate", function () {
             GameEvents.SendCustomGameEventToServer("rpg_bench_buy", {});
         });
+        $("#ScrollBuyLow").SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_scroll_buy", { kind: "low" });
+        });
+        $("#ScrollBuyHigh").SetPanelEvent("onactivate", function () {
+            GameEvents.SendCustomGameEventToServer("rpg_scroll_buy", { kind: "high" });
+        });
+        $("#ScrollUseLow").SetPanelEvent("onactivate", function () {
+            var target = selectedHeroIndex.Radiant >= 0 && saveData.lineup[selectedHeroIndex.Radiant];
+            if (target) {
+                GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: "low", hero: target });
+            }
+        });
+        $("#ScrollUseHigh").SetPanelEvent("onactivate", function () {
+            var target = selectedHeroIndex.Radiant >= 0 && saveData.lineup[selectedHeroIndex.Radiant];
+            if (target) {
+                GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: "high", hero: target });
+            }
+        });
+    }
+
+    function updateScrollLabels() {
+        $("#ScrollBuyLowLabel").text = $.Localize("#dota2_rpg_scroll_low") +
+            " (余" + shopState.scroll_low_remaining + ") 存" + shopState.scroll_low_stock;
+        $("#ScrollBuyHighLabel").text = $.Localize("#dota2_rpg_scroll_high") +
+            " (余" + shopState.scroll_high_remaining + ") 存" + shopState.scroll_high_stock;
+        $("#ScrollUseLowLabel").text = $.Localize("#dota2_rpg_scroll_use_low") + " " + shopState.scroll_low_stock;
+        $("#ScrollUseHighLabel").text = $.Localize("#dota2_rpg_scroll_use_high") + " " + shopState.scroll_high_stock;
+        $("#ScrollBuyLow").enabled = phase === "setup" && shopState.scroll_low_remaining > 0 && shopState.gold >= 100;
+        $("#ScrollBuyHigh").enabled = phase === "setup" && shopState.scroll_high_remaining > 0 && shopState.gold >= 1000;
+        $("#ScrollUseLow").enabled = phase === "setup" && shopState.scroll_low_stock > 0;
+        $("#ScrollUseHigh").enabled = phase === "setup" && shopState.scroll_high_stock > 0;
     }
 
     function renderLineupStrip() {
@@ -877,6 +935,8 @@
     var SAVE_VERSION = 2;
     var INITIAL_GOLD = 300;
     var HERO_MAX_LEVEL = 30;
+    var XP_BASE = 40;   // 与服务端 XP_TO_NEXT_BASE/STEP 保持一致
+    var XP_STEP = 30;
     var MAX_ATTEMPTS = 5;
 
     // 升到下一级所需经验（经验全队共享、全员统一等级）
@@ -915,7 +975,22 @@
         if (!saved.attempts || typeof saved.attempts !== "object") {
             saved.attempts = {};
         }
-        saved.level = Math.max(1, Math.floor(Number(saved.level) || 1)); // 全队统一等级
+        saved.level = Math.max(1, Math.floor(Number(saved.level) || 1)); // 旧统一等级（迁移源）
+        if (!saved.heroes || typeof saved.heroes !== "object") {
+            // 迁移：统一等级 → 每名已拥有英雄个人等级
+            saved.heroes = {};
+            var migratedHeroes = saved.owned && saved.owned.length ? saved.owned : [];
+            for (var mh = 0; mh < migratedHeroes.length; mh++) {
+                saved.heroes[migratedHeroes[mh]] = { level: saved.level, xp: 0, quality: "common" };
+            }
+        }
+        if (!saved.scrolls || typeof saved.scrolls !== "object") {
+            saved.scrolls = { low: 0, high: 0 };
+        }
+        if (!saved.stars || typeof saved.stars !== "object") {
+            saved.stars = {};
+        }
+        saved.encounter_seed = Number(saved.encounter_seed || 0);
         if (!saved.owned || typeof saved.owned !== "object") {
             saved.owned = [];   // 英雄池（可含场下英雄）
         } else {
@@ -950,13 +1025,22 @@
 
     function syncSaveToServer() {
         // CEM 嵌套数组会导致载荷丢失，列表统一拍平成分号分隔字符串。
+        var heroEntries = [];
+        var heroNames = saveData.owned;
+        for (var hi = 0; hi < heroNames.length; hi++) {
+            var hero = saveData.heroes[heroNames[hi]] || { level: 1, xp: 0, quality: "common" };
+            heroEntries.push(heroNames[hi] + ":" + hero.level + ":" + (hero.xp || 0) + ":" + (hero.quality || "common"));
+        }
         GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
             gold: saveData.gold,
-            level: saveData.level,
-            bench_slots: saveData.bench_slots,
+            hero_data_text: heroEntries.join(";"),
             owned_text: saveData.owned.join(";"),
             lineup_text: saveData.lineup.join(";"),
-            current_level: saveData.current_level
+            bench_slots: saveData.bench_slots,
+            scroll_stock_low: saveData.scrolls.low,
+            scroll_stock_high: saveData.scrolls.high,
+            current_level: saveData.current_level,
+            encounter_seed: saveData.encounter_seed
         });
     }
 
@@ -966,7 +1050,23 @@
     }
 
     function sendHeroLevels() {
-        GameEvents.SendCustomGameEventToServer("rpg_hero_levels", { level: saveData.level });
+        // 兼容入口：走 rpg_save_sync 的 hero_data_text
+        syncSaveToServer();
+    }
+
+    function updateTeamLevelLabels() {
+        // 每名英雄个人等级（上阵英雄）
+        var parts = [];
+        var lineup = saveData.lineup || [];
+        for (var index = 0; index < lineup.length; index++) {
+            var hero = saveData.heroes[lineup[index]];
+            parts.push(hero ? "Lv" + hero.level : "Lv1");
+        }
+        if (!parts.length) {
+            parts.push($.Localize("#dota2_rpg_no_lineup"));
+        }
+        $("#RadiantTeamLevel").text = parts.join(" / ");
+        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
     }
 
     function updateTeamLevelLabels() {
@@ -974,31 +1074,60 @@
         $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
     }
 
-    function applySharedXp(xp) {
-        var pool = Number(xp || 0);
-        var levelUps = 0;
-        var level = saveData.level;
-        while (level < HERO_MAX_LEVEL && pool >= xpToNext(level)) {
-            pool -= xpToNext(level);
-            level++;
-            levelUps++;
+    function addXpToHero(heroName, amount) {
+        var hero = saveData.heroes[heroName];
+        if (!hero || hero.level >= HERO_MAX_LEVEL) {
+            return; // 满级经验舍弃
         }
-        saveData.level = level;
-        return levelUps;
+        hero.xp = (hero.xp || 0) + amount;
+        while (hero.level < HERO_MAX_LEVEL) {
+            var need = XP_BASE + XP_STEP * hero.level;
+            if (hero.xp >= need) {
+                hero.xp -= need;
+                hero.level++;
+            } else {
+                break;
+            }
+        }
+        if (hero.level >= HERO_MAX_LEVEL) {
+            hero.xp = 0;
+        }
+    }
+
+    // 经验池平均分配（余数按招募顺序补 1）
+    function distributeXpPool(pool) {
+        var owned = saveData.owned;
+        if (!owned || !owned.length) {
+            return 0;
+        }
+        var base = Math.floor(pool / owned.length);
+        var remainder = pool % owned.length;
+        for (var index = 0; index < owned.length; index++) {
+            var extra = 0;
+            if (remainder > 0) {
+                extra = 1;
+                remainder--;
+            }
+            addXpToHero(owned[index], base + extra);
+        }
+        return pool;
     }
 
     function grantSettlement(settlement) {
         if (!settlement || settlement.winner !== "radiant") {
             return null;
         }
-        var firstClear = !saveData.cleared[settlement.level];
-        var gold = Number(firstClear ? settlement.first_gold : settlement.repeat_gold) || 0;
-        var xp = Number(firstClear ? settlement.first_xp : settlement.repeat_xp) || 0;
+        var gold = Number(settlement.gold || 0);
+        var xp = Number(settlement.xp_pool || 0);
+        saveData.stars = saveData.stars || {};
+        if (settlement.stars !== undefined) {
+            saveData.stars[settlement.level] = Number(settlement.stars) || 1;
+        }
         if (firstClear) {
             saveData.cleared[settlement.level] = true;
         }
         saveData.attempts[settlement.level] = 0;
-        // 闯关推进：存档指向下一关
+        distributeXpPool(xp);
         for (var li = 0; li < levelList.length; li++) {
             var lid = String(levelList[li].id || levelList[li]);
             if (lid === String(settlement.level) && levelList[li + 1]) {
@@ -1082,6 +1211,7 @@
         renderLevelList();
         updateLevelProgress();
         updateShopEconomyLabels(shopState.gold);
+        updateScrollLabels();
         updateTeamLevelLabels();
 
         if (phase !== "setup") {
@@ -1117,6 +1247,9 @@
         var rewardLabel = $("#RewardLabel");
         if (settlement && settlement.winner === "radiant" && reward) {
             var parts = [$.Localize("#dota2_rpg_reward_gold") + " " + reward.gold];
+            if (settlement.stars !== undefined) {
+                parts.push($.Localize("#dota2_rpg_result_stars").replace("%s1", String(settlement.stars)));
+            }
             if (reward.levelUps > 0) {
                 parts.push($.Localize("#dota2_rpg_reward_level_up") + " " + reward.levelUps);
             }
@@ -1128,6 +1261,7 @@
                 : $.Localize("#dota2_rpg_no_attempts");
         }
         updateShopEconomyLabels(shopState.gold);
+        updateScrollLabels();
         updateTeamLevelLabels();
     }
 
