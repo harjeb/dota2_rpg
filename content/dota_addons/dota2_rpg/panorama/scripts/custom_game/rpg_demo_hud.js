@@ -1570,6 +1570,10 @@
             if (settlement.stars !== undefined) {
                 parts.push($.Localize("#dota2_rpg_result_stars").replace("%s1", String(settlement.stars)));
             }
+            var ownedCount = Math.max(1, saveData.owned.length);
+            var xpEach = Math.floor(Number(settlement.xp_pool || 0) / ownedCount);
+            parts.push($.Localize("#dota2_rpg_reward_xp")
+                .replace("%s1", String(xpEach)).replace("%s2", String(ownedCount)));
             var lootDrops = settlement.loot_text ? settlement.loot_text.split(";") : [];
             for (var li = 0; li < lootDrops.length; li++) {
                 parts.push("+" + lootDrops[li].replace("item_", ""));

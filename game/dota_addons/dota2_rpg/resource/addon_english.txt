@@ -83,6 +83,7 @@
 		"dota2_rpg_dire_team_label"		"Enemies · data-driven"
 		"dota2_rpg_level_select"		"Select Level"
 		"dota2_rpg_gold"				"Gold"
+		"dota2_rpg_reward_xp"			"XP pool +%s1 (+%s1 each hero... +%s2 each)"
 		"dota2_rpg_reward_gold"			"Gold earned +"
 		"dota2_rpg_reward_level_up"		"Level ups +"
 		"dota2_rpg_attempts_left"		"Attempts left"

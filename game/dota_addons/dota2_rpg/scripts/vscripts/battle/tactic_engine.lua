@@ -435,6 +435,8 @@ function TacticEngine:CreateHeroState(teamIndex)
 end
 
 -- 每次规则评估的环境：单位列表由宿主(BattleManager)提供
+local TACTIC_DEBUG = true
+
 function TacticEngine:Think(hero, state, rules, env)
 	local now = env.now
 	if now < state.nextActionAt then
@@ -450,20 +452,41 @@ function TacticEngine:Think(hero, state, rules, env)
 		return
 	end
 
+	local trace = TACTIC_DEBUG and ("[" .. hero:GetUnitName() .. "]") or nil
+	local executed = false
+
 	for ruleIndex, rule in ipairs(rules) do
 		if rule.enabled == false then
-			-- 规则被玩家停用（如关闭发球技能）时直接跳过
+			if trace then trace = trace .. string.format(" | r%d DISABLED", ruleIndex) end
 		else
 		local action = self:ResolveAction(hero, rule)
-		if action ~= nil then
+		if action == nil then
+			if trace then trace = trace .. string.format(" | r%d %s no-ability", ruleIndex, tostring(rule.action)) end
+		else
 			local ctx = self:BuildContext(hero, rule, action, env)
-			if self:IsActionExecutable(hero, action, rule, ctx) and self:EvaluateConditionList(rule, ctx) then
+			local executable = self:IsActionExecutable(hero, action, rule, ctx)
+			local conditionMet = executable and self:EvaluateConditionList(rule, ctx)
+			if trace then
+				trace = trace .. string.format(" | r%d %s exec=%s cond=%s", ruleIndex, tostring(rule.action),
+					tostring(executable), tostring(conditionMet))
+			end
+			if executable and conditionMet then
+				if trace then
+					print("[TacticDebug] " .. trace .. " -> EXEC")
+					trace = nil
+				end
 				if self:ExecuteRule(hero, state, ruleIndex, rule, action, ctx) then
+					executed = true
 					return
 				end
 			end
 		end
 		end
+	end
+
+	if trace and (state.lastTraceAt == nil or now - state.lastTraceAt > 1.5) then
+		print("[TacticDebug] " .. trace .. " -> NO-ACTION")
+		state.lastTraceAt = now
 	end
 
 	state.nextActionAt = now + ORDER_RETRY_INTERVAL
@@ -580,6 +603,9 @@ end
 
 function TacticEngine:PerformAttack(hero, state, ruleIndex, rule, target, ctx)
 	local now = ctx.env.now
+	if TACTIC_DEBUG then
+		print(string.format("[TacticDebug] %s attack -> %s (forced=%s)", hero:GetUnitName(), target:GetUnitName(), tostring(rule.forced)))
+	end
 	if not self.adapter:IsUnitInAttackRange(hero, target) then
 		if not rule.forced then
 			return false
@@ -643,6 +669,9 @@ function TacticEngine:PerformCast(hero, state, ruleIndex, rule, ability, target,
 		return true
 	end
 
+	if TACTIC_DEBUG then
+		print(string.format("[TacticDebug] %s cast %s -> %s", hero:GetUnitName(), ability:GetAbilityName(), TacticEngine.IsValidUnit(target) and target:GetUnitName() or "ground"))
+	end
 	self:ClearForcedLock(state)
 	if self.adapter:IsPointTargetAbility(ability) then
 		self.adapter:OrderCastPosition(hero, ability, target:GetAbsOrigin())

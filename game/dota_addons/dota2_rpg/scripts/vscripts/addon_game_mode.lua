@@ -48,6 +48,11 @@ local BENCH_TREE_DURATION = 999999
 local BENCH_GRID_COLS = 3
 local BENCH_GRID_SPACING = 260
 
+-- 战场隔断：一排能量屏障单位分隔双方，开战瞬间移除
+local BARRIER_X = 0
+local BARRIER_HALF_SPAN = 1500
+local BARRIER_SPACING = 150
+
 -- 招募体系（DESIGN.md §2.1）：等级概率/品质锚点/价格倍率
 RECRUIT_BASE_PRICE = { ["1"] = 100, ["5"] = 300, ["10"] = 500, ["15"] = 800, ["20"] = 1500, ["30"] = 3000 }
 RECRUIT_LEVEL_RULES = {
@@ -259,6 +264,8 @@ function CDota2RpgDemo:InitGameMode()
 	self.itemCatalog = {}
 	self.itemStock = {}
 	self.heroInventories = {}  -- heroData[hero].inventory = { item, ... } 由 heroData 持有
+	self.barrierUnits = nil
+	self.placedPositions = {}  -- heroName -> {x, y}（准备阶段玩家排的站位）
 
 	self.battleManager = BattleManager(self)
 
@@ -684,16 +691,13 @@ function CDota2RpgDemo:OnShopBuy(_, payload)
 	data.quality = offer.quality
 	self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
 
-	if #self.lineup < self.shopCosts.lineup_max then
-		table.insert(self.lineup, heroName)
-	else
-		local benchCount = #self.ownedHeroes - #self.lineup
-		if benchCount > self.benchSlots then
-			table.remove(self.ownedHeroes)
-			self.gold = self.gold + offer.price
-			self.heroData[heroName] = nil
-			return
-		end
+	-- 购买的英雄默认进待命区；上阵由玩家手动选择（右键待命英雄或点英雄池条）
+	local benchCount = #self.ownedHeroes - #self.lineup
+	if benchCount > self.benchSlots then
+		table.remove(self.ownedHeroes)
+		self.gold = self.gold + offer.price
+		self.heroData[heroName] = nil
+		return -- 替补格子不足
 	end
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
@@ -1525,16 +1529,13 @@ function CDota2RpgDemo:OnShopBuy(_, payload)
 	data.quality = offer.quality
 	self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
 
-	if #self.lineup < self.shopCosts.lineup_max then
-		table.insert(self.lineup, heroName)
-	else
-		local benchCount = #self.ownedHeroes - #self.lineup
-		if benchCount > self.benchSlots then
-			table.remove(self.ownedHeroes)
-			self.gold = self.gold + offer.price
-			self.heroData[heroName] = nil
-			return
-		end
+	-- 购买的英雄默认进待命区；上阵由玩家手动选择（右键待命英雄或点英雄池条）
+	local benchCount = #self.ownedHeroes - #self.lineup
+	if benchCount > self.benchSlots then
+		table.remove(self.ownedHeroes)
+		self.gold = self.gold + offer.price
+		self.heroData[heroName] = nil
+		return -- 替补格子不足
 	end
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
@@ -1850,6 +1851,7 @@ function CDota2RpgDemo:EnsureBattlefield()
 	end
 	self:SpawnLevelEnemies(self.currentLevelId)
 	self:RespawnPlayerRoster()
+	self:SpawnBattleBarrier()
 
 	self:BroadcastShopState()
 	self:BroadcastLevelInfo()
@@ -1858,6 +1860,39 @@ function CDota2RpgDemo:EnsureBattlefield()
 end
 
 -- 玩家阵容：按 lineup 顺序在己方出生点生成，统一等级 self.playerLevel
+function CDota2RpgDemo:SpawnBattleBarrier()
+	self:RemoveBattleBarrier()
+	self.barrierUnits = {}
+	local y = -BARRIER_HALF_SPAN
+	while y <= BARRIER_HALF_SPAN do
+		local pos = GetGroundPosition(Vector(BARRIER_X, y, 128), nil)
+		local unit = CreateUnitByName("npc_dota_hero_wisp", pos, true, nil, nil, DOTA_TEAM_NEUTRALS)
+		if TacticEngine.IsValidUnit(unit) then
+			unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
+			unit:AddNewModifier(unit, nil, "modifier_rooted", {})
+			unit:AddNewModifier(unit, nil, "modifier_silenced", {})
+			unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
+			if unit.AddNoHealthBar ~= nil then
+				unit:AddNoHealthBar()
+			end
+			unit:SetIdleAcquire(false)
+			unit:SetAcquisitionRange(0)
+			table.insert(self.barrierUnits, unit)
+		end
+		y = y + BARRIER_SPACING
+	end
+	print("[Dota2Rpg] Battle barrier spawned.")
+end
+
+function CDota2RpgDemo:RemoveBattleBarrier()
+	for _, unit in ipairs(self.barrierUnits or {}) do
+		if TacticEngine.IsValidUnit(unit) then
+			unit:RemoveSelf()
+		end
+	end
+	self.barrierUnits = nil
+end
+
 -- 用树墙围出待命区（树会阻挡移动，形成封闭地形；长持续时间常驻）
 function CDota2RpgDemo:SpawnBenchEnclosure()
 	if self.benchEnclosureBuilt then
@@ -1967,7 +2002,11 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		if index > #TEAM_SPAWNS[DOTA_TEAM_GOODGUYS] then
 			break
 		end
-		local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
+		-- 玩家在准备阶段排的站位优先保留
+		local placed = self.placedPositions[heroName]
+		local spawnPosition = placed ~= nil
+			and GetGroundPosition(Vector(placed.x, placed.y, 128), nil)
+			or GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
 		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
@@ -2148,20 +2187,49 @@ end
 
 function CDota2RpgDemo:FilterExecuteOrder(filterTable)
 	local issuerPlayerId = tonumber(filterTable.issuer_player_id_const) or -1
-	if issuerPlayerId >= 0 then
-		-- 玩家右键点击待命区英雄：请求换其上场
-		local orderType = tonumber(filterTable.order_type) or 0
-		local targetIndex = tonumber(filterTable.entindex_target) or -1
-		if targetIndex > 0 and (orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET or orderType == DOTA_UNIT_ORDER_ATTACK_TARGET) then
-			local target = EntIndexToHScript(targetIndex)
-			if TacticEngine.IsValidUnit(target) and target.benchHeroName ~= nil then
-				self:PromoteBenchHero(target.benchHeroName)
-				return false
-			end
+	if issuerPlayerId < 0 then
+		return true
+	end
+
+	local orderType = tonumber(filterTable.order_type) or 0
+	local targetIndex = tonumber(filterTable.entindex_target) or -1
+	local target = targetIndex > 0 and EntIndexToHScript(targetIndex) or nil
+
+	-- 右键待命区英雄：请求换其上场
+	if TacticEngine.IsValidUnit(target) and target.benchHeroName ~= nil
+		and (orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET or orderType == DOTA_UNIT_ORDER_ATTACK_TARGET) then
+		if self.phase == "setup" then
+			self:PromoteBenchHero(target.benchHeroName)
 		end
 		return false
 	end
-	return true
+
+	-- 准备阶段：玩家可自由调整上阵英雄站位（限己方半场）
+	if self.phase == "setup" then
+		local isMove = orderType == DOTA_UNIT_ORDER_MOVE_TO_POINT
+			or orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET
+			or orderType == DOTA_UNIT_ORDER_HOLD_POSITION
+		if isMove then
+			local unitIndex = tonumber(filterTable.units["0"] or -1)
+			local unit = unitIndex > 0 and EntIndexToHScript(unitIndex) or nil
+			if TacticEngine.IsValidUnit(unit) and unit:GetTeamNumber() == DOTA_TEAM_GOODGUYS
+				and unit.benchHeroName == nil then
+				if orderType == DOTA_UNIT_ORDER_MOVE_TO_POINT then
+					local pos = filterTable.position_2 or filterTable.position
+					local x = tonumber(filterTable.position_x or (pos and pos.x) or 0)
+					if x ~= 0 and x > -150 then
+						return false -- 不可越过中线排位
+					end
+					if x ~= 0 then
+						self.placedPositions[unit:GetUnitName()] = { x = x, y = tonumber(filterTable.position_y or 0) }
+					end
+				end
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 -- 换人：待命英雄进入首发；首发已满时替换最后一名
@@ -2255,6 +2323,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 		end
 	end
 
+	self:RemoveBattleBarrier()
 	self.battleManager:ResetBattleStats()
 	self.battleManager:StartBattle(self.battleManager.teamRules)
 	self:BroadcastBattleState()
