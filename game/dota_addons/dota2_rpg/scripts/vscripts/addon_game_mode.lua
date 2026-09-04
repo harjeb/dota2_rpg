@@ -987,6 +987,9 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 	if payload.refresh_count ~= nil then
 		self.refreshCount = math.max(0, math.floor(tonumber(payload.refresh_count) or 0))
 	end
+	if payload.stock_text ~= nil then
+		self.itemStock = self:ReadPayloadList(payload, "stock_text")
+	end
 	if payload.scroll_stock_low ~= nil then
 		self.scrollStock.low = math.max(0, math.floor(tonumber(payload.scroll_stock_low) or 0))
 	end
@@ -2281,6 +2284,24 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		timeBonus = math.min(math.floor(baseGold * TIME_BONUS_CAP + 0.5), math.floor(remaining * fullRate))
 	end
 
+	-- 唯一一次 loot_table 掉落结算：胜利时按掉落表概率 roll 入共享仓库
+	local lootDrops = {}
+	if winner == "radiant" then
+		local lootId = level ~= nil and level.loot or nil
+		local lootTable = lootId ~= nil and self.dataLoader:GetLoot(lootId) or nil
+		if lootTable ~= nil then
+			for _, lootEntry in pairs(lootTable.items or {}) do
+				if type(lootEntry) == "table" and lootEntry.item ~= nil then
+					local chance = tonumber(lootEntry.chance) or 0
+					if math.random() < chance then
+						table.insert(self.itemStock, lootEntry.item)
+						table.insert(lootDrops, lootEntry.item)
+					end
+				end
+			end
+		end
+	end
+
 	local settlement = {
 		level = self.currentLevelId,
 		winner = winner,
@@ -2290,6 +2311,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		xp_pool = baseXp,
 		stars = stars,
 		clear_time = math.floor(clearTime),
+		loot_text = table.concat(lootDrops, ";"),
 	}
 	-- 唯一一次奖励：胜利即入账（金币），经验池分配给全部已拥有英雄
 	if winner == "radiant" then

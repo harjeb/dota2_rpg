@@ -137,6 +137,19 @@
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
+				<Panel class="SaveCodePanel">
+					<Label class="LineupHeader" text="#dota2_rpg_savecode_title" />
+					<Panel class="ShopButtons">
+						<Button id="SaveCodeExportButton" class="ShopButton">
+							<Label text="#dota2_rpg_savecode_export" />
+						</Button>
+						<Button id="SaveCodeImportButton" class="ShopButton">
+							<Label text="#dota2_rpg_savecode_import" />
+						</Button>
+					</Panel>
+					<Label id="SaveCodeText" class="SaveCodeText" />
+					<TextEntry id="SaveCodeEntry" class="SaveCodeEntry" placeholder="#dota2_rpg_savecode_hint" />
+				</Panel>
 			</Panel>
 			<Panel id="BattleSpeedRow" class="ShopButtons">
 					<Button id="Speed1Button" class="ShopButton"><Label text="1x" /></Button>
