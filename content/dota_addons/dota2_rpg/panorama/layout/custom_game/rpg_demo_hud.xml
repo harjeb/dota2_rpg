@@ -190,5 +190,7 @@
 			<Label id="BattleResultLabel" />
 			<Label id="RewardLabel" />
 		</Panel>
+
+		<Panel id="DropdownLayer" class="DropdownLayer" />
 	</Panel>
 </root>

@@ -1166,3 +1166,26 @@
 {
 	visibility: collapse;
 }
+
+/* 悬浮下拉层：菜单覆盖在内容上方，不撑开行 */
+.DropdownLayer
+{
+	width: 100%;
+	height: 100%;
+	flow-children: down;
+}
+
+.DropdownLayer .ConditionMenu,
+.DropdownLayer .EffectMenu,
+.DropdownLayer .TargetMenu
+{
+	margin-left: 60px;
+	z-index: 900;
+}
+
+.DropdownLayer .DropRight
+{
+	horizontal-align: right;
+	margin-left: 0px;
+	margin-right: 60px;
+}

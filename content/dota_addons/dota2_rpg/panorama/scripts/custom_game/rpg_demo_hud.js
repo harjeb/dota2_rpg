@@ -432,6 +432,43 @@
         }
     }
 
+    // 悬浮下拉：菜单移动到全屏浮层，按行位置覆盖显示（不撑开面板）
+    var DROPDOWN_TYPE_OFFSET = {
+        condition: 6,
+        effect: 6,
+        cond2: 96,
+        targetAttr: 48,
+        targetSide: 48
+    };
+
+    function openDropdownMenu(side, index, menuType) {
+        var panels = rowPanels[side][index];
+        var menu;
+        if (menuType === "effect") {
+            menu = panels.effectMenu;
+        } else if (menuType === "cond2") {
+            menu = panels.cond2Menu;
+        } else if (menuType === "targetAttr") {
+            menu = panels.targetAttrMenu;
+        } else if (menuType === "targetSide") {
+            menu = panels.targetSideMenu;
+        } else {
+            menu = panels.conditionMenu;
+        }
+        var layer = $("#DropdownLayer");
+        if (layer === null || layer === undefined) {
+            return menu;
+        }
+        menu.SetParent(layer);
+        menu.SetHasClass("DropRight", side === "Dire");
+        menu.style.marginTop = (EDITOR_TOP + index * ROW_HEIGHT + (DROPDOWN_TYPE_OFFSET[menuType] || 0)) + "px;";
+        menu.SetHasClass("Hidden", false);
+        return menu;
+    }
+
+    var EDITOR_TOP = 268;
+    var ROW_HEIGHT = 130;
+
     function toggleEditorMenu(side, index, menuType) {
         if (phase !== "setup") {
             return;
@@ -451,15 +488,10 @@
         }
         var shouldOpen = menu.BHasClass("Hidden");
         closeEditorMenus();
-        menu.SetHasClass("Hidden", !shouldOpen);
+        if (shouldOpen) {
+            openDropdownMenu(side, index, menuType);
+        }
         panels.row.SetHasClass("MenuOpen", shouldOpen);
-        panels.row.SetHasClass("ConditionMenuOpen", shouldOpen && menuType === "condition");
-        panels.row.SetHasClass("EffectMenuOpen", shouldOpen && menuType === "effect");
-        panels.row.SetHasClass("TargetMenuOpen", shouldOpen && menuType === "target");
-        var editor = $("#" + side + "Editor");
-        editor.SetHasClass("ConditionMenuExpanded", shouldOpen && menuType === "condition");
-        editor.SetHasClass("EffectMenuExpanded", shouldOpen && menuType === "effect");
-        editor.SetHasClass("TargetMenuExpanded", shouldOpen && menuType === "target");
     }
 
     function chooseCondition(side, index, condition) {
