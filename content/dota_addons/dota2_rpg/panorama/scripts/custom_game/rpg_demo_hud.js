@@ -605,8 +605,8 @@
             var heroIndex = selectedHeroIndex[side];
             var slotEntry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
             var detailName = "";
-            if (slotEntry && slotEntry.actions_text) {
-                var details = splitList(slotEntry.actions_text);
+            if (slotEntry && slotEntry.details_text) {
+                var details = splitList(slotEntry.details_text);
                 if (details[index]) {
                     detailName = details[index];
                 }
