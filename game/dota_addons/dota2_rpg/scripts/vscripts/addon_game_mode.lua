@@ -177,11 +177,12 @@ function Precache(context)
 
 	PrecacheUnit(PLAYER_PLACEHOLDER_HERO)
 
-	-- 英雄池必须完整预缓存，否则运行时生成英雄会显示 ERROR 模型
+	-- 只预缓存可招募子集（全量 112 个同步预缓存会导致加载崩溃）
 	local heroData = LoadKeyValues("scripts/data/heroes.kv")
 	if type(heroData) == "table" then
+		local pool = heroData.recruitable ~= nil and heroData.recruitable or heroData
 		for _, categoryName in ipairs(SHOP_CATEGORIES) do
-			for _, heroEntry in pairs(heroData[categoryName] or {}) do
+			for _, heroEntry in pairs(pool[categoryName] or {}) do
 				PrecacheUnit(heroEntry)
 			end
 		end
@@ -381,8 +382,10 @@ function CDota2RpgDemo:LoadHeroPool()
 		lineup_max = tonumber(data.lineup_max) or LINEUP_MAX,
 		initial_gold = tonumber(data.initial_gold) or INITIAL_GOLD,
 	}
+	-- 招募池 = 已通过预缓存验证的子集；全目录条目需逐个验证后才开放（DESIGN §7）
+	local sourcePool = data.recruitable ~= nil and data.recruitable or data
 	for _, category in ipairs(SHOP_CATEGORIES) do
-		for _, hero in pairs(data[category] or {}) do
+		for _, hero in pairs(sourcePool[category] or {}) do
 			-- 兼容两种目录格式：纯字符串（全英雄目录）或 { name = ... } 表
 			local heroName = nil
 			if type(hero) == "string" then
