@@ -1905,6 +1905,13 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 	end
 end
 
+-- 金币写入玩家钱包，Dota 原版 HUD 经济面板即可正常显示
+function CDota2RpgDemo:SyncGoldToPlayer()
+	if self.playerId >= 0 then
+		PlayerResource:SetGold(self.playerId, self.gold, true)
+	end
+end
+
 function CDota2RpgDemo:BroadcastShopState()
 	self:SyncGoldToPlayer()
 	-- CEM 载荷一律拍平；英雄数据用 "name:level:xp:quality" 分号串
