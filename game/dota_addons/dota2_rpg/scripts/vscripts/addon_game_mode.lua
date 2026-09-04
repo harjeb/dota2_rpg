@@ -2131,6 +2131,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 		end
 	end
 
+	self.battleManager:ResetBattleStats()
 	self.battleManager:StartBattle(self.battleManager.teamRules)
 	self:BroadcastBattleState()
 	print("[Dota2Rpg] Battle started on level " .. self.currentLevelId .. ".")
@@ -2148,6 +2149,14 @@ function CDota2RpgDemo:OnEntityKilled(event)
 	local killed = EntIndexToHScript(event.entindex_killed or -1)
 	if not TacticEngine.IsValidUnit(killed) then
 		return
+	end
+
+	-- 我方英雄阵亡计数（供"已阵亡友军 ≥ N"条件使用）
+	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+		if TacticEngine.IsValidUnit(hero) and hero:GetEntityIndex() == killed:GetEntityIndex() then
+			self.battleManager:RecordAllyDeath()
+			break
+		end
 	end
 
 	if self.battleManager.heroStates[killed:GetEntityIndex()] ~= nil then

@@ -23,7 +23,10 @@
         ally_exists: "#dota2_rpg_condition_ally_exists",
         enemy_count_ge: "#dota2_rpg_condition_enemy_count_ge",
         battle_time_ge: "#dota2_rpg_condition_battle_time_ge",
-        ally_under_attack: "#dota2_rpg_condition_ally_under_attack"
+        ally_under_attack: "#dota2_rpg_condition_ally_under_attack",
+        ally_hit_count_ge: "#dota2_rpg_condition_ally_hit_count_ge",
+        ally_death_ge: "#dota2_rpg_condition_ally_death_ge",
+        none: "#dota2_rpg_condition_none"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -160,6 +163,9 @@
                 target_attr: defaults.target_attr,
                 target_side: defaults.target_side,
                 target: composeTarget(defaults.target_attr, defaults.target_side),
+                condition2: "none",
+                value2: 50,
+                logic: "all",
                 forced: defaults.forced
             });
         }
@@ -275,6 +281,12 @@
         var effectSelect = editor.FindChildTraverse("EffectSelect");
         var effectValue = editor.FindChildTraverse("EffectValue");
         var effectMenu = editor.FindChildTraverse("EffectMenu");
+        var logicToggle = editor.FindChildTraverse("LogicToggle");
+        var logicValue = editor.FindChildTraverse("LogicValue");
+        var cond2Select = editor.FindChildTraverse("Cond2Select");
+        var cond2Value = editor.FindChildTraverse("Cond2Value");
+        var cond2Entry = editor.FindChildTraverse("Cond2Entry");
+        var cond2Menu = editor.FindChildTraverse("Cond2Menu");
         var targetAttrSelect = editor.FindChildTraverse("TargetAttrSelect");
         var targetAttrValue = editor.FindChildTraverse("TargetAttrValue");
         var targetAttrMenu = editor.FindChildTraverse("TargetAttrMenu");
@@ -293,6 +305,18 @@
         });
         targetSideSelect.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "targetSide");
+        });
+        cond2Select.SetPanelEvent("onactivate", function () {
+            toggleEditorMenu(side, index, "cond2");
+        });
+        logicToggle.SetPanelEvent("onactivate", function () {
+            toggleLogic(side, index);
+        });
+        wireValueButtons(cond2Menu, function (cond) {
+            chooseCondition2(side, index, cond);
+        });
+        cond2Entry.SetPanelEvent("oninputsubmit", function () {
+            syncCond2Value(side, index, true);
         });
         wireValueButtons(menu, function (condition) {
             chooseCondition(side, index, condition);
@@ -320,6 +344,12 @@
             effectSelect: effectSelect,
             effectValue: effectValue,
             effectMenu: effectMenu,
+            logicToggle: logicToggle,
+            logicValue: logicValue,
+            cond2Select: cond2Select,
+            cond2Value: cond2Value,
+            cond2Entry: cond2Entry,
+            cond2Menu: cond2Menu,
             targetAttrSelect: targetAttrSelect,
             targetAttrValue: targetAttrValue,
             targetAttrMenu: targetAttrMenu,
@@ -358,6 +388,12 @@
                 effectSelect: conditionEditor.effectSelect,
                 effectValue: conditionEditor.effectValue,
                 effectMenu: conditionEditor.effectMenu,
+                logicToggle: conditionEditor.logicToggle,
+                logicValue: conditionEditor.logicValue,
+                cond2Select: conditionEditor.cond2Select,
+                cond2Value: conditionEditor.cond2Value,
+                cond2Entry: conditionEditor.cond2Entry,
+                cond2Menu: conditionEditor.cond2Menu,
                 targetAttrSelect: conditionEditor.targetAttrSelect,
                 targetAttrValue: conditionEditor.targetAttrValue,
                 targetAttrMenu: conditionEditor.targetAttrMenu,
@@ -383,6 +419,7 @@
                 panels.effectMenu.SetHasClass("Hidden", true);
                 panels.targetAttrMenu.SetHasClass("Hidden", true);
                 panels.targetSideMenu.SetHasClass("Hidden", true);
+                panels.cond2Menu.SetHasClass("Hidden", true);
                 panels.row.SetHasClass("MenuOpen", false);
                 panels.row.SetHasClass("ConditionMenuOpen", false);
                 panels.row.SetHasClass("EffectMenuOpen", false);
@@ -405,6 +442,8 @@
             menu = panels.effectMenu;
         } else if (menuType === "targetAttr") {
             menu = panels.targetAttrMenu;
+        } else if (menuType === "cond2") {
+            menu = panels.cond2Menu;
         } else if (menuType === "targetSide") {
             menu = panels.targetSideMenu;
         } else {
@@ -464,6 +503,32 @@
         updateConditionSelector(side, index, false);
     }
 
+    function chooseCondition2(side, index, cond) {
+        var rules = getSelectedRules(side);
+        var rule = rules[index];
+        rule.condition2 = cond === "none" || CONDITION_TOKENS[cond] ? cond : "none";
+        closeEditorMenus();
+        updateConditionSelector(side, index, false);
+    }
+
+    function toggleLogic(side, index) {
+        if (phase !== "setup") {
+            return;
+        }
+        var rule = getSelectedRules(side)[index];
+        rule.logic = rule.logic === "any" ? "all" : "any";
+        updateConditionSelector(side, index, false);
+    }
+
+    function syncCond2Value(side, index, normalizeText) {
+        var rule = getSelectedRules(side)[index];
+        var entry = rowPanels[side][index].cond2Entry;
+        rule.value2 = clampValue(entry.text, rule.value2 || 50, VALUE_CONDITIONS[rule.condition2]);
+        if (normalizeText) {
+            entry.text = String(rule.value2);
+        }
+    }
+
     function toggleForced(side, index) {
         if (phase !== "setup") {
             return;
@@ -495,6 +560,19 @@
         panels.conditionSelect.enabled = !locked;
         panels.targetAttrSelect.enabled = !locked && tSide !== "self";
         panels.targetSideSelect.enabled = !locked && attr !== "casting";
+        // 第二条件（组合：AND/OR）
+        var cond2 = rule.condition2 || "none";
+        panels.cond2Value.text = $.Localize(CONDITION_TOKENS[cond2] || CONDITION_TOKENS.none);
+        panels.logicValue.text = rule.logic === "any" ? "OR" : "AND";
+        panels.cond2Select.enabled = !locked;
+        panels.logicToggle.enabled = !locked && cond2 !== "none";
+        panels.logicToggle.SetHasClass("Any", rule.logic === "any");
+        var cond2Kind = VALUE_CONDITIONS[cond2];
+        panels.cond2Entry.enabled = !locked && Boolean(cond2Kind);
+        panels.cond2Entry.SetHasClass("Hidden", !cond2Kind);
+        if (cond2Kind && locked === false) {
+            panels.cond2Entry.text = String(rule.value2 === undefined ? 50 : rule.value2);
+        }
 
         var valueKind = VALUE_CONDITIONS[rule.condition];
         var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);
@@ -657,6 +735,9 @@
                     payload[prefix + "_condition_" + (ruleIndex + 1)] = rules[ruleIndex].condition;
                     payload[prefix + "_value_" + (ruleIndex + 1)] = rules[ruleIndex].value;
                     payload[prefix + "_target_" + (ruleIndex + 1)] = rules[ruleIndex].target;
+                    payload[prefix + "_condition2_" + (ruleIndex + 1)] = rules[ruleIndex].condition2 || "none";
+                    payload[prefix + "_value2_" + (ruleIndex + 1)] = rules[ruleIndex].value2 === undefined ? 50 : rules[ruleIndex].value2;
+                    payload[prefix + "_logic_" + (ruleIndex + 1)] = rules[ruleIndex].logic || "all";
                     payload[prefix + "_forced_" + (ruleIndex + 1)] = rules[ruleIndex].forced ? 1 : 0;
                 }
             }

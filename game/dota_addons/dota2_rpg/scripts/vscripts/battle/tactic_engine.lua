@@ -54,6 +54,9 @@ local VALID_CONDITIONS = {
 	enemy_count_ge = true,
 	battle_time_ge = true,
 	ally_under_attack = true,
+	ally_hit_count_ge = true,   -- 连续事件计数：友军受击次数
+	ally_death_ge = true,       -- 已阵亡友军数
+	none = true,                -- 组合第二槽占位
 }
 
 -- 目标选择器组合式 ID：{enemy|ally}_{hp|hp_pct|armor|attack|mr}_{highest|lowest}
@@ -152,33 +155,86 @@ function TacticEngine:constructor(adapter)
 	self:RegisterConditions()
 end
 
+-- 条件求值统一入口：conditions[type](ctx, value)
 function TacticEngine:RegisterConditions()
-	self.conditions.always = function(ctx)
+	self.conditions.always = function(ctx, value)
 		return true
 	end
-	self.conditions.self_hp_below = function(ctx)
-		return TacticEngine.HealthPercent(ctx.hero) < ctx.value
+	self.conditions.none = function(ctx, value)
+		return true -- 组合条件第二槽未启用
 	end
-	self.conditions.self_mp_above = function(ctx)
-		return TacticEngine.ManaPercent(ctx.hero) >= ctx.value
+	self.conditions.self_hp_below = function(ctx, value)
+		return TacticEngine.HealthPercent(ctx.hero) < value
 	end
-	self.conditions.enemy_exists = function(ctx)
+	self.conditions.self_mp_above = function(ctx, value)
+		return TacticEngine.ManaPercent(ctx.hero) >= value
+	end
+	self.conditions.enemy_exists = function(ctx, value)
 		return self:SelectTarget(ctx.hero, ctx.rule, ctx, "enemy") ~= nil
 	end
-	self.conditions.ally_exists = function(ctx)
+	self.conditions.ally_exists = function(ctx, value)
 		return self:SelectTarget(ctx.hero, ctx.rule, ctx, "ally") ~= nil
 	end
-	self.conditions.enemy_count_ge = function(ctx)
-		return self:CountAlive(ctx.enemies) >= ctx.value
+	self.conditions.enemy_count_ge = function(ctx, value)
+		return self:CountAlive(ctx.enemies) >= value
 	end
-	self.conditions.battle_time_ge = function(ctx)
-		return (ctx.env.battleTime or 0) >= ctx.value
+	self.conditions.battle_time_ge = function(ctx, value)
+		return (ctx.env.battleTime or 0) >= value
 	end
-	self.conditions.ally_under_attack = function(ctx)
+	self.conditions.ally_under_attack = function(ctx, value)
 		-- 任意友军最近 3 秒内受到伤害（宿主通过 entity_hurt 事件维护）
 		local attacked = ctx.env.recentlyAttackedAllies
 		return attacked ~= nil and #attacked > 0
 	end
+	self.conditions.ally_hit_count_ge = function(ctx, value)
+		-- 连续事件计数：友军在受击窗口内被击中次数 ≥ N
+		local hits = ctx.env.recentlyAllyHitCount or 0
+		return hits >= value
+	end
+	self.conditions.ally_death_ge = function(ctx, value)
+		local deaths = ctx.env.allyDeathCount or 0
+		return deaths >= value
+	end
+end
+
+-- 组合条件求值：rule.conditionList = { {type, value}, ... }，rule.logic = "all"|"any"
+function TacticEngine:EvaluateConditionList(rule, ctx)
+	local list = rule.conditionList
+	if list == nil or #list == 0 then
+		-- 兼容旧单条件
+		local fn = self.conditions[rule.condition]
+		if fn == nil then
+			return false
+		end
+		return fn(ctx, ctx.value) == true
+	end
+	local function normalizedValue(cond)
+		-- 百分比类条件入参为 1..100，统一换算到 0..1
+		if PERCENT_CONDITIONS[cond.type] then
+			return math.max(0.01, math.min(1, cond.value / 100))
+		end
+		return cond.value
+	end
+	if rule.logic == "any" then
+		for _, cond in ipairs(list) do
+			local fn = self.conditions[cond.type]
+			if fn ~= nil and fn(ctx, normalizedValue(cond)) == true then
+				return true
+			end
+		end
+		return false
+	end
+	-- 默认 all（AND）
+	for _, cond in ipairs(list) do
+		local fn = self.conditions[cond.type]
+		if fn == nil then
+			return false
+		end
+		if fn(ctx, normalizedValue(cond)) ~= true then
+			return false
+		end
+	end
+	return true
 end
 
 -- 组合式目标选择：selectorId -> 单位
@@ -306,6 +362,10 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 		local condition = tostring(payload[prefix .. "_condition_" .. index] or "")
 		local value = tonumber(payload[prefix .. "_value_" .. index]) or 50
 		value = math.max(1, math.min(999, math.floor(value + 0.5)))
+		local condition2 = tostring(payload[prefix .. "_condition2_" .. index] or "none")
+		local value2 = tonumber(payload[prefix .. "_value2_" .. index]) or 50
+		value2 = math.max(1, math.min(999, math.floor(value2 + 0.5)))
+		local logic = tostring(payload[prefix .. "_logic_" .. index] or "all")
 		local target = tostring(payload[prefix .. "_target_" .. index] or "")
 		local forced = payload[prefix .. "_forced_" .. index]
 		local enabled = payload[prefix .. "_enabled_" .. index]
@@ -335,10 +395,25 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 			action = "attack"
 		end
 
+		if not VALID_CONDITIONS[condition2] then
+			condition2 = "none"
+		end
+		if logic ~= "any" then
+			logic = "all"
+		end
+
+		-- 组合条件：第二条件为 none 时退化为单条件
+		local conditionList = { { type = condition, value = value } }
+		if condition2 ~= "none" then
+			table.insert(conditionList, { type = condition2, value = value2 })
+		end
+
 		usedActions[action] = true
 		table.insert(parsedRules, {
 			action = action,
 			condition = condition,
+			conditionList = conditionList,
+			logic = logic,
 			value = value,
 			target = target,
 			forced = forced,
@@ -382,7 +457,7 @@ function TacticEngine:Think(hero, state, rules, env)
 		local action = self:ResolveAction(hero, rule)
 		if action ~= nil then
 			local ctx = self:BuildContext(hero, rule, action, env)
-			if self:IsActionExecutable(hero, action, rule, ctx) and self.conditions[rule.condition](ctx) then
+			if self:IsActionExecutable(hero, action, rule, ctx) and self:EvaluateConditionList(rule, ctx) then
 				if self:ExecuteRule(hero, state, ruleIndex, rule, action, ctx) then
 					return
 				end
@@ -396,7 +471,11 @@ end
 
 function TacticEngine:BuildContext(hero, rule, action, env)
 	local value = tonumber(rule.value) or 50
-	if PERCENT_CONDITIONS[rule.condition] then
+	local primaryType = rule.condition
+	if rule.conditionList ~= nil and rule.conditionList[1] ~= nil then
+		primaryType = rule.conditionList[1].type
+	end
+	if PERCENT_CONDITIONS[primaryType] then
 		value = math.max(0.01, math.min(1, value / 100))
 	end
 	return {

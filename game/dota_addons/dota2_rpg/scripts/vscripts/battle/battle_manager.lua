@@ -29,14 +29,54 @@ function BattleManager:constructor(gameMode)
 	}
 	self.tacticEngine = TacticEngine(self)
 	self.recentDamage = {}      -- entindex -> 最后受击时间
+	self.recentHitCounts = {}   -- entindex -> 受击次数（滚动窗口）
+	self.allyDeathCount = 0     -- 我方累计阵亡数
 	self.enemyTags = {}         -- entindex -> { tag, ... }
 	self.DAMAGE_WINDOW = 3.0
+	self.HIT_COUNT_WINDOW = 5.0
+end
+
+-- 滚动窗口内的受击次数（连续事件计数）
+function BattleManager:GetRecentHitCount(team)
+	local now = GameRules:GetGameTime()
+	local count = 0
+	for _, hero in ipairs(self.teamHeroes[team] or {}) do
+		if TacticEngine.IsValidUnit(hero) then
+			local hits = self.recentHitCounts[hero:GetEntityIndex()]
+			if hits ~= nil then
+				-- 清理窗口外记录
+				local fresh = {}
+				for _, t in ipairs(hits) do
+					if now - t <= self.HIT_COUNT_WINDOW then
+						table.insert(fresh, t)
+					end
+				end
+				self.recentHitCounts[hero:GetEntityIndex()] = fresh
+				count = count + #fresh
+			end
+		end
+	end
+	return count
 end
 
 function BattleManager:RecordDamage(entindex)
 	if entindex ~= nil and entindex > 0 then
-		self.recentDamage[entindex] = GameRules:GetGameTime()
+		local now = GameRules:GetGameTime()
+		self.recentDamage[entindex] = now
+		local hits = self.recentHitCounts[entindex] or {}
+		table.insert(hits, now)
+		self.recentHitCounts[entindex] = hits
 	end
+end
+
+function BattleManager:RecordAllyDeath()
+	self.allyDeathCount = self.allyDeathCount + 1
+end
+
+function BattleManager:ResetBattleStats()
+	self.recentDamage = {}
+	self.recentHitCounts = {}
+	self.allyDeathCount = 0
 end
 
 function BattleManager:RegisterEnemyTags(unit, tags)
@@ -146,6 +186,8 @@ function BattleManager:OnThink()
 					enemies = enemies,
 					allies = allies,
 					recentlyAttackedAllies = self:GetRecentlyAttackedAllies(team),
+					recentlyAllyHitCount = self:GetRecentHitCount(team),
+					allyDeathCount = self.allyDeathCount,
 					enemyTags = self.enemyTags,
 				}
 				self.tacticEngine:Think(hero, state, rules, env)

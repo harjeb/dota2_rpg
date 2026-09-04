@@ -196,7 +196,9 @@ $expectedConditionValues = @(
     "ally_exists",
     "enemy_count_ge",
     "battle_time_ge",
-    "ally_under_attack"
+    "ally_under_attack",
+    "ally_hit_count_ge",
+    "ally_death_ge"
 )
 $actualConditionValues = @(
     $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |

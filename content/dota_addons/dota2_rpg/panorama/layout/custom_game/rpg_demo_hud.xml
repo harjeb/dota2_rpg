@@ -31,6 +31,8 @@
 					<Button id="EnemyCountOption" class="ConditionOption" value="enemy_count_ge"><Label text="#dota2_rpg_condition_enemy_count_ge" /></Button>
 					<Button id="BattleTimeOption" class="ConditionOption" value="battle_time_ge"><Label text="#dota2_rpg_condition_battle_time_ge" /></Button>
 					<Button id="AllyUnderAttackOption" class="ConditionOption" value="ally_under_attack"><Label text="#dota2_rpg_condition_ally_under_attack" /></Button>
+					<Button id="AllyHitCountOption" class="ConditionOption" value="ally_hit_count_ge"><Label text="#dota2_rpg_condition_ally_hit_count_ge" /></Button>
+					<Button id="AllyDeathOption" class="ConditionOption" value="ally_death_ge"><Label text="#dota2_rpg_condition_ally_death_ge" /></Button>
 				</Panel>
 				<Panel id="EffectMenu" class="EffectMenu Hidden">
 					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
@@ -48,6 +50,27 @@
 						<Label class="SelectChevron" text="v" />
 					</Button>
 				</Panel>
+				<Panel class="Cond2Top">
+						<Button id="LogicToggle" class="LogicToggle">
+							<Label id="LogicValue" class="LogicValue" text="AND" />
+						</Button>
+						<Button id="Cond2Select" class="Cond2Select">
+							<Label id="Cond2Value" class="TargetValue" />
+							<Label class="SelectChevron" text="v" />
+						</Button>
+						<TextEntry id="Cond2Entry" class="Cond2Entry" text="50" maxchars="3" />
+					</Panel>
+					<Panel id="Cond2Menu" class="TargetMenu Cond2Menu Hidden">
+						<Button class="ConditionOption" value="none"><Label text="#dota2_rpg_condition_none" /></Button>
+						<Button class="ConditionOption" value="always"><Label text="#dota2_rpg_condition_always" /></Button>
+						<Button class="ConditionOption" value="self_hp_below"><Label text="#dota2_rpg_condition_self_hp_below" /></Button>
+						<Button class="ConditionOption" value="self_mp_above"><Label text="#dota2_rpg_condition_self_mp_above" /></Button>
+						<Button class="ConditionOption" value="enemy_count_ge"><Label text="#dota2_rpg_condition_enemy_count_ge" /></Button>
+						<Button class="ConditionOption" value="battle_time_ge"><Label text="#dota2_rpg_condition_battle_time_ge" /></Button>
+						<Button class="ConditionOption" value="ally_under_attack"><Label text="#dota2_rpg_condition_ally_under_attack" /></Button>
+						<Button class="ConditionOption" value="ally_hit_count_ge"><Label text="#dota2_rpg_condition_ally_hit_count_ge" /></Button>
+						<Button class="ConditionOption" value="ally_death_ge"><Label text="#dota2_rpg_condition_ally_death_ge" /></Button>
+					</Panel>
 				<Panel id="TargetAttrMenu" class="TargetMenu Hidden">
 					<Button class="TargetOption" value="hp"><Label text="#dota2_rpg_target_attr_hp" /></Button>
 					<Button class="TargetOption" value="hp_pct"><Label text="#dota2_rpg_target_attr_hp_pct" /></Button>
