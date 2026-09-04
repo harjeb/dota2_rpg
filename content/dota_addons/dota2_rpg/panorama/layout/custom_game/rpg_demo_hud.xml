@@ -116,13 +116,15 @@
 					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="^" />
 				</Button>
 			</Panel>
-			<Panel class="ColumnHeader">
-				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
-				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
-				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
-				<Label class="ForceColumn" text="#dota2_rpg_force_column" />
+			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
+				<Panel class="ColumnHeader">
+					<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
+					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
+					<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
+					<Label class="ForceColumn" text="#dota2_rpg_force_column" />
+				</Panel>
+				<Panel id="RadiantRules" class="RulesContainer" />
 			</Panel>
-			<Panel id="RadiantRules" class="RulesContainer" />
 		</Panel>
 
 		<Panel id="BattleControls" hittest="true">
@@ -173,13 +175,15 @@
 					<Label id="DireCollapseLabel" class="CollapseGlyph" text="^" />
 				</Button>
 			</Panel>
-			<Panel class="ColumnHeader">
+			<Panel id="DireEditorBody" class="EditorBody" flow-children="down">
+				<Panel class="ColumnHeader">
 				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
 				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
 				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
 				<Label class="ForceColumn" text="#dota2_rpg_force_column" />
 			</Panel>
 			<Panel id="DireRules" class="RulesContainer" />
+				</Panel>
 		</Panel>
 
 		<Panel id="BattleResult" class="BattleResult Hidden">

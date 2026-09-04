@@ -924,13 +924,19 @@
         });
         $("#RadiantCollapseButton").SetPanelEvent("onactivate", function () {
             var editor = $("#RadiantEditor");
+            var editorBody = $("#RadiantEditorBody");
             editor.ToggleClass("Collapsed");
-            $("#RadiantCollapseLabel").text = editor.BHasClass("Collapsed") ? "v" : "^";
+            var collapsed = editor.BHasClass("Collapsed");
+            editorBody.SetHasClass("Hidden", collapsed);
+            $("#RadiantCollapseLabel").text = collapsed ? "v" : "^";
         });
         $("#DireCollapseButton").SetPanelEvent("onactivate", function () {
             var editor = $("#DireEditor");
+            var editorBody = $("#DireEditorBody");
             editor.ToggleClass("Collapsed");
-            $("#DireCollapseLabel").text = editor.BHasClass("Collapsed") ? "v" : "^";
+            var collapsed = editor.BHasClass("Collapsed");
+            editorBody.SetHasClass("Hidden", collapsed);
+            $("#DireCollapseLabel").text = collapsed ? "v" : "^";
         });
     }
 

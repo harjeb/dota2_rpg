@@ -232,14 +232,19 @@
 	color: #d9e1e5;
 }
 
-.TeamEditor.Collapsed
+/* 最小化：只剩队伍标题条与展开箭头 */
+.EditorBody
 {
-	height: 130px !important;
-	overflow: noclip;
+	flow-children: down;
+	width: 100%;
 }
 
-.TeamEditor.Collapsed .RulesContainer,
-.TeamEditor.Collapsed .ColumnHeader
+.TeamEditor.Collapsed
+{
+	height: 74px !important;
+}
+
+.TeamEditor.Collapsed .EditorBody
 {
 	visibility: collapse;
 }
@@ -276,14 +281,13 @@
 	color: #d9e1e5;
 }
 
+/* 最小化：只剩队伍标题条与展开箭头 */
 .TeamEditor.Collapsed
 {
-	height: 130px !important;
-	overflow: noclip;
+	height: 74px !important;
 }
 
-.TeamEditor.Collapsed .RulesContainer,
-.TeamEditor.Collapsed .ColumnHeader
+.TeamEditor.Collapsed .EditorBody
 {
 	visibility: collapse;
 }
@@ -317,14 +321,13 @@
 	color: #d9e1e5;
 }
 
+/* 最小化：只剩队伍标题条与展开箭头 */
 .TeamEditor.Collapsed
 {
-	height: 130px !important;
-	overflow: noclip;
+	height: 74px !important;
 }
 
-.TeamEditor.Collapsed .RulesContainer,
-.TeamEditor.Collapsed .ColumnHeader
+.TeamEditor.Collapsed .EditorBody
 {
 	visibility: collapse;
 }
