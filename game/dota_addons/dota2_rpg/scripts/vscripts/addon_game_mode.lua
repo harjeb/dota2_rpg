@@ -39,6 +39,15 @@ local PRE_BATTLE_MODIFIERS = {
 
 local ENEMY_SPAWN_SPACING = 220
 
+-- 待命区：围起来的地形，场下英雄在此可视化展示（右键点击可换上场）
+local BENCH_AREA_CENTER = Vector(-2300, 0, 128)
+local BENCH_AREA_HALF_W = 520
+local BENCH_AREA_HALF_H = 380
+local BENCH_TREE_SPACING = 140
+local BENCH_TREE_DURATION = 999999
+local BENCH_GRID_COLS = 3
+local BENCH_GRID_SPACING = 260
+
 -- 招募体系（DESIGN.md §2.1）：等级概率/品质锚点/价格倍率
 RECRUIT_BASE_PRICE = { ["1"] = 100, ["5"] = 300, ["10"] = 500, ["15"] = 800, ["20"] = 1500, ["30"] = 3000 }
 RECRUIT_LEVEL_RULES = {
@@ -1849,10 +1858,78 @@ function CDota2RpgDemo:EnsureBattlefield()
 end
 
 -- 玩家阵容：按 lineup 顺序在己方出生点生成，统一等级 self.playerLevel
+-- 用树墙围出待命区（树会阻挡移动，形成封闭地形；长持续时间常驻）
+function CDota2RpgDemo:SpawnBenchEnclosure()
+	if self.benchEnclosureBuilt then
+		return
+	end
+	self.benchEnclosureBuilt = true
+	local cx, cy = BENCH_AREA_CENTER.x, BENCH_AREA_CENTER.y
+	local hw, hh = BENCH_AREA_HALF_W, BENCH_AREA_HALF_H
+	local function plant(x, y)
+		CreateTempTree(GetGroundPosition(Vector(x, y, 128), nil), BENCH_TREE_DURATION)
+	end
+	local cols = math.ceil((hw * 2) / BENCH_TREE_SPACING)
+	local rows = math.ceil((hh * 2) / BENCH_TREE_SPACING)
+	for i = 0, cols do
+		plant(cx - hw + i * BENCH_TREE_SPACING, cy - hh)
+		plant(cx - hw + i * BENCH_TREE_SPACING, cy + hh)
+	end
+	for j = 0, rows do
+		plant(cx - hw, cy - hh + j * BENCH_TREE_SPACING)
+		plant(cx + hw, cy - hh + j * BENCH_TREE_SPACING)
+	end
+	print("[Dota2Rpg] Bench enclosure built.")
+end
+
+-- 生成场下英雄到待命区（无敌/禁足展示，不参与战斗与胜负判定）
+function CDota2RpgDemo:SpawnBenchHeroes()
+	-- 清理旧场下单位
+	for _, unit in ipairs(self.benchUnits or {}) do
+		if TacticEngine.IsValidUnit(unit) then
+			unit:RemoveSelf()
+		end
+	end
+	self.benchUnits = {}
+
+	for _, heroName in ipairs(self.ownedHeroes) do
+		local onLineup = false
+		for _, lineupName in ipairs(self.lineup) do
+			if lineupName == heroName then
+				onLineup = true
+				break
+			end
+		end
+		if not onLineup then
+			local count = #self.benchUnits
+			local col = count % BENCH_GRID_COLS
+			local row = math.floor(count / BENCH_GRID_COLS)
+			local pos = GetGroundPosition(Vector(
+				BENCH_AREA_CENTER.x - BENCH_GRID_SPACING + col * BENCH_GRID_SPACING,
+				BENCH_AREA_CENTER.y - 120 + row * BENCH_GRID_SPACING, 128), nil)
+			local unit = CreateUnitByName(heroName, pos, true, nil, nil, DOTA_TEAM_GOODGUYS)
+			if TacticEngine.IsValidUnit(unit) then
+				FindClearSpaceForUnit(unit, pos, true)
+				local data = self.heroData[heroName]
+				self:PrepareBattleHero(unit, data ~= nil and data.level or 1)
+				unit.benchHeroName = heroName
+				if data ~= nil and QUALITY_CONSUMED_MODIFIERS[data.quality] ~= nil then
+					for _, modifierName in ipairs(QUALITY_CONSUMED_MODIFIERS[data.quality]) do
+						unit:AddNewModifier(unit, nil, modifierName, {})
+					end
+				end
+				table.insert(self.benchUnits, unit)
+			end
+		end
+	end
+end
+
 function CDota2RpgDemo:RespawnPlayerRoster()
 	if self.phase ~= "setup" then
 		return
 	end
+	self:SpawnBenchEnclosure()
+	self:SpawnBenchHeroes()
 	local battleManager = self.battleManager
 	for _, hero in ipairs(battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
 		if TacticEngine.IsValidUnit(hero) then
@@ -2072,9 +2149,38 @@ end
 function CDota2RpgDemo:FilterExecuteOrder(filterTable)
 	local issuerPlayerId = tonumber(filterTable.issuer_player_id_const) or -1
 	if issuerPlayerId >= 0 then
+		-- 玩家右键点击待命区英雄：请求换其上场
+		local orderType = tonumber(filterTable.order_type) or 0
+		local targetIndex = tonumber(filterTable.entindex_target) or -1
+		if targetIndex > 0 and (orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET or orderType == DOTA_UNIT_ORDER_ATTACK_TARGET) then
+			local target = EntIndexToHScript(targetIndex)
+			if TacticEngine.IsValidUnit(target) and target.benchHeroName ~= nil then
+				self:PromoteBenchHero(target.benchHeroName)
+				return false
+			end
+		end
 		return false
 	end
 	return true
+end
+
+-- 换人：待命英雄进入首发；首发已满时替换最后一名
+function CDota2RpgDemo:PromoteBenchHero(heroName)
+	if self.phase ~= "setup" then
+		return
+	end
+	for _, lineupName in ipairs(self.lineup) do
+		if lineupName == heroName then
+			return
+		end
+	end
+	if #self.lineup < self.shopCosts.lineup_max then
+		table.insert(self.lineup, heroName)
+	else
+		table.remove(self.lineup) -- 首发已满：替换最后一名
+	end
+	self:RespawnPlayerRoster()
+	self:BroadcastShopState()
 end
 
 function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
