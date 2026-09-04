@@ -89,6 +89,9 @@
 					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
 				</Panel>
 				<Panel id="RadiantHeroStrip" class="HeroStrip" />
+				<Button id="RadiantCollapseButton" class="CollapseButton">
+					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="^" />
+				</Button>
 			</Panel>
 			<Panel class="ColumnHeader">
 				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
@@ -104,10 +107,6 @@
 				<Panel class="ShopHeaderRow">
 					<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
 				</Panel>
-				<Panel id="GoldBar" class="GoldBar">
-					<Label id="GoldLabel" text="#dota2_rpg_gold" />
-					<Label id="GoldValue" text="300" />
-				</Panel>
 				<Panel id="ShopOffer" class="ShopOffer" />
 				<Panel class="ShopButtons">
 					<Button id="RefreshShopButton" class="ShopButton">
@@ -117,27 +116,27 @@
 						<Label id="BenchBuyLabel" text="#dota2_rpg_bench_buy" />
 					</Button>
 				</Panel>
-				<Panel class="ShopButtons">
-					<Button id="ScrollBuyLow" class="ShopButton">
-						<Label id="ScrollBuyLowLabel" text="#dota2_rpg_scroll_low" />
-					</Button>
-					<Button id="ScrollBuyHigh" class="ShopButton">
-						<Label id="ScrollBuyHighLabel" text="#dota2_rpg_scroll_high" />
-					</Button>
-				</Panel>
-				<Panel class="ShopButtons">
-					<Button id="ScrollUseLow" class="ShopButton">
-						<Label id="ScrollUseLowLabel" text="#dota2_rpg_scroll_use_low" />
-					</Button>
-					<Button id="ScrollUseHigh" class="ShopButton">
-						<Label id="ScrollUseHighLabel" text="#dota2_rpg_scroll_use_high" />
-					</Button>
-				</Panel>
 				<Panel id="LineupPanel" class="LineupPanel">
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
 				<Panel id="ItemShopPanel" class="LineupPanel">
+					<Panel class="ShopButtons">
+						<Button id="ScrollBuyLow" class="ShopButton">
+							<Label id="ScrollBuyLowLabel" text="#dota2_rpg_scroll_low" />
+						</Button>
+						<Button id="ScrollBuyHigh" class="ShopButton">
+							<Label id="ScrollBuyHighLabel" text="#dota2_rpg_scroll_high" />
+						</Button>
+					</Panel>
+					<Panel class="ShopButtons">
+						<Button id="ScrollUseLow" class="ShopButton">
+							<Label id="ScrollUseLowLabel" text="#dota2_rpg_scroll_use_low" />
+						</Button>
+						<Button id="ScrollUseHigh" class="ShopButton">
+							<Label id="ScrollUseHighLabel" text="#dota2_rpg_scroll_use_high" />
+						</Button>
+					</Panel>
 					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
 					<Panel id="ItemStockList" class="LevelList" />
 					<Label class="LineupHeader" text="#dota2_rpg_item_catalog" />
@@ -163,6 +162,9 @@
 					<DOTAHeroImage id="DireHero2" class="HeroPortrait" heroname="npc_dota_hero_lion" heroimagestyle="portrait" hittest="true" />
 					<DOTAHeroImage id="DireHero3" class="HeroPortrait" heroname="npc_dota_hero_crystal_maiden" heroimagestyle="portrait" hittest="true" />
 				</Panel>
+				<Button id="DireCollapseButton" class="CollapseButton">
+					<Label id="DireCollapseLabel" class="CollapseGlyph" text="^" />
+				</Button>
 			</Panel>
 			<Panel class="ColumnHeader">
 				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />

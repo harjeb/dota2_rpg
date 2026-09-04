@@ -230,13 +230,7 @@ if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
     throw "Condition and target dropdowns must use the readable single-column layout"
 }
 
-$shopPanelNode = $hudXml.SelectSingleNode("//Panel[@id='ShopPanel']")
-$goldBarNode = if ($null -ne $shopPanelNode) { $shopPanelNode.SelectSingleNode(".//Panel[@id='GoldBar']") } else { $null }
-if ($null -eq $goldBarNode -or
-    $null -eq $goldBarNode.SelectSingleNode("./Label[@id='GoldLabel']") -or
-    $null -eq $goldBarNode.SelectSingleNode("./Label[@id='GoldValue']")) {
-    throw "The shop must contain a dedicated gold bar with a caption and direct numeric value"
-}
+# 金币已改走 Dota 原版 HUD 钱包，商店面板不再放置金币条
 
 $localizationFiles = @(
     "game\dota_addons\dota2_rpg\resource\addon_english.txt",
@@ -295,7 +289,7 @@ foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
     }
 }
 
-foreach ($shopPattern in @('id="ShopOffer"', 'id="GoldBar"', 'id="GoldLabel"', 'id="GoldValue"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', '$("#GoldValue").text', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }

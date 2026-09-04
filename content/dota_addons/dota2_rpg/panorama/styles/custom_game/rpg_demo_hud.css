@@ -208,6 +208,42 @@
 	saturation: 0.85;
 }
 
+.CollapseButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 6px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+.TeamEditor.Collapsed
+{
+	height: 130px !important;
+	overflow: noclip;
+}
+
+.TeamEditor.Collapsed .RulesContainer,
+.TeamEditor.Collapsed .ColumnHeader
+{
+	visibility: collapse;
+}
+
 .HeroPortrait.Selected
 {
 	brightness: 1.2;
@@ -216,12 +252,84 @@
 	border: 2px solid #f2d982;
 }
 
-.RadiantEditor .HeroPortrait.Selected
+.RadiantEditor .CollapseButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 6px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+.TeamEditor.Collapsed
+{
+	height: 130px !important;
+	overflow: noclip;
+}
+
+.TeamEditor.Collapsed .RulesContainer,
+.TeamEditor.Collapsed .ColumnHeader
+{
+	visibility: collapse;
+}
+
+.HeroPortrait.Selected
 {
 	border-bottom: 3px solid #4bb99f;
 }
 
-.DireEditor .HeroPortrait.Selected
+.DireEditor .CollapseButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 6px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+.TeamEditor.Collapsed
+{
+	height: 130px !important;
+	overflow: noclip;
+}
+
+.TeamEditor.Collapsed .RulesContainer,
+.TeamEditor.Collapsed .ColumnHeader
+{
+	visibility: collapse;
+}
+
+.HeroPortrait.Selected
 {
 	border-bottom: 3px solid #d65e56;
 }
@@ -766,27 +874,6 @@
 	font-size: 18px;
 	font-weight: bold;
 	color: #d9bd6b;
-}
-
-.GoldBar
-{
-	width: 100%;
-	height: 42px;
-	margin-top: 6px;
-	background-color: #2a2415;
-	border: 1px solid #d7b85a;
-	box-shadow: inset #00000088 0px 1px 4px 0px;
-}
-
-#GoldValue
-{
-	horizontal-align: right;
-	vertical-align: center;
-	margin-right: 12px;
-	font-size: 25px;
-	font-weight: bold;
-	color: #ffd85a;
-	text-shadow: 0px 1px 3px 2 #000000;
 }
 
 .ShopOffer

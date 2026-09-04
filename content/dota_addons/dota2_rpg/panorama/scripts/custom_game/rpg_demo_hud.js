@@ -716,8 +716,7 @@
     }
 
     function updateShopEconomyLabels(gold) {
-        var normalizedGold = Number(gold);
-        $("#GoldValue").text = String(isFinite(normalizedGold) ? Math.max(0, Math.floor(normalizedGold)) : 0);
+        // 金币显示在 Dota 原版 HUD 钱包，这里只更新价格标签
         $("#RefreshShopLabel").text = localizeFormat("#dota2_rpg_shop_refresh", shopState.costs.refresh);
         $("#BenchBuyLabel").text = localizeFormat("#dota2_rpg_bench_buy", shopState.costs.bench_slot);
     }
@@ -841,6 +840,16 @@
         var bench = $("#BenchBuyButton");
         bench.SetPanelEvent("onactivate", function () {
             GameEvents.SendCustomGameEventToServer("rpg_bench_buy", {});
+        });
+        $("#RadiantCollapseButton").SetPanelEvent("onactivate", function () {
+            var editor = $("#RadiantEditor");
+            editor.ToggleClass("Collapsed");
+            $("#RadiantCollapseLabel").text = editor.BHasClass("Collapsed") ? "v" : "^";
+        });
+        $("#DireCollapseButton").SetPanelEvent("onactivate", function () {
+            var editor = $("#DireEditor");
+            editor.ToggleClass("Collapsed");
+            $("#DireCollapseLabel").text = editor.BHasClass("Collapsed") ? "v" : "^";
         });
         $("#ScrollBuyLow").SetPanelEvent("onactivate", function () {
             GameEvents.SendCustomGameEventToServer("rpg_scroll_buy", { kind: "low" });
