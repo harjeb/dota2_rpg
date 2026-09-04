@@ -151,11 +151,6 @@
 					<TextEntry id="SaveCodeEntry" class="SaveCodeEntry" placeholder="#dota2_rpg_savecode_hint" />
 				</Panel>
 			</Panel>
-			<Panel id="BattleSpeedRow" class="ShopButtons">
-					<Button id="Speed1Button" class="ShopButton"><Label text="1x" /></Button>
-					<Button id="Speed2Button" class="ShopButton"><Label text="2x" /></Button>
-					<Button id="SkipBattleButton" class="ShopButton"><Label text="#dota2_rpg_skip" /></Button>
-				</Panel>
 				<Panel id="ItemShopPanel" class="LineupPanel">
 					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
 					<Panel id="ItemStockList" class="LevelList" />

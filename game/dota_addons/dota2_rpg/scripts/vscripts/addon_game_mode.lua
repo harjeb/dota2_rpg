@@ -328,12 +328,6 @@ function CDota2RpgDemo:InitGameMode()
 	CustomGameEventManager:RegisterListener("rpg_item_unequip", function(eventSourceIndex, payload)
 		return self:OnItemUnequip(eventSourceIndex, payload)
 	end)
-	CustomGameEventManager:RegisterListener("rpg_battle_speed", function(eventSourceIndex, payload)
-		return self:OnBattleSpeed(eventSourceIndex, payload)
-	end)
-	CustomGameEventManager:RegisterListener("rpg_battle_skip", function(eventSourceIndex, payload)
-		return self:OnBattleSkip(eventSourceIndex, payload)
-	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
 	self:RollShop()
@@ -826,33 +820,9 @@ end
 -- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
 ------------------------------------------------------------------
 
-function CDota2RpgDemo:SetBattleSpeed(speed)
-	if self.phase ~= "fight" then
-		return
-	end
-	self.battleSpeed = speed
-	SendToServerConsole("host_timescale " .. tostring(speed))
-end
 
-function CDota2RpgDemo:OnBattleSpeed(_, payload)
-	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
-	if speed ~= 1 and speed ~= 2 then
-		speed = 1
-	end
-	self:SetBattleSpeed(speed)
-end
 
-function CDota2RpgDemo:OnBattleSkip(_, payload)
-	if self.phase ~= "fight" then
-		return
-	end
-	self:SetBattleSpeed(10)
-end
 
-function CDota2RpgDemo:ResetBattleSpeed()
-	self.battleSpeed = 1
-	SendToServerConsole("host_timescale 1")
-end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
 function CDota2RpgDemo:DistributeXpPool(pool)
@@ -1156,33 +1126,9 @@ end
 -- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
 ------------------------------------------------------------------
 
-function CDota2RpgDemo:SetBattleSpeed(speed)
-	if self.phase ~= "fight" then
-		return
-	end
-	self.battleSpeed = speed
-	SendToServerConsole("host_timescale " .. tostring(speed))
-end
 
-function CDota2RpgDemo:OnBattleSpeed(_, payload)
-	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
-	if speed ~= 1 and speed ~= 2 then
-		speed = 1
-	end
-	self:SetBattleSpeed(speed)
-end
 
-function CDota2RpgDemo:OnBattleSkip(_, payload)
-	if self.phase ~= "fight" then
-		return
-	end
-	self:SetBattleSpeed(10)
-end
 
-function CDota2RpgDemo:ResetBattleSpeed()
-	self.battleSpeed = 1
-	SendToServerConsole("host_timescale 1")
-end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
 function CDota2RpgDemo:DistributeXpPool(pool)
@@ -1715,33 +1661,9 @@ end
 -- 战斗速度 1x/2x 与跳过（跳过 = 极限时间缩放快进到结算）
 ------------------------------------------------------------------
 
-function CDota2RpgDemo:SetBattleSpeed(speed)
-	if self.phase ~= "fight" then
-		return
-	end
-	self.battleSpeed = speed
-	SendToServerConsole("host_timescale " .. tostring(speed))
-end
 
-function CDota2RpgDemo:OnBattleSpeed(_, payload)
-	local speed = tonumber(payload ~= nil and payload.speed or 1) or 1
-	if speed ~= 1 and speed ~= 2 then
-		speed = 1
-	end
-	self:SetBattleSpeed(speed)
-end
 
-function CDota2RpgDemo:OnBattleSkip(_, payload)
-	if self.phase ~= "fight" then
-		return
-	end
-	self:SetBattleSpeed(10)
-end
 
-function CDota2RpgDemo:ResetBattleSpeed()
-	self.battleSpeed = 1
-	SendToServerConsole("host_timescale 1")
-end
 
 -- 经验池平均分配（含余数按招募顺序补 1）
 function CDota2RpgDemo:DistributeXpPool(pool)
@@ -2340,7 +2262,6 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	-- 单人闯关：结算展示 3 秒后回到准备阶段（不结束整局游戏）
 	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
-		self:ResetBattleSpeed()
 		self.phase = "setup"
 		self.winner = ""
 		self:SpawnLevelEnemies(self.currentLevelId)
