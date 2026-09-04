@@ -177,7 +177,15 @@ function Precache(context)
 
 	PrecacheUnit(PLAYER_PLACEHOLDER_HERO)
 
-	-- 官方英雄资源在游戏 VPK 内，无需逐个同步预缓存（112 个会拖慢加载）
+	-- 英雄池必须完整预缓存，否则运行时生成英雄会显示 ERROR 模型
+	local heroData = LoadKeyValues("scripts/data/heroes.kv")
+	if type(heroData) == "table" then
+		for _, categoryName in ipairs(SHOP_CATEGORIES) do
+			for _, heroEntry in pairs(heroData[categoryName] or {}) do
+				PrecacheUnit(heroEntry)
+			end
+		end
+	end
 
 	local levelData = LoadKeyValues("scripts/data/levels.kv")
 	if type(levelData) == "table" then
