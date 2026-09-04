@@ -95,6 +95,9 @@ function SimUnit:GetMaxMana() return self.maxMana end
 function SimUnit:GetMana() return self.mana end
 function SimUnit:SetMana(v) self.mana = math.max(0, math.min(self.maxMana, v)) end
 function SimUnit:GetAttackDamage() return self.attackDamage end
+function SimUnit:GetPhysicalArmorValue(_) return self.armor or 0 end
+function SimUnit:GetPhysicalArmorBaseValue() return self.armor or 0 end
+function SimUnit:GetMagicalArmorValue() return (self.magicResist or 25) / 100 end
 function SimUnit:GetAbsOrigin() return self.position end
 function SimUnit:IsChanneling() return SimClock < self.channelUntil end
 function SimUnit:GetCurrentActiveAbility() return nil end

@@ -114,6 +114,10 @@ end
 
 function SimAdapter:GetToggleState(_) return false end
 function SimAdapter:GetCastPoint(ability) return ability:GetCastPoint() end
+
+function SimAdapter:IsAbilityNoTarget(ability)
+	return self:IsNoTargetAbility(ability)
+end
 function SimAdapter:GetAbilityTargetSide(ability) return getAbilityTargetSide(ability) end
 function SimAdapter:IsAbilitySelfCastableAt(_, _) return true end
 
@@ -341,11 +345,11 @@ if SIM_SELFTEST ~= false then
 
 	local rulesA = {
 		{ action = "ultimate", condition = "enemy_count_ge", value = 1, target = "enemy_hp_pct_lowest", forced = true },
-		{ action = "ability_1", condition = "enemy_exists", target = "enemy_nearest", forced = false },
-		{ action = "attack", condition = "always", target = "enemy_nearest", forced = true },
+		{ action = "ability_1", condition = "enemy_exists", target = "enemy_armor_lowest", forced = false },
+		{ action = "attack", condition = "always", target = "enemy_distance_nearest", forced = true },
 	}
 	local rulesB = {
-		{ action = "attack", condition = "always", target = "enemy_nearest", forced = false },
+		{ action = "attack", condition = "always", target = "enemy_distance_nearest", forced = false },
 	}
 
 	local teamB = {

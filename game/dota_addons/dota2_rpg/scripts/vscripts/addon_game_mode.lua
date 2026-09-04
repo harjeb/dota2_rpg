@@ -72,11 +72,11 @@ end
 
 -- 默认规则模板（条件 → 动作 → 目标选择器），玩家可套用后微调
 local DEFAULT_RULES = {
-	{ action = "ability_1", condition = "enemy_exists", value = 50, target = "enemy_nearest", forced = false, enabled = true },
+	{ action = "ability_1", condition = "enemy_exists", value = 50, target = "enemy_distance_nearest", forced = false, enabled = true },
 	{ action = "ability_2", condition = "enemy_exists", value = 50, target = "enemy_hp_pct_lowest", forced = false },
 	{ action = "ability_3", condition = "self_hp_below", value = 50, target = "self", forced = false },
 	{ action = "ultimate", condition = "enemy_count_ge", value = 2, target = "enemy_hp_pct_lowest", forced = true },
-	{ action = "attack", condition = "always", value = 50, target = "enemy_nearest", forced = true },
+	{ action = "attack", condition = "always", value = 50, target = "enemy_distance_nearest", forced = true },
 }
 
 local RULE_COUNT = #DEFAULT_RULES
@@ -684,7 +684,7 @@ function CDota2RpgDemo:BuildEnemyRules(aiId)
 			action = (presetRule.action and presetRule.action.type) or "attack",
 			condition = cond.type or "always",
 			value = tonumber(cond.value) or 50,
-			target = presetRule.target or "enemy_nearest",
+			target = presetRule.target or "enemy_distance_nearest",
 			forced = presetRule.mode == "forced_chase",
 			enabled = true,
 		})

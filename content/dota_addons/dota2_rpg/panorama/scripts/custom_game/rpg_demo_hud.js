@@ -25,19 +25,64 @@
         battle_time_ge: "#dota2_rpg_condition_battle_time_ge"
     };
 
-    var TARGET_TOKENS = {
-        enemy_hp_lowest: "#dota2_rpg_target_enemy_hp_lowest",
-        enemy_hp_pct_lowest: "#dota2_rpg_target_enemy_hp_pct_lowest",
-        enemy_hp_highest: "#dota2_rpg_target_enemy_hp_highest",
-        enemy_hp_pct_highest: "#dota2_rpg_target_enemy_hp_pct_highest",
-        enemy_nearest: "#dota2_rpg_target_enemy_nearest",
-        enemy_farthest: "#dota2_rpg_target_enemy_farthest",
-        enemy_attack_highest: "#dota2_rpg_target_enemy_attack_highest",
-        enemy_casting: "#dota2_rpg_target_enemy_casting",
-        ally_hp_lowest: "#dota2_rpg_target_ally_hp_lowest",
-        ally_hp_pct_lowest: "#dota2_rpg_target_ally_hp_pct_lowest",
+    // 组合式目标：先选属性，再选阵营与极值
+    var TARGET_ATTR_TOKENS = {
+        hp: "#dota2_rpg_target_attr_hp",
+        hp_pct: "#dota2_rpg_target_attr_hp_pct",
+        armor: "#dota2_rpg_target_attr_armor",
+        attack: "#dota2_rpg_target_attr_attack",
+        mr: "#dota2_rpg_target_attr_mr",
+        distance: "#dota2_rpg_target_attr_distance",
+        casting: "#dota2_rpg_target_attr_casting"
+    };
+
+    var TARGET_SIDE_TOKENS = {
+        enemy_highest: "#dota2_rpg_target_side_enemy_highest",
+        enemy_lowest: "#dota2_rpg_target_side_enemy_lowest",
+        ally_highest: "#dota2_rpg_target_side_ally_highest",
+        ally_lowest: "#dota2_rpg_target_side_ally_lowest",
+        nearest: "#dota2_rpg_target_side_nearest",
+        farthest: "#dota2_rpg_target_side_farthest",
         self: "#dota2_rpg_target_self"
     };
+
+    // 由属性+阵营组合出引擎目标 ID
+    function composeTarget(attr, side) {
+        attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
+        side = TARGET_SIDE_TOKENS[side] ? side : "enemy_lowest";
+        if (side === "self") {
+            return "self";
+        }
+        if (attr === "casting") {
+            return "enemy_casting";
+        }
+        if (attr === "distance") {
+            return side === "farthest" ? "enemy_distance_farthest" : "enemy_distance_nearest";
+        }
+        var parts = side.split("_"); // enemy|ally + highest|lowest
+        return parts[0] + "_" + attr + "_" + parts[1];
+    }
+
+    // 旧 ID / 组合 ID 拆回 (attr, side)，兼容存档
+    function decomposeTarget(target) {
+        if (target === "self") {
+            return { attr: "hp", side: "self" };
+        }
+        if (target === "enemy_casting") {
+            return { attr: "casting", side: "enemy_highest" };
+        }
+        if (target === "enemy_distance_nearest") {
+            return { attr: "distance", side: "nearest" };
+        }
+        if (target === "enemy_distance_farthest") {
+            return { attr: "distance", side: "farthest" };
+        }
+        var m = String(target).match(/^(enemy|ally)_(hp|hp_pct|armor|attack|mr)_(highest|lowest)$/);
+        if (m) {
+            return { attr: m[2], side: m[1] + "_" + m[3] };
+        }
+        return { attr: "hp", side: "enemy_lowest" };
+    }
 
     var EFFECT_TOKENS = {
         magic_immune: "#dota2_rpg_effect_magic_immune",
@@ -67,11 +112,11 @@
 
     // 每个动作槽的默认规则模板（玩家可套用后微调）
     var DEFAULT_RULE_BY_ACTION = {
-        ultimate: { condition: "enemy_count_ge", value: 2, target: "enemy_hp_pct_lowest", forced: true },
-        ability_1: { condition: "enemy_exists", value: 50, target: "enemy_nearest", forced: false },
-        ability_2: { condition: "enemy_exists", value: 50, target: "enemy_hp_pct_lowest", forced: false },
-        ability_3: { condition: "self_hp_below", value: 50, target: "self", forced: false },
-        attack: { condition: "always", value: 50, target: "enemy_nearest", forced: true }
+        ultimate: { condition: "enemy_count_ge", value: 2, target_attr: "hp_pct", target_side: "enemy_lowest", forced: true },
+        ability_1: { condition: "enemy_exists", value: 50, target_attr: "distance", target_side: "nearest", forced: false },
+        ability_2: { condition: "enemy_exists", value: 50, target_attr: "hp_pct", target_side: "enemy_lowest", forced: false },
+        ability_3: { condition: "self_hp_below", value: 50, target_attr: "hp", target_side: "self", forced: false },
+        attack: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: true }
     };
 
     var MAX_RULE_ROWS = 5;
@@ -108,7 +153,9 @@
                 action: actions[index],
                 condition: defaults.condition,
                 value: defaults.value,
-                target: defaults.target,
+                target_attr: defaults.target_attr,
+                target_side: defaults.target_side,
+                target: composeTarget(defaults.target_attr, defaults.target_side),
                 forced: defaults.forced
             });
         }
@@ -224,9 +271,12 @@
         var effectSelect = editor.FindChildTraverse("EffectSelect");
         var effectValue = editor.FindChildTraverse("EffectValue");
         var effectMenu = editor.FindChildTraverse("EffectMenu");
-        var targetSelect = editor.FindChildTraverse("TargetSelect");
-        var targetValue = editor.FindChildTraverse("TargetValue");
-        var targetMenu = editor.FindChildTraverse("TargetMenu");
+        var targetAttrSelect = editor.FindChildTraverse("TargetAttrSelect");
+        var targetAttrValue = editor.FindChildTraverse("TargetAttrValue");
+        var targetAttrMenu = editor.FindChildTraverse("TargetAttrMenu");
+        var targetSideSelect = editor.FindChildTraverse("TargetSideSelect");
+        var targetSideValue = editor.FindChildTraverse("TargetSideValue");
+        var targetSideMenu = editor.FindChildTraverse("TargetSideMenu");
 
         selectButton.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "condition");
@@ -234,8 +284,11 @@
         effectSelect.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "effect");
         });
-        targetSelect.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "target");
+        targetAttrSelect.SetPanelEvent("onactivate", function () {
+            toggleEditorMenu(side, index, "targetAttr");
+        });
+        targetSideSelect.SetPanelEvent("onactivate", function () {
+            toggleEditorMenu(side, index, "targetSide");
         });
         wireValueButtons(menu, function (condition) {
             chooseCondition(side, index, condition);
@@ -243,8 +296,11 @@
         wireValueButtons(effectMenu, function (effect) {
             chooseEffect(side, index, effect);
         });
-        wireValueButtons(targetMenu, function (target) {
-            chooseTarget(side, index, target);
+        wireValueButtons(targetAttrMenu, function (attr) {
+            chooseTargetAttr(side, index, attr);
+        });
+        wireValueButtons(targetSideMenu, function (targetSide) {
+            chooseTargetSide(side, index, targetSide);
         });
         thresholdEntry.SetPanelEvent("oninputsubmit", function () {
             syncThreshold(side, index, true);
@@ -260,9 +316,12 @@
             effectSelect: effectSelect,
             effectValue: effectValue,
             effectMenu: effectMenu,
-            targetSelect: targetSelect,
-            targetValue: targetValue,
-            targetMenu: targetMenu
+            targetAttrSelect: targetAttrSelect,
+            targetAttrValue: targetAttrValue,
+            targetAttrMenu: targetAttrMenu,
+            targetSideSelect: targetSideSelect,
+            targetSideValue: targetSideValue,
+            targetSideMenu: targetSideMenu
         };
     }
 
@@ -295,9 +354,12 @@
                 effectSelect: conditionEditor.effectSelect,
                 effectValue: conditionEditor.effectValue,
                 effectMenu: conditionEditor.effectMenu,
-                targetSelect: conditionEditor.targetSelect,
-                targetValue: conditionEditor.targetValue,
-                targetMenu: conditionEditor.targetMenu,
+                targetAttrSelect: conditionEditor.targetAttrSelect,
+                targetAttrValue: conditionEditor.targetAttrValue,
+                targetAttrMenu: conditionEditor.targetAttrMenu,
+                targetSideSelect: conditionEditor.targetSideSelect,
+                targetSideValue: conditionEditor.targetSideValue,
+                targetSideMenu: conditionEditor.targetSideMenu,
                 forceToggle: forceToggle.button,
                 forceToggleValue: forceToggle.valueLabel,
                 upButton: upButton,
@@ -315,7 +377,8 @@
                 var panels = rowPanels[side][index];
                 panels.conditionMenu.SetHasClass("Hidden", true);
                 panels.effectMenu.SetHasClass("Hidden", true);
-                panels.targetMenu.SetHasClass("Hidden", true);
+                panels.targetAttrMenu.SetHasClass("Hidden", true);
+                panels.targetSideMenu.SetHasClass("Hidden", true);
                 panels.row.SetHasClass("MenuOpen", false);
                 panels.row.SetHasClass("ConditionMenuOpen", false);
                 panels.row.SetHasClass("EffectMenuOpen", false);
@@ -336,8 +399,10 @@
         var menu;
         if (menuType === "effect") {
             menu = panels.effectMenu;
-        } else if (menuType === "target") {
-            menu = panels.targetMenu;
+        } else if (menuType === "targetAttr") {
+            menu = panels.targetAttrMenu;
+        } else if (menuType === "targetSide") {
+            menu = panels.targetSideMenu;
         } else {
             menu = panels.conditionMenu;
         }
@@ -361,9 +426,29 @@
         updateConditionSelector(side, index, false);
     }
 
-    function chooseTarget(side, index, target) {
+    function chooseTargetAttr(side, index, attr) {
         var rules = getSelectedRules(side);
-        rules[index].target = TARGET_TOKENS[target] ? target : "enemy_nearest";
+        var rule = rules[index];
+        rule.target_attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
+        if (rule.target_attr === "casting" && rule.target_side !== "self") {
+            rule.target_side = "enemy_highest";
+        }
+        if (rule.target_attr === "distance" && rule.target_side !== "nearest" && rule.target_side !== "farthest" && rule.target_side !== "self") {
+            rule.target_side = "nearest";
+        }
+        rule.target = composeTarget(rule.target_attr, rule.target_side);
+        closeEditorMenus();
+        updateConditionSelector(side, index, false);
+    }
+
+    function chooseTargetSide(side, index, targetSide) {
+        var rules = getSelectedRules(side);
+        var rule = rules[index];
+        rule.target_side = TARGET_SIDE_TOKENS[targetSide] ? targetSide : "enemy_lowest";
+        if (rule.target_side === "self" && rule.target_attr === "casting") {
+            rule.target_attr = "hp";
+        }
+        rule.target = composeTarget(rule.target_attr, rule.target_side);
         closeEditorMenus();
         updateConditionSelector(side, index, false);
     }
@@ -396,12 +481,16 @@
         var panels = rowPanels[side][index];
         var rule = getSelectedRules(side)[index];
         panels.conditionValue.text = $.Localize(CONDITION_TOKENS[rule.condition] || CONDITION_TOKENS.always);
-        panels.targetValue.text = $.Localize(TARGET_TOKENS[rule.target] || TARGET_TOKENS.enemy_nearest);
+        var attr = rule.target_attr || "hp";
+        var tSide = rule.target_side || "enemy_lowest";
+        panels.targetAttrValue.text = $.Localize(TARGET_ATTR_TOKENS[attr] || TARGET_ATTR_TOKENS.hp);
+        panels.targetSideValue.text = $.Localize(TARGET_SIDE_TOKENS[tSide] || TARGET_SIDE_TOKENS.enemy_lowest);
         if (EFFECT_TOKENS[rule.effect]) {
             panels.effectValue.text = $.Localize(EFFECT_TOKENS[rule.effect]);
         }
         panels.conditionSelect.enabled = !locked;
-        panels.targetSelect.enabled = !locked;
+        panels.targetAttrSelect.enabled = !locked && tSide !== "self";
+        panels.targetSideSelect.enabled = !locked && attr !== "casting";
 
         var valueKind = VALUE_CONDITIONS[rule.condition];
         var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);

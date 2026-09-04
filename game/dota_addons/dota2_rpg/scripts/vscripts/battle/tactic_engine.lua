@@ -55,33 +55,86 @@ local VALID_CONDITIONS = {
 	battle_time_ge = true,
 }
 
-local VALID_TARGETS = {
-	enemy_hp_lowest = true,
-	enemy_hp_pct_lowest = true,
-	enemy_hp_highest = true,
-	enemy_hp_pct_highest = true,
-	enemy_nearest = true,
-	enemy_farthest = true,
-	enemy_attack_highest = true,
-	enemy_casting = true,
-	ally_hp_lowest = true,
-	ally_hp_pct_lowest = true,
-	self = true,
+-- 目标选择器组合式 ID：{enemy|ally}_{hp|hp_pct|armor|attack|mr}_{highest|lowest}
+-- 特殊：self / enemy_casting / enemy_distance_nearest / enemy_distance_farthest
+local TARGET_METRICS = {
+	hp = true,
+	hp_pct = true,
+	armor = true,
+	attack = true,
+	mr = true,
 }
 
-local TARGET_SIDE = {
-	enemy_hp_lowest = "enemy",
-	enemy_hp_pct_lowest = "enemy",
-	enemy_hp_highest = "enemy",
-	enemy_hp_pct_highest = "enemy",
-	enemy_nearest = "enemy",
-	enemy_farthest = "enemy",
-	enemy_attack_highest = "enemy",
-	enemy_casting = "enemy",
-	ally_hp_lowest = "ally",
-	ally_hp_pct_lowest = "ally",
-	self = "self",
-}
+local function splitSelector(selectorId)
+	-- Lua 模式不支持 | 交替，分两步解析阵营前缀
+	local side = "enemy"
+	local rest = string.match(selectorId, "^enemy_(.+)$")
+	if rest == nil then
+		side = "ally"
+		rest = string.match(selectorId, "^ally_(.+)$")
+	end
+	if rest == nil then
+		return nil
+	end
+	local attr, extremum = string.match(rest, "^(%a+)_(%a+)$")
+	if attr == nil then
+		return nil
+	end
+	return side, attr, extremum
+end
+
+function TacticEngine.IsValidTarget(selectorId)
+	if selectorId == "self" or selectorId == "enemy_casting" then
+		return true
+	end
+	local side, attr, extremum = splitSelector(selectorId)
+	if side == nil then
+		return false
+	end
+	if attr == "distance" then
+		return extremum == "nearest" or extremum == "farthest"
+	end
+	return TARGET_METRICS[attr] == true and (extremum == "highest" or extremum == "lowest")
+end
+
+function TacticEngine.GetTargetSide(selectorId)
+	if selectorId == "self" then
+		return "self"
+	end
+	if string.match(selectorId, "^enemy_") ~= nil then
+		return "enemy"
+	end
+	if string.match(selectorId, "^ally_") ~= nil then
+		return "ally"
+	end
+	return "enemy"
+end
+
+local function metricValue(unit, metric)
+	if metric == "hp" then
+		return unit:GetHealth()
+	end
+	if metric == "hp_pct" then
+		return TacticEngine.HealthPercent(unit)
+	end
+	if metric == "armor" then
+		if unit.GetPhysicalArmorValue ~= nil then
+			return unit:GetPhysicalArmorValue(false)
+		end
+		return unit.GetPhysicalArmorBaseValue ~= nil and unit:GetPhysicalArmorBaseValue() or 0
+	end
+	if metric == "attack" then
+		return unit:GetAttackDamage()
+	end
+	if metric == "mr" then
+		-- 魔抗百分比：数值越大越抗魔
+		if unit.GetMagicalArmorValue ~= nil then
+			return unit:GetMagicalArmorValue() * 100
+		end
+		return 25
+	end
+	return 0
+end
 
 local PERCENT_CONDITIONS = {
 	self_hp_below = true,
@@ -91,9 +144,7 @@ local PERCENT_CONDITIONS = {
 function TacticEngine:constructor(adapter)
 	self.adapter = adapter
 	self.conditions = {}
-	self.targets = {}
 	self:RegisterConditions()
-	self:RegisterTargets()
 end
 
 function TacticEngine:RegisterConditions()
@@ -120,42 +171,24 @@ function TacticEngine:RegisterConditions()
 	end
 end
 
-function TacticEngine:RegisterTargets()
-	self.targets.enemy_hp_lowest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp", true)
-	end
-	self.targets.enemy_hp_pct_lowest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp_pct", true)
-	end
-	self.targets.enemy_hp_highest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp", false)
-	end
-	self.targets.enemy_hp_pct_highest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp_pct", false)
-	end
-	self.targets.enemy_nearest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "distance", true, ctx.hero)
-	end
-	self.targets.enemy_farthest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "distance", false, ctx.hero)
-	end
-	self.targets.enemy_attack_highest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "attack", false)
-	end
-	self.targets.enemy_casting = function(ctx)
-		return self:NearestMatching(ctx.hero, ctx.units, function(unit)
+-- 组合式目标选择：selectorId -> 单位
+function TacticEngine:SelectSelectorTarget(hero, selectorId, units)
+	if selectorId == "enemy_casting" then
+		return self:NearestMatching(hero, units, function(unit)
 			return unit:IsChanneling()
 		end)
 	end
-	self.targets.ally_hp_lowest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp", true)
+
+	local side, attr, extremum = splitSelector(selectorId)
+	if side == nil then
+		return nil
 	end
-	self.targets.ally_hp_pct_lowest = function(ctx)
-		return self:ExtremeUnit(ctx.units, "hp_pct", true)
+
+	if attr == "distance" then
+		return self:ExtremeUnit(units, "distance", extremum == "nearest", hero)
 	end
-	self.targets.self = function(ctx)
-		return ctx.hero
-	end
+
+	return self:ExtremeUnit(units, attr, extremum == "lowest")
 end
 
 function TacticEngine.HealthPercent(unit)
@@ -178,14 +211,10 @@ function TacticEngine:ExtremeUnit(units, metric, wantMinimum, origin)
 	for _, unit in ipairs(units or {}) do
 		if TacticEngine.IsValidUnit(unit) then
 			local value
-			if metric == "hp" then
-				value = unit:GetHealth()
-			elseif metric == "hp_pct" then
-				value = TacticEngine.HealthPercent(unit)
-			elseif metric == "attack" then
-				value = unit:GetAttackDamage()
-			elseif metric == "distance" then
+			if metric == "distance" then
 				value = (origin:GetAbsOrigin() - unit:GetAbsOrigin()):Length2D()
+			else
+				value = metricValue(unit, metric)
 			end
 
 			if value ~= nil and (bestValue == nil or (wantMinimum and value < bestValue or not wantMinimum and value > bestValue)) then
@@ -244,8 +273,8 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 			enabled = tonumber(enabled) ~= 0
 		end
 
-		if not VALID_TARGETS[target] then
-			target = fallbackRules[index] ~= nil and fallbackRules[index].target or "enemy_nearest"
+		if not TacticEngine.IsValidTarget(target) then
+			target = fallbackRules[index] ~= nil and fallbackRules[index].target or "enemy_distance_nearest"
 		end
 		if not VALID_CONDITIONS[condition] then
 			condition = fallbackRules[index] ~= nil and fallbackRules[index].condition or "always"
@@ -360,11 +389,7 @@ function TacticEngine:SelectTarget(hero, rule, ctx, side)
 		units = self.adapter:FilterUnitsInActionRange(hero, ctx.action, units)
 	end
 
-	local selector = self.targets[selectorId]
-	if selector == nil then
-		return nil
-	end
-	return selector({ hero = hero, units = units, rule = rule, env = ctx.env })
+	return self:SelectSelectorTarget(hero, selectorId, units)
 end
 
 function TacticEngine:ResolveAction(hero, rule)
@@ -399,7 +424,7 @@ function TacticEngine:ExecuteRule(hero, state, ruleIndex, rule, action, ctx)
 	local ability = action.ability
 	local side = self.adapter:GetAbilityTargetSide(ability)
 	-- 目标选择器与技能阵营不匹配时规则不可执行（如对治疗技能选了敌方选择器）
-	local selectorSide = TARGET_SIDE[rule.target]
+	local selectorSide = TacticEngine.GetTargetSide(rule.target)
 	if side == "enemy" and selectorSide ~= nil and selectorSide ~= "enemy" then
 		return false
 	end
@@ -575,10 +600,3 @@ function TacticEngine:GetValidConditions()
 	return VALID_CONDITIONS
 end
 
-function TacticEngine:GetValidTargets()
-	return VALID_TARGETS
-end
-
-function TacticEngine:GetTargetSide(selectorId)
-	return TARGET_SIDE[selectorId] or "enemy"
-end

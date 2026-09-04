@@ -94,17 +94,15 @@ $luaChecks = @(
            'ally_exists = true',
            'enemy_count_ge = true',
            'battle_time_ge = true',
-           'enemy_hp_lowest = true',
-           'enemy_hp_pct_lowest = true',
-           'enemy_hp_highest = true',
-           'enemy_hp_pct_highest = true',
-           'enemy_nearest = true',
-           'enemy_farthest = true',
-           'enemy_attack_highest = true',
-           'enemy_casting = true',
-           'ally_hp_lowest = true',
-           'ally_hp_pct_lowest = true',
-           'self = true',
+           'TARGET_METRICS = {',
+           'hp_pct = true',
+           'armor = true',
+           'attack = true',
+           'mr = true',
+           'IsValidTarget',
+           'GetTargetSide',
+           'enemy_casting',
+           'SelectSelectorTarget',
            'item_1 = true',
            'item_6 = true',
            'forcedRuleIndex',
@@ -206,26 +204,24 @@ if ($conditionDifference.Count -gt 0) {
     throw "Condition dropdown values must exactly match the conditions supported by Panorama JavaScript"
 }
 
-$expectedTargetValues = @(
-    "enemy_hp_lowest",
-    "enemy_hp_pct_lowest",
-    "enemy_hp_highest",
-    "enemy_hp_pct_highest",
-    "enemy_nearest",
-    "enemy_farthest",
-    "enemy_attack_highest",
-    "enemy_casting",
-    "ally_hp_lowest",
-    "ally_hp_pct_lowest",
-    "self"
-)
-$actualTargetValues = @(
-    $hudXml.SelectNodes("//Panel[@id='TargetMenu']//Button") |
+$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting")
+$actualTargetAttrValues = @(
+    $hudXml.SelectNodes("//Panel[@id='TargetAttrMenu']//Button") |
         ForEach-Object { $_.GetAttribute("value") }
 )
-$targetDifference = @(Compare-Object -ReferenceObject $expectedTargetValues -DifferenceObject $actualTargetValues)
-if ($targetDifference.Count -gt 0) {
-    throw "Target dropdown values must exactly match the targets supported by Panorama JavaScript"
+$targetAttrDifference = @(Compare-Object -ReferenceObject $expectedTargetAttrValues -DifferenceObject $actualTargetAttrValues)
+if ($targetAttrDifference.Count -gt 0) {
+    throw "Target attribute dropdown values must exactly match the attributes supported by Panorama JavaScript"
+}
+
+$expectedTargetSideValues = @("enemy_highest", "enemy_lowest", "ally_highest", "ally_lowest", "nearest", "farthest", "self")
+$actualTargetSideValues = @(
+    $hudXml.SelectNodes("//Panel[@id='TargetSideMenu']//Button") |
+        ForEach-Object { $_.GetAttribute("value") }
+)
+$targetSideDifference = @(Compare-Object -ReferenceObject $expectedTargetSideValues -DifferenceObject $actualTargetSideValues)
+if ($targetSideDifference.Count -gt 0) {
+    throw "Target side dropdown values must exactly match the sides supported by Panorama JavaScript"
 }
 if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
     throw "Condition and target dropdowns must use the readable single-column layout"
@@ -272,24 +268,19 @@ foreach ($conditionName in @(
 }
 
 foreach ($targetName in @(
-    'enemy_hp_lowest:',
-    'enemy_hp_pct_lowest:',
-    'enemy_hp_highest:',
-    'enemy_hp_pct_highest:',
-    'enemy_nearest:',
-    'enemy_farthest:',
-    'enemy_attack_highest:',
-    'enemy_casting:',
-    'ally_hp_lowest:',
-    'ally_hp_pct_lowest:',
-    'self:'
+    'TARGET_ATTR_TOKENS',
+    'TARGET_SIDE_TOKENS',
+    'composeTarget',
+    'decomposeTarget',
+    'chooseTargetAttr',
+    'chooseTargetSide'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($targetName)) {
-        throw "Panorama UI is missing target selector: $targetName"
+        throw "Panorama UI is missing compositional target selector: $targetName"
     }
 }
 
-foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"', 'id="ConditionMenu"', 'id="EffectSelect"', 'id="EffectMenu"', 'id="TargetSelect"', 'id="TargetMenu"', 'BLoadLayoutSnippet("RpgConditionEditor")', 'toggleEditorMenu', 'chooseCondition', 'chooseTarget', 'chooseEffect')) {
+foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"', 'id="ConditionMenu"', 'id="EffectSelect"', 'id="EffectMenu"', 'id="TargetAttrSelect"', 'id="TargetAttrMenu"', 'id="TargetSideSelect"', 'id="TargetSideMenu"', 'BLoadLayoutSnippet("RpgConditionEditor")', 'toggleEditorMenu', 'chooseCondition', 'chooseTarget', 'chooseEffect')) {
     if ($conditionSource -notmatch [regex]::Escape($snippetPattern)) {
         throw "Panorama UI is missing declarative dropdown behavior: $snippetPattern"
     }

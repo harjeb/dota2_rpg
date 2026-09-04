@@ -38,24 +38,33 @@
 					<Button id="RootedOption" class="EffectOption" value="rooted"><Label text="#dota2_rpg_effect_rooted" /></Button>
 				</Panel>
 				<Panel class="TargetTop">
-					<Button id="TargetSelect" class="TargetSelect">
-						<Label id="TargetValue" class="TargetValue" />
+					<Button id="TargetAttrSelect" class="TargetSelect TargetAttrSelect">
+						<Label id="TargetAttrValue" class="TargetValue" />
+						<Label class="SelectChevron" text="v" />
+					</Button>
+					<Button id="TargetSideSelect" class="TargetSelect TargetSideSelect">
+						<Label id="TargetSideValue" class="TargetValue" />
 						<Label class="SelectChevron" text="v" />
 					</Button>
 				</Panel>
-				<Panel id="TargetMenu" class="TargetMenu Hidden">
-					<Button class="TargetOption" value="enemy_hp_lowest"><Label text="#dota2_rpg_target_enemy_hp_lowest" /></Button>
-					<Button class="TargetOption" value="enemy_hp_pct_lowest"><Label text="#dota2_rpg_target_enemy_hp_pct_lowest" /></Button>
-					<Button class="TargetOption" value="enemy_hp_highest"><Label text="#dota2_rpg_target_enemy_hp_highest" /></Button>
-					<Button class="TargetOption" value="enemy_hp_pct_highest"><Label text="#dota2_rpg_target_enemy_hp_pct_highest" /></Button>
-					<Button class="TargetOption" value="enemy_nearest"><Label text="#dota2_rpg_target_enemy_nearest" /></Button>
-					<Button class="TargetOption" value="enemy_farthest"><Label text="#dota2_rpg_target_enemy_farthest" /></Button>
-					<Button class="TargetOption" value="enemy_attack_highest"><Label text="#dota2_rpg_target_enemy_attack_highest" /></Button>
-					<Button class="TargetOption" value="enemy_casting"><Label text="#dota2_rpg_target_enemy_casting" /></Button>
-					<Button class="TargetOption" value="ally_hp_lowest"><Label text="#dota2_rpg_target_ally_hp_lowest" /></Button>
-					<Button class="TargetOption" value="ally_hp_pct_lowest"><Label text="#dota2_rpg_target_ally_hp_pct_lowest" /></Button>
-					<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
+				<Panel id="TargetAttrMenu" class="TargetMenu Hidden">
+					<Button class="TargetOption" value="hp"><Label text="#dota2_rpg_target_attr_hp" /></Button>
+					<Button class="TargetOption" value="hp_pct"><Label text="#dota2_rpg_target_attr_hp_pct" /></Button>
+					<Button class="TargetOption" value="armor"><Label text="#dota2_rpg_target_attr_armor" /></Button>
+					<Button class="TargetOption" value="attack"><Label text="#dota2_rpg_target_attr_attack" /></Button>
+					<Button class="TargetOption" value="mr"><Label text="#dota2_rpg_target_attr_mr" /></Button>
+					<Button class="TargetOption" value="distance"><Label text="#dota2_rpg_target_attr_distance" /></Button>
+					<Button class="TargetOption" value="casting"><Label text="#dota2_rpg_target_attr_casting" /></Button>
 				</Panel>
+				<Panel id="TargetSideMenu" class="TargetMenu Hidden">
+					<Button class="TargetOption" value="enemy_highest"><Label text="#dota2_rpg_target_side_enemy_highest" /></Button>
+					<Button class="TargetOption" value="enemy_lowest"><Label text="#dota2_rpg_target_side_enemy_lowest" /></Button>
+					<Button class="TargetOption" value="ally_highest"><Label text="#dota2_rpg_target_side_ally_highest" /></Button>
+					<Button class="TargetOption" value="ally_lowest"><Label text="#dota2_rpg_target_side_ally_lowest" /></Button>
+					<Button class="TargetOption" value="nearest"><Label text="#dota2_rpg_target_side_nearest" /></Button>
+					<Button class="TargetOption" value="farthest"><Label text="#dota2_rpg_target_side_farthest" /></Button>
+					<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
+</Panel>
 			</Panel>
 		</snippet>
 	</snippets>
