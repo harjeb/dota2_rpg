@@ -27,7 +27,6 @@ function BattleManager:constructor(gameMode)
 		[DOTA_TEAM_GOODGUYS] = {},
 		[DOTA_TEAM_BADGUYS] = {},
 	}
-	self.tacticEngine = TacticEngine(self)
 	self.recentDamage = {}      -- entindex -> 最后受击时间
 	self.recentHitCounts = {}   -- entindex -> 受击次数（滚动窗口）
 	self.allyDeathCount = 0     -- 我方累计阵亡数
@@ -110,23 +109,12 @@ end
 
 function BattleManager:RegisterHero(team, teamIndex, hero)
 	table.insert(self.teamHeroes[team], hero)
-	self.heroStates[hero:GetEntityIndex()] = self.tacticEngine:CreateHeroState(teamIndex)
 end
 
 function BattleManager:StartBattle(rulesByTeam)
 	self.teamRules = rulesByTeam
 	self.battleStartedAt = GameRules:GetGameTime()
 
-	local now = GameRules:GetGameTime()
-	for team, heroes in pairs(self.teamHeroes) do
-		for index, hero in ipairs(heroes) do
-			if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then
-				local state = self.heroStates[hero:GetEntityIndex()]
-				state.nextActionAt = now + 0.15 + (index * 0.08)
-				self.tacticEngine:ClearForcedLock(state)
-			end
-		end
-	end
 	self.phase = "fight"
 end
 
@@ -172,28 +160,8 @@ function BattleManager:OnThink()
 		return
 	end
 
-	local now = GameRules:GetGameTime()
-	for team, heroes in pairs(self.teamHeroes) do
-		local enemies = self.teamHeroes[self:GetEnemyTeam(team)]
-		local allies = heroes
-		for _, hero in ipairs(heroes) do
-			if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then
-				local state = self.heroStates[hero:GetEntityIndex()]
-				local rules = self.teamRules[team][state.teamIndex]
-				local env = {
-					now = now,
-					battleTime = self:GetBattleTime(),
-					enemies = enemies,
-					allies = allies,
-					recentlyAttackedAllies = self:GetRecentlyAttackedAllies(team),
-					recentlyAllyHitCount = self:GetRecentHitCount(team),
-					allyDeathCount = self.allyDeathCount,
-					enemyTags = self.enemyTags,
-				}
-				self.tacticEngine:Think(hero, state, rules, env)
-			end
-		end
-	end
+	-- 规则评估由修订版 TacticEngine（tactics/tactic_engine.lua，经 tactic_bridge 接管）
+	-- BattleManager 只负责胜负/超时/结算与战斗统计
 end
 
 function BattleManager:GetEnemyTeam(team)

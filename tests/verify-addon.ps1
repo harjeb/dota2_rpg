@@ -68,7 +68,6 @@ $luaChecks = @(
            'SetUnseenFogOfWarEnabled\(false\)',
            'SetHeroRespawnEnabled\(false\)',
            'SetRespawnsDisabled\(true\)',
-           'SetExecuteOrderFilter',
            'issuerPlayerId < 0',
            'local SHOP_HERO_COST = 100',
            'local SHOP_REFRESH_COST = 20',
@@ -83,6 +82,8 @@ $luaChecks = @(
            'RollRecruitLevel',
            'RollQuality',
            'SCROLL_LIMIT_PER_STAGE',
+           'tactic_bridge',
+           'battle.tactic_engine'
            'StashAddItem',
            'BuildItemPrices',
            'Vector\(-650, -420, 128\)',

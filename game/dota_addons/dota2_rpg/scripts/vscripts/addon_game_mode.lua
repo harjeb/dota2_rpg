@@ -1,8 +1,9 @@
-local okEngine = pcall(require, "battle.tactic_engine")
+local okHelpers = pcall(require, "battle.tactic_engine") -- 仅用其 IsValidUnit 等 helper（引擎评估已由修订版模块接管）
+local okBridge = pcall(require, "tactics.tactic_bridge")
 local okBattle = pcall(require, "battle.battle_manager")
 local okData = pcall(require, "data.data_loader")
-print(string.format("[Dota2Rpg] requires: tactic_engine=%s battle_manager=%s data_loader=%s",
-	tostring(okEngine), tostring(okBattle), tostring(okData)))
+print(string.format("[Dota2Rpg] requires: helpers=%s tactic_bridge=%s battle_manager=%s data_loader=%s",
+	tostring(okHelpers), tostring(okBridge), tostring(okBattle), tostring(okData)))
 
 if CDota2RpgDemo == nil then
 	_G.CDota2RpgDemo = class({})
@@ -268,6 +269,8 @@ function CDota2RpgDemo:InitGameMode()
 	self.placedPositions = {}  -- heroName -> {x, y}（准备阶段玩家排的站位）
 
 	self.battleManager = BattleManager(self)
+	self.tacticBridge = TacticBridge.new({ game_mode = self })
+	self.tacticBridge:Install()
 
 	gameMode:SetCustomGameForceHero(PLAYER_PLACEHOLDER_HERO)
 	gameMode:SetBuybackEnabled(false)
@@ -275,7 +278,7 @@ function CDota2RpgDemo:InitGameMode()
 	gameMode:SetFogOfWarDisabled(true)
 	gameMode:SetUnseenFogOfWarEnabled(false)
 	gameMode:SetCameraDistanceOverride(1500)
-	gameMode:SetExecuteOrderFilter(Dynamic_Wrap(CDota2RpgDemo, "FilterExecuteOrder"), self)
+	-- 订单过滤由修订版 OrderFilter 安装（tactic_bridge）
 	gameMode:SetContextThink("Dota2RpgDemoThink", function()
 		return self:OnThink()
 	end, THINK_INTERVAL)
@@ -2109,7 +2112,6 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 					end
 				end
 			end
-			battleManager.heroStates[hero:GetEntityIndex()] = nil
 			hero:RemoveSelf()
 		end
 	end
@@ -2315,7 +2317,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	end
 end
 
-function CDota2RpgDemo:FilterExecuteOrder(filterTable)
+function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 	local issuerPlayerId = tonumber(filterTable.issuer_player_id_const) or -1
 	if issuerPlayerId < 0 then
 		return true
@@ -2482,9 +2484,7 @@ function CDota2RpgDemo:OnEntityKilled(event)
 		end
 	end
 
-	if self.battleManager.heroStates[killed:GetEntityIndex()] ~= nil then
-		self:ScheduleStateBroadcast(0.05)
-	end
+	self:ScheduleStateBroadcast(0.05)
 end
 
 function CDota2RpgDemo:OnThink()
@@ -2496,7 +2496,7 @@ function CDota2RpgDemo:OnThink()
 	end
 
 	if self.phase == "fight" then
-		self.battleManager:OnThink()
+		self.tacticBridge:OnThink()
 	end
 
 	return THINK_INTERVAL

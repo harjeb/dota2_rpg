@@ -1,0 +1,65 @@
+#RPGRoot {
+    width: 100%;
+    height: 100%;
+}
+
+.Window {
+    background-color: #151a20ee;
+    border: 1px solid #59636f;
+    box-shadow: 0 0 12px #000000aa;
+    padding: 12px;
+}
+
+#TacticEditor {
+    width: 720px;
+    height: 760px;
+    horizontal-align: left;
+    vertical-align: center;
+    margin-left: 24px;
+}
+
+#RPGShop {
+    width: 620px;
+    height: 720px;
+    horizontal-align: right;
+    vertical-align: center;
+    margin-right: 24px;
+}
+
+.WindowTitle {
+    color: #f0e6cf;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.Hint {
+    color: #9eabb8;
+    font-size: 16px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+.HeaderRow {
+    width: 100%;
+    flow-children: right;
+}
+
+.Gold {
+    horizontal-align: right;
+    color: #e6c95c;
+    font-size: 22px;
+    margin-left: 12px;
+}
+
+.RuleRow {
+    width: 100%;
+    min-height: 58px;
+    margin-bottom: 4px;
+    background-color: #252d36;
+    border-left: 3px solid #73879b;
+    padding: 6px;
+}
+
+.RuleRow.Invalid {
+    border-left: 3px solid #b54b4b;
+}
