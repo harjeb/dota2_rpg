@@ -1487,3 +1487,32 @@
 {
 	brightness: 1.35;
 }
+
+.AddRuleButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 4px;
+	background-color: #1e4a2e;
+	border: 1px solid #4fa06a;
+}
+
+.AddRuleButton:hover
+{
+	brightness: 1.4;
+}
+
+.AddRuleButton:disabled
+{
+	visibility: collapse;
+}
+
+.AddGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #a8f0b8;
+}

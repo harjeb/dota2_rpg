@@ -406,6 +406,15 @@
                     }
                 });
                 deleteButton.enabled = idx > 0;
+                var addButton = $.CreatePanel("Button", row, side + "AddRule" + idx);
+                addButton.AddClass("AddRuleButton");
+                createLabel(addButton, "AddGlyph", "+");
+                addButton.SetPanelEvent("onactivate", function () {
+                    if (phase === "setup") {
+                        addRuleAtEnd(side);
+                    }
+                });
+                addButton.enabled = idx === 0;
                 var actionMenu = $.CreatePanel("Panel", row, side + "ActionMenu" + idx);
                 actionMenu.AddClass("ActionMenu Hidden");
                 rowPanels[side].push({
@@ -413,6 +422,7 @@
                     actionAbilityImage: abilityImage,
                     actionFallback: actionFallback,
                     deleteButton: deleteButton,
+                    addButton: addButton,
                     row: row,
                 conditionEditor: conditionEditor.editor,
                 conditionSelect: conditionEditor.selectButton,
@@ -588,6 +598,32 @@
             return; // 至少保留一条规则（系统兜底始终存在）
         }
         rules.splice(index, 1);
+        renderSide(side);
+    }
+
+    // 新增规则：复制最后一个动作，追加到末尾（最多 10 条）
+    function addRuleAtEnd(side) {
+        var rules = getSelectedRules(side);
+        if (rules.length >= MAX_RULE_ROWS) {
+            return;
+        }
+        var last = rules[rules.length - 1];
+        var source = last || { action: "attack", condition: "always", value: 50,
+            target_attr: "distance", target_side: "nearest",
+            target: "enemy_distance_nearest", forced: true };
+        rules.push({
+            action: source.action,
+            condition: source.condition,
+            value: source.value,
+            target_attr: source.target_attr,
+            target_side: source.target_side,
+            target: source.target,
+            condition2: "none",
+            value2: 50,
+            logic: "all",
+            forced: source.forced,
+            enabled: true
+        });
         renderSide(side);
     }
 
@@ -834,6 +870,10 @@
             if (panels.deleteButton) {
                 panels.deleteButton.enabled = !locked && index > 0;
                 panels.deleteButton.SetHasClass("Hidden", index === 0 || phase !== "setup");
+            }
+            if (panels.addButton) {
+                panels.addButton.enabled = !locked && index === 0 && rules.length < MAX_RULE_ROWS;
+                panels.addButton.SetHasClass("Hidden", index !== 0 || phase !== "setup");
             }
         }
         $("#" + side + "Editor").SetHasClass("Hidden", hidePanels);
