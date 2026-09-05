@@ -889,7 +889,9 @@
         saveData.lineup = shopState.lineup;
         saveData.bench_slots = shopState.bench_slots;
         saveData.scrolls = { low: shopState.scroll_low_stock, high: shopState.scroll_high_stock };
-        saveData.item_stock = shopState.stock;
+        saveData.item_stock = shopState.stock.map(function (entry) {
+            return entry.split("|")[0];
+        });
         persistSave();
         renderShop();
         renderLineupStrip();
@@ -1032,7 +1034,7 @@
                 sell.AddClass("ItemRowBtn");
                 createLabel(sell, "", $.Localize("#dota2_rpg_item_sell"));
                 sell.SetPanelEvent("onactivate", function () {
-                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { index: i + 1 });
+                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { item: parts[0] });
                 });
                 var equip = $.CreatePanel("Button", row, "Eq" + i);
                 equip.AddClass("ItemRowBtn");
@@ -1040,7 +1042,7 @@
                 equip.SetPanelEvent("onactivate", function () {
                     var hero = saveData.lineup[selectedHeroIndex.Radiant];
                     if (hero) {
-                        GameEvents.SendCustomGameEventToServer("rpg_item_equip", { hero: hero, index: i + 1 });
+                        GameEvents.SendCustomGameEventToServer("rpg_item_equip", { hero: hero, item: parts[0] });
                     }
                 });
             }(stock[index], index));
@@ -1128,7 +1130,7 @@
                 sell.AddClass("ItemRowBtn");
                 createLabel(sell, "", $.Localize("#dota2_rpg_item_sell"));
                 sell.SetPanelEvent("onactivate", function () {
-                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { index: i + 1 });
+                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { item: parts[0] });
                 });
                 var equip = $.CreatePanel("Button", row, "Eq" + i);
                 equip.AddClass("ItemRowBtn");
@@ -1136,7 +1138,7 @@
                 equip.SetPanelEvent("onactivate", function () {
                     var hero = saveData.lineup[selectedHeroIndex.Radiant];
                     if (hero) {
-                        GameEvents.SendCustomGameEventToServer("rpg_item_equip", { hero: hero, index: i + 1 });
+                        GameEvents.SendCustomGameEventToServer("rpg_item_equip", { hero: hero, item: parts[0] });
                     }
                 });
             }(stock[index], index));

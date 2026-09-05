@@ -83,6 +83,8 @@ $luaChecks = @(
            'RollRecruitLevel',
            'RollQuality',
            'SCROLL_LIMIT_PER_STAGE',
+           'StashAddItem',
+           'BuildItemPrices',
            'Vector\(-650, -420, 128\)',
            'Vector\(650, 420, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'

@@ -262,7 +262,6 @@ function CDota2RpgDemo:InitGameMode()
 	self.heroRulesByName = {}
 	-- 装备商店：目录价格（运行时读取当前 Dota 物价）+ 队伍共享库存池
 	self.itemCatalog = {}
-	self.itemStock = {}
 	self.heroInventories = {}  -- heroData[hero].inventory = { item, ... } 由 heroData 持有
 	self.barrierUnits = nil
 	self.placedPositions = {}  -- heroName -> {x, y}（准备阶段玩家排的站位）
@@ -765,7 +764,9 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	table.insert(self.itemStock, itemName)
+	if not self:StashAddItem(itemName) then
+		self.gold = self.gold + cost -- 仓库已满（12 格）
+	end
 	self:BroadcastShopState()
 end
 
@@ -773,13 +774,13 @@ function CDota2RpgDemo:OnItemSell(_, payload)
 	if self.phase ~= "setup" then
 		return
 	end
-	local index = tonumber(payload ~= nil and payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	table.remove(self.itemStock, index)
-	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	if self:StashRemoveItem(itemName) ~= nil then
+		self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	end
 	self:BroadcastShopState()
 end
 
@@ -788,22 +789,22 @@ function CDota2RpgDemo:OnItemEquip(_, payload)
 		return
 	end
 	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
-	local index = tonumber(payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil or self.heroData[heroName] == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self.heroData[heroName] == nil then
 		return
 	end
 	local heroUnit = self:FindLineupUnit(heroName)
-	if heroUnit == nil then
+	if heroUnit == nil or self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	-- 找空物品栏（0..5，不含中立/储备）
+	-- 找英雄空物品栏（0..5，不含中立/储备）
 	for slot = 0, 5 do
 		if heroUnit:GetItemInSlot(slot) == nil then
-			local item = heroUnit:AddItemByName(itemName)
-			if item ~= nil and not item:IsNull() then
-				table.remove(self.itemStock, index)
-				table.insert(self.heroData[heroName].inventory, itemName)
+			if self:StashRemoveItem(itemName) ~= nil then
+				local item = heroUnit:AddItemByName(itemName)
+				if item ~= nil and not item:IsNull() then
+					table.insert(self.heroData[heroName].inventory, itemName)
+				end
 			end
 			break
 		end
@@ -826,12 +827,14 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 	if item == nil then
 		return
 	end
-	table.insert(self.itemStock, item:GetAbilityName())
+	local itemName = item:GetAbilityName()
 	UTIL_Remove(item)
-	for i, name in ipairs(self.heroData[heroName].inventory) do
-		if name == item:GetAbilityName() then
-			table.remove(self.heroData[heroName].inventory, i)
-			break
+	if self:StashAddItem(itemName) then
+		for i, name in ipairs(self.heroData[heroName].inventory) do
+			if name == itemName then
+				table.remove(self.heroData[heroName].inventory, i)
+				break
+			end
 		end
 	end
 	self:RespawnPlayerRoster()
@@ -989,7 +992,11 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 		self.refreshCount = math.max(0, math.floor(tonumber(payload.refresh_count) or 0))
 	end
 	if payload.stock_text ~= nil then
-		self.itemStock = self:ReadPayloadList(payload, "stock_text")
+		-- 以存档记录重建仓库实物（玩家自由拖拽/丢捡后的真值以服务端扫描为准）
+		if self.stashUnit == nil or not TacticEngine.IsValidUnit(self.stashUnit) then
+			self:SpawnBattleBarrier()
+		end
+		self:RebuildStashFromNames(self:ReadPayloadList(payload, "stock_text"))
 	end
 	if payload.scroll_stock_low ~= nil then
 		self.scrollStock.low = math.max(0, math.floor(tonumber(payload.scroll_stock_low) or 0))
@@ -1071,7 +1078,9 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	table.insert(self.itemStock, itemName)
+	if not self:StashAddItem(itemName) then
+		self.gold = self.gold + cost -- 仓库已满（12 格）
+	end
 	self:BroadcastShopState()
 end
 
@@ -1079,13 +1088,13 @@ function CDota2RpgDemo:OnItemSell(_, payload)
 	if self.phase ~= "setup" then
 		return
 	end
-	local index = tonumber(payload ~= nil and payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	table.remove(self.itemStock, index)
-	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	if self:StashRemoveItem(itemName) ~= nil then
+		self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	end
 	self:BroadcastShopState()
 end
 
@@ -1094,22 +1103,22 @@ function CDota2RpgDemo:OnItemEquip(_, payload)
 		return
 	end
 	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
-	local index = tonumber(payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil or self.heroData[heroName] == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self.heroData[heroName] == nil then
 		return
 	end
 	local heroUnit = self:FindLineupUnit(heroName)
-	if heroUnit == nil then
+	if heroUnit == nil or self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	-- 找空物品栏（0..5，不含中立/储备）
+	-- 找英雄空物品栏（0..5，不含中立/储备）
 	for slot = 0, 5 do
 		if heroUnit:GetItemInSlot(slot) == nil then
-			local item = heroUnit:AddItemByName(itemName)
-			if item ~= nil and not item:IsNull() then
-				table.remove(self.itemStock, index)
-				table.insert(self.heroData[heroName].inventory, itemName)
+			if self:StashRemoveItem(itemName) ~= nil then
+				local item = heroUnit:AddItemByName(itemName)
+				if item ~= nil and not item:IsNull() then
+					table.insert(self.heroData[heroName].inventory, itemName)
+				end
 			end
 			break
 		end
@@ -1132,12 +1141,14 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 	if item == nil then
 		return
 	end
-	table.insert(self.itemStock, item:GetAbilityName())
+	local itemName = item:GetAbilityName()
 	UTIL_Remove(item)
-	for i, name in ipairs(self.heroData[heroName].inventory) do
-		if name == item:GetAbilityName() then
-			table.remove(self.heroData[heroName].inventory, i)
-			break
+	if self:StashAddItem(itemName) then
+		for i, name in ipairs(self.heroData[heroName].inventory) do
+			if name == itemName then
+				table.remove(self.heroData[heroName].inventory, i)
+				break
+			end
 		end
 	end
 	self:RespawnPlayerRoster()
@@ -1603,7 +1614,9 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	table.insert(self.itemStock, itemName)
+	if not self:StashAddItem(itemName) then
+		self.gold = self.gold + cost -- 仓库已满（12 格）
+	end
 	self:BroadcastShopState()
 end
 
@@ -1611,13 +1624,13 @@ function CDota2RpgDemo:OnItemSell(_, payload)
 	if self.phase ~= "setup" then
 		return
 	end
-	local index = tonumber(payload ~= nil and payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	table.remove(self.itemStock, index)
-	self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	if self:StashRemoveItem(itemName) ~= nil then
+		self.gold = self.gold + math.floor(self:GetItemCost(itemName) * 0.5)
+	end
 	self:BroadcastShopState()
 end
 
@@ -1626,22 +1639,22 @@ function CDota2RpgDemo:OnItemEquip(_, payload)
 		return
 	end
 	local heroName = payload ~= nil and tostring(payload.hero or "") or ""
-	local index = tonumber(payload.index or 0) or 0
-	local itemName = self.itemStock[index]
-	if itemName == nil or self.heroData[heroName] == nil then
+	local itemName = payload ~= nil and tostring(payload.item or "") or ""
+	if self.heroData[heroName] == nil then
 		return
 	end
 	local heroUnit = self:FindLineupUnit(heroName)
-	if heroUnit == nil then
+	if heroUnit == nil or self:StashCountItem(itemName) <= 0 then
 		return
 	end
-	-- 找空物品栏（0..5，不含中立/储备）
+	-- 找英雄空物品栏（0..5，不含中立/储备）
 	for slot = 0, 5 do
 		if heroUnit:GetItemInSlot(slot) == nil then
-			local item = heroUnit:AddItemByName(itemName)
-			if item ~= nil and not item:IsNull() then
-				table.remove(self.itemStock, index)
-				table.insert(self.heroData[heroName].inventory, itemName)
+			if self:StashRemoveItem(itemName) ~= nil then
+				local item = heroUnit:AddItemByName(itemName)
+				if item ~= nil and not item:IsNull() then
+					table.insert(self.heroData[heroName].inventory, itemName)
+				end
 			end
 			break
 		end
@@ -1664,12 +1677,14 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 	if item == nil then
 		return
 	end
-	table.insert(self.itemStock, item:GetAbilityName())
+	local itemName = item:GetAbilityName()
 	UTIL_Remove(item)
-	for i, name in ipairs(self.heroData[heroName].inventory) do
-		if name == item:GetAbilityName() then
-			table.remove(self.heroData[heroName].inventory, i)
-			break
+	if self:StashAddItem(itemName) then
+		for i, name in ipairs(self.heroData[heroName].inventory) do
+			if name == itemName then
+				table.remove(self.heroData[heroName].inventory, i)
+				break
+			end
 		end
 	end
 	self:RespawnPlayerRoster()
@@ -1881,7 +1896,80 @@ function CDota2RpgDemo:SpawnBattleBarrier()
 		end
 		y = y + BARRIER_SPACING
 	end
+	-- 仓库小精灵：玩家购买的装备实物放在它身上，可选中查看/拖拽
+	local stashPos = GetGroundPosition(Vector(BARRIER_X, 0, 128), nil)
+	local stash = CreateUnitByName("npc_dota_hero_wisp", stashPos, true, nil, nil, DOTA_TEAM_NEUTRALS)
+	if TacticEngine.IsValidUnit(stash) then
+		stash:AddNewModifier(stash, nil, "modifier_invulnerable", {})
+		stash:AddNewModifier(stash, nil, "modifier_rooted", {})
+		stash:AddNewModifier(stash, nil, "modifier_silenced", {})
+		stash:AddNewModifier(stash, nil, "modifier_disarmed", {})
+		if stash.AddNoHealthBar ~= nil then
+			stash:AddNoHealthBar()
+		end
+		self.stashUnit = stash
+	end
 	print("[Dota2Rpg] Battle barrier spawned.")
+end
+
+function CDota2RpgDemo:StashAddItem(itemName)
+	local stash = self.stashUnit
+	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+		return false
+	end
+	-- 物品栏 0..5 + 储备 6..11
+	for slot = 0, 11 do
+		if stash:GetItemInSlot(slot) == nil then
+			local item = stash:AddItemByName(itemName)
+			return item ~= nil and not item:IsNull()
+		end
+	end
+	return false -- 仓库已满（12 格）
+end
+
+function CDota2RpgDemo:StashRemoveItem(itemName)
+	local stash = self.stashUnit
+	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+		return nil
+	end
+	for slot = 0, 11 do
+		local item = stash:GetItemInSlot(slot)
+		if item ~= nil and not item:IsNull() and item:GetAbilityName() == itemName then
+			stash:RemoveItem(item)
+			return itemName
+		end
+	end
+	return nil
+end
+
+function CDota2RpgDemo:StashCountItem(itemName)
+	local stash = self.stashUnit
+	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+		return 0
+	end
+	local count = 0
+	for slot = 0, 11 do
+		local item = stash:GetItemInSlot(slot)
+		if item ~= nil and not item:IsNull() and item:GetAbilityName() == itemName then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+function CDota2RpgDemo:RebuildStashFromNames(names)
+	if self.stashUnit == nil or not TacticEngine.IsValidUnit(self.stashUnit) then
+		return
+	end
+	for slot = 0, 11 do
+		local item = self.stashUnit:GetItemInSlot(slot)
+		if item ~= nil and not item:IsNull() then
+			UTIL_Remove(item)
+		end
+	end
+	for _, itemName in ipairs(names or {}) do
+		self:StashAddItem(itemName)
+	end
 end
 
 function CDota2RpgDemo:RemoveBattleBarrier()
@@ -1946,6 +2034,8 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 			if TacticEngine.IsValidUnit(unit) then
 				FindClearSpaceForUnit(unit, pos, true)
 				local data = self.heroData[heroName]
+				self.autoAbilityHeroes = self.autoAbilityHeroes or {}
+				self.autoAbilityHeroes[unit:GetEntityIndex()] = true
 				self:PrepareBattleHero(unit, data ~= nil and data.level or 1)
 				unit.benchHeroName = heroName
 				if data ~= nil and QUALITY_CONSUMED_MODIFIERS[data.quality] ~= nil then
@@ -2011,6 +2101,8 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
 			local heroData = self.heroData[heroName]
+			self.autoAbilityHeroes = self.autoAbilityHeroes or {}
+			self.autoAbilityHeroes[hero:GetEntityIndex()] = nil -- 上阵英雄：玩家手动加点
 			self:PrepareBattleHero(hero, heroData ~= nil and heroData.level or 1)
 			-- 重新佩戴个人装备
 			heroData.inventory = heroData.inventory or {}
@@ -2109,6 +2201,8 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 end
 
 function CDota2RpgDemo:PrepareEnemyHero(hero, level)
+	self.autoAbilityHeroes = self.autoAbilityHeroes or {}
+	self.autoAbilityHeroes[hero:GetEntityIndex()] = true
 	self:PrepareBattleHero(hero, level)
 end
 
@@ -2147,33 +2241,37 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 		hero:HeroLevelUp(false)
 	end
 
-	-- 技能加点：与正常模式一致——普通技能可用等级=ceil(level/2)，大招需 6/12/18 级；
-	-- 加点后清空技能点，避免 1 级英雄带满技能+剩余点数
-	local basicLevel = math.max(1, math.min(4, math.ceil(wantedLevel / 2)))
-	local ultimateLevel = 0
-	if wantedLevel >= 18 then
-		ultimateLevel = 3
-	elseif wantedLevel >= 12 then
-		ultimateLevel = 2
-	elseif wantedLevel >= 6 then
-		ultimateLevel = 1
-	end
-	for slot = 0, hero:GetAbilityCount() - 1 do
-		local ability = hero:GetAbilityByIndex(slot)
-		if ability ~= nil and not ability:IsNull() then
-			local abilityName = ability:GetAbilityName()
-			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
-			if not isTalent and ability:GetMaxLevel() > 0 then
-				if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
-					ability:SetLevel(math.min(ability:GetMaxLevel(), ultimateLevel))
-				else
-					ability:SetLevel(math.min(ability:GetMaxLevel(), basicLevel))
+	-- 技能加点：敌方/待命区英雄自动加点（普通技能 ceil(lv/2)，大招 6/12/18 级）；
+	-- 玩家上阵英雄保留技能点（level-1 点），由玩家在准备阶段自己决定学什么
+	local autoAbilities = self.autoAbilityHeroes == nil or self.autoAbilityHeroes[hero:GetEntityIndex()] ~= nil
+	if autoAbilities then
+		local basicLevel = math.max(1, math.min(4, math.ceil(wantedLevel / 2)))
+		local ultimateLevel = 0
+		if wantedLevel >= 18 then
+			ultimateLevel = 3
+		elseif wantedLevel >= 12 then
+			ultimateLevel = 2
+		elseif wantedLevel >= 6 then
+			ultimateLevel = 1
+		end
+		for slot = 0, hero:GetAbilityCount() - 1 do
+			local ability = hero:GetAbilityByIndex(slot)
+			if ability ~= nil and not ability:IsNull() then
+				local abilityName = ability:GetAbilityName()
+				local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
+				if not isTalent and ability:GetMaxLevel() > 0 then
+					if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
+						ability:SetLevel(math.min(ability:GetMaxLevel(), ultimateLevel))
+					else
+						ability:SetLevel(math.min(ability:GetMaxLevel(), basicLevel))
+					end
 				end
 			end
 		end
+		hero:SetAbilityPoints(0)
+	else
+		hero:SetAbilityPoints(math.max(0, wantedLevel - 1))
 	end
-
-	hero:SetAbilityPoints(0)
 	hero:SetRespawnsDisabled(true)
 	hero:SetHealth(hero:GetMaxHealth())
 	hero:SetMana(hero:GetMaxMana())
@@ -2418,8 +2516,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 				if type(lootEntry) == "table" and lootEntry.item ~= nil then
 					local chance = tonumber(lootEntry.chance) or 0
 					if math.random() < chance then
-						table.insert(self.itemStock, lootEntry.item)
-						table.insert(lootDrops, lootEntry.item)
+						if self:StashAddItem(lootEntry.item) then
+							table.insert(lootDrops, lootEntry.item)
+						end
 					end
 				end
 			end
@@ -2468,6 +2567,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		self.winner = ""
 		self:SpawnLevelEnemies(self.currentLevelId)
 		self:RespawnPlayerRoster()
+		self:SpawnBattleBarrier()
 		self:BroadcastShopState()
 		self:BroadcastLevelInfo()
 		self:BroadcastBattleState()
@@ -2552,8 +2652,15 @@ function CDota2RpgDemo:BroadcastShopState()
 		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common") .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 	end
 	local stockParts = {}
-	for _, itemName in ipairs(self.itemStock) do
-		table.insert(stockParts, itemName .. "|" .. self:GetItemCost(itemName))
+	local stash = self.stashUnit
+	if stash ~= nil and TacticEngine.IsValidUnit(stash) then
+		for slot = 0, 11 do
+			local item = stash:GetItemInSlot(slot)
+			if item ~= nil and not item:IsNull() then
+				local itemName = item:GetAbilityName()
+				table.insert(stockParts, itemName .. "|" .. self:GetItemCost(itemName))
+			end
+		end
 	end
 	local catalogParts = {}
 	for itemName, cost in pairs(self.itemCatalog) do
