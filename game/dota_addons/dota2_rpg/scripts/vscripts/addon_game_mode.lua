@@ -1857,43 +1857,41 @@ function CDota2RpgDemo:SpawnBattleBarrier()
 		end
 		y = y + BARRIER_SPACING
 	end
-	-- 仓库小精灵：玩家购买的装备实物放在它身上，可选中查看/拖拽
-	local stashPos = GetGroundPosition(Vector(BARRIER_X, 0, 128), nil)
-	local stash = CreateUnitByName("npc_dota_hero_wisp", stashPos, true, nil, nil, DOTA_TEAM_NEUTRALS)
-	if TacticEngine.IsValidUnit(stash) then
-		stash:AddNewModifier(stash, nil, "modifier_invulnerable", {})
-		stash:AddNewModifier(stash, nil, "modifier_rooted", {})
-		stash:AddNewModifier(stash, nil, "modifier_silenced", {})
-		stash:AddNewModifier(stash, nil, "modifier_disarmed", {})
-		if stash.AddNoHealthBar ~= nil then
-			stash:AddNoHealthBar()
-		end
-		self.stashUnit = stash
-	end
+	-- 装备仓库 = 玩家自己的小精灵（指挥官），不再生成独立的仓库单位
 	print("[Dota2Rpg] Battle barrier spawned.")
 end
 
+-- 仓库 = 玩家自己的小精灵（指挥官）：购买的装备直接放在它身上，
+-- 玩家可自由拖拽、丢到地上给英雄拾取
+function CDota2RpgDemo:GetStashUnit()
+	local hero = self.placeholderHero
+	if hero ~= nil and TacticEngine.IsValidUnit(hero) then
+		return hero
+	end
+	return nil
+end
+
 function CDota2RpgDemo:StashAddItem(itemName)
-	local stash = self.stashUnit
-	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+	local stash = self:GetStashUnit()
+	if stash == nil then
 		return false
 	end
-	-- 物品栏 0..5 + 储备 6..11
-	for slot = 0, 11 do
+	-- 物品栏 0..5 + 背包 6..8
+	for slot = 0, 8 do
 		if stash:GetItemInSlot(slot) == nil then
 			local item = stash:AddItemByName(itemName)
 			return item ~= nil and not item:IsNull()
 		end
 	end
-	return false -- 仓库已满（12 格）
+	return false -- 仓库已满（9 格）
 end
 
 function CDota2RpgDemo:StashRemoveItem(itemName)
-	local stash = self.stashUnit
-	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+	local stash = self:GetStashUnit()
+	if stash == nil then
 		return nil
 	end
-	for slot = 0, 11 do
+	for slot = 0, 8 do
 		local item = stash:GetItemInSlot(slot)
 		if item ~= nil and not item:IsNull() and item:GetAbilityName() == itemName then
 			stash:RemoveItem(item)
@@ -1904,33 +1902,18 @@ function CDota2RpgDemo:StashRemoveItem(itemName)
 end
 
 function CDota2RpgDemo:StashCountItem(itemName)
-	local stash = self.stashUnit
-	if stash == nil or not TacticEngine.IsValidUnit(stash) then
+	local stash = self:GetStashUnit()
+	if stash == nil then
 		return 0
 	end
 	local count = 0
-	for slot = 0, 11 do
+	for slot = 0, 8 do
 		local item = stash:GetItemInSlot(slot)
 		if item ~= nil and not item:IsNull() and item:GetAbilityName() == itemName then
 			count = count + 1
 		end
 	end
 	return count
-end
-
-function CDota2RpgDemo:RebuildStashFromNames(names)
-	if self.stashUnit == nil or not TacticEngine.IsValidUnit(self.stashUnit) then
-		return
-	end
-	for slot = 0, 11 do
-		local item = self.stashUnit:GetItemInSlot(slot)
-		if item ~= nil and not item:IsNull() then
-			UTIL_Remove(item)
-		end
-	end
-	for _, itemName in ipairs(names or {}) do
-		self:StashAddItem(itemName)
-	end
 end
 
 function CDota2RpgDemo:RemoveBattleBarrier()
@@ -1942,11 +1925,6 @@ function CDota2RpgDemo:RemoveBattleBarrier()
 		end
 	end
 	self.barrierUnits = nil
-	-- 旧仓库小精灵一并清理，防止孤儿堆积（新仓库随隔断重建）
-	if self.stashUnit ~= nil and TacticEngine.IsValidUnit(self.stashUnit) then
-		self.stashUnit:RemoveSelf()
-	end
-	self.stashUnit = nil
 end
 
 -- 用树墙围出待命区（树会阻挡移动，形成封闭地形；长持续时间常驻）
@@ -2640,9 +2618,9 @@ function CDota2RpgDemo:BroadcastShopState()
 		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common") .. ":" .. (d ~= nil and (d.skill_points or d.level) or 1) .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 	end
 	local stockParts = {}
-	local stash = self.stashUnit
-	if stash ~= nil and TacticEngine.IsValidUnit(stash) then
-		for slot = 0, 11 do
+	local stash = self:GetStashUnit()
+	if stash ~= nil then
+		for slot = 0, 8 do
 			local item = stash:GetItemInSlot(slot)
 			if item ~= nil and not item:IsNull() then
 				local itemName = item:GetAbilityName()
