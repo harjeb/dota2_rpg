@@ -125,7 +125,16 @@
 					<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
 					<Label class="ForceColumn" text="#dota2_rpg_force_column" />
 				</Panel>
-				<Panel id="RadiantRules" class="RulesContainer" />
+				<Panel id="RadiantRulesViewport" class="RulesViewport">
+					<Panel id="RadiantRules" class="RulesContainer" hittest="true" hittestchildren="true" />
+					<Panel class="RulesScrollRail" hittest="true">
+						<Button id="RadiantRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
+						<Panel id="RadiantRulesScrollTrack" class="RulesScrollTrack">
+							<Panel id="RadiantRulesScrollThumb" class="RulesScrollThumb" />
+						</Panel>
+						<Button id="RadiantRulesScrollDown" class="RulesScrollButton"><Label text="▼" /></Button>
+					</Panel>
+				</Panel>
 			</Panel>
 		</Panel>
 
@@ -184,7 +193,16 @@
 				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
 				<Label class="ForceColumn" text="#dota2_rpg_force_column" />
 			</Panel>
-			<Panel id="DireRules" class="RulesContainer" />
+			<Panel id="DireRulesViewport" class="RulesViewport">
+				<Panel id="DireRules" class="RulesContainer" hittest="true" hittestchildren="true" />
+				<Panel class="RulesScrollRail" hittest="true">
+					<Button id="DireRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
+					<Panel id="DireRulesScrollTrack" class="RulesScrollTrack">
+						<Panel id="DireRulesScrollThumb" class="RulesScrollThumb" />
+					</Panel>
+					<Button id="DireRulesScrollDown" class="RulesScrollButton"><Label text="▼" /></Button>
+				</Panel>
+			</Panel>
 				</Panel>
 		</Panel>
 

@@ -237,6 +237,7 @@
 {
 	flow-children: down;
 	width: 100%;
+	height: fill-parent-flow(1.0);
 }
 
 /* 最小化：整个面板只剩一个最小化图标 */
@@ -489,15 +490,34 @@
 .RulesContainer
 {
 	width: 100%;
-	height: 340px;
+	height: fill-parent-flow(1.0);
+	padding-right: 12px;
 	overflow: squish scroll;
 	flow-children: down;
+}
+
+.RulesContainer VerticalScrollBar
+{
+	width: 9px;
+	height: 100%;
+	horizontal-align: right;
+	background-color: #0b1015cc;
+	border: 1px solid #3b474f;
+}
+
+.RulesContainer VerticalScrollBar .ScrollThumb
+{
+	width: 7px;
+	min-height: 48px;
+	horizontal-align: center;
+	background-color: #d7b85a;
+	border: 1px solid #f0d487;
 }
 
 .RuleRow
 {
 	width: 100%;
-	height: 100px;
+	height: 130px;
 	flow-children: right;
 	border-bottom: 1px solid #303b43;
 }
@@ -810,11 +830,17 @@
 
 .TargetSelect
 {
-	width: 300px;
+	width: fill-parent-flow(1.0);
 	height: 36px;
+	margin-right: 4px;
 	flow-children: right;
 	background-color: #1d262d;
 	border: 1px solid #4d5a63;
+}
+
+.TargetSideSelect
+{
+	margin-right: 0px;
 }
 
 .TargetValue
@@ -876,6 +902,54 @@
 	font-size: 15px;
 	color: #e1e7e9;
 	text-overflow: shrink;
+}
+
+.Cond2Top
+{
+	width: 300px;
+	height: 30px;
+	flow-children: right;
+}
+
+.LogicToggle,
+.Cond2Select,
+.Cond2Entry
+{
+	height: 28px;
+	background-color: #182128;
+	border: 1px solid #46545d;
+}
+
+.LogicToggle
+{
+	width: 50px;
+	margin-right: 4px;
+}
+
+.LogicValue
+{
+	width: 100%;
+	vertical-align: center;
+	font-size: 11px;
+	font-weight: bold;
+	color: #d9bd6b;
+	text-align: center;
+}
+
+.Cond2Select
+{
+	width: fill-parent-flow(1.0);
+	margin-right: 4px;
+	flow-children: right;
+}
+
+.Cond2Entry
+{
+	width: 54px;
+	padding: 3px 5px;
+	font-size: 13px;
+	color: #f1e6c8;
+	text-align: right;
 }
 
 .ForceToggle
@@ -1301,4 +1375,66 @@
 	horizontal-align: right;
 	margin-left: 0px;
 	margin-right: 60px;
+}
+
+/* 自绘规则列表滚动条（悬停裁剪视口 + 右侧轨道） */
+.RulesViewport
+{
+	width: 100%;
+	height: 380px;
+	flow-children: right;
+	overflow: noclip clip;
+}
+
+.RulesViewport .RulesContainer
+{
+	width: fill-parent-flow(1.0);
+	height: 1300px;
+}
+
+.RulesScrollRail
+{
+	width: 26px;
+	height: 380px;
+	flow-children: down;
+}
+
+.RulesScrollButton
+{
+	width: 26px;
+	height: 26px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.RulesScrollButton:hover
+{
+	brightness: 1.35;
+}
+
+.RulesScrollButton Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 11px;
+	color: #d9e1e5;
+}
+
+.RulesScrollTrack
+{
+	width: 26px;
+	height: fill-parent-flow(1.0);
+	background-color: #0b1015cc;
+	border: 1px solid #3b474f;
+}
+
+.RulesScrollThumb
+{
+	width: 20px;
+	height: 80px;
+	horizontal-align: center;
+	background-color: #d7b85a;
+	border: 1px solid #f0d487;
+	transition-property: margin-top;
+	transition-duration: 0.08s;
 }

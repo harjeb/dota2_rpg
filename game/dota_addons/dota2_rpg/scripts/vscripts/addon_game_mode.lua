@@ -271,7 +271,8 @@ function CDota2RpgDemo:InitGameMode()
 	self.scrollPurchases = { low = 0, high = 0 }  -- 当前关已购数量
 	self.lineup = {}
 	self.benchSlots = 0
-	self.shopOffer = {}
+	self.shopOffers = {}
+	self.shopOfferText = ""
 	self.refreshCount = 0
 	self.scrollStock = { low = 0, high = 0 }
 	self.scrollBought = { low = 0, high = 0 }
@@ -610,8 +611,9 @@ function CDota2RpgDemo:RollShop()
 			end
 		end
 	end
-	while #offer < self.shopCosts.lineup_max + 0 and #allHeroes > #offer do
-		local candidate = allHeroes[math.random(#allHeroes)]
+	while #offer < self.shopCosts.lineup_max and #allHeroes > 0 do
+		-- 抽中过前四个属性保底英雄时继续抽，而不是提前 break 导致只显示 4 个报价。
+		local candidate = table.remove(allHeroes, math.random(#allHeroes))
 		local duplicate = false
 		for _, existing in ipairs(offer) do
 			if existing == candidate then
@@ -621,8 +623,6 @@ function CDota2RpgDemo:RollShop()
 		end
 		if not duplicate then
 			table.insert(offer, candidate)
-		else
-			break
 		end
 	end
 
@@ -1393,8 +1393,9 @@ function CDota2RpgDemo:RollShop()
 			end
 		end
 	end
-	while #offer < self.shopCosts.lineup_max + 0 and #allHeroes > #offer do
-		local candidate = allHeroes[math.random(#allHeroes)]
+	while #offer < self.shopCosts.lineup_max and #allHeroes > 0 do
+		-- 抽中过前四个属性保底英雄时继续抽，而不是提前 break 导致只显示 4 个报价。
+		local candidate = table.remove(allHeroes, math.random(#allHeroes))
 		local duplicate = false
 		for _, existing in ipairs(offer) do
 			if existing == candidate then
@@ -1404,8 +1405,6 @@ function CDota2RpgDemo:RollShop()
 		end
 		if not duplicate then
 			table.insert(offer, candidate)
-		else
-			break
 		end
 	end
 
@@ -1829,6 +1828,11 @@ function CDota2RpgDemo:EnsureBattlefield()
 		pcall(function()
 			self:BuildItemPrices()
 		end)
+	end
+	-- 初次进入时必须先生成一批招募报价；否则只会广播空 offer_text，
+	-- Panorama 英雄商店会一直保持空白直到玩家手动刷新。
+	if self.shopOffers == nil or #self.shopOffers == 0 then
+		self:RollShop()
 	end
 	self:SpawnLevelEnemies(self.currentLevelId)
 	self:RespawnPlayerRoster()
@@ -2598,25 +2602,31 @@ local function DescribeAction(hero, action)
 end
 
 function CDota2RpgDemo:BroadcastHeroInfo()
-	local heroes = self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]
-	for index, hero in ipairs(heroes) do
-		if TacticEngine.IsValidUnit(hero) then
-			local descriptions = {}
-			local slots = BuildHeroActionSlots(hero)
-			for _, action in ipairs(slots) do
-				local _, detail = DescribeAction(hero, action)
-				table.insert(descriptions, detail ~= "" and detail or action)
+	local sides = {
+		{ key = "radiant", team = DOTA_TEAM_GOODGUYS },
+		{ key = "dire", team = DOTA_TEAM_BADGUYS },
+	}
+	for _, side in ipairs(sides) do
+		local heroes = self.battleManager.teamHeroes[side.team]
+		for index, hero in ipairs(heroes) do
+			if TacticEngine.IsValidUnit(hero) then
+				local descriptions = {}
+				local slots = BuildHeroActionSlots(hero)
+				for _, action in ipairs(slots) do
+					local _, detail = DescribeAction(hero, action)
+					table.insert(descriptions, detail ~= "" and detail or action)
+				end
+				-- 10 槽：动作循环补齐图标映射
+				for i = #slots + 1, RULE_COUNT do
+					table.insert(descriptions, descriptions[((i - 1) % #slots) + 1])
+				end
+				CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
+					slot_key = side.key .. "_" .. index,
+					hero_name = hero:GetUnitName(),
+					actions_text = table.concat(slots, ";"),
+					details_text = table.concat(descriptions, ";"),
+				})
 			end
-			-- 10 槽：动作循环补齐图标映射
-			for i = #slots + 1, RULE_COUNT do
-				table.insert(descriptions, descriptions[((i - 1) % #slots) + 1])
-			end
-			CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
-				slot_key = "radiant_" .. index,
-				hero_name = self.lineup[index] or "",
-				actions_text = table.concat(BuildHeroActionSlots(hero), ";"),
-				details_text = table.concat(descriptions, ";"),
-			})
 		end
 	end
 end

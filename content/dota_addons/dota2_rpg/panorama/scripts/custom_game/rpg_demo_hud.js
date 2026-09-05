@@ -152,6 +152,22 @@
         return actions;
     }
 
+    function getActionDetail(side, heroIndex, action) {
+        var key = side.toLowerCase() + "_" + (heroIndex + 1);
+        var entry = heroSlots ? heroSlots[key] : null;
+        if (!entry) {
+            return "";
+        }
+        var actions = splitList(entry.actions_text);
+        var details = splitList(entry.details_text);
+        for (var index = 0; index < actions.length; index++) {
+            if (actions[index] === action && details[index] && details[index] !== action) {
+                return details[index];
+            }
+        }
+        return "";
+    }
+
     function buildRulesForHero(side, heroIndex) {
         var actions = getSlotActions(side, heroIndex);
         var rules = [];
@@ -719,22 +735,10 @@
             }
             var definition = rules[index];
             var heroIndex = selectedHeroIndex[side];
-            var slotEntry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
-            var detailName = "";
-            if (slotEntry && slotEntry.details_text) {
-                var details = splitList(slotEntry.details_text);
-                if (details[index]) {
-                    detailName = details[index];
-                }
-            }
+            var detailName = getActionDetail(side, heroIndex, definition.action);
             if (panels.actionAbilityImage) {
-                if (detailName && detailName !== "" && definition.action !== "attack") {
-                    panels.actionAbilityImage.abilityname = detailName;
-                    panels.actionAbilityImage.SetHasClass("Empty", false);
-                } else {
-                    panels.actionAbilityImage.abilityname = "";
-                    panels.actionAbilityImage.SetHasClass("Empty", true);
-                }
+                setAbilityImage(panels.actionAbilityImage,
+                    definition.action !== "attack" ? detailName : "");
             }
             if (definition.action === "attack") {
                 panels.actionFallback.text = $.Localize("#dota2_rpg_action_attack");
@@ -815,7 +819,7 @@
     // ---------------- 英雄商店 + 阵容（服务端权威，事件镜像） ----------------
     var shopState = {
         gold: 300,
-        offer: [],
+        offers: [],
         owned: [],
         lineup: [],
         bench_slots: 0,
@@ -872,6 +876,16 @@
             shopState.refresh_cost = Number(data.refresh_cost);
             shopState.costs.refresh = shopState.refresh_cost;
         }
+        if (data.cost_bench_slot !== undefined) {
+            shopState.costs.bench_slot = Number(data.cost_bench_slot);
+        }
+        if (data.bench_slot_max !== undefined) {
+            shopState.costs.bench_slot_max = Number(data.bench_slot_max);
+        }
+        if (data.lineup_max !== undefined) {
+            shopState.costs.lineup_max = Number(data.lineup_max);
+        }
+        shopState.item_catalog = splitList(data.item_catalog);
         shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
         shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
         shopState.stock = splitList(data.stock_text);
@@ -940,7 +954,7 @@
                     slot.SetPanelEvent("onactivate", function () {
                         GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
                     });
-                    slot.enabled = shopState.gold >= shopState.costs.hero;
+                    slot.enabled = shopState.gold >= offer.price;
                 } else {
                     slot.enabled = false;
                 }
@@ -1165,16 +1179,7 @@
     }
 
     function updateScrollLabels() {
-        $("#ScrollBuyLowLabel").text = $.Localize("#dota2_rpg_scroll_low") +
-            " (余" + shopState.scroll_low_remaining + ") 存" + shopState.scroll_low_stock;
-        $("#ScrollBuyHighLabel").text = $.Localize("#dota2_rpg_scroll_high") +
-            " (余" + shopState.scroll_high_remaining + ") 存" + shopState.scroll_high_stock;
-        $("#ScrollUseLowLabel").text = $.Localize("#dota2_rpg_scroll_use_low") + " " + shopState.scroll_low_stock;
-        $("#ScrollUseHighLabel").text = $.Localize("#dota2_rpg_scroll_use_high") + " " + shopState.scroll_high_stock;
-        $("#ScrollBuyLow").enabled = phase === "setup" && shopState.scroll_low_remaining > 0 && shopState.gold >= 100;
-        $("#ScrollBuyHigh").enabled = phase === "setup" && shopState.scroll_high_remaining > 0 && shopState.gold >= 1000;
-        $("#ScrollUseLow").enabled = phase === "setup" && shopState.scroll_low_stock > 0;
-        $("#ScrollUseHigh").enabled = phase === "setup" && shopState.scroll_high_stock > 0;
+        // 卷轴控件已并入物品列表；不要再访问已从布局删除的旧按钮。
     }
 
     function renderLineupStrip() {
@@ -1238,6 +1243,7 @@
         if (selectedHeroIndex.Radiant >= shopState.lineup.length) {
             selectedHeroIndex.Radiant = 0;
         }
+        renderSide("Radiant");
     }
 
     // ---------------- 关卡选择（数据来自 CustomNetTables） ----------------
@@ -1297,6 +1303,66 @@
 
     function persistSave() {
         // no-op
+    }
+
+    // ---------------- 自绘规则列表滚动（按钮/滚轮/滑块） ----------------
+    var RULE_VIEW_HEIGHT = 380;
+    var RULE_CONTENT_HEIGHT = 1300; // 10 行 × 130px
+    var RULE_SCROLL_STEP = 130;
+    var ruleScroll = { Radiant: 0, Dire: 0 };
+
+    function ruleScrollMax(side) {
+        return Math.max(0, RULE_CONTENT_HEIGHT - RULE_VIEW_HEIGHT);
+    }
+
+    function applyRuleScroll(side) {
+        var pos = Math.max(0, Math.min(ruleScrollMax(side), ruleScroll[side]));
+        ruleScroll[side] = pos;
+        var container = $("#" + side + "Rules");
+        if (container) {
+            container.style.marginTop = -pos + "px;";
+        }
+        var thumb = $("#" + side + "RulesScrollThumb");
+        var track = $("#" + side + "RulesScrollTrack");
+        if (thumb && track) {
+            var maxScroll = ruleScrollMax(side);
+            var trackH = 380 - 52 - 4; // 上下按钮占位后的轨道高度
+            var thumbH = Math.max(48, Math.floor(trackH * RULE_VIEW_HEIGHT / Math.max(1, RULE_CONTENT_HEIGHT)));
+            thumb.style.height = thumbH + "px;";
+            var thumbTop = maxScroll > 0 ? Math.floor((pos / maxScroll) * (trackH - thumbH)) : 0;
+            thumb.style.marginTop = thumbTop + "px;";
+        }
+        var rail = $("#" + side + "RulesScrollRail");
+        if (rail) {
+            rail.SetHasClass("Hidden", ruleScrollMax(side) <= 0);
+        }
+    }
+
+    function scrollRulesBy(side, delta) {
+        ruleScroll[side] = Math.max(0, Math.min(ruleScrollMax(side), ruleScroll[side] + delta));
+        applyRuleScroll(side);
+    }
+
+    function setupRuleScroll(side) {
+        var up = $("#" + side + "RulesScrollUp");
+        var down = $("#" + side + "RulesScrollDown");
+        var viewport = $("#" + side + "RulesViewport");
+        if (up) {
+            up.SetPanelEvent("onactivate", function () {
+                scrollRulesBy(side, -RULE_SCROLL_STEP);
+            });
+        }
+        if (down) {
+            down.SetPanelEvent("onactivate", function () {
+                scrollRulesBy(side, RULE_SCROLL_STEP);
+            });
+        }
+        if (viewport) {
+            viewport.SetPanelEvent("onmousewheel", function () {
+                scrollRulesBy(side, -RULE_SCROLL_STEP);
+            });
+        }
+        applyRuleScroll(side);
     }
 
     function attemptsLeft(levelId) {
@@ -1469,8 +1535,14 @@
         if (phase === "setup" && unspent > 0) {
             setStatus($.Localize("#dota2_rpg_skill_points_hint").replace("%s1", String(unspent)));
         }
-        $("#BattleSpeedRow").SetHasClass("Hidden", phase === "setup");
-        $("#LevelSection").SetHasClass("Hidden", phase !== "setup");
+        var battleSpeedRow = $("#BattleSpeedRow");
+        if (battleSpeedRow) {
+            battleSpeedRow.SetHasClass("Hidden", phase === "setup");
+        }
+        var levelSection = $("#LevelSection");
+        if (levelSection) {
+            levelSection.SetHasClass("Hidden", phase !== "setup");
+        }
         renderLevelList();
         updateLevelProgress();
         updateShopEconomyLabels(shopState.gold);
@@ -1484,6 +1556,8 @@
 
         renderSide("Radiant");
         renderSide("Dire");
+        applyRuleScroll("Radiant");
+        applyRuleScroll("Dire");
     }
 
     function onLevelsState(data) {
@@ -1540,6 +1614,8 @@
 
     createRuleRows("Radiant");
     createRuleRows("Dire");
+    setupRuleScroll("Radiant");
+    setupRuleScroll("Dire");
     wireHeroPortraits("Radiant");
     wireHeroPortraits("Dire");
     $("#StartBattleButton").enabled = false;
@@ -1559,14 +1635,19 @@
         if (!data || !data.slot_key) {
             return;
         }
-        heroSlots[String(data.slot_key)] = {
+        var slotKey = String(data.slot_key);
+        heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
-            actions_text: String(data.actions_text || "")
+            actions_text: String(data.actions_text || ""),
+            details_text: String(data.details_text || "")
         };
-        rulesBySide.Radiant = [];
-        rulesBySide.Dire = [];
-        renderSide("Radiant");
-        renderSide("Dire");
+        var match = slotKey.match(/^(radiant|dire)_(\d+)$/);
+        if (match) {
+            var side = match[1] === "radiant" ? "Radiant" : "Dire";
+            var heroIndex = Math.max(0, Number(match[2]) - 1);
+            rulesBySide[side][heroIndex] = null;
+            renderSide(side);
+        }
     });
     wireShopButtons();
     shopState.gold = saveData.gold;
