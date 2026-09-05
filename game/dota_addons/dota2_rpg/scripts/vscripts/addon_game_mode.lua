@@ -269,7 +269,6 @@ function CDota2RpgDemo:InitGameMode()
 
 	self.battleManager = BattleManager(self)
 	self.tacticBridge = TacticBridge.new({ game_mode = self })
-	self.tacticBridge:Install()
 
 	gameMode:SetCustomGameForceHero(PLAYER_PLACEHOLDER_HERO)
 	gameMode:SetBuybackEnabled(false)
@@ -354,7 +353,13 @@ function CDota2RpgDemo:InitGameMode()
 	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
-	self:RollShop()
+	-- 战术桥接初始化放最后：失败时给出可定位错误并中止初始化
+	local okInstall, installErr = pcall(function()
+		self.tacticBridge:Install()
+	end)
+	if not okInstall then
+		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
+	end
 	print("[Dota2Rpg] BUILD rpg-shop-lineup-v2 loaded. Setup disabled, shop enabled.")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
@@ -2051,6 +2056,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			local heroData = self.heroData[heroName]
 			self.autoAbilityHeroes = self.autoAbilityHeroes or {}
 			self.autoAbilityHeroes[hero:GetEntityIndex()] = nil -- 上阵英雄：玩家手动加点
+			hero.lineupHeroName = heroName
 			self:PrepareBattleHero(hero, heroData ~= nil and heroData.level or 1)
 			local points = heroData ~= nil and math.max(0, heroData.skill_points or heroData.level) or 1
 			hero:SetAbilityPoints(points)
@@ -2142,6 +2148,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 					end
 				end
 				battleManager:RegisterHero(DOTA_TEAM_BADGUYS, enemyIndex, unit)
+				unit.enemyRuleIndex = enemyIndex
 				battleManager:RegisterEnemyTags(unit, entry.tags)
 				battleManager.teamRules[DOTA_TEAM_BADGUYS][enemyIndex] = self:BuildEnemyRules(entry.ai)
 			else
@@ -2374,6 +2381,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	end
 
 	self:RemoveBattleBarrier()
+	self.tacticBridge:ResetState()
 	self.battleManager:ResetBattleStats()
 	self.battleManager:StartBattle(self.battleManager.teamRules)
 	self:BroadcastBattleState()
@@ -2414,7 +2422,10 @@ function CDota2RpgDemo:OnThink()
 	end
 
 	if self.phase == "fight" then
-		self.tacticBridge:OnThink()
+		self.battleManager:OnThink() -- 胜负/超时判定
+		if self.phase == "fight" then
+			self.tacticBridge:OnThink()
+		end
 	end
 
 	return THINK_INTERVAL

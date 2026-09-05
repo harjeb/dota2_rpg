@@ -11,6 +11,18 @@ local CombatMemory = require("tactics/combat_memory")
 local TacticEngine = require("tactics/tactic_engine")
 local RuleService = require("tactics/rule_service")
 
+local function is_valid_entity(entity)
+	return entity ~= nil and (entity.IsNull == nil or not entity:IsNull())
+end
+
+local function is_alive(entity)
+	return is_valid_entity(entity) and (entity.IsAlive == nil or entity:IsAlive())
+end
+
+local function entity_index(entity)
+	return is_valid_entity(entity) and entity:entindex() or -1
+end
+
 TacticBridge = {}
 TacticBridge.__index = TacticBridge
 
@@ -175,7 +187,7 @@ function TacticBridge:Install()
 	end
 
 	local function isBattleUnit(unit)
-		if not TacticEngine.IsValidUnit(unit) then
+		if not is_valid_entity(unit) then
 			return false
 		end
 		if unit.benchHeroName ~= nil then
@@ -233,11 +245,23 @@ function TacticBridge:Install()
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
+		-- 敌方单位：按关卡实例规则（teamRules 中以 enemyRuleIndex 定位）
+		if unit.enemyRuleIndex ~= nil then
+			local enemyRules = gameMode.battleManager.teamRules[DOTA_TEAM_BADGUYS][unit.enemyRuleIndex] or {}
+			local converted = {}
+			for slot, legacy in ipairs(enemyRules) do
+				if legacy.enabled ~= false then
+					table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
+				end
+			end
+			return converted
+		end
+		-- 上阵英雄：按英雄名取玩家规则
+		local heroName = unit.lineupHeroName or unit:GetUnitName()
 		local cache = state.rules[unit:entindex()]
 		if cache ~= nil then
 			return cache
 		end
-		local heroName = unit:GetUnitName()
 		local legacyRules = gameMode.heroRulesByName[heroName] or {}
 		local converted = {}
 		for slot, legacy in ipairs(legacyRules) do
@@ -262,12 +286,53 @@ function TacticBridge:Install()
 			allies = allies,
 			enemies = enemies,
 			elapsed = gameMode.battleManager:GetBattleTime(),
-			enemy_tags = gameMode.battleManager.enemyTags,
-			combat_memory = self.combatMemory,
-			resolve_action_name = resolveActionName,
-			record_action_order = function(_, logicalId, _)
-				self.combatMemory:RecordActionUse(unit, logicalId)
+			dead_ally_count = gameMode.battleManager.allyDeathCount or 0,
+			get_candidates = function(caster, action_spec, ruleTarget)
+				local wantedTeam = tostring(ruleTarget and ruleTarget.team or "enemy")
+				local types = {}
+				if ruleTarget ~= nil and ruleTarget.types ~= nil then
+					for _, t in pairs(ruleTarget.types) do
+						types[tostring(t)] = true
+					end
+				end
+				if wantedTeam == "self" then
+					return { caster }
+				end
+				local pool
+				if wantedTeam == "enemy" then
+					pool = enemies
+				else
+					pool = allies
+				end
+				local candidates = {}
+				for _, unit2 in ipairs(pool) do
+					if is_alive(unit2) then
+						local isHero = unit2.IsRealHero ~= nil and unit2:IsRealHero()
+						if types["hero"] and isHero
+							or (types["monster"] or types["summon"]) and not isHero
+							or next(types) == nil then
+							table.insert(candidates, unit2)
+						end
+					end
+				end
+				return candidates
 			end,
+			get_tags = function(target)
+				return gameMode.battleManager.enemyTags[target:entindex()] or {}
+			end,
+			was_recently_damaged = function(target, seconds)
+				return self.combatMemory:WasDamagedWithin(target, seconds or 3)
+			end,
+			any_ally_recently_damaged = function(caster2, seconds)
+				return self.combatMemory:AnyAllyDamagedWithin(caster2, allies, seconds or 3)
+			end,
+			get_action_use_count = function(target, logicalId)
+				return self.combatMemory:GetActionUseCount(target, logicalId)
+			end,
+			record_action_order = function(target, logicalId, _)
+				self.combatMemory:RecordActionUse(target, logicalId)
+			end,
+			resolve_action_name = resolveActionName,
 		}
 	end
 
@@ -288,7 +353,7 @@ function TacticBridge:Install()
 	self.ruleService = RuleService.new({
 		get_phase = getPhase,
 		is_roster_hero = function(_, hero)
-			return TacticEngine.IsValidUnit(hero)
+			return is_valid_entity(hero)
 		end,
 		is_action_allowed = function(_, _, _)
 			return true -- 动作合法性由槽位生成时保证
