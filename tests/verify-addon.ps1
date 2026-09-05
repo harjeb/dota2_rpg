@@ -72,7 +72,7 @@ $luaChecks = @(
            'local SHOP_HERO_COST = 100',
            'local SHOP_REFRESH_COST = 20',
            'local SHOP_BENCH_SLOT_COST = 200',
-           'local INITIAL_GOLD = 300',
+           'local INITIAL_GOLD = 500',
            'local BENCH_SLOT_MAX = 5',
            'local LINEUP_MAX = 5',
            'self\.currentLevelId',
@@ -302,7 +302,7 @@ foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="Refr
 }
 
 foreach ($shopStatePattern in @(
-    'self\.gold = self\.shopCosts\.initial_gold',
+    'self\.gold = INITIAL_GOLD',
     'local heroName = pool\[math\.random\(#pool\)\]',
     'ReadPayloadList\(payload, "owned_text", "owned"\)',
     'ReadPayloadList\(payload, "lineup_text", "lineup"\)',

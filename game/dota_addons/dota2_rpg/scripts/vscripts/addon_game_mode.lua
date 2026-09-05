@@ -2265,8 +2265,16 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	hero:SetIdleAcquire(false)
 	hero:SetAcquisitionRange(0)
 
+	-- 上阵英雄不挂禁足：准备阶段玩家需要自由移动它们排位
+	-- （移动指令由订单过滤器放行并限制在己方半场）
+	local isFielded = self.autoAbilityHeroes ~= nil
+		and self.autoAbilityHeroes[hero:GetEntityIndex()] == nil
 	for _, modifierName in ipairs(PRE_BATTLE_MODIFIERS) do
-		hero:AddNewModifier(hero, nil, modifierName, {})
+		if isFielded and modifierName == "modifier_rooted" then
+			-- 上阵英雄保持可移动
+		else
+			hero:AddNewModifier(hero, nil, modifierName, {})
+		end
 	end
 end
 
