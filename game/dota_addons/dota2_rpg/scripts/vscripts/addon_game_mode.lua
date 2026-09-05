@@ -487,8 +487,8 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	end
 	self.playerId = math.max(self.playerId, ownerId)
 	unit:SetRespawnsDisabled(true)
-	-- 玩家小精灵 = 可自由移动的"指挥官"：无敌/禁攻/禁技能，但可见、可走动
-	unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
+	-- 玩家小精灵 = 可自由移动的"指挥官"：禁攻/禁技能；准备阶段可自由拖拽装备，
+	-- 开战后自动进入无敌（敌人无法选中/伤害它）
 	unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
 	unit:AddNewModifier(unit, nil, "modifier_silence", {})
 	FindClearSpaceForUnit(unit, Vector(-1950, -700, 128), true)
@@ -2261,8 +2261,14 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 			or orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET
 			or orderType == DOTA_UNIT_ORDER_HOLD_POSITION
 		if isMove then
-			local unitIndex = tonumber(filterTable.units["0"] or -1)
-			local unit = unitIndex > 0 and EntIndexToHScript(unitIndex) or nil
+			local unit = nil
+			for _, unitEntityIndex in pairs(filterTable.units or {}) do
+				local candidate = EntIndexToHScript(tonumber(unitEntityIndex) or -1)
+				if TacticEngine.IsValidUnit(candidate) and candidate:IsRealHero() then
+					unit = candidate
+					break
+				end
+			end
 			if TacticEngine.IsValidUnit(unit) and unit:GetTeamNumber() == DOTA_TEAM_GOODGUYS
 				and unit.benchHeroName == nil then
 				if orderType == DOTA_UNIT_ORDER_MOVE_TO_POINT then
@@ -2377,6 +2383,10 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	self:RemoveBattleBarrier()
 	self.tacticBridge:ResetState()
 	self.battleManager:ResetBattleStats()
+	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
+		-- 战斗中玩家小精灵无敌，避免被敌方波及
+		self.placeholderHero:AddNewModifier(self.placeholderHero, nil, "modifier_invulnerable", {})
+	end
 	self.battleManager:StartBattle(self.battleManager.teamRules)
 	self:BroadcastBattleState()
 	print("[Dota2Rpg] Battle started on level " .. self.currentLevelId .. ".")
@@ -2520,6 +2530,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
 		self.phase = "setup"
 		self.winner = ""
+		if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
+			self.placeholderHero:RemoveModifierByName("modifier_invulnerable")
+		end
 		self:SpawnLevelEnemies(self.currentLevelId)
 		self:RespawnPlayerRoster()
 		self:SpawnBattleBarrier()
