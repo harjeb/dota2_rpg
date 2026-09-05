@@ -89,6 +89,7 @@
 		"dota2_rpg_reward_level_up"		"Level ups +"
 		"dota2_rpg_attempts_left"		"Attempts left"
 		"dota2_rpg_no_attempts"			"No attempts left — farm creep levels to grow stronger"
+		"dota2_rpg_skill_points_hint"		"%s1 unspent skill points - select a hero and click the + next to its portrait"
 		"dota2_rpg_status_preparing"	"Preparing both teams"
 		"dota2_rpg_status_ready"		"Ready to start"
 		"dota2_rpg_status_running"		"Both teams are following their priorities"

@@ -89,6 +89,7 @@
 		"dota2_rpg_reward_level_up"		"英雄升级 +"
 		"dota2_rpg_attempts_left"		"剩余挑战次数"
 		"dota2_rpg_no_attempts"			"挑战次数耗尽，先去刷野怪关变强"
+		"dota2_rpg_skill_points_hint"		"上阵英雄有 %s1 个未分配技能点：选中英雄，点头像旁的加号学习"
 		"dota2_rpg_status_preparing"	"正在生成双方英雄"
 		"dota2_rpg_status_ready"		"等待开始"
 		"dota2_rpg_status_running"		"双方正在按优先级自动行动"

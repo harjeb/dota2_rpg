@@ -2132,7 +2132,10 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			self.autoAbilityHeroes = self.autoAbilityHeroes or {}
 			self.autoAbilityHeroes[hero:GetEntityIndex()] = nil -- 上阵英雄：玩家手动加点
 			self:PrepareBattleHero(hero, heroData ~= nil and heroData.level or 1)
-			hero:SetAbilityPoints(heroData ~= nil and math.max(0, heroData.skill_points or heroData.level) or 1)
+			local points = heroData ~= nil and math.max(0, heroData.skill_points or heroData.level) or 1
+			hero:SetAbilityPoints(points)
+			print(string.format("[Dota2Rpg] %s fielded: level=%d skill_points=%d (player picks abilities)",
+				heroName, heroData ~= nil and heroData.level or 1, points))
 			-- 重新佩戴个人装备
 			heroData.inventory = heroData.inventory or {}
 			for _, itemName in ipairs(heroData.inventory) do

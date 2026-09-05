@@ -1529,6 +1529,17 @@
         }
 
         $("#ShopPanel").SetHasClass("Hidden", phase !== "setup");
+        // 未分配技能点提示
+        var unspent = 0;
+        for (var hi = 0; hi < (saveData.lineup || []).length; hi++) {
+            var hero = saveData.heroes[saveData.lineup[hi]];
+            if (hero && hero.skill_points > 0) {
+                unspent += hero.skill_points;
+            }
+        }
+        if (phase === "setup" && unspent > 0) {
+            setStatus($.Localize("#dota2_rpg_skill_points_hint").replace("%s1", String(unspent)));
+        }
         $("#BattleSpeedRow").SetHasClass("Hidden", phase === "setup");
         $("#LevelSection").SetHasClass("Hidden", phase !== "setup");
         renderLevelList();
