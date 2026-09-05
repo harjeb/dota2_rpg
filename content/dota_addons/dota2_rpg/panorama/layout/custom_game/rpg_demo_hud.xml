@@ -155,9 +155,14 @@
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
-				<Panel id="ItemShopPanel" class="LineupPanel">
-					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
-					<Panel id="ItemStockList" class="LevelList" />
+				<Panel id="ItemShopPanel" class="LineupPanel ItemShopPanel">
+					<Panel class="ItemTargetRow">
+						<Label id="ItemTargetLabel" class="ItemTargetLabel" />
+						<Panel id="ItemTargetHeroes" class="ItemTargetHeroes" />
+					</Panel>
+					<Panel id="ItemEquippedList" class="ItemEquippedList" />
+					<Label class="LineupHeader" text="#dota2_rpg_item_stash" />
+					<Panel id="ItemStockList" class="ItemStockList" />
 					<Label class="LineupHeader" text="#dota2_rpg_item_catalog" />
 					<Panel id="ItemCatalogList" class="ItemCatalogList" />
 				</Panel>

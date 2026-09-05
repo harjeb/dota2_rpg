@@ -1,0 +1,51 @@
+// 经验卷轴（自定义物品，进原版物品体系：可在原版商店/快速购买出现——视 Valve 商店 bug 情况，
+// 自建物品商店为保底购买入口；英雄携带后主动使用获得经验）
+"item_rpg_scroll_low"
+{
+	"BaseClass"				"item_lua"
+	"AbilityTextureName"	"item_tome_of_knowledge"
+	"AbilityBehavior"		"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
+	"AbilityUnitTargetTeam"	"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+	"AbilityUnitTargetType"	"DOTA_UNIT_TARGET_HERO"
+	"AbilityCastRange"		"200"
+	"AbilityCooldown"		"0"
+	"AbilityManaCost"		"0"
+	"AbilityCastPoint"		"0"
+
+	"ItemCost"				"100"
+	"ItemPurchasable"		"1"
+	"ItemSellable"			"1"
+	"ItemDroppable"			"1"
+	"ItemShareability"		"ITEM_FULLY_SHAREABLE"
+	"ItemKillable"			"0"
+	"ItemPermanent"			"0"
+	"ItemStackable"			"0"
+	"ItemShopTags"			"consumable"
+	"ItemInitialCharges"	"1"
+	"ItemDisplayCharges"	"1"
+}
+
+"item_rpg_scroll_high"
+{
+	"BaseClass"				"item_lua"
+	"AbilityTextureName"	"item_tome_of_knowledge"
+	"AbilityBehavior"		"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK"
+	"AbilityUnitTargetTeam"	"DOTA_UNIT_TARGET_TEAM_FRIENDLY"
+	"AbilityUnitTargetType"	"DOTA_UNIT_TARGET_HERO"
+	"AbilityCastRange"		"200"
+	"AbilityCooldown"		"0"
+	"AbilityManaCost"		"0"
+	"AbilityCastPoint"		"0"
+
+	"ItemCost"				"1000"
+	"ItemPurchasable"		"1"
+	"ItemSellable"			"1"
+	"ItemDroppable"			"1"
+	"ItemShareability"		"ITEM_FULLY_SHAREABLE"
+	"ItemKillable"			"0"
+	"ItemPermanent"			"0"
+	"ItemStackable"			"0"
+	"ItemShopTags"			"consumable"
+	"ItemInitialCharges"	"1"
+	"ItemDisplayCharges"	"1"
+}

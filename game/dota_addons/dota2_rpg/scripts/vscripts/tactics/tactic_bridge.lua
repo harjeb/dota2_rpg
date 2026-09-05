@@ -381,6 +381,11 @@ function TacticBridge:Install()
 		gate = orderGate,
 		get_phase = getPhase,
 		is_battle_unit = isBattleUnit,
+		-- 玩家小精灵与待命英雄不在 battleManager 的战斗名单中，
+		-- 仍须受准备阶段的物品转移锁约束。
+		is_inventory_unit = function(unit)
+			return gameMode:IsEquipmentCarrier(unit)
+		end,
 		validate_prepare_order = function(filterTable)
 			return gameMode:ValidatePrepareOrder(filterTable)
 		end,

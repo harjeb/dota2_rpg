@@ -1029,7 +1029,7 @@
 #BattleControls
 {
 	width: 420px;
-	height: 700px;
+	height: 850px;
 	horizontal-align: center;
 	vertical-align: center;
 	flow-children: down;
@@ -1517,11 +1517,88 @@
 	color: #a8f0b8;
 }
 
+.ItemShopPanel
+{
+	margin-top: 8px;
+}
+
+.ItemTargetRow
+{
+	width: 100%;
+	height: 38px;
+	flow-children: right;
+	margin-top: 4px;
+	padding: 3px 5px;
+	background-color: #182128;
+	border: 1px solid #65727a;
+}
+
+.ItemTargetLabel
+{
+	width: fill-parent-flow(1.0);
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #f2d982;
+	text-overflow: shrink;
+}
+
+.ItemTargetLabel.Empty
+{
+	color: #e99486;
+}
+
+.ItemTargetHeroes
+{
+	height: 30px;
+	flow-children: right;
+	vertical-align: center;
+}
+
+.ItemTargetPortrait
+{
+	width: 30px;
+	height: 30px;
+	margin-left: 3px;
+	border: 1px solid #65727a;
+	brightness: 0.52;
+	saturation: 0.55;
+}
+
+.ItemTargetPortrait:hover
+{
+	brightness: 1.05;
+	saturation: 1;
+	border-color: #d7b85a;
+}
+
+.ItemTargetPortrait.Selected
+{
+	brightness: 1.15;
+	saturation: 1;
+	border: 2px solid #f2d982;
+}
+
+.ItemEquippedList
+{
+	width: 100%;
+	height: 34px;
+	overflow: squish scroll;
+	flow-children: right;
+	margin-top: 3px;
+	background-color: #111820;
+	border: 1px solid #34414a;
+}
+
 .ItemStockList, .ItemCatalogList
 {
-	height: 150px;
+	width: 100%;
+	height: 116px;
 	overflow: squish scroll;
 	flow-children: down;
+	margin-top: 3px;
+	background-color: #11182099;
+	border: 1px solid #34414a;
 }
 
 .ItemRow
@@ -1532,13 +1609,36 @@
 	border-bottom: 1px solid #2a333b;
 }
 
+.ItemEquippedRow
+{
+	width: 164px;
+	height: 32px;
+	flow-children: right;
+	border-right: 1px solid #2a333b;
+}
+
+.ItemIcon
+{
+	width: 26px;
+	height: 26px;
+	margin-left: 3px;
+	vertical-align: center;
+	border: 1px solid #58656d;
+}
+
 .ItemRowName
 {
-	width: 150px;
+	width: fill-parent-flow(1.0);
 	vertical-align: center;
+	margin-left: 5px;
 	font-size: 12px;
 	color: #dfe6e9;
 	text-overflow: shrink;
+}
+
+.ItemEquippedRow .ItemRowName
+{
+	width: 85px;
 }
 
 .ItemRowCost
@@ -1549,17 +1649,42 @@
 	font-weight: bold;
 	color: #f2d982;
 	text-align: right;
-	padding-right: 6px;
+	padding-right: 4px;
 }
 
 .ItemRowBtn
 {
-	width: 62px;
+	width: 52px;
 	height: 26px;
 	vertical-align: center;
-	margin-left: 4px;
+	margin-left: 3px;
 	background-color: #29333a;
 	border: 1px solid #65727a;
+}
+
+.ItemEquipBtn
+{
+	background-color: #1e4a3a;
+	border-color: #5bbf9f;
+}
+
+.ItemDirectBuyBtn
+{
+	width: 86px;
+	background-color: #4a3d22;
+	border-color: #d7b85a;
+}
+
+.ItemStoreBtn
+{
+	width: 48px;
+}
+
+.ItemUnequipBtn
+{
+	width: 50px;
+	background-color: #493237;
+	border-color: #aa737a;
 }
 
 .ItemRowBtn:hover
@@ -1567,10 +1692,16 @@
 	brightness: 1.35;
 }
 
+.ItemRowBtn:disabled
+{
+	brightness: 0.38;
+}
+
 .ItemRowBtn Label
 {
 	horizontal-align: center;
 	vertical-align: center;
-	font-size: 11px;
+	font-size: 10px;
 	color: #e7edf0;
+	text-overflow: shrink;
 }

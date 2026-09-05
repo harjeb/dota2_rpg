@@ -32,6 +32,8 @@ function OrderFilter.new(options)
         gate = options.gate or OrderGate.new(),
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_battle_unit = assert(options.is_battle_unit, "is_battle_unit is required"),
+        -- 小精灵/待命区不参与战斗，但它们的原版物品订单也必须服从准备阶段锁。
+        is_inventory_unit = options.is_inventory_unit or function() return false end,
         validate_prepare_order = options.validate_prepare_order,
     }, OrderFilter)
 end
@@ -46,16 +48,18 @@ function OrderFilter:Filter(filter_table)
     end
 
     local units = filter_table.units or {}
-    local contains_battle_unit = false
+    local contains_managed_unit = false
     for _, entity_index in pairs(units) do
         local unit = EntIndexToHScript(entity_index)
-        if unit ~= nil and not unit:IsNull() and self.is_battle_unit(unit) then
-            contains_battle_unit = true
+        if unit ~= nil and not unit:IsNull()
+            and (self.is_battle_unit(unit) or self.is_inventory_unit(unit)) then
+            contains_managed_unit = true
             break
         end
     end
 
-    if not contains_battle_unit then
+    -- 不属于 RPG 的原版单位仍按 Dota 默认行为处理；但小精灵和待命英雄不能借此绕过阶段锁。
+    if not contains_managed_unit then
         return true
     end
 

@@ -128,6 +128,13 @@ local function newUnit(unitName, position, team)
 	function unit:SetMana(value) self.mana = value end
 	function unit:SetIdleAcquire(value) self.idleAcquire = value end
 	function unit:SetAcquisitionRange(value) self.acquisitionRange = value end
+	function unit:SetAbilityPoints(value) self.abilityPoints = value end
+	function unit:GetAbilityCount() return 0 end
+	function unit:AddNewModifier() end
+	function unit:RemoveSelf() self.removed = true end
+	function unit:SetControllableByPlayer(playerId, value)
+		self.controlledByPlayer = value and playerId or nil
+	end
 	table.insert(spawned, unit)
 	return unit
 end
@@ -157,6 +164,8 @@ local function newBattleManager()
 	function manager:RegisterHero(team, _, unit)
 		table.insert(self.teamHeroes[team], unit)
 	end
+	function manager:RegisterEnemyTags() end
+	function manager:ResetBattleStats() self.reset = true end
 	function manager:StartBattle()
 		self.started = true
 	end
@@ -173,6 +182,10 @@ local spawnGame = setmetatable({
 		"npc_dota_hero_lina",
 	},
 	playerLevel = 30,
+	playerId = 0,
+	heroData = {},
+	heroOrder = 0,
+	placedPositions = {},
 	heroRulesByName = {},
 	battleManager = newBattleManager(),
 	dataLoader = {
@@ -182,10 +195,16 @@ local spawnGame = setmetatable({
 	},
 }, CDota2RpgDemo)
 spawnGame.PrepareBattleHero = function() end
+spawnGame.SpawnBenchEnclosure = function() end
+spawnGame.SpawnBenchHeroes = function() end
 spawnGame.PrepareEnemyCreep = function() end
 spawnGame.BuildEnemyRules = function() return {} end
 spawnGame.BroadcastHeroInfo = function() end
 spawnGame:RespawnPlayerRoster()
+for index = 1, 5 do
+	assert(spawned[index].controlledByPlayer == 0,
+		"each fielded hero must be controllable in preparation for movement/pickup")
+end
 spawnGame:SpawnLevelEnemies("ch01")
 
 local teamCounts = { [DOTA_TEAM_GOODGUYS] = 0, [DOTA_TEAM_BADGUYS] = 0 }
@@ -205,6 +224,7 @@ local fightGame = setmetatable({
 	lineup = { "npc_dota_hero_axe" },
 	heroRulesByName = { npc_dota_hero_axe = { { action = "attack" } } },
 	battleManager = newBattleManager(),
+	tacticBridge = { ResetState = function() end },
 	currentLevelId = "ch01",
 }, CDota2RpgDemo)
 fightGame.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = { radiant }
