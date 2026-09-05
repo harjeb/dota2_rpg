@@ -691,13 +691,13 @@ function CDota2RpgDemo:OnShopBuy(_, payload)
 	data.quality = offer.quality
 	self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
 
-	-- 购买的英雄默认进待命区；上阵由玩家手动选择（右键待命英雄或点英雄池条）
-	local benchCount = #self.ownedHeroes - #self.lineup
-	if benchCount > self.benchSlots then
+	-- 购买的英雄默认进待命区；格子经济：首发 5 人额外，每名替补英雄需购买替补格
+	local overflow = #self.ownedHeroes - self.shopCosts.lineup_max + 1
+	if overflow > self.benchSlots then
 		table.remove(self.ownedHeroes)
 		self.gold = self.gold + offer.price
 		self.heroData[heroName] = nil
-		return -- 替补格子不足
+		return -- 替补格子不足（买满 5 名首发后需要替补格）
 	end
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()
@@ -1529,13 +1529,13 @@ function CDota2RpgDemo:OnShopBuy(_, payload)
 	data.quality = offer.quality
 	self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
 
-	-- 购买的英雄默认进待命区；上阵由玩家手动选择（右键待命英雄或点英雄池条）
-	local benchCount = #self.ownedHeroes - #self.lineup
-	if benchCount > self.benchSlots then
+	-- 购买的英雄默认进待命区；格子经济：首发 5 人额外，每名替补英雄需购买替补格
+	local overflow = #self.ownedHeroes - self.shopCosts.lineup_max + 1
+	if overflow > self.benchSlots then
 		table.remove(self.ownedHeroes)
 		self.gold = self.gold + offer.price
 		self.heroData[heroName] = nil
-		return -- 替补格子不足
+		return -- 替补格子不足（买满 5 名首发后需要替补格）
 	end
 	self:RespawnPlayerRoster()
 	self:BroadcastShopState()

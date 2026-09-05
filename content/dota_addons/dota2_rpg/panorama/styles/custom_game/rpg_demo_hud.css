@@ -239,14 +239,34 @@
 	width: 100%;
 }
 
+/* 最小化：整个面板只剩一个最小化图标 */
 .TeamEditor.Collapsed
 {
-	height: 74px !important;
+	height: 52px !important;
 }
 
-.TeamEditor.Collapsed .EditorBody
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
 {
 	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: none;
+	padding-bottom: 0px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	horizontal-align: center;
+	vertical-align: center;
+	margin-left: 0px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
 }
 
 .HeroPortrait.Selected
@@ -282,14 +302,34 @@
 }
 
 /* 最小化：只剩队伍标题条与展开箭头 */
+/* 最小化：整个面板只剩一个最小化图标 */
 .TeamEditor.Collapsed
 {
-	height: 74px !important;
+	height: 52px !important;
 }
 
-.TeamEditor.Collapsed .EditorBody
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
 {
 	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: none;
+	padding-bottom: 0px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	horizontal-align: center;
+	vertical-align: center;
+	margin-left: 0px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
 }
 
 .HeroPortrait.Selected
@@ -322,14 +362,34 @@
 }
 
 /* 最小化：只剩队伍标题条与展开箭头 */
+/* 最小化：整个面板只剩一个最小化图标 */
 .TeamEditor.Collapsed
 {
-	height: 74px !important;
+	height: 52px !important;
 }
 
-.TeamEditor.Collapsed .EditorBody
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
 {
 	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: none;
+	padding-bottom: 0px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	horizontal-align: center;
+	vertical-align: center;
+	margin-left: 0px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
 }
 
 .HeroPortrait.Selected
