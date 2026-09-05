@@ -272,6 +272,11 @@ function BattleManager:IsAbilityReady(hero, ability)
 	if ability:GetLevel() <= 0 or ability:IsHidden() or ability:IsPassive() then
 		return false
 	end
+	-- 形态切换类技能（无 CD 的 toggle）不作为规则动作反复施放，
+	-- 否则高优先级规则会被无限命中，堵死后续规则与普攻
+	if self:IsToggleAbility(ability) then
+		return false
+	end
 	if ability:GetCooldownTimeRemaining() > 0.05 then
 		return false
 	end

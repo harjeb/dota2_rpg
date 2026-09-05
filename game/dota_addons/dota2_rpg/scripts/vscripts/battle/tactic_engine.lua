@@ -307,7 +307,7 @@ function TacticEngine:ExtremeUnit(units, metric, wantMinimum, origin)
 	local selected = nil
 	local bestValue = nil
 	for _, unit in ipairs(units or {}) do
-		if TacticEngine.IsValidUnit(unit) then
+		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() then
 			local value
 			if metric == "distance" then
 				value = (origin:GetAbsOrigin() - unit:GetAbsOrigin()):Length2D()
@@ -338,7 +338,7 @@ function TacticEngine:NearestMatching(origin, units, predicate)
 	local selected = nil
 	local bestDistance = nil
 	for _, unit in ipairs(units or {}) do
-		if TacticEngine.IsValidUnit(unit) and predicate(unit) then
+		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() and predicate(unit) then
 			local distance = (origin:GetAbsOrigin() - unit:GetAbsOrigin()):Length2D()
 			if bestDistance == nil or distance < bestDistance then
 				selected = unit
