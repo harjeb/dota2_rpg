@@ -1851,18 +1851,12 @@ function CDota2RpgDemo:SpawnBattleBarrier()
 	local y = -BARRIER_HALF_SPAN
 	while y <= BARRIER_HALF_SPAN do
 		local pos = GetGroundPosition(Vector(BARRIER_X, y, 128), nil)
-		local unit = CreateUnitByName("npc_dota_hero_wisp", pos, true, nil, nil, DOTA_TEAM_NEUTRALS)
-		if TacticEngine.IsValidUnit(unit) then
-			unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
-			unit:AddNewModifier(unit, nil, "modifier_rooted", {})
-			unit:AddNewModifier(unit, nil, "modifier_silenced", {})
-			unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
-			if unit.AddNoHealthBar ~= nil then
-				unit:AddNoHealthBar()
-			end
-			unit:SetIdleAcquire(false)
-			unit:SetAcquisitionRange(0)
-			table.insert(self.barrierUnits, unit)
+		-- 树木实体：不可选中/不可摧毁，阻挡中线
+		local ok, tree = pcall(SpawnEntityFromTableSynchronous, "ent_dota_tree", { origin = pos })
+		if ok and tree ~= nil then
+			table.insert(self.barrierUnits, tree)
+		else
+			break
 		end
 		y = y + BARRIER_SPACING
 	end
@@ -1944,8 +1938,10 @@ end
 
 function CDota2RpgDemo:RemoveBattleBarrier()
 	for _, unit in ipairs(self.barrierUnits or {}) do
-		if TacticEngine.IsValidUnit(unit) then
-			unit:RemoveSelf()
+		if unit ~= nil and (unit.IsNull == nil or not unit:IsNull()) then
+			pcall(function()
+				unit:RemoveSelf()
+			end)
 		end
 	end
 	self.barrierUnits = nil
