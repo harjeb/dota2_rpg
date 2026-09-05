@@ -86,8 +86,7 @@ SCROLL_COST = { low = 100, high = 1000 }
 SCROLL_XP = { low = 500, high = 2000 }
 SCROLL_LIMIT_PER_STAGE = 3
 -- 个人升级公式（客户端保持一致）
-XP_TO_NEXT_BASE = 40
-XP_TO_NEXT_STEP = 30
+-- 升级曲线见 AddXpToHero 内 XP_TO_LEVEL 表（v1.0：30 级总需求 33700）
 TIME_BONUS_CAP = 0.25
 
 -- 商店与阵容经济（需求：开局 300 金币，英雄 100/个，刷新 20/次，替补格 200/个）
@@ -322,9 +321,6 @@ function CDota2RpgDemo:InitGameMode()
 	end)
 	CustomGameEventManager:RegisterListener("rpg_hero_levels", function(eventSourceIndex, payload)
 		return self:OnHeroLevels(eventSourceIndex, payload)
-	end)
-	CustomGameEventManager:RegisterListener("rpg_save_sync", function(eventSourceIndex, payload)
-		return self:OnSaveSync(eventSourceIndex, payload)
 	end)
 	CustomGameEventManager:RegisterListener("rpg_shop_refresh", function(eventSourceIndex, payload)
 		return self:OnShopRefresh(eventSourceIndex, payload)
@@ -864,24 +860,18 @@ end
 
 
 
--- 经验池平均分配（含余数按招募顺序补 1）
+-- 关卡经验：上阵英雄 100%，待命英雄 50%（向下取整）；满级舍弃
 function CDota2RpgDemo:DistributeXpPool(pool)
-	local owned = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
-		table.insert(owned, heroName)
-	end
-	if #owned == 0 then
-		return
-	end
-	local base = math.floor(pool / #owned)
-	local remainder = pool % #owned
-	for _, heroName in ipairs(owned) do
-		local extra = 0
-		if remainder > 0 then
-			extra = 1
-			remainder = remainder - 1
+		local onLineup = false
+		for _, lineupName in ipairs(self.lineup) do
+			if lineupName == heroName then
+				onLineup = true
+				break
+			end
 		end
-		self:AddXpToHero(heroName, base + extra)
+		local share = onLineup and pool or math.floor(pool * 0.5)
+		self:AddXpToHero(heroName, share)
 	end
 end
 
@@ -893,8 +883,12 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	data.skill_points = data.skill_points or data.level
 	local before = data.level
 	data.current_xp = data.current_xp + amount
+	-- v1.0 升级曲线：到达该等级所需累计经验（30 级总需求 33700）
+	local XP_TO_LEVEL = { 0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+		3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
+		14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200 }
 	while data.level < HERO_LEVEL do
-		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
+		local need = XP_TO_LEVEL[data.level + 1] or 33700
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1
@@ -948,90 +942,6 @@ function CDota2RpgDemo:OnLineupSet(_, payload)
 	self:BroadcastShopState()
 end
 
--- 客户端存档同步（单人 MVP：信任客户端 LocalStorage，覆盖服务端状态）
--- CEM 载荷列表（分号分隔字符串）拆回 Lua 数组
-function CDota2RpgDemo:ReadPayloadList(payload, fieldName)
-	local result = {}
-	if payload == nil or payload[fieldName] == nil then
-		return result
-	end
-	for entry in string.gmatch(tostring(payload[fieldName]), "[^;]+") do
-		table.insert(result, entry)
-	end
-	return result
-end
-
-function CDota2RpgDemo:OnSaveSync(_, payload)
-	if self.phase ~= "setup" or payload == nil then
-		return
-	end
-	if payload.gold ~= nil then
-		self.gold = math.max(0, math.floor(tonumber(payload.gold) or 0))
-	end
-	if payload.hero_data_text ~= nil then
-		self.ownedHeroes = {}
-		self.heroData = {}
-		self.heroOrder = 0
-		self.lineup = {}
-		for entry in string.gmatch(tostring(payload.hero_data_text), "[^;]+") do
-			local name, level, xp, quality, spText, itemsText = string.match(entry, "^(.+):(%d+):(%d+):(%a+):?(%d*):?(.*)$")
-			if name ~= nil then
-				table.insert(self.ownedHeroes, name)
-				self.heroOrder = self.heroOrder + 1
-				local inventory = {}
-				for itemName in string.gmatch(itemsText or "", "[^,]+") do
-					table.insert(inventory, itemName)
-				end
-				self.heroData[name] = {
-					level = math.max(1, math.min(HERO_LEVEL, tonumber(level) or 1)),
-					current_xp = math.max(0, tonumber(xp) or 0),
-					quality = quality,
-					order = self.heroOrder,
-					skill_points = math.max(0, tonumber(spText) or 0),
-					inventory = inventory,
-				}
-			end
-		end
-	end
-	local savedLineup = self:ReadPayloadList(payload, "lineup_text")
-	if #savedLineup > 0 then
-		self.lineup = savedLineup
-	end
-	if payload.bench_slots ~= nil then
-		self.benchSlots = math.max(0, math.min(self.shopCosts.bench_slot_max, math.floor(tonumber(payload.bench_slots) or 0)))
-	end
-	if payload.refresh_count ~= nil then
-		self.refreshCount = math.max(0, math.floor(tonumber(payload.refresh_count) or 0))
-	end
-	if payload.stock_text ~= nil then
-		-- 以存档记录重建仓库实物（玩家自由拖拽/丢捡后的真值以服务端扫描为准）
-		if self.stashUnit == nil or not TacticEngine.IsValidUnit(self.stashUnit) then
-			self:SpawnBattleBarrier()
-		end
-		self:RebuildStashFromNames(self:ReadPayloadList(payload, "stock_text"))
-	end
-	if payload.scroll_stock_low ~= nil then
-		self.scrollStock.low = math.max(0, math.floor(tonumber(payload.scroll_stock_low) or 0))
-	end
-	if payload.scroll_stock_high ~= nil then
-		self.scrollStock.high = math.max(0, math.floor(tonumber(payload.scroll_stock_high) or 0))
-	end
-	if payload.current_level ~= nil then
-		local levelId = tostring(payload.current_level)
-		if self.dataLoader:GetLevel(levelId) ~= nil then
-			self.currentLevelId = levelId
-		end
-	end
-	-- 遭遇种子：首次解锁生成并持久化，重试不更换
-	if payload.encounter_seed ~= nil and tonumber(payload.encounter_seed) ~= 0 then
-		self.encounterSeed = tonumber(payload.encounter_seed)
-	elseif self.encounterSeed == nil then
-		self.encounterSeed = math.random(1, 2147483647)
-	end
-	math.randomseed(self.encounterSeed)
-	self:RollShop()
-	self:RespawnPlayerRoster()
-end
 
 function CDota2RpgDemo:OnScrollBuy(_, payload)
 	if self.phase ~= "setup" then
@@ -1215,8 +1125,12 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	data.skill_points = data.skill_points or data.level
 	local before = data.level
 	data.current_xp = data.current_xp + amount
+	-- v1.0 升级曲线：到达该等级所需累计经验（30 级总需求 33700）
+	local XP_TO_LEVEL = { 0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+		3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
+		14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200 }
 	while data.level < HERO_LEVEL do
-		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
+		local need = XP_TO_LEVEL[data.level + 1] or 33700
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1
@@ -1758,8 +1672,12 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	data.skill_points = data.skill_points or data.level
 	local before = data.level
 	data.current_xp = data.current_xp + amount
+	-- v1.0 升级曲线：到达该等级所需累计经验（30 级总需求 33700）
+	local XP_TO_LEVEL = { 0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+		3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
+		14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200 }
 	while data.level < HERO_LEVEL do
-		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
+		local need = XP_TO_LEVEL[data.level + 1] or 33700
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1

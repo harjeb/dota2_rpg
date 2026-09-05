@@ -6,6 +6,7 @@ local Conditions = require("tactics/condition_registry")
 local TargetSelector = require("tactics/target_selector")
 local ActionAdapter = require("tactics/action_adapter")
 local OrderFilterModule = require("tactics/order_filter")
+local OrderGateModule = OrderFilterModule.OrderGate
 local CombatMemory = require("tactics/combat_memory")
 local TacticEngine = require("tactics/tactic_engine")
 local RuleService = require("tactics/rule_service")
@@ -152,6 +153,11 @@ function TacticBridge.new(options)
 end
 
 function TacticBridge:Install()
+	print("[TacticDebug] bridge install: OFM=" .. type(OrderFilterModule) ..
+		" OFM.new=" .. type(OrderFilterModule ~= nil and OrderFilterModule.new or nil) ..
+		" TE=" .. type(TacticEngine) .. " RS=" .. type(RuleService) ..
+		" Sel=" .. type(TargetSelector) .. " Act=" .. type(ActionAdapter) ..
+		" Cond=" .. type(Conditions))
 	local gameMode = self.gameMode
 	local manager = self
 	local orderGate = OrderGateModule.new()

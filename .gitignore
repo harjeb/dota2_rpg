@@ -25,3 +25,5 @@ secrets.yaml
 .boto
 .s3cfg
 kubeconfig
+_revised_review/
+dota2_rpg_revised_package/

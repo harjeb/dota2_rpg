@@ -893,7 +893,6 @@
         saveData.item_stock = shopState.stock.map(function (entry) {
             return entry.split("|")[0];
         });
-        persistSave();
         renderShop();
         renderLineupStrip();
         renderRadiantHeroStrip();
@@ -1248,19 +1247,21 @@
         // 关卡按顺序推进，不再提供自由选择（进度显示在顶部）
     }
 
-    // ---------------- 金币/经验/挑战次数存档（LocalStorage，MVP） ----------------
-    var SAVE_KEY = "dota2_rpg_save_v1";
-    var SAVE_VERSION = 2;
+    // ---------------- 经验/挑战次数（无存档：状态仅存服务端内存） ----------------
     var INITIAL_GOLD = 300;
     var HERO_MAX_LEVEL = 30;
-    var XP_BASE = 40;   // 与服务端 XP_TO_NEXT_BASE/STEP 保持一致
-    var XP_STEP = 30;
     var MAX_ATTEMPTS = 5;
 
-    // 升到下一级所需经验（经验全队共享、全员统一等级）
-    // 首通 1~15 关合计 13500 xp ≈ 累计需求 14210 → 15 关左右满级 30
+    // v1.0 升级曲线：到达该等级所需累计经验（30 级总需求 33700）
+    var XP_TO_LEVEL = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+        3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
+        14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200, 33700];
+
     function xpToNext(level) {
-        return 40 + 30 * level;
+        if (level >= HERO_MAX_LEVEL) {
+            return Infinity;
+        }
+        return XP_TO_LEVEL[level] - XP_TO_LEVEL[level - 1];
     }
 
     function hasEntries(value) {
@@ -1272,98 +1273,29 @@
         return false;
     }
 
+
+
+    // 无存档设计（已拍板）：状态只存服务端内存；这两个函数保留为兼容桩
     function loadSave() {
-        var saved = null;
-        try {
-            saved = JSON.parse($.LocalStorage.Get(SAVE_KEY) || "null");
-        } catch (e) {
-            saved = null;
-        }
-        if (!saved || typeof saved !== "object") {
-            saved = {};
-        }
-        var previousVersion = Number(saved.version || 0);
-        var parsedGold = Number(saved.gold);
-        saved.gold = saved.gold !== undefined && isFinite(parsedGold)
-            ? Math.max(0, parsedGold)
-            : INITIAL_GOLD;
-        if (!saved.cleared || typeof saved.cleared !== "object") {
-            saved.cleared = {};
-        }
-        if (!saved.attempts || typeof saved.attempts !== "object") {
-            saved.attempts = {};
-        }
-        saved.level = Math.max(1, Math.floor(Number(saved.level) || 1)); // 旧统一等级（迁移源）
-        if (!saved.heroes || typeof saved.heroes !== "object") {
-            // 迁移：统一等级 → 每名已拥有英雄个人等级
-            saved.heroes = {};
-            var migratedHeroes = saved.owned && saved.owned.length ? saved.owned : [];
-            for (var mh = 0; mh < migratedHeroes.length; mh++) {
-                saved.heroes[migratedHeroes[mh]] = { level: saved.level, xp: 0, quality: "common", skill_points: saved.level };
-            }
-        }
-        if (!saved.item_stock || typeof saved.item_stock !== "object") {
-            saved.item_stock = [];
-        }
-        if (!saved.scrolls || typeof saved.scrolls !== "object") {
-            saved.scrolls = { low: 0, high: 0 };
-        }
-        if (!saved.stars || typeof saved.stars !== "object") {
-            saved.stars = {};
-        }
-        saved.encounter_seed = Number(saved.encounter_seed || 0);
-        if (!saved.owned || typeof saved.owned !== "object") {
-            saved.owned = [];   // 英雄池（可含场下英雄）
-        } else {
-            saved.owned = cemList(saved.owned);
-        }
-        if (!saved.lineup || typeof saved.lineup !== "object") {
-            saved.lineup = [];
-        } else {
-            saved.lineup = cemList(saved.lineup);
-        }
-        saved.bench_slots = Math.max(0, Math.floor(Number(saved.bench_slots) || 0)); // 替补格子
-        if (!saved.current_level) {
-            saved.current_level = "ch01"; // 闯关进度
-        }
-        // v1 首次存档曾错误写入 0 金币；只修复完全无进度的受影响存档。
-        if (previousVersion < SAVE_VERSION && saved.gold === 0 && saved.level === 1 &&
-                saved.owned.length === 0 && saved.lineup.length === 0 && saved.bench_slots === 0 &&
-                !hasEntries(saved.cleared) && !hasEntries(saved.attempts) && saved.current_level === "ch01") {
-            saved.gold = INITIAL_GOLD;
-        }
-        saved.version = SAVE_VERSION;
-        return saved;
+        return {
+            gold: 300,
+            level: 1,
+            cleared: {},
+            attempts: {},
+            heroes: {},
+            owned: [],
+            lineup: [],
+            bench_slots: 0,
+            scrolls: { low: 0, high: 0 },
+            item_stock: [],
+            stars: {},
+            current_level: "ch01",
+            encounter_seed: 0
+        };
     }
 
     function persistSave() {
-        try {
-            $.LocalStorage.Set(SAVE_KEY, JSON.stringify(saveData));
-        } catch (e) {
-            // 存档失败不阻断游戏
-        }
-    }
-
-    function syncSaveToServer() {
-        // CEM 嵌套数组会导致载荷丢失，列表统一拍平成分号分隔字符串。
-        var heroEntries = [];
-        var heroNames = saveData.owned;
-        for (var hi = 0; hi < heroNames.length; hi++) {
-            var hero = saveData.heroes[heroNames[hi]] || { level: 1, xp: 0, quality: "common", skill_points: 1 };
-            heroEntries.push(heroNames[hi] + ":" + hero.level + ":" + (hero.xp || 0) + ":" + (hero.quality || "common") + ":" + (hero.skill_points === undefined ? hero.level : hero.skill_points));
-        }
-        GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
-            gold: saveData.gold,
-            hero_data_text: heroEntries.join(";"),
-            owned_text: saveData.owned.join(";"),
-            lineup_text: saveData.lineup.join(";"),
-            bench_slots: saveData.bench_slots,
-            stock_text: (saveData.item_stock || []).join(";"),
-            scroll_stock_low: saveData.scrolls.low,
-            scroll_stock_high: saveData.scrolls.high,
-            current_level: saveData.current_level,
-            encounter_seed: saveData.encounter_seed
-        });
+        // no-op
     }
 
     function attemptsLeft(levelId) {
@@ -1372,8 +1304,7 @@
     }
 
     function sendHeroLevels() {
-        // 兼容入口：走 rpg_save_sync 的 hero_data_text
-        syncSaveToServer();
+        // 无存档：无需客户端同步
     }
 
     function updateTeamLevelLabels() {
@@ -1403,7 +1334,7 @@
         }
         hero.xp = (hero.xp || 0) + amount;
         while (hero.level < HERO_MAX_LEVEL) {
-            var need = XP_BASE + XP_STEP * hero.level;
+            var need = xpToNext(hero.level);
             if (hero.xp >= need) {
                 hero.xp -= need;
                 hero.level++;
@@ -1463,14 +1394,11 @@
         saveData.gold += gold;
         shopState.gold = saveData.gold;
         // 服务端是金币权威，把存档金币推回去
-        syncSaveToServer();
-        persistSave();
         return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
     }
 
     function registerFailure(levelId) {
         saveData.attempts[levelId] = Math.min(MAX_ATTEMPTS, Number(saveData.attempts[levelId] || 0) + 1);
-        persistSave();
     }
 
     var saveData = loadSave();
@@ -1644,6 +1572,5 @@
     updateShopEconomyLabels(shopState.gold);
     updateTeamLevelLabels();
     sendHeroLevels();
-    syncSaveToServer();
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

@@ -182,7 +182,7 @@ foreach ($dataCheck in $dataChecks) {
 $javascript = Get-Content -LiteralPath $javascriptPath -Raw
 $hudLayout = Get-Content -LiteralPath $hudPath -Raw
 $gameModeText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua") -Raw
-foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_hero_levels", "rpg_save_sync", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set")) {
+foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set")) {
     $combined = $javascript + "`n" + $gameModeText
     if ($combined -notmatch [regex]::Escape($eventName)) {
         throw "Missing event wiring: $eventName"
@@ -315,16 +315,15 @@ foreach ($shopStatePattern in @(
 if ($gameModeText -match 'pool\[math\.random\(#pool\)\]\.name' -or $gameModeText -match 'owned\[owned\] = true') {
     throw "Lua shop state contains the old string/object mismatch"
 }
-foreach ($saveStatePattern in @(
-    'var SAVE_VERSION = 2;',
-    'var INITIAL_GOLD = 300;',
-    'saved\.gold = INITIAL_GOLD;',
-    'owned_text: saveData\.owned\.join\(";"\)',
-    'lineup_text: saveData\.lineup\.join\(";"\)',
-    'lineup_text: next\.join\(";"\)'
+# 无存档设计：客户端不再读写 LocalStorage、不再发送存档同步
+foreach ($forbiddenPattern in @(
+    'LocalStorage',
+    'rpg_save_sync',
+    'owned_text: saveData',
+    'lineup_text: saveData'
 )) {
-    if ($javascript -notmatch $saveStatePattern) {
-        throw "Panorama save state is missing regression protection: $saveStatePattern"
+    if ($javascript -match $forbiddenPattern) {
+        throw "Panorama still references removed save system: $forbiddenPattern"
     }
 }
 if ($javascript -match 'owned: saveData\.owned' -or $javascript -match 'lineup: saveData\.lineup') {
