@@ -258,13 +258,25 @@
 	padding-bottom: 0px;
 }
 
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.DireEditor.Collapsed .CollapseButton
+{
+	horizontal-align: right;
+	vertical-align: center;
+	margin-right: 8px;
+}
+
 .TeamEditor.Collapsed .CollapseButton
 {
 	width: 34px;
 	height: 34px;
-	horizontal-align: center;
-	vertical-align: center;
-	margin-left: 0px;
 	background-color: #4a3d22;
 	border: 2px solid #d7b85a;
 }
@@ -321,13 +333,25 @@
 	padding-bottom: 0px;
 }
 
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.DireEditor.Collapsed .CollapseButton
+{
+	horizontal-align: right;
+	vertical-align: center;
+	margin-right: 8px;
+}
+
 .TeamEditor.Collapsed .CollapseButton
 {
 	width: 34px;
 	height: 34px;
-	horizontal-align: center;
-	vertical-align: center;
-	margin-left: 0px;
 	background-color: #4a3d22;
 	border: 2px solid #d7b85a;
 }
@@ -381,13 +405,25 @@
 	padding-bottom: 0px;
 }
 
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.DireEditor.Collapsed .CollapseButton
+{
+	horizontal-align: right;
+	vertical-align: center;
+	margin-right: 8px;
+}
+
 .TeamEditor.Collapsed .CollapseButton
 {
 	width: 34px;
 	height: 34px;
-	horizontal-align: center;
-	vertical-align: center;
-	margin-left: 0px;
 	background-color: #4a3d22;
 	border: 2px solid #d7b85a;
 }
