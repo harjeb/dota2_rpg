@@ -156,7 +156,8 @@ local function BuildHeroActionSlots(hero)
 		if ability ~= nil and not ability:IsNull() then
 			local abilityName = ability:GetAbilityName()
 			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
-			if not isTalent and not ability:IsHidden() and not ability:IsPassive() and ability:GetMaxLevel() > 0 then
+			-- 未学技能（level 0）在 Dota 中 IsHidden 为 true，必须保留槽位以显示图标
+			if not isTalent and not ability:IsPassive() and ability:GetMaxLevel() > 0 then
 				if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
 					table.insert(actions, "ultimate")
 				elseif slot <= 2 then
