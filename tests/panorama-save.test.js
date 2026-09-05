@@ -146,8 +146,8 @@ var progressedV1 = runHud({
     current_level: "ch02"
 });
 assert(progressedV1.payload.gold === 0, "a progressed save that legitimately has zero gold must stay at zero");
-assert(progressedV1.payload.hero_data_text === "npc_dota_hero_axe:2:0:common",
-    "unified level must migrate into per-hero level/xp/quality data");
+assert(progressedV1.payload.hero_data_text === "npc_dota_hero_axe:2:0:common:2",
+    "unified level must migrate into per-hero level/xp/quality/skill-point data");
 assert(progressedV1.payload.lineup_text === "npc_dota_hero_axe", "lineup must use the flat payload field");
 
 var objectLists = runHud({
@@ -161,7 +161,7 @@ var objectLists = runHud({
     current_level: "ch01"
 });
 assert(objectLists.payload.gold === 100, "object-shaped old lists must not reset gold");
-assert(objectLists.payload.hero_data_text === "npc_dota_hero_axe:1:0:common;npc_dota_hero_sven:1:0:common",
+assert(objectLists.payload.hero_data_text === "npc_dota_hero_axe:1:0:common:1;npc_dota_hero_sven:1:0:common:1",
     "object-shaped owned list must be normalized into per-hero data without loss");
 assert(objectLists.payload.lineup_text === "npc_dota_hero_sven",
     "object-shaped lineup must be normalized without data loss");

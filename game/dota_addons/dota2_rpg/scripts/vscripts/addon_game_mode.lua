@@ -765,9 +765,11 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	if not self:StashAddItem(itemName) then
+	local stashed = self:StashAddItem(itemName)
+	if not stashed then
 		self.gold = self.gold + cost -- 仓库已满（12 格）
 	end
+	print(string.format("[Dota2Rpg] ItemBuy %s cost=%d stashed=%s gold=%d", itemName, cost, tostring(stashed), self.gold))
 	self:BroadcastShopState()
 end
 
@@ -885,12 +887,15 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data == nil or data.level >= HERO_LEVEL then
 		return -- 满级经验舍弃
 	end
+	data.skill_points = data.skill_points or data.level
+	local before = data.level
 	data.current_xp = data.current_xp + amount
 	while data.level < HERO_LEVEL do
 		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1
+			data.skill_points = data.skill_points + 1
 		else
 			break
 		end
@@ -898,6 +903,8 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data.level >= HERO_LEVEL then
 		data.current_xp = 0
 	end
+	print(string.format("[Dota2Rpg] XP: %s +%d (lv%d -> lv%d, sp=%d, xp=%d)",
+		heroName, amount, before, data.level, data.skill_points, data.current_xp))
 end
 
 function CDota2RpgDemo:OnBenchBuy(_, payload)
@@ -964,7 +971,7 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 		self.heroOrder = 0
 		self.lineup = {}
 		for entry in string.gmatch(tostring(payload.hero_data_text), "[^;]+") do
-			local name, level, xp, quality, itemsText = string.match(entry, "^(.+):(%d+):(%d+):(%a+):?(.*)$")
+			local name, level, xp, quality, spText, itemsText = string.match(entry, "^(.+):(%d+):(%d+):(%a+):?(%d*):?(.*)$")
 			if name ~= nil then
 				table.insert(self.ownedHeroes, name)
 				self.heroOrder = self.heroOrder + 1
@@ -977,6 +984,7 @@ function CDota2RpgDemo:OnSaveSync(_, payload)
 					current_xp = math.max(0, tonumber(xp) or 0),
 					quality = quality,
 					order = self.heroOrder,
+					skill_points = math.max(0, tonumber(spText) or 0),
 					inventory = inventory,
 				}
 			end
@@ -1079,9 +1087,11 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	if not self:StashAddItem(itemName) then
+	local stashed = self:StashAddItem(itemName)
+	if not stashed then
 		self.gold = self.gold + cost -- 仓库已满（12 格）
 	end
+	print(string.format("[Dota2Rpg] ItemBuy %s cost=%d stashed=%s gold=%d", itemName, cost, tostring(stashed), self.gold))
 	self:BroadcastShopState()
 end
 
@@ -1199,12 +1209,15 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data == nil or data.level >= HERO_LEVEL then
 		return -- 满级经验舍弃
 	end
+	data.skill_points = data.skill_points or data.level
+	local before = data.level
 	data.current_xp = data.current_xp + amount
 	while data.level < HERO_LEVEL do
 		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1
+			data.skill_points = data.skill_points + 1
 		else
 			break
 		end
@@ -1212,6 +1225,8 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data.level >= HERO_LEVEL then
 		data.current_xp = 0
 	end
+	print(string.format("[Dota2Rpg] XP: %s +%d (lv%d -> lv%d, sp=%d, xp=%d)",
+		heroName, amount, before, data.level, data.skill_points, data.current_xp))
 end
 
 function CDota2RpgDemo:OnBenchBuy(_, payload)
@@ -1615,9 +1630,11 @@ function CDota2RpgDemo:OnItemBuy(_, payload)
 		return
 	end
 	self.gold = self.gold - cost
-	if not self:StashAddItem(itemName) then
+	local stashed = self:StashAddItem(itemName)
+	if not stashed then
 		self.gold = self.gold + cost -- 仓库已满（12 格）
 	end
+	print(string.format("[Dota2Rpg] ItemBuy %s cost=%d stashed=%s gold=%d", itemName, cost, tostring(stashed), self.gold))
 	self:BroadcastShopState()
 end
 
@@ -1735,12 +1752,15 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data == nil or data.level >= HERO_LEVEL then
 		return -- 满级经验舍弃
 	end
+	data.skill_points = data.skill_points or data.level
+	local before = data.level
 	data.current_xp = data.current_xp + amount
 	while data.level < HERO_LEVEL do
 		local need = XP_TO_NEXT_BASE + XP_TO_NEXT_STEP * data.level
 		if data.current_xp >= need then
 			data.current_xp = data.current_xp - need
 			data.level = data.level + 1
+			data.skill_points = data.skill_points + 1
 		else
 			break
 		end
@@ -1748,6 +1768,8 @@ function CDota2RpgDemo:AddXpToHero(heroName, amount)
 	if data.level >= HERO_LEVEL then
 		data.current_xp = 0
 	end
+	print(string.format("[Dota2Rpg] XP: %s +%d (lv%d -> lv%d, sp=%d, xp=%d)",
+		heroName, amount, before, data.level, data.skill_points, data.current_xp))
 end
 
 function CDota2RpgDemo:OnBenchBuy(_, payload)
@@ -1980,6 +2002,11 @@ function CDota2RpgDemo:RemoveBattleBarrier()
 		end
 	end
 	self.barrierUnits = nil
+	-- 旧仓库小精灵一并清理，防止孤儿堆积（新仓库随隔断重建）
+	if self.stashUnit ~= nil and TacticEngine.IsValidUnit(self.stashUnit) then
+		self.stashUnit:RemoveSelf()
+	end
+	self.stashUnit = nil
 end
 
 -- 用树墙围出待命区（树会阻挡移动，形成封闭地形；长持续时间常驻）
@@ -2105,6 +2132,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			self.autoAbilityHeroes = self.autoAbilityHeroes or {}
 			self.autoAbilityHeroes[hero:GetEntityIndex()] = nil -- 上阵英雄：玩家手动加点
 			self:PrepareBattleHero(hero, heroData ~= nil and heroData.level or 1)
+			hero:SetAbilityPoints(heroData ~= nil and math.max(0, heroData.skill_points or heroData.level) or 1)
 			-- 重新佩戴个人装备
 			heroData.inventory = heroData.inventory or {}
 			for _, itemName in ipairs(heroData.inventory) do
@@ -2271,7 +2299,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 		end
 		hero:SetAbilityPoints(0)
 	else
-		hero:SetAbilityPoints(math.max(0, wantedLevel - 1))
+		hero:SetAbilityPoints(math.max(0, wantedLevel))
 	end
 	hero:SetRespawnsDisabled(true)
 	hero:SetHealth(hero:GetMaxHealth())
@@ -2650,7 +2678,7 @@ function CDota2RpgDemo:BroadcastShopState()
 	local heroEntries = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
 		local d = self.heroData[heroName]
-		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common") .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
+		table.insert(heroEntries, heroName .. ":" .. (d ~= nil and d.level or 1) .. ":" .. (d ~= nil and d.current_xp or 0) .. ":" .. (d ~= nil and d.quality or "common") .. ":" .. (d ~= nil and (d.skill_points or d.level) or 1) .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 	end
 	local stockParts = {}
 	local stash = self.stashUnit

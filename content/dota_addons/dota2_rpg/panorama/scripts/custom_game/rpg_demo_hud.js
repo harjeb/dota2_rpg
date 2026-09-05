@@ -860,9 +860,10 @@
         var heroEntries = splitList(data.hero_data_text);
         for (var hIndex = 0; hIndex < heroEntries.length; hIndex++) {
             var hParts = heroEntries[hIndex].split(":");
-            if (hParts.length >= 4) {
+            if (hParts.length >= 5) {
                 saveData.heroes[hParts[0]] = {
-                    level: Number(hParts[1]), xp: Number(hParts[2]), quality: hParts[3]
+                    level: Number(hParts[1]), xp: Number(hParts[2]),
+                    quality: hParts[3], skill_points: Number(hParts[4])
                 };
             }
         }
@@ -1298,7 +1299,7 @@
             saved.heroes = {};
             var migratedHeroes = saved.owned && saved.owned.length ? saved.owned : [];
             for (var mh = 0; mh < migratedHeroes.length; mh++) {
-                saved.heroes[migratedHeroes[mh]] = { level: saved.level, xp: 0, quality: "common" };
+                saved.heroes[migratedHeroes[mh]] = { level: saved.level, xp: 0, quality: "common", skill_points: saved.level };
             }
         }
         if (!saved.item_stock || typeof saved.item_stock !== "object") {
@@ -1348,8 +1349,8 @@
         var heroEntries = [];
         var heroNames = saveData.owned;
         for (var hi = 0; hi < heroNames.length; hi++) {
-            var hero = saveData.heroes[heroNames[hi]] || { level: 1, xp: 0, quality: "common" };
-            heroEntries.push(heroNames[hi] + ":" + hero.level + ":" + (hero.xp || 0) + ":" + (hero.quality || "common"));
+            var hero = saveData.heroes[heroNames[hi]] || { level: 1, xp: 0, quality: "common", skill_points: 1 };
+            heroEntries.push(heroNames[hi] + ":" + hero.level + ":" + (hero.xp || 0) + ":" + (hero.quality || "common") + ":" + (hero.skill_points === undefined ? hero.level : hero.skill_points));
         }
         GameEvents.SendCustomGameEventToServer("rpg_save_sync", {
             gold: saveData.gold,
