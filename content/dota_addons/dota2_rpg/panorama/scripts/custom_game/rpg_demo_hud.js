@@ -382,37 +382,38 @@
         for (var index = 0; index < MAX_RULE_ROWS; index++) {
             var row = $.CreatePanel("Panel", container, side + "Rule" + index);
             row.AddClass("RuleRow");
-            var actionIcon = $.CreatePanel("Button", row, side + "ActionSelect" + index);
-            actionIcon.AddClass("ActionIcon");
-            var abilityImage = $.CreatePanel("DOTAAbilityImage", actionIcon, side + "ActionAbility" + index);
-            abilityImage.AddClass("ActionAbilityImage");
-            var actionFallback = createLabel(actionIcon, "ActionName", "");
-            actionIcon.SetPanelEvent("onactivate", function () {
-                if (phase === "setup") {
-                    openActionMenu(side, index);
-                }
-            });
-            var deleteButton = $.CreatePanel("Button", row, side + "DeleteRule" + index);
-            deleteButton.AddClass("DeleteRuleButton");
-            createLabel(deleteButton, "DeleteGlyph", "X");
-            deleteButton.SetPanelEvent("onactivate", function () {
-                if (phase === "setup" && index > 0) {
-                    deleteRule(side, index);
-                }
-            });
-            deleteButton.enabled = index > 0;
-            var conditionEditor = createConditionEditor(row, side, index);
-            var forceToggle = createForceToggle(row, side, index);
-            var upButton = createMoveButton(row, side, index, "Up", "^");
-            var downButton = createMoveButton(row, side, index, "Down", "v");
-            var actionMenu = $.CreatePanel("Panel", row, side + "ActionMenu" + index);
-            actionMenu.AddClass("ActionMenu Hidden");
-            rowPanels[side].push({
-                actionMenu: actionMenu,
-                actionAbilityImage: abilityImage,
-                actionFallback: actionFallback,
-                deleteButton: deleteButton,
-                row: row,
+            (function (idx) {
+                var actionIcon = $.CreatePanel("Button", row, side + "ActionSelect" + idx);
+                actionIcon.AddClass("ActionIcon");
+                var abilityImage = $.CreatePanel("DOTAAbilityImage", actionIcon, side + "ActionAbility" + idx);
+                abilityImage.AddClass("ActionAbilityImage");
+                var actionFallback = createLabel(actionIcon, "ActionName", "");
+                actionIcon.SetPanelEvent("onactivate", function () {
+                    if (phase === "setup") {
+                        openActionMenu(side, idx);
+                    }
+                });
+                var conditionEditor = createConditionEditor(row, side, idx);
+                var forceToggle = createForceToggle(row, side, idx);
+                var upButton = createMoveButton(row, side, idx, "Up", "^");
+                var downButton = createMoveButton(row, side, idx, "Down", "v");
+                var deleteButton = $.CreatePanel("Button", row, side + "DeleteRule" + idx);
+                deleteButton.AddClass("DeleteRuleButton");
+                createLabel(deleteButton, "DeleteGlyph", "X");
+                deleteButton.SetPanelEvent("onactivate", function () {
+                    if (phase === "setup" && idx > 0) {
+                        deleteRule(side, idx);
+                    }
+                });
+                deleteButton.enabled = idx > 0;
+                var actionMenu = $.CreatePanel("Panel", row, side + "ActionMenu" + idx);
+                actionMenu.AddClass("ActionMenu Hidden");
+                rowPanels[side].push({
+                    actionMenu: actionMenu,
+                    actionAbilityImage: abilityImage,
+                    actionFallback: actionFallback,
+                    deleteButton: deleteButton,
+                    row: row,
                 conditionEditor: conditionEditor.editor,
                 conditionSelect: conditionEditor.selectButton,
                 conditionValue: conditionEditor.valueLabel,
@@ -439,7 +440,8 @@
                 forceToggleValue: forceToggle.valueLabel,
                 upButton: upButton,
                 downButton: downButton
-            });
+                });
+            }(index));
         }
         renderSide(side);
     }
