@@ -57,6 +57,7 @@
 		"dota2_rpg_start_battle"		"Start Battle"
 		"dota2_rpg_condition_ally_hit_count_ge"	"Ally hits ≥"
 		"dota2_rpg_condition_ally_death_ge"		"Allies dead ≥"
+		"dota2_rpg_condition_toggle_state_off"	"Stance/toggle not active"
 		"dota2_rpg_condition_none"				"(no condition)"
 		"dota2_rpg_condition_ally_under_attack"	"Ally under attack"
 		"dota2_rpg_target_attr_boss"		"Boss/Elite"

@@ -33,6 +33,7 @@
 					<Button id="AllyUnderAttackOption" class="ConditionOption" value="ally_under_attack"><Label text="#dota2_rpg_condition_ally_under_attack" /></Button>
 					<Button id="AllyHitCountOption" class="ConditionOption" value="ally_hit_count_ge"><Label text="#dota2_rpg_condition_ally_hit_count_ge" /></Button>
 					<Button id="AllyDeathOption" class="ConditionOption" value="ally_death_ge"><Label text="#dota2_rpg_condition_ally_death_ge" /></Button>
+					<Button id="ToggleStateOption" class="ConditionOption" value="toggle_state_off"><Label text="#dota2_rpg_condition_toggle_state_off" /></Button>
 				</Panel>
 				<Panel id="EffectMenu" class="EffectMenu Hidden">
 					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
@@ -70,6 +71,7 @@
 						<Button class="ConditionOption" value="ally_under_attack"><Label text="#dota2_rpg_condition_ally_under_attack" /></Button>
 						<Button class="ConditionOption" value="ally_hit_count_ge"><Label text="#dota2_rpg_condition_ally_hit_count_ge" /></Button>
 						<Button class="ConditionOption" value="ally_death_ge"><Label text="#dota2_rpg_condition_ally_death_ge" /></Button>
+						<Button class="ConditionOption" value="toggle_state_off"><Label text="#dota2_rpg_condition_toggle_state_off" /></Button>
 					</Panel>
 				<Panel id="TargetAttrMenu" class="TargetMenu Hidden">
 					<Button class="TargetOption" value="hp"><Label text="#dota2_rpg_target_attr_hp" /></Button>

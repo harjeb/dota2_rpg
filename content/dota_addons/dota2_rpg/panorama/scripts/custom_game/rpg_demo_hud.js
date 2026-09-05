@@ -26,6 +26,7 @@
         ally_under_attack: "#dota2_rpg_condition_ally_under_attack",
         ally_hit_count_ge: "#dota2_rpg_condition_ally_hit_count_ge",
         ally_death_ge: "#dota2_rpg_condition_ally_death_ge",
+        toggle_state_off: "#dota2_rpg_condition_toggle_state_off",
         none: "#dota2_rpg_condition_none"
     };
 

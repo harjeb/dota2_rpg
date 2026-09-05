@@ -56,6 +56,7 @@ local VALID_CONDITIONS = {
 	ally_under_attack = true,
 	ally_hit_count_ge = true,   -- 连续事件计数：友军受击次数
 	ally_death_ge = true,       -- 已阵亡友军数
+	toggle_state_off = true,    -- 切换/形态技能：当前处于关闭状态
 	none = true,                -- 组合第二槽占位
 }
 
@@ -194,6 +195,19 @@ function TacticEngine:RegisterConditions()
 	self.conditions.ally_death_ge = function(ctx, value)
 		local deaths = ctx.env.allyDeathCount or 0
 		return deaths >= value
+	end
+	-- 切换/形态技能专用：当前 toggle 状态为关时触发；
+	-- 施放后状态翻转，条件自动失效，不会反复抖动
+	self.conditions.toggle_state_off = function(ctx, value)
+		local action = ctx.action
+		if action == nil or action.kind ~= "ability" then
+			return false
+		end
+		local ability = action.ability
+		if ability == nil or ability:IsNull() or not self.adapter:IsToggleAbility(ability) then
+			return false
+		end
+		return not self.adapter:GetToggleState(ability)
 	end
 end
 
