@@ -240,9 +240,14 @@
 }
 
 /* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
 .TeamEditor.Collapsed
 {
-	height: 52px !important;
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
 }
 
 .TeamEditor.Collapsed .EditorBody,
@@ -315,9 +320,14 @@
 
 /* 最小化：只剩队伍标题条与展开箭头 */
 /* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
 .TeamEditor.Collapsed
 {
-	height: 52px !important;
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
 }
 
 .TeamEditor.Collapsed .EditorBody,
@@ -387,9 +397,14 @@
 
 /* 最小化：只剩队伍标题条与展开箭头 */
 /* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
 .TeamEditor.Collapsed
 {
-	height: 52px !important;
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
 }
 
 .TeamEditor.Collapsed .EditorBody,
