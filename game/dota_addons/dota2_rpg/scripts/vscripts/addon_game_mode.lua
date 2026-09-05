@@ -95,7 +95,7 @@ local SHOP_REFRESH_COST = 20
 local SHOP_BENCH_SLOT_COST = 200
 local BENCH_SLOT_MAX = 5
 local LINEUP_MAX = 5
-local INITIAL_GOLD = 300
+local INITIAL_GOLD = 500
 local SHOP_OFFER_SIZE = 5
 local SHOP_CATEGORIES = { "strength", "agility", "intelligence", "universal" }
 
@@ -263,7 +263,7 @@ function CDota2RpgDemo:InitGameMode()
 	self.orderedLevels = levelIds
 
 	-- 经济/商店/阵容（服务端为金币权威，客户端存档仅镜像）
-	self.gold = self.shopCosts.initial_gold
+	self.gold = INITIAL_GOLD
 	self.ownedHeroes = {}   -- 名字列表，招募顺序
 	-- 个人等级/经验：heroData[name] = { level, current_xp, quality, order }
 	self.heroData = {}
@@ -371,6 +371,8 @@ function CDota2RpgDemo:InitGameMode()
 	end)
 
 	PlayerResource:SetCustomTeamAssignment(0, DOTA_TEAM_GOODGUYS)
+	self:GrantStarterHeroes()
+	self:RollShop()
 	-- 战术桥接初始化放最后：失败时给出可定位错误并中止初始化
 	local okInstall, installErr = pcall(function()
 		self.tacticBridge:Install()
@@ -404,6 +406,38 @@ function CDota2RpgDemo:CountTable(t)
 		count = count + 1
 	end
 	return count
+end
+
+-- 开局免费赠送 2 名 1 级英雄（只有开场才有；计入首发/待命体系）
+function CDota2RpgDemo:GrantStarterHeroes()
+	local pool = {}
+	for _, categoryName in ipairs(SHOP_CATEGORIES) do
+		for _, heroName in ipairs(self.heroPool[categoryName] or {}) do
+			table.insert(pool, heroName)
+		end
+	end
+	local granted = 0
+	local used = {}
+	while granted < 2 and #pool > 0 do
+		local index = math.random(#pool)
+		local heroName = pool[index]
+		table.remove(pool, index)
+		if not used[heroName] then
+			used[heroName] = true
+			granted = granted + 1
+			table.insert(self.ownedHeroes, heroName)
+			self.heroOrder = self.heroOrder + 1
+			self.heroData[heroName] = {
+				level = 1,
+				current_xp = 0,
+				quality = "common",
+				order = self.heroOrder,
+				skill_points = 1,
+				inventory = {},
+			}
+		end
+	end
+	print("[Dota2Rpg] Starter heroes granted: " .. granted)
 end
 
 function CDota2RpgDemo:LoadHeroPool()
