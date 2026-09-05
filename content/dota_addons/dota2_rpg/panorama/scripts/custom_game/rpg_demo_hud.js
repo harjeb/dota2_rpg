@@ -382,19 +382,36 @@
         for (var index = 0; index < MAX_RULE_ROWS; index++) {
             var row = $.CreatePanel("Panel", container, side + "Rule" + index);
             row.AddClass("RuleRow");
-            createLabel(row, "PriorityNumber", String(index + 1));
-            var actionIcon = $.CreatePanel("Panel", row, side + "ActionIcon" + index);
+            var actionIcon = $.CreatePanel("Button", row, side + "ActionSelect" + index);
             actionIcon.AddClass("ActionIcon");
             var abilityImage = $.CreatePanel("DOTAAbilityImage", actionIcon, side + "ActionAbility" + index);
             abilityImage.AddClass("ActionAbilityImage");
             var actionFallback = createLabel(actionIcon, "ActionName", "");
+            actionIcon.SetPanelEvent("onactivate", function () {
+                if (phase === "setup") {
+                    openActionMenu(side, index);
+                }
+            });
+            var deleteButton = $.CreatePanel("Button", row, side + "DeleteRule" + index);
+            deleteButton.AddClass("DeleteRuleButton");
+            createLabel(deleteButton, "DeleteGlyph", "X");
+            deleteButton.SetPanelEvent("onactivate", function () {
+                if (phase === "setup" && index > 0) {
+                    deleteRule(side, index);
+                }
+            });
+            deleteButton.enabled = index > 0;
             var conditionEditor = createConditionEditor(row, side, index);
             var forceToggle = createForceToggle(row, side, index);
             var upButton = createMoveButton(row, side, index, "Up", "^");
             var downButton = createMoveButton(row, side, index, "Down", "v");
+            var actionMenu = $.CreatePanel("Panel", row, side + "ActionMenu" + index);
+            actionMenu.AddClass("ActionMenu Hidden");
             rowPanels[side].push({
+                actionMenu: actionMenu,
                 actionAbilityImage: abilityImage,
                 actionFallback: actionFallback,
+                deleteButton: deleteButton,
                 row: row,
                 conditionEditor: conditionEditor.editor,
                 conditionSelect: conditionEditor.selectButton,
@@ -438,6 +455,9 @@
                 panels.targetAttrMenu.SetHasClass("Hidden", true);
                 panels.targetSideMenu.SetHasClass("Hidden", true);
                 panels.cond2Menu.SetHasClass("Hidden", true);
+                if (panels.actionMenu) {
+                    panels.actionMenu.SetHasClass("Hidden", true);
+                }
                 panels.row.SetHasClass("MenuOpen", false);
                 panels.row.SetHasClass("ConditionMenuOpen", false);
                 panels.row.SetHasClass("EffectMenuOpen", false);
@@ -470,8 +490,13 @@
             menu = panels.targetAttrMenu;
         } else if (menuType === "targetSide") {
             menu = panels.targetSideMenu;
+        } else if (menuType === "action") {
+            menu = panels.actionMenu;
         } else {
             menu = panels.conditionMenu;
+        }
+        if (menu == null) {
+            return menu;
         }
         var layer = $("#DropdownLayer");
         if (layer === null || layer === undefined) {
@@ -510,6 +535,58 @@
             openDropdownMenu(side, index, menuType);
         }
         panels.row.SetHasClass("MenuOpen", shouldOpen);
+    }
+
+    function openActionMenu(side, index) {
+        var panels = rowPanels[side][index];
+        var menu = panels.actionMenu;
+        if (menu == null) {
+            return;
+        }
+        var layer = $("#DropdownLayer");
+        if (layer) {
+            menu.SetParent(layer);
+        }
+        // 动态填充：该英雄全部可用动作（可重复选择）
+        menu.RemoveAndDeleteChildren();
+        var actions = getSlotActions(side, index);
+        for (var i = 0; i < actions.length; i++) {
+            (function (actionKey) {
+                var option = $.CreatePanel("Button", menu, "ActionOpt_" + side + index + "_" + actionKey);
+                option.AddClass("ConditionOption");
+                var detail = getActionDetail(side, index, actionKey);
+                var text = detail !== "" ? detail : $.Localize(ACTION_TOKENS[actionKey] || actionKey);
+                createLabel(option, "", text);
+                option.SetPanelEvent("onactivate", function () {
+                    chooseAction(side, index, actionKey);
+                });
+            }(actions[i]));
+        }
+        var shouldOpen = menu.BHasClass("Hidden");
+        closeEditorMenus();
+        if (shouldOpen) {
+            openDropdownMenu(side, index, "action");
+        }
+        panels.row.SetHasClass("MenuOpen", shouldOpen);
+    }
+
+    function chooseAction(side, index, actionKey) {
+        var rules = getSelectedRules(side);
+        if (!rules[index]) {
+            return;
+        }
+        rules[index].action = actionKey;
+        closeEditorMenus();
+        renderSide(side);
+    }
+
+    function deleteRule(side, index) {
+        var rules = getSelectedRules(side);
+        if (rules.length <= 1) {
+            return; // 至少保留一条规则（系统兜底始终存在）
+        }
+        rules.splice(index, 1);
+        renderSide(side);
     }
 
     function chooseCondition(side, index, condition) {
@@ -752,6 +829,10 @@
             updateForcedToggle(side, index, locked);
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
+            if (panels.deleteButton) {
+                panels.deleteButton.enabled = !locked && index > 0;
+                panels.deleteButton.SetHasClass("Hidden", index === 0 || phase !== "setup");
+            }
         }
         $("#" + side + "Editor").SetHasClass("Hidden", hidePanels);
         $("#" + side + "Editor").SetHasClass("Locked", locked);

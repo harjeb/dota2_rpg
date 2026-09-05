@@ -465,12 +465,6 @@
 	vertical-align: center;
 }
 
-.PriorityColumn
-{
-	width: 38px;
-	text-align: center;
-}
-
 .ActionColumn
 {
 	width: 112px;
@@ -522,22 +516,24 @@
 	border-bottom: 1px solid #303b43;
 }
 
-.PriorityNumber
-{
-	width: 38px;
-	vertical-align: center;
-	font-family: titleFont;
-	font-size: 19px;
-	font-weight: bold;
-	color: #d9bd6b;
-	text-align: center;
-}
-
 .ActionIcon
 {
 	width: 44px;
 	height: 44px;
 	vertical-align: center;
+	background-color: #1c272e;
+	border: 1px solid #5a6871;
+}
+
+.ActionIcon:hover
+{
+	brightness: 1.3;
+	border-color: #d7b85a;
+}
+
+.ActionIcon:disabled
+{
+	brightness: 0.5;
 }
 
 .ActionAbilityImage
@@ -602,7 +598,6 @@
 	height: 482px;
 }
 
-.RuleRow.MenuOpen .PriorityNumber,
 .RuleRow.MenuOpen .ActionName,
 .RuleRow.MenuOpen .ForceToggle,
 .RuleRow.MenuOpen .MoveButton
@@ -1437,4 +1432,58 @@
 	border: 1px solid #f0d487;
 	transition-property: margin-top;
 	transition-duration: 0.08s;
+}
+
+.DeleteRuleButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 4px;
+	background-color: #5a2a2a;
+	border: 1px solid #a05050;
+}
+
+.DeleteRuleButton:hover
+{
+	brightness: 1.4;
+}
+
+.DeleteRuleButton:disabled
+{
+	visibility: collapse;
+}
+
+.DeleteGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #f0c0c0;
+}
+
+.ActionMenu
+{
+	width: 200px;
+	height: 260px;
+	overflow: squish scroll;
+	flow-children: down;
+	background-color: #141d23;
+	border: 1px solid #8b989f;
+	box-shadow: #000000dd 0px 4px 12px 0px;
+	z-index: 300;
+}
+
+.ActionMenu .ConditionOption
+{
+	width: 100%;
+	height: 32px;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.ActionMenu .ConditionOption:hover
+{
+	brightness: 1.35;
 }

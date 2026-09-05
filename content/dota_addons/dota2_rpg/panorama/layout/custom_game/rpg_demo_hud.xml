@@ -120,7 +120,6 @@
 			</Panel>
 			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
 				<Panel class="ColumnHeader">
-					<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
 					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
 					<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
 					<Label class="ForceColumn" text="#dota2_rpg_force_column" />
@@ -188,7 +187,6 @@
 			</Panel>
 			<Panel id="DireEditorBody" class="EditorBody" flow-children="down">
 				<Panel class="ColumnHeader">
-				<Label class="PriorityColumn" text="#dota2_rpg_priority_column" />
 				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
 				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
 				<Label class="ForceColumn" text="#dota2_rpg_force_column" />
