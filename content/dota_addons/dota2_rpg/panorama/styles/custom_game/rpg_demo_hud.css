@@ -254,7 +254,7 @@
 
 .TeamEditor.Collapsed .TeamHeader
 {
-	border-bottom: none;
+	border-bottom: 0px solid #00000000;
 	padding-bottom: 0px;
 }
 
@@ -329,7 +329,7 @@
 
 .TeamEditor.Collapsed .TeamHeader
 {
-	border-bottom: none;
+	border-bottom: 0px solid #00000000;
 	padding-bottom: 0px;
 }
 
@@ -401,7 +401,7 @@
 
 .TeamEditor.Collapsed .TeamHeader
 {
-	border-bottom: none;
+	border-bottom: 0px solid #00000000;
 	padding-bottom: 0px;
 }
 
