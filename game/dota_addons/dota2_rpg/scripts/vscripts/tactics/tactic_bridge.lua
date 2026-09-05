@@ -377,7 +377,7 @@ function TacticBridge:Install()
 	})
 
 	-- 订单过滤：内部订单放行；战斗中拒绝玩家订单；准备阶段走排位/换人校验
-	self.orderFilter = OrderFilterModule.new({
+	self.orderFilter = OrderFilterModule.OrderFilter.new({
 		gate = orderGate,
 		get_phase = getPhase,
 		is_battle_unit = isBattleUnit,
