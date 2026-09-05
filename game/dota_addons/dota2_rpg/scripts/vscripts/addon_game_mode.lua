@@ -487,16 +487,13 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	end
 	self.playerId = math.max(self.playerId, ownerId)
 	unit:SetRespawnsDisabled(true)
+	-- 玩家小精灵 = 可自由移动的"指挥官"：无敌/禁攻/禁技能，但可见、可走动
 	unit:AddNewModifier(unit, nil, "modifier_invulnerable", {})
-	unit:AddNewModifier(unit, nil, "modifier_rooted", {})
 	unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
 	unit:AddNewModifier(unit, nil, "modifier_silence", {})
-	if unit.AddNoDraw ~= nil then
-		unit:AddNoDraw()
-	end
-	FindClearSpaceForUnit(unit, Vector(-7600, -7600, 128), true)
+	FindClearSpaceForUnit(unit, Vector(-1950, -700, 128), true)
 	self:EnsureBattlefield()
-	print(string.format("[Dota2Rpg] Hidden placeholder ready for player %d.", self.playerId))
+	print(string.format("[Dota2Rpg] Player commander ready for player %d.", self.playerId))
 end
 
 function CDota2RpgDemo:OnGameRulesStateChange()
