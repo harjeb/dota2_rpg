@@ -396,16 +396,8 @@ function TacticEngine:ParseRules(payload, prefix, ruleCount, fallbackRules)
 			condition = fallbackRules[index] ~= nil and fallbackRules[index].condition or "always"
 		end
 
-		if not VALID_ACTIONS[action] or usedActions[action] then
-			action = nil
-			for _, fallbackAction in ipairs(ACTION_KEYS) do
-				if not usedActions[fallbackAction] then
-					action = fallbackAction
-					break
-				end
-			end
-		end
-		if action == nil then
+		-- 修订版：同一技能/装备可出现在多条规则
+		if not VALID_ACTIONS[action] then
 			action = "attack"
 		end
 

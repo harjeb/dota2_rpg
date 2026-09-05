@@ -489,6 +489,8 @@
 .RulesContainer
 {
 	width: 100%;
+	height: 340px;
+	overflow: squish scroll;
 	flow-children: down;
 }
 

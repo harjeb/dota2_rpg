@@ -127,7 +127,7 @@
         attack: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: true }
     };
 
-    var MAX_RULE_ROWS = 5;
+    var MAX_RULE_ROWS = 10;  // 固定 10 条规则槽 + 系统兜底
     var heroSlots = {};
     var FALLBACK_SLOT_ACTIONS = ["ability_1", "ability_2", "ability_3", "ultimate", "attack"];
 
@@ -155,10 +155,11 @@
     function buildRulesForHero(side, heroIndex) {
         var actions = getSlotActions(side, heroIndex);
         var rules = [];
-        for (var index = 0; index < actions.length; index++) {
-            var defaults = DEFAULT_RULE_BY_ACTION[actions[index]];
+        for (var index = 0; index < MAX_RULE_ROWS; index++) {
+            var action = actions[((index % actions.length) + actions.length) % actions.length];
+            var defaults = DEFAULT_RULE_BY_ACTION[action];
             rules.push({
-                action: actions[index],
+                action: action,
                 condition: defaults.condition,
                 value: defaults.value,
                 target_attr: defaults.target_attr,

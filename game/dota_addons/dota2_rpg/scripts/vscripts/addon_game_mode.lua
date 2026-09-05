@@ -129,7 +129,24 @@ local DEFAULT_RULES = {
 	{ action = "attack", condition = "always", value = 50, target = "enemy_distance_nearest", forced = true },
 }
 
-local RULE_COUNT = #DEFAULT_RULES
+local RULE_COUNT = 10  -- 固定 10 条规则槽 + 系统兜底（修订版设计）
+
+-- 按英雄动作列表生成 10 条默认规则：动作循环分配，普攻强制追击
+local function BuildDefaultRulesForSlots(actions)
+	local rules = {}
+	for index = 1, RULE_COUNT do
+		local action = actions[((index - 1) % #actions) + 1]
+		table.insert(rules, {
+			action = action,
+			condition = action == "attack" and "always" or "enemy_exists",
+			value = 50,
+			target = action == "attack" and "enemy_distance_nearest" or "enemy_hp_pct_lowest",
+			forced = (action == "attack"),
+			enabled = true,
+		})
+	end
+	return rules
+end
 
 local function CloneDefaultRules()
 	local rules = {}
@@ -2076,7 +2093,9 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 				end
 			end
 			battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
-			self.heroRulesByName[heroName] = self.heroRulesByName[heroName] or CloneDefaultRules()
+			-- 固定 10 槽：按英雄动作列表生成默认规则（玩家可改）
+			self.heroRulesByName[heroName] = self.heroRulesByName[heroName]
+				or BuildDefaultRulesForSlots(BuildHeroActionSlots(hero))
 			battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRulesByName[heroName]
 		else
 			print(string.format("[Dota2Rpg] Failed to spawn lineup hero %s.", heroName))
@@ -2583,9 +2602,14 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 	for index, hero in ipairs(heroes) do
 		if TacticEngine.IsValidUnit(hero) then
 			local descriptions = {}
-			for _, action in ipairs(BuildHeroActionSlots(hero)) do
+			local slots = BuildHeroActionSlots(hero)
+			for _, action in ipairs(slots) do
 				local _, detail = DescribeAction(hero, action)
 				table.insert(descriptions, detail ~= "" and detail or action)
+			end
+			-- 10 槽：动作循环补齐图标映射
+			for i = #slots + 1, RULE_COUNT do
+				table.insert(descriptions, descriptions[((i - 1) % #slots) + 1])
 			end
 			CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
 				slot_key = "radiant_" .. index,
