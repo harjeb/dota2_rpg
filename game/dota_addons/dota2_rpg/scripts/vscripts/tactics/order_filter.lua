@@ -32,8 +32,10 @@ function OrderFilter.new(options)
         gate = options.gate or OrderGate.new(),
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_battle_unit = assert(options.is_battle_unit, "is_battle_unit is required"),
-        -- 小精灵/待命区不参与战斗，但它们的原版物品订单也必须服从准备阶段锁。
+        -- 小精灵不在战斗名单中，但它的原版物品订单也必须服从准备阶段锁。
         is_inventory_unit = options.is_inventory_unit or function() return false end,
+        -- 原版购买/出售订单有时不带 units；仍必须进入阶段与归属校验。
+        is_managed_order = options.is_managed_order or function() return false end,
         validate_prepare_order = options.validate_prepare_order,
     }, OrderFilter)
 end
@@ -58,8 +60,9 @@ function OrderFilter:Filter(filter_table)
         end
     end
 
-    -- 不属于 RPG 的原版单位仍按 Dota 默认行为处理；但小精灵和待命英雄不能借此绕过阶段锁。
-    if not contains_managed_unit then
+    -- 不属于 RPG 的原版单位仍按 Dota 默认行为处理。原版购买/出售可能没有 units，
+    -- 因此由 is_managed_order 显式接管，避免借空单位表绕过阶段锁。
+    if not contains_managed_unit and not self.is_managed_order(filter_table) then
         return true
     end
 

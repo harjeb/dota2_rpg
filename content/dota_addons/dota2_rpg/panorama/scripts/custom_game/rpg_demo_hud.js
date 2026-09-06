@@ -945,7 +945,7 @@
 
     // ---------------- 英雄商店 + 阵容（服务端权威，事件镜像） ----------------
     var shopState = {
-        gold: 300,
+        gold: 500,
         offers: [],
         owned: [],
         lineup: [],
@@ -1012,7 +1012,6 @@
         if (data.lineup_max !== undefined) {
             shopState.costs.lineup_max = Number(data.lineup_max);
         }
-        shopState.item_catalog = splitList(data.item_catalog);
         shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
         shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
         shopState.stock = splitList(data.stock_text);
@@ -1229,10 +1228,8 @@
 
     function renderItemShop() {
         var stock = cemList(shopState.stock);
-        var catalog = cemList(shopState.item_catalog);
         var target = getSelectedEquipmentTarget();
         var targetHasSpace = target && target.inventory.length < 6;
-        var stashHasSpace = stock.length < 9;
         var scrollDefs = [
             { kind: "low", label: $.Localize("#dota2_rpg_scroll_low"),
               remaining: shopState.scroll_low_remaining, stockCount: shopState.scroll_low_stock,
@@ -1244,27 +1241,9 @@
 
         renderItemTarget(target);
 
+        // 普通装备只来自 Valve 原版商店。这里显示小精灵持有的真实实例，并提供一键转交。
         var stockList = $("#ItemStockList");
         stockList.RemoveAndDeleteChildren();
-        // 卷轴仍在这里使用，目标与装备购买共用同一个明确选中的上阵英雄。
-        for (var scrollIndex = 0; scrollIndex < scrollDefs.length; scrollIndex++) {
-            (function (def) {
-                var row = $.CreatePanel("Panel", stockList, "ScrollUse_" + def.kind);
-                row.AddClass("ItemRow");
-                createLabel(row, "ItemRowName", def.label + " x" + def.stockCount);
-                var use = $.CreatePanel("Button", row, "ScrollUseBtn_" + def.kind);
-                use.AddClass("ItemRowBtn");
-                use.AddClass("ItemEquipBtn");
-                createLabel(use, "", $.Localize("#dota2_rpg_item_use"));
-                use.SetPanelEvent("onactivate", function () {
-                    if (target) {
-                        GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: def.kind, hero: target.name });
-                    }
-                });
-                use.enabled = phase === "setup" && def.stockCount > 0 && Boolean(target);
-            }(scrollDefs[scrollIndex]));
-        }
-
         if (!stock.length) {
             createLabel(stockList, "ItemRowName", $.Localize("#dota2_rpg_item_stash_empty"));
         }
@@ -1272,18 +1251,12 @@
             (function (entry, index) {
                 var parts = entry.split("|");
                 var itemName = parts[0];
-                var itemId = parts[2] || "";
+                // 新协议是 name|entityId；兼容已热重载但尚未重开地图的旧 name|cost|entityId。
+                var itemId = parts.length >= 3 ? parts[2] : (parts[1] || "");
                 var row = $.CreatePanel("Panel", stockList, "Stock" + index);
                 row.AddClass("ItemRow");
                 createItemIcon(row, itemName);
                 createLabel(row, "ItemRowName", itemDisplayName(itemName));
-                var sell = $.CreatePanel("Button", row, "Sell" + index);
-                sell.AddClass("ItemRowBtn");
-                createLabel(sell, "", $.Localize("#dota2_rpg_item_sell"));
-                sell.SetPanelEvent("onactivate", function () {
-                    GameEvents.SendCustomGameEventToServer("rpg_item_sell", { item: itemName, item_index: itemId });
-                });
-                sell.enabled = phase === "setup" && Boolean(itemId);
                 var equip = $.CreatePanel("Button", row, "Equip" + index);
                 equip.AddClass("ItemRowBtn");
                 equip.AddClass("ItemEquipBtn");
@@ -1301,57 +1274,34 @@
             }(stock[stockIndex], stockIndex));
         }
 
-        var catalogList = $("#ItemCatalogList");
-        catalogList.RemoveAndDeleteChildren();
-        for (var buyScrollIndex = 0; buyScrollIndex < scrollDefs.length; buyScrollIndex++) {
+        // 项目面板只出售两种经验卷轴；购买/出售普通物品请使用原版 Dota 商店。
+        var scrollList = $("#ScrollShopList");
+        scrollList.RemoveAndDeleteChildren();
+        for (var scrollIndex = 0; scrollIndex < scrollDefs.length; scrollIndex++) {
             (function (def) {
-                var row = $.CreatePanel("Panel", catalogList, "ScrollBuy_" + def.kind);
+                var row = $.CreatePanel("Panel", scrollList, "Scroll_" + def.kind);
                 row.AddClass("ItemRow");
-                createLabel(row, "ItemRowName", def.label + "（余" + def.remaining + "）");
+                createLabel(row, "ItemRowName", def.label + " x" + def.stockCount + "（余" + def.remaining + "）");
                 createLabel(row, "ItemRowCost", def.cost + "g");
                 var buy = $.CreatePanel("Button", row, "ScrollBuyBtn_" + def.kind);
                 buy.AddClass("ItemRowBtn");
-                createLabel(buy, "", $.Localize("#dota2_rpg_item_buy"));
+                buy.AddClass("ItemScrollBuyBtn");
+                createLabel(buy, "", $.Localize("#dota2_rpg_scroll_buy"));
                 buy.SetPanelEvent("onactivate", function () {
                     GameEvents.SendCustomGameEventToServer("rpg_scroll_buy", { kind: def.kind });
                 });
                 buy.enabled = phase === "setup" && def.remaining > 0 && shopState.gold >= def.cost;
-            }(scrollDefs[buyScrollIndex]));
-        }
-
-        for (var catalogIndex = 0; catalogIndex < catalog.length; catalogIndex++) {
-            (function (entry, index) {
-                var parts = entry.split("|");
-                var itemName = parts[0];
-                var cost = Number(parts[1]);
-                var row = $.CreatePanel("Panel", catalogList, "Cat" + index);
-                row.AddClass("ItemRow");
-                createItemIcon(row, itemName);
-                createLabel(row, "ItemRowName", itemDisplayName(itemName));
-                createLabel(row, "ItemRowCost", cost + "g");
-                var buyEquip = $.CreatePanel("Button", row, "BuyEquip" + index);
-                buyEquip.AddClass("ItemRowBtn");
-                buyEquip.AddClass("ItemDirectBuyBtn");
-                createLabel(buyEquip, "", $.Localize("#dota2_rpg_item_buy_equip"));
-                buyEquip.SetPanelEvent("onactivate", function () {
+                var use = $.CreatePanel("Button", row, "ScrollUseBtn_" + def.kind);
+                use.AddClass("ItemRowBtn");
+                use.AddClass("ItemEquipBtn");
+                createLabel(use, "", $.Localize("#dota2_rpg_item_use"));
+                use.SetPanelEvent("onactivate", function () {
                     if (target) {
-                        GameEvents.SendCustomGameEventToServer("rpg_item_buy_equip", {
-                            hero: target.name,
-                            item: itemName
-                        });
+                        GameEvents.SendCustomGameEventToServer("rpg_scroll_use", { kind: def.kind, hero: target.name });
                     }
                 });
-                buyEquip.enabled = phase === "setup" && Boolean(target) && targetHasSpace
-                    && shopState.gold >= cost;
-                var store = $.CreatePanel("Button", row, "Store" + index);
-                store.AddClass("ItemRowBtn");
-                store.AddClass("ItemStoreBtn");
-                createLabel(store, "", $.Localize("#dota2_rpg_item_store"));
-                store.SetPanelEvent("onactivate", function () {
-                    GameEvents.SendCustomGameEventToServer("rpg_item_buy", { item: itemName });
-                });
-                store.enabled = phase === "setup" && stashHasSpace && shopState.gold >= cost;
-            }(catalog[catalogIndex], catalogIndex));
+                use.enabled = phase === "setup" && def.stockCount > 0 && Boolean(target);
+            }(scrollDefs[scrollIndex]));
         }
     }
 
@@ -1432,7 +1382,7 @@
     }
 
     // ---------------- 经验/挑战次数（无存档：状态仅存服务端内存） ----------------
-    var INITIAL_GOLD = 300;
+    var INITIAL_GOLD = 500;
     var HERO_MAX_LEVEL = 30;
     var MAX_ATTEMPTS = 5;
 
@@ -1462,7 +1412,7 @@
     // 无存档设计（已拍板）：状态只存服务端内存；这两个函数保留为兼容桩
     function loadSave() {
         return {
-            gold: 300,
+            gold: 500,
             level: 1,
             cleared: {},
             attempts: {},

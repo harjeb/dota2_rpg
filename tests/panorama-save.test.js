@@ -106,7 +106,7 @@ hud.subscriptions.rpg_hero_slots({
 
 // 服务端状态推送后，首批五个英雄报价与阵容 UI 正常渲染。
 hud.subscriptions.rpg_shop_state({
-    gold: 300,
+    gold: 500,
     offer_text: [
         "npc_dota_hero_axe|1|common|100",
         "npc_dota_hero_juggernaut|1|common|100",
@@ -122,9 +122,8 @@ hud.subscriptions.rpg_shop_state({
     scroll_high_remaining: 3,
     scroll_low_stock: 0,
     scroll_high_stock: 0,
-    stock_text: "item_magic_wand|450|9001",
-    equipped_text: "npc_dota_hero_axe:item_blink|8001;npc_dota_hero_juggernaut:",
-    item_catalog: "item_blink|2250"
+    stock_text: "item_magic_wand|9001",
+    equipped_text: "npc_dota_hero_axe:item_blink|8001;npc_dota_hero_juggernaut:"
 });
 assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text === "Lv1 普通"; }),
     "shop offer cards must show recruit level and quality");
@@ -142,15 +141,25 @@ assert(itemTarget && itemTarget.text.indexOf("axe") >= 0,
     "equipment panel must keep a visible selected-hero target");
 assert(itemTarget.text.indexOf("1/6") >= 0,
     "equipment target must show the live number of equipped slots");
-var directBuy = hud.createdPanels.filter(function (p) { return p.id === "BuyEquip0"; })[0];
-assert(directBuy && directBuy.events.onactivate,
-    "each catalog item must expose a direct buy-and-equip action");
-directBuy.events.onactivate();
-var directBuyEvent = hud.sentEvents[hud.sentEvents.length - 1];
-assert(directBuyEvent.name === "rpg_item_buy_equip"
-    && directBuyEvent.payload.hero === "npc_dota_hero_axe"
-    && directBuyEvent.payload.item === "item_blink",
-    "direct item purchase must target the persistently selected fielded hero");
+assert(/id="NativeShopHint"/.test(layoutSource)
+    && layoutSource.indexOf("#dota2_rpg_native_shop_hint") >= 0,
+    "equipment panel must direct ordinary item purchases to the native Dota shop");
+assert(!hud.createdPanels.some(function (p) { return p.id === "BuyEquip0" || p.id === "Store0"; }),
+    "scroll-only panel must not expose custom ordinary-item purchase controls");
+var scrollBuy = hud.createdPanels.filter(function (p) { return p.id === "ScrollBuyBtn_low"; })[0];
+var scrollUse = hud.createdPanels.filter(function (p) { return p.id === "ScrollUseBtn_low"; })[0];
+assert(scrollBuy && scrollBuy.events.onactivate && scrollUse && scrollUse.events.onactivate,
+    "scroll-only panel must expose buy and use controls for the low scroll");
+scrollBuy.events.onactivate();
+var scrollBuyEvent = hud.sentEvents[hud.sentEvents.length - 1];
+assert(scrollBuyEvent.name === "rpg_scroll_buy" && scrollBuyEvent.payload.kind === "low",
+    "low scroll purchase must use the existing scroll event");
+scrollUse.events.onactivate();
+var scrollUseEvent = hud.sentEvents[hud.sentEvents.length - 1];
+assert(scrollUseEvent.name === "rpg_scroll_use"
+    && scrollUseEvent.payload.kind === "low"
+    && scrollUseEvent.payload.hero === "npc_dota_hero_axe",
+    "low scroll use must target the persistently selected hero");
 var stashEquip = hud.createdPanels.filter(function (p) { return p.id === "Equip0"; })[0];
 assert(stashEquip && stashEquip.events.onactivate,
     "wisp stash items must retain a one-click equip action");
@@ -188,17 +197,22 @@ assert(/\.RuleRow\s*\{[^}]*height:\s*130px/s.test(cssSource),
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&
     /id="DireRules"[^>]*hittest="true"/.test(layoutSource),
     "both action lists must accept wheel and pointer input");
-assert(/id="ItemTargetLabel"/.test(layoutSource)
+assert(/id="NativeShopHint"/.test(layoutSource)
+    && /id="ItemTargetLabel"/.test(layoutSource)
     && /id="ItemTargetHeroes"/.test(layoutSource)
-    && /id="ItemEquippedList"/.test(layoutSource),
-    "equipment UI must expose a persistent target and equipped-item management region");
-assert(/\.ItemTargetRow\s*\{/.test(cssSource)
-    && /\.ItemDirectBuyBtn\s*\{/.test(cssSource)
-    && /\.ItemUnequipBtn\s*\{/.test(cssSource),
-    "equipment target, direct-buy, and unequip controls must have dedicated visible styles");
-assert(hudSource.indexOf("rpg_item_buy_equip") >= 0
+    && /id="ItemEquippedList"/.test(layoutSource)
+    && /id="ScrollShopList"/.test(layoutSource),
+    "equipment UI must expose native-shop guidance, persistent target, and scroll-only management regions");
+assert(/\.NativeShopHint\s*\{/.test(cssSource)
+    && /\.ItemTargetRow\s*\{/.test(cssSource)
+    && /\.ItemUnequipBtn\s*\{/.test(cssSource)
+    && /\.ItemScrollBuyBtn\s*\{/.test(cssSource),
+    "native-shop hint, target, scroll, and unequip controls must have dedicated visible styles");
+assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
+    && hudSource.indexOf('SendCustomGameEventToServer("rpg_item_sell') < 0
+    && hudSource.indexOf("rpg_item_equip") >= 0
     && hudSource.indexOf("rpg_item_unequip") >= 0,
-    "equipment UI must wire direct equip and unequip server events");
+    "equipment UI must remove custom ordinary-item buy/sell events and retain exact transfer events");
 
 var currentSave = runHud();
 assert(currentSave.createdPanels.length > 0, "HUD must initialize and create panels");

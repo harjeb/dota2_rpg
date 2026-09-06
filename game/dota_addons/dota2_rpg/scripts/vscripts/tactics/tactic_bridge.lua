@@ -386,6 +386,9 @@ function TacticBridge:Install()
 		is_inventory_unit = function(unit)
 			return gameMode:IsEquipmentCarrier(unit)
 		end,
+		is_managed_order = function(filterTable)
+			return gameMode:IsNativeItemShopOrder(filterTable)
+		end,
 		validate_prepare_order = function(filterTable)
 			return gameMode:ValidatePrepareOrder(filterTable)
 		end,

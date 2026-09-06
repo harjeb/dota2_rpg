@@ -20,7 +20,7 @@ This repository contains a real Dota 2 Workshop Tools custom-game addon named `d
 
 ## 已确认的商店改造方案
 
-用户已确认的下一步商店方案（原版 Dota 商店出售全部原生可售普通物品；本项目面板只保留两种经验卷轴与小精灵转交）见 [`docs/native-dota-shop-integration.md`](docs/native-dota-shop-integration.md)。该文档包含玩家流程、金币同步、阶段锁、实现顺序和实机验收标准；当前状态为**待实现**，不是已经上线的功能声明。
+用户已确认的商店方案（原版 Dota 商店出售全部原生可售普通物品；本项目面板只保留两种经验卷轴与小精灵转交）见 [`docs/native-dota-shop-integration.md`](docs/native-dota-shop-integration.md)。源码/UI 已进入实施：原版商店钱包、购买事件同步、阶段锁和 scroll-only 面板已接入；**干净重开地图后的真实购买、出售、合成和转交验收仍待完成**，不是已经完全上线的功能声明。
 
 ## Verify the source
 

@@ -75,6 +75,12 @@ function PrecacheUnitByNameSync(unitName, context)
 	precached[unitName] = (precached[unitName] or 0) + 1
 end
 
+local precachedItems = {}
+function PrecacheItemByNameSync(itemName, context)
+	assert(context == precacheContext, "item precache context was not forwarded")
+	precachedItems[itemName] = (precachedItems[itemName] or 0) + 1
+end
+
 local addonPath = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua"
 local loaded, loadError = pcall(dofile, addonPath)
 assert(loaded, "failed to load addon_game_mode.lua: " .. tostring(loadError))
@@ -97,6 +103,8 @@ for _, unitName in ipairs(expectedUnits) do
 	assert(precached[unitName] == 1, unitName .. " must be precached exactly once")
 end
 assert(precached["Level display name must not be precached"] == nil, "level labels are not unit names")
+assert(precachedItems.item_rpg_scroll_low == 1 and precachedItems.item_rpg_scroll_high == 1,
+	"the two project scroll items must be precached exactly once")
 
 TacticEngine = {
 	IsValidUnit = function(unit)

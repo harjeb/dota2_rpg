@@ -17,6 +17,8 @@ $requiredFiles = @(
     "content\dota_addons\dota2_rpg\panorama\styles\custom_game\rpg_demo_hud.css",
     "game\dota_addons\dota2_rpg\addoninfo.txt",
     "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua",
+    "game\dota_addons\dota2_rpg\scripts\npc\npc_items_custom.txt",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\items.lua",
     "game\dota_addons\dota2_rpg\resource\addon_english.txt",
     "game\dota_addons\dota2_rpg\resource\addon_schinese.txt",
     "scripts\generate-minimap.ps1",
@@ -83,9 +85,18 @@ $luaChecks = @(
            'RollQuality',
            'SCROLL_LIMIT_PER_STAGE',
            'tactic_bridge',
-           'battle.tactic_engine'
+           'battle.tactic_engine',
+           'SetUseUniversalShopMode\(true\)',
+           'SetCanSellAnywhere',
+           'npc_items_custom.txt',
+           'pcall\(require, .items.\)',
+           'item_rpg_scroll_low',
+           'dota_item_purchased',
+           'IsNativeItemShopOrder',
+           'GetGoldBalance',
+           'rpg_item_equip',
+           'rpg_item_unequip',
            'StashAddItem',
-           'BuildItemPrices',
            'Vector\(-650, -420, 128\)',
            'Vector\(650, 420, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'
@@ -182,7 +193,7 @@ foreach ($dataCheck in $dataChecks) {
 $javascript = Get-Content -LiteralPath $javascriptPath -Raw
 $hudLayout = Get-Content -LiteralPath $hudPath -Raw
 $gameModeText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua") -Raw
-foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set")) {
+foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set", "rpg_scroll_buy", "rpg_scroll_use", "rpg_item_equip", "rpg_item_unequip")) {
     $combined = $javascript + "`n" + $gameModeText
     if ($combined -notmatch [regex]::Escape($eventName)) {
         throw "Missing event wiring: $eventName"
@@ -236,7 +247,15 @@ if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
     throw "Condition and target dropdowns must use the readable single-column layout"
 }
 
-# 金币已改走 Dota 原版 HUD 钱包，商店面板不再放置金币条
+# 金币已改走 Dota 原版 HUD 钱包，普通装备走原版商店，项目面板只保留双卷轴与转交。
+if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy|rpg_item_sell' -or $hudLayout -match 'ItemCatalogList') {
+    throw "Custom ordinary-item catalog/purchase controls must remain removed"
+}
+foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'NativeShopHint', 'ScrollShopList')) {
+    if (($javascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
+        throw "Native shop / scroll-only wiring is missing: $nativeShopPattern"
+    }
+}
 
 $localizationFiles = @(
     "game\dota_addons\dota2_rpg\resource\addon_english.txt",
@@ -295,18 +314,19 @@ foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
     }
 }
 
-foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'id="NativeShopHint"', 'id="ScrollShopList"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }
 }
 
 foreach ($shopStatePattern in @(
-    'self\.gold = INITIAL_GOLD',
+    'self\.gold = self\.shopCosts\.initial_gold or INITIAL_GOLD',
     'local heroName = pool\[math\.random\(#pool\)\]',
-    'ReadPayloadList\(payload, "owned_text", "owned"\)',
-    'ReadPayloadList\(payload, "lineup_text", "lineup"\)',
-    'ownedSet\[owned\] = true'
+    'for _, owned in ipairs\(self\.ownedHeroes\) do',
+    'ownedSet\[owned\] = true',
+    'self:SpendGold\(offer\.price\)',
+    'self:RespawnPlayerRoster\(\)'
 )) {
     if ($gameModeText -notmatch $shopStatePattern) {
         throw "Lua shop state is missing regression protection: $shopStatePattern"
