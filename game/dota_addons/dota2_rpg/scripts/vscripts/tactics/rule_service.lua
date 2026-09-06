@@ -104,6 +104,14 @@ function RuleService.new(options)
     return setmetatable({
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_roster_hero = assert(options.is_roster_hero, "is_roster_hero is required"),
+        find_roster_hero = options.find_roster_hero,
+        get_hero_key = options.get_hero_key or function(hero)
+            if hero == nil then return nil end
+            if hero.lineupHeroName ~= nil and hero.lineupHeroName ~= "" then
+                return tostring(hero.lineupHeroName)
+            end
+            return hero.GetUnitName ~= nil and tostring(hero:GetUnitName()) or nil
+        end,
         is_action_allowed = assert(options.is_action_allowed, "is_action_allowed is required"),
         state = assert(options.state, "current-run state is required"),
         conditions = options.conditions or Conditions,
@@ -226,9 +234,12 @@ function RuleService:ValidateRule(player_id, hero, rule)
 end
 
 function RuleService:GetHeroRules(hero)
-    local id = hero:entindex()
-    self.state.rules[id] = self.state.rules[id] or {}
-    return self.state.rules[id]
+    local key = self.get_hero_key(hero)
+    if key == nil or key == "" then
+        return {}
+    end
+    self.state.rules[key] = self.state.rules[key] or {}
+    return self.state.rules[key]
 end
 
 function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
@@ -241,12 +252,19 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
     end
 
     local hero = EntIndexToHScript(tonumber(hero_index or -1))
+    if (hero == nil or hero:IsNull()) and self.find_roster_hero ~= nil then
+        hero = self.find_roster_hero(player_id, flat_args.hero_name)
+    end
     if hero == nil or hero:IsNull() or not self.is_roster_hero(player_id, hero) then
         return false, "invalid_hero"
     end
 
     local rule = self:DecodeFlat(flat_args)
-    rule.id = rule.id ~= "" and rule.id or ("hero_" .. hero:entindex() .. "_rule_" .. slot)
+    local hero_key = self.get_hero_key(hero)
+    if hero_key == nil or hero_key == "" then
+        return false, "missing_hero_key"
+    end
+    rule.id = rule.id ~= "" and rule.id or (hero_key .. ":" .. slot)
     local ok, reason = self:ValidateRule(player_id, hero, rule)
     if not ok then
         return false, reason
@@ -258,7 +276,11 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
 end
 
 function RuleService:SyncRule(_player_id, hero, slot, rule)
-    local key = tostring(hero:entindex()) .. "_" .. tostring(slot)
+    local hero_key = self.get_hero_key(hero)
+    if hero_key == nil or hero_key == "" then
+        return
+    end
+    local key = hero_key .. ":" .. tostring(slot)
     CustomNetTables:SetTableValue("rpg_rules", key, {
         id = rule.id,
         enabled = rule.enabled and 1 or 0,
@@ -286,8 +308,16 @@ function RuleService:SendResult(player_id, request_id, ok, reason)
 end
 
 function RuleService:InstallEventListener()
-    CustomGameEventManager:RegisterListener("rpg_update_rule", function(_, args)
+    if self._listener_installed then
+        return
+    end
+    self._listener_installed = true
+    CustomGameEventManager:RegisterListener("rpg_update_rule", function(event_source_index, args)
+        args = args or {}
         local player_id = tonumber(args.PlayerID)
+        if player_id == nil then
+            player_id = tonumber(event_source_index) or 0
+        end
         local ok, reason = self:UpdateRule(player_id, args.hero_index, args.slot, args)
         self:SendResult(player_id, args.request_id, ok, reason)
     end)

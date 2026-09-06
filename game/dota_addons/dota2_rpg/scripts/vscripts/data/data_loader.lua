@@ -31,6 +31,11 @@ function DataLoader:LoadTable(relativePath, label)
 		print(string.format("[Dota2Rpg] WARNING: data table '%s' missing (%s).", label, relativePath))
 		return {}
 	end
+	-- Workshop Tools 版本可能返回带文件根节点的表，也可能直接返回根节点内容。
+	-- 两种形式都归一化，避免 levels/enemy_ai/loot 在不同工具版本下变成空表。
+	if type(loaded) == "table" and type(loaded[label]) == "table" then
+		return loaded[label]
+	end
 	return loaded
 end
 

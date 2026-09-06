@@ -38,7 +38,8 @@ if ($Compile) {
         (Join-Path $targetContent "panorama\layout\custom_game\custom_ui_manifest.xml"),
         (Join-Path $targetContent "panorama\layout\custom_game\rpg_demo_hud.xml"),
         (Join-Path $targetContent "panorama\styles\custom_game\rpg_demo_hud.css"),
-        (Join-Path $targetContent "panorama\scripts\custom_game\rpg_demo_hud.js")
+        (Join-Path $targetContent "panorama\scripts\custom_game\rpg_demo_hud.js"),
+        (Join-Path $targetContent "panorama\scripts\custom_game\panorama_rule_sync.js")
     )
 
     foreach ($resource in $resources) {

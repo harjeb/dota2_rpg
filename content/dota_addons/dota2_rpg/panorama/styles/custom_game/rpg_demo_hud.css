@@ -899,54 +899,6 @@
 	text-overflow: shrink;
 }
 
-.Cond2Top
-{
-	width: 300px;
-	height: 30px;
-	flow-children: right;
-}
-
-.LogicToggle,
-.Cond2Select,
-.Cond2Entry
-{
-	height: 28px;
-	background-color: #182128;
-	border: 1px solid #46545d;
-}
-
-.LogicToggle
-{
-	width: 50px;
-	margin-right: 4px;
-}
-
-.LogicValue
-{
-	width: 100%;
-	vertical-align: center;
-	font-size: 11px;
-	font-weight: bold;
-	color: #d9bd6b;
-	text-align: center;
-}
-
-.Cond2Select
-{
-	width: fill-parent-flow(1.0);
-	margin-right: 4px;
-	flow-children: right;
-}
-
-.Cond2Entry
-{
-	width: 54px;
-	padding: 3px 5px;
-	font-size: 13px;
-	color: #f1e6c8;
-	text-align: right;
-}
-
 .ForceToggle
 {
 	width: 66px;

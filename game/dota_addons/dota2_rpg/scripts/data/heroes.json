@@ -27,10 +27,10 @@
 		{ "name": "npc_dota_hero_dawnbreaker", "label": "dawnbreaker" },
 		{ "name": "npc_dota_hero_kez", "label": "kez" }
 	],
-	"hero_cost": 100,
+	"hero_cost": 500,
 	"refresh_cost": 20,
 	"bench_slot_cost": 200,
 	"bench_slot_max": 5,
 	"lineup_max": 5,
-	"initial_gold": 300
+	"initial_gold": 500
 }

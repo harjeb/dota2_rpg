@@ -17,17 +17,13 @@
 
     var CONDITION_TOKENS = {
         always: "#dota2_rpg_condition_always",
-        self_hp_below: "#dota2_rpg_condition_self_hp_below",
-        self_mp_above: "#dota2_rpg_condition_self_mp_above",
-        enemy_exists: "#dota2_rpg_condition_enemy_exists",
-        ally_exists: "#dota2_rpg_condition_ally_exists",
-        enemy_count_ge: "#dota2_rpg_condition_enemy_count_ge",
-        battle_time_ge: "#dota2_rpg_condition_battle_time_ge",
-        ally_under_attack: "#dota2_rpg_condition_ally_under_attack",
-        ally_hit_count_ge: "#dota2_rpg_condition_ally_hit_count_ge",
-        ally_death_ge: "#dota2_rpg_condition_ally_death_ge",
-        toggle_state_off: "#dota2_rpg_condition_toggle_state_off",
-        none: "#dota2_rpg_condition_none"
+        self_hp_pct_lte: "#dota2_rpg_condition_self_hp_pct_lte",
+        self_mana_pct_gte: "#dota2_rpg_condition_self_mana_pct_gte",
+        alive_enemy_count_gte: "#dota2_rpg_condition_alive_enemy_count_gte",
+        elapsed_gte: "#dota2_rpg_condition_elapsed_gte",
+        self_recently_damaged: "#dota2_rpg_condition_self_recently_damaged",
+        any_ally_recently_damaged: "#dota2_rpg_condition_any_ally_recently_damaged",
+        dead_ally_count_gte: "#dota2_rpg_condition_dead_ally_count_gte"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -101,10 +97,13 @@
 
     // 条件参数语义：pct 显示 %，count/seconds 显示纯数字
     var VALUE_CONDITIONS = {
-        self_hp_below: "pct",
-        self_mp_above: "pct",
-        enemy_count_ge: "count",
-        battle_time_ge: "seconds"
+        self_hp_pct_lte: "pct",
+        self_mana_pct_gte: "pct",
+        alive_enemy_count_gte: "count",
+        elapsed_gte: "seconds",
+        self_recently_damaged: "seconds",
+        any_ally_recently_damaged: "seconds",
+        dead_ally_count_gte: "count"
     };
 
     var EFFECT_CONDITIONS = {}; // v1 条件为单一条件，状态类条件 v2 预留
@@ -120,12 +119,19 @@
 
     // 每个动作槽的默认规则模板（玩家可套用后微调）
     var DEFAULT_RULE_BY_ACTION = {
-        ultimate: { condition: "enemy_count_ge", value: 2, target_attr: "hp_pct", target_side: "enemy_lowest", forced: true },
-        ability_1: { condition: "enemy_exists", value: 50, target_attr: "distance", target_side: "nearest", forced: false },
-        ability_2: { condition: "enemy_exists", value: 50, target_attr: "hp_pct", target_side: "enemy_lowest", forced: false },
-        ability_3: { condition: "self_hp_below", value: 50, target_attr: "hp", target_side: "self", forced: false },
+        ultimate: { condition: "always", value: 2, target_attr: "hp_pct", target_side: "enemy_lowest", forced: true },
+        ability_1: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: false },
+        ability_2: { condition: "always", value: 50, target_attr: "hp_pct", target_side: "enemy_lowest", forced: false },
+        ability_3: { condition: "self_hp_pct_lte", value: 50, target_attr: "hp", target_side: "self", forced: false },
         attack: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: true }
     };
+    // 主动装备和技能共用同一套规则编辑器；服务端动作列表中的 item_1..item_6
+    // 不能因为没有静态模板而被客户端过滤掉。
+    for (var defaultItemSlot = 1; defaultItemSlot <= 6; defaultItemSlot++) {
+        DEFAULT_RULE_BY_ACTION["item_" + defaultItemSlot] = {
+            condition: "always", value: 50, target_attr: "hp_pct", target_side: "enemy_lowest", forced: false
+        };
+    }
 
     var MAX_RULE_ROWS = 10;  // 固定 10 条规则槽 + 系统兜底
     var heroSlots = {};
@@ -181,9 +187,6 @@
                 target_attr: defaults.target_attr,
                 target_side: defaults.target_side,
                 target: composeTarget(defaults.target_attr, defaults.target_side),
-                condition2: "none",
-                value2: 50,
-                logic: "all",
                 forced: defaults.forced
             });
         }
@@ -299,12 +302,6 @@
         var effectSelect = editor.FindChildTraverse("EffectSelect");
         var effectValue = editor.FindChildTraverse("EffectValue");
         var effectMenu = editor.FindChildTraverse("EffectMenu");
-        var logicToggle = editor.FindChildTraverse("LogicToggle");
-        var logicValue = editor.FindChildTraverse("LogicValue");
-        var cond2Select = editor.FindChildTraverse("Cond2Select");
-        var cond2Value = editor.FindChildTraverse("Cond2Value");
-        var cond2Entry = editor.FindChildTraverse("Cond2Entry");
-        var cond2Menu = editor.FindChildTraverse("Cond2Menu");
         var targetAttrSelect = editor.FindChildTraverse("TargetAttrSelect");
         var targetAttrValue = editor.FindChildTraverse("TargetAttrValue");
         var targetAttrMenu = editor.FindChildTraverse("TargetAttrMenu");
@@ -323,18 +320,6 @@
         });
         targetSideSelect.SetPanelEvent("onactivate", function () {
             toggleEditorMenu(side, index, "targetSide");
-        });
-        cond2Select.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "cond2");
-        });
-        logicToggle.SetPanelEvent("onactivate", function () {
-            toggleLogic(side, index);
-        });
-        wireValueButtons(cond2Menu, function (cond) {
-            chooseCondition2(side, index, cond);
-        });
-        cond2Entry.SetPanelEvent("oninputsubmit", function () {
-            syncCond2Value(side, index, true);
         });
         wireValueButtons(menu, function (condition) {
             chooseCondition(side, index, condition);
@@ -362,12 +347,6 @@
             effectSelect: effectSelect,
             effectValue: effectValue,
             effectMenu: effectMenu,
-            logicToggle: logicToggle,
-            logicValue: logicValue,
-            cond2Select: cond2Select,
-            cond2Value: cond2Value,
-            cond2Entry: cond2Entry,
-            cond2Menu: cond2Menu,
             targetAttrSelect: targetAttrSelect,
             targetAttrValue: targetAttrValue,
             targetAttrMenu: targetAttrMenu,
@@ -434,12 +413,6 @@
                 effectSelect: conditionEditor.effectSelect,
                 effectValue: conditionEditor.effectValue,
                 effectMenu: conditionEditor.effectMenu,
-                logicToggle: conditionEditor.logicToggle,
-                logicValue: conditionEditor.logicValue,
-                cond2Select: conditionEditor.cond2Select,
-                cond2Value: conditionEditor.cond2Value,
-                cond2Entry: conditionEditor.cond2Entry,
-                cond2Menu: conditionEditor.cond2Menu,
                 targetAttrSelect: conditionEditor.targetAttrSelect,
                 targetAttrValue: conditionEditor.targetAttrValue,
                 targetAttrMenu: conditionEditor.targetAttrMenu,
@@ -466,7 +439,6 @@
                 panels.effectMenu.SetHasClass("Hidden", true);
                 panels.targetAttrMenu.SetHasClass("Hidden", true);
                 panels.targetSideMenu.SetHasClass("Hidden", true);
-                panels.cond2Menu.SetHasClass("Hidden", true);
                 if (panels.actionMenu) {
                     panels.actionMenu.SetHasClass("Hidden", true);
                 }
@@ -486,7 +458,6 @@
     var DROPDOWN_TYPE_OFFSET = {
         condition: 6,
         effect: 6,
-        cond2: 96,
         targetAttr: 48,
         targetSide: 48
     };
@@ -496,8 +467,6 @@
         var menu;
         if (menuType === "effect") {
             menu = panels.effectMenu;
-        } else if (menuType === "cond2") {
-            menu = panels.cond2Menu;
         } else if (menuType === "targetAttr") {
             menu = panels.targetAttrMenu;
         } else if (menuType === "targetSide") {
@@ -534,8 +503,6 @@
             menu = panels.effectMenu;
         } else if (menuType === "targetAttr") {
             menu = panels.targetAttrMenu;
-        } else if (menuType === "cond2") {
-            menu = panels.cond2Menu;
         } else if (menuType === "targetSide") {
             menu = panels.targetSideMenu;
         } else {
@@ -589,6 +556,7 @@
         }
         rules[index].action = actionKey;
         closeEditorMenus();
+        sendRuleToServer(side, selectedHeroIndex[side], index);
         renderSide(side);
     }
 
@@ -618,9 +586,6 @@
             target_attr: source.target_attr,
             target_side: source.target_side,
             target: source.target,
-            condition2: "none",
-            value2: 50,
-            logic: "all",
             forced: source.forced,
             enabled: true
         });
@@ -632,6 +597,7 @@
         rules[index].condition = CONDITION_TOKENS[condition] ? condition : "always";
         closeEditorMenus();
         updateConditionSelector(side, index, false);
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function chooseTargetAttr(side, index, attr) {
@@ -647,6 +613,7 @@
         rule.target = composeTarget(rule.target_attr, rule.target_side);
         closeEditorMenus();
         updateConditionSelector(side, index, false);
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function chooseTargetSide(side, index, targetSide) {
@@ -659,6 +626,7 @@
         rule.target = composeTarget(rule.target_attr, rule.target_side);
         closeEditorMenus();
         updateConditionSelector(side, index, false);
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function chooseEffect(side, index, effect) {
@@ -666,32 +634,7 @@
         rules[index].effect = EFFECT_TOKENS[effect] ? effect : "magic_immune";
         closeEditorMenus();
         updateConditionSelector(side, index, false);
-    }
-
-    function chooseCondition2(side, index, cond) {
-        var rules = getSelectedRules(side);
-        var rule = rules[index];
-        rule.condition2 = cond === "none" || CONDITION_TOKENS[cond] ? cond : "none";
-        closeEditorMenus();
-        updateConditionSelector(side, index, false);
-    }
-
-    function toggleLogic(side, index) {
-        if (phase !== "setup") {
-            return;
-        }
-        var rule = getSelectedRules(side)[index];
-        rule.logic = rule.logic === "any" ? "all" : "any";
-        updateConditionSelector(side, index, false);
-    }
-
-    function syncCond2Value(side, index, normalizeText) {
-        var rule = getSelectedRules(side)[index];
-        var entry = rowPanels[side][index].cond2Entry;
-        rule.value2 = clampValue(entry.text, rule.value2 || 50, VALUE_CONDITIONS[rule.condition2]);
-        if (normalizeText) {
-            entry.text = String(rule.value2);
-        }
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function toggleForced(side, index) {
@@ -701,6 +644,7 @@
         var rule = getSelectedRules(side)[index];
         rule.forced = !rule.forced;
         updateForcedToggle(side, index, false);
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function updateForcedToggle(side, index, locked) {
@@ -725,20 +669,6 @@
         panels.conditionSelect.enabled = !locked;
         panels.targetAttrSelect.enabled = !locked && tSide !== "self";
         panels.targetSideSelect.enabled = !locked && attr !== "casting";
-        // 第二条件（组合：AND/OR）
-        var cond2 = rule.condition2 || "none";
-        panels.cond2Value.text = $.Localize(CONDITION_TOKENS[cond2] || CONDITION_TOKENS.none);
-        panels.logicValue.text = rule.logic === "any" ? "OR" : "AND";
-        panels.cond2Select.enabled = !locked;
-        panels.logicToggle.enabled = !locked && cond2 !== "none";
-        panels.logicToggle.SetHasClass("Any", rule.logic === "any");
-        var cond2Kind = VALUE_CONDITIONS[cond2];
-        panels.cond2Entry.enabled = !locked && Boolean(cond2Kind);
-        panels.cond2Entry.SetHasClass("Hidden", !cond2Kind);
-        if (cond2Kind && locked === false) {
-            panels.cond2Entry.text = String(rule.value2 === undefined ? 50 : rule.value2);
-        }
-
         var valueKind = VALUE_CONDITIONS[rule.condition];
         var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);
         panels.thresholdControls.SetHasClass("Hidden", !valueKind);
@@ -759,7 +689,7 @@
             return Math.max(1, Math.min(10, Math.round(parsed)));
         }
         if (kind === "seconds") {
-            return Math.max(1, Math.min(300, Math.round(parsed)));
+            return Math.max(1, Math.min(30, Math.round(parsed)));
         }
         return Math.max(1, Math.min(100, Math.round(parsed)));
     }
@@ -771,6 +701,7 @@
         if (normalizeText) {
             entry.text = String(rule.value);
         }
+        sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
     function syncAllRuleInputs(side) {
@@ -869,6 +800,9 @@
             panels.thresholdEntry.text = String(definition.value);
             updateConditionSelector(side, index, locked);
             updateForcedToggle(side, index, locked);
+            if (!locked) {
+                sendRuleToServer(side, heroIndex, index);
+            }
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
             if (panels.deleteButton) {
@@ -885,29 +819,52 @@
         updateHeroSelection(side);
     }
 
+    function sendRuleToServer(side, heroIndex, ruleIndex) {
+        if (typeof RpgRuleSync === "undefined") {
+            return;
+        }
+        var key = side.toLowerCase() + "_" + (heroIndex + 1);
+        var entry = heroSlots[key];
+        if (!entry || entry.hero_index === undefined) {
+            return;
+        }
+        var rules = getRules(side, heroIndex);
+        var rule = rules[ruleIndex] || {
+            action: "attack",
+            condition: "always",
+            value: 50,
+            target: "enemy_distance_nearest",
+            target_attr: "distance",
+            target_side: "nearest",
+            forced: false,
+            enabled: false
+        };
+        RpgRuleSync.sendRule({
+            heroIndex: entry.hero_index,
+            heroName: entry.name,
+            slot: ruleIndex + 1,
+            rule: rule,
+            actionId: rule.action,
+            actionName: rule.action === "attack" ? "" : getActionDetail(side, heroIndex, rule.action)
+        });
+    }
+
     function buildPayload() {
-        var payload = {};
+        syncAllRuleInputs("Radiant");
+        syncAllRulesToServer();
+        return {};
+    }
+
+    function syncAllRulesToServer() {
         var sides = ["Radiant", "Dire"];
         for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
             var side = sides[sideIndex];
-            syncAllRuleInputs(side);
-            for (var heroIndex = 0; heroIndex < HEROES[side].length; heroIndex++) {
-                var rules = getRules(side, heroIndex);
-                var prefix = side.toLowerCase() + "_hero_" + (heroIndex + 1);
-                payload[prefix + "_count"] = rules.length;
-                for (var ruleIndex = 0; ruleIndex < rules.length; ruleIndex++) {
-                    payload[prefix + "_action_" + (ruleIndex + 1)] = rules[ruleIndex].action;
-                    payload[prefix + "_condition_" + (ruleIndex + 1)] = rules[ruleIndex].condition;
-                    payload[prefix + "_value_" + (ruleIndex + 1)] = rules[ruleIndex].value;
-                    payload[prefix + "_target_" + (ruleIndex + 1)] = rules[ruleIndex].target;
-                    payload[prefix + "_condition2_" + (ruleIndex + 1)] = rules[ruleIndex].condition2 || "none";
-                    payload[prefix + "_value2_" + (ruleIndex + 1)] = rules[ruleIndex].value2 === undefined ? 50 : rules[ruleIndex].value2;
-                    payload[prefix + "_logic_" + (ruleIndex + 1)] = rules[ruleIndex].logic || "all";
-                    payload[prefix + "_forced_" + (ruleIndex + 1)] = rules[ruleIndex].forced ? 1 : 0;
+            for (var heroIndex = 0; heroIndex < (HEROES[side] || []).length; heroIndex++) {
+                for (var ruleIndex = 0; ruleIndex < MAX_RULE_ROWS; ruleIndex++) {
+                    sendRuleToServer(side, heroIndex, ruleIndex);
                 }
             }
         }
-        return payload;
     }
 
     function setStatus(token) {
@@ -950,7 +907,8 @@
         owned: [],
         lineup: [],
         bench_slots: 0,
-        costs: { hero: 100, refresh: 20, bench_slot: 200, bench_slot_max: 5, lineup_max: 5 }
+        costs: { hero: 500, refresh: 20, bench_slot: 200, bench_slot_max: 5, lineup_max: 5 },
+        free_recruit_choices: 2
     };
 
     function onShopState(data) {
@@ -987,6 +945,7 @@
         shopState.owned = splitList(data.owned_text);
         shopState.lineup = splitList(data.lineup_text);
         shopState.bench_slots = Number(data.bench_slots || 0);
+        shopState.free_recruit_choices = Number(data.free_recruit_choices !== undefined ? data.free_recruit_choices : shopState.free_recruit_choices);
         // 个人等级/经验："name:level:xp:quality"
         saveData.heroes = saveData.heroes || {};
         var heroEntries = splitList(data.hero_data_text);
@@ -1096,13 +1055,14 @@
                 var qualityNames = { common: "普通", fine: "精良", epic: "史诗", legendary: "传说" };
                 var qualityColors = { common: "#c8d2d7", fine: "#6fc3ff", epic: "#c88bff", legendary: "#ffcc55" };
                 createLabel(slot, "ShopName", "Lv" + offer.level + " " + qualityNames[offer.quality]);
-                var priceLabel = createLabel(slot, "ShopPrice", offer.price + "g");
-                priceLabel.style.color = qualityColors[offer.quality] || "#f2d982";
+                var isFree = shopState.free_recruit_choices > 0;
+                var priceLabel = createLabel(slot, "ShopPrice", isFree ? "免费（余" + shopState.free_recruit_choices + "）" : offer.price + "g");
+                priceLabel.style.color = isFree ? "#8ee6a8" : (qualityColors[offer.quality] || "#f2d982");
                 if (!owned) {
                     slot.SetPanelEvent("onactivate", function () {
                         GameEvents.SendCustomGameEventToServer("rpg_shop_buy", { hero: heroName });
                     });
-                    slot.enabled = shopState.gold >= offer.price;
+                    slot.enabled = isFree || shopState.gold >= offer.price;
                 } else {
                     slot.enabled = false;
                 }
@@ -1374,62 +1334,27 @@
     }
 
     // ---------------- 关卡选择（数据来自 CustomNetTables） ----------------
+    var saveData = loadSave();
     var levelList = [];
-    var currentLevelId = saveData ? saveData.current_level || "ch01" : "ch01";
+    var currentLevelId = saveData.current_level || "ch01";
 
     function renderLevelList() {
         // 关卡按顺序推进，不再提供自由选择（进度显示在顶部）
     }
 
     // ---------------- 经验/挑战次数（无存档：状态仅存服务端内存） ----------------
-    var INITIAL_GOLD = 500;
-    var HERO_MAX_LEVEL = 30;
-    var MAX_ATTEMPTS = 5;
-
-    // v1.0 升级曲线：到达该等级所需累计经验（30 级总需求 33700）
-    var XP_TO_LEVEL = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
-        3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
-        14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200, 33700];
-
-    function xpToNext(level) {
-        if (level >= HERO_MAX_LEVEL) {
-            return Infinity;
-        }
-        return XP_TO_LEVEL[level] - XP_TO_LEVEL[level - 1];
-    }
-
-    function hasEntries(value) {
-        for (var key in value) {
-            if (value.hasOwnProperty(key)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-
-    // 无存档设计（已拍板）：状态只存服务端内存；这两个函数保留为兼容桩
+    // 进度只在当前比赛的服务端内存中；这里仅保存服务端广播的镜像，绝不写入本地存储。
     function loadSave() {
         return {
             gold: 500,
-            level: 1,
-            cleared: {},
-            attempts: {},
             heroes: {},
             owned: [],
             lineup: [],
             bench_slots: 0,
             scrolls: { low: 0, high: 0 },
             item_stock: [],
-            stars: {},
-            current_level: "ch01",
-            encounter_seed: 0
+            current_level: "ch01"
         };
-    }
-
-    function persistSave() {
-        // no-op
     }
 
     // ---------------- 自绘规则列表滚动（按钮/滚轮/滑块） ----------------
@@ -1492,13 +1417,8 @@
         applyRuleScroll(side);
     }
 
-    function attemptsLeft(levelId) {
-        var used = Number(saveData.attempts[levelId] || 0);
-        return Math.max(0, MAX_ATTEMPTS - used);
-    }
-
     function sendHeroLevels() {
-        // 无存档：无需客户端同步
+        // 英雄等级由服务端 shop_state 广播；无需客户端推送或本地保存。
     }
 
     function updateTeamLevelLabels() {
@@ -1516,86 +1436,25 @@
         $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
     }
 
-    function updateTeamLevelLabels() {
-        $("#RadiantTeamLevel").text = $.Localize("#dota2_rpg_level_unified") + " " + saveData.level;
-        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
-    }
-
-    function addXpToHero(heroName, amount) {
-        var hero = saveData.heroes[heroName];
-        if (!hero || hero.level >= HERO_MAX_LEVEL) {
-            return; // 满级经验舍弃
-        }
-        hero.xp = (hero.xp || 0) + amount;
-        while (hero.level < HERO_MAX_LEVEL) {
-            var need = xpToNext(hero.level);
-            if (hero.xp >= need) {
-                hero.xp -= need;
-                hero.level++;
-            } else {
-                break;
-            }
-        }
-        if (hero.level >= HERO_MAX_LEVEL) {
-            hero.xp = 0;
-        }
-    }
-
-    // 经验池平均分配（余数按招募顺序补 1）
-    function distributeXpPool(pool) {
-        var owned = saveData.owned;
-        if (!owned || !owned.length) {
-            return 0;
-        }
-        var base = Math.floor(pool / owned.length);
-        var remainder = pool % owned.length;
-        for (var index = 0; index < owned.length; index++) {
-            var extra = 0;
-            if (remainder > 0) {
-                extra = 1;
-                remainder--;
-            }
-            addXpToHero(owned[index], base + extra);
-        }
-        return pool;
-    }
-
+    // 结算只展示服务端已结算的结果；金币和英雄 XP 不在客户端二次修改。
     function grantSettlement(settlement) {
         if (!settlement || settlement.winner !== "radiant") {
             return null;
         }
-        var gold = Number(settlement.gold || 0);
-        var xp = Number(settlement.xp_pool || 0);
-        saveData.stars = saveData.stars || {};
-        if (settlement.stars !== undefined) {
-            saveData.stars[settlement.level] = Number(settlement.stars) || 1;
-        }
-        if (firstClear) {
-            saveData.cleared[settlement.level] = true;
-        }
-        saveData.attempts[settlement.level] = 0;
-        distributeXpPool(xp);
-        for (var li = 0; li < levelList.length; li++) {
-            var lid = String(levelList[li].id || levelList[li]);
-            if (lid === String(settlement.level) && levelList[li + 1]) {
-                saveData.current_level = String(levelList[li + 1].id || levelList[li + 1]);
-                break;
-            }
-        }
-        var levelUps = applySharedXp(xp);
-        // 时间奖励：越快越多（服务端已算好 time_bonus）
-        gold += Number(settlement.time_bonus || 0);
-        saveData.gold += gold;
-        shopState.gold = saveData.gold;
-        // 服务端是金币权威，把存档金币推回去
-        return { gold: gold, xp: xp, levelUps: levelUps, firstClear: firstClear };
+        var activeXp = Number(settlement.xp_per_active_hero !== undefined
+            ? settlement.xp_per_active_hero : settlement.xp_pool || 0);
+        var benchXp = Number(settlement.xp_per_bench_hero || 0);
+        var activeCount = (saveData.lineup || []).length;
+        var benchCount = Math.max(0, (saveData.owned || []).length - activeCount);
+        return {
+            gold: Number(settlement.gold || 0),
+            activeXp: activeXp,
+            benchXp: benchXp,
+            activeCount: activeCount,
+            benchCount: benchCount,
+            totalXp: activeXp * activeCount + benchXp * benchCount
+        };
     }
-
-    function registerFailure(levelId) {
-        saveData.attempts[levelId] = Math.min(MAX_ATTEMPTS, Number(saveData.attempts[levelId] || 0) + 1);
-    }
-
-    var saveData = loadSave();
 
     function updateResult(winner) {
         var resultPanel = $("#BattleResult");
@@ -1624,18 +1483,13 @@
         }
         if (data.level) {
             currentLevelId = data.level;
+            saveData.current_level = currentLevelId;
         }
 
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
-            var attempts = attemptsLeft(currentLevelId);
-            if (attempts <= 0) {
-                setStatus("#dota2_rpg_no_attempts");
-                startButton.enabled = false;
-            } else {
-                setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
-                startButton.enabled = serverReady;
-            }
+            setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
+            startButton.enabled = serverReady;
             startButton.SetHasClass("Hidden", false);
             $("#BattleResult").SetHasClass("Hidden", true);
             $("#RewardLabel").text = "";
@@ -1690,6 +1544,7 @@
     function onLevelsState(data) {
         data = data || {};
         currentLevelId = data.current || currentLevelId;
+        saveData.current_level = currentLevelId;
         levelList = splitList(data.level_ids);
         updateLevelProgress();
     }
@@ -1715,23 +1570,21 @@
             if (settlement.stars !== undefined) {
                 parts.push($.Localize("#dota2_rpg_result_stars").replace("%s1", String(settlement.stars)));
             }
-            var ownedCount = Math.max(1, saveData.owned.length);
-            var xpEach = Math.floor(Number(settlement.xp_pool || 0) / ownedCount);
             parts.push($.Localize("#dota2_rpg_reward_xp")
-                .replace("%s1", String(xpEach)).replace("%s2", String(ownedCount)));
+                .replace("%s1", String(reward.totalXp))
+                .replace("%s2", String(reward.activeXp))
+                .replace("%s3", String(reward.benchXp)));
             var lootDrops = settlement.loot_text ? settlement.loot_text.split(";") : [];
             for (var li = 0; li < lootDrops.length; li++) {
-                parts.push("+" + lootDrops[li].replace("item_", ""));
-            }
-            if (reward.levelUps > 0) {
-                parts.push($.Localize("#dota2_rpg_reward_level_up") + " " + reward.levelUps);
+                if (lootDrops[li]) {
+                    parts.push("+" + lootDrops[li].replace("item_", ""));
+                }
             }
             rewardLabel.text = parts.join("   ");
         } else if (settlement) {
-            registerFailure(settlement.level);
-            rewardLabel.text = attemptsLeft(settlement.level) > 0
-                ? $.Localize("#dota2_rpg_attempts_left") + " " + attemptsLeft(settlement.level)
-                : $.Localize("#dota2_rpg_no_attempts");
+            rewardLabel.text = settlement.winner === "timeout"
+                ? $.Localize("#dota2_rpg_result_timeout")
+                : $.Localize("#dota2_rpg_result_dire");
         }
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
@@ -1763,8 +1616,10 @@
             return;
         }
         var slotKey = String(data.slot_key);
+        var previous = heroSlots[slotKey];
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
+            hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
             actions_text: String(data.actions_text || ""),
             details_text: String(data.details_text || "")
         };
@@ -1772,8 +1627,14 @@
         if (match) {
             var side = match[1] === "radiant" ? "Radiant" : "Dire";
             var heroIndex = Math.max(0, Number(match[2]) - 1);
-            rulesBySide[side][heroIndex] = null;
+            if (!previous || previous.name !== heroSlots[slotKey].name) {
+                rulesBySide[side][heroIndex] = null;
+            }
+            if (!rulesBySide[side][heroIndex]) {
+                rulesBySide[side][heroIndex] = buildRulesForHero(side, heroIndex);
+            }
             renderSide(side);
+            syncAllRulesToServer();
         }
     });
     wireShopButtons();

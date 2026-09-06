@@ -8,6 +8,9 @@
 	- 胜负判定（全灭或超时判负）与结算广播。
 ]]
 
+local UnitHelpers = require("battle.unit_helpers")
+local TacticEngine = UnitHelpers -- compatibility name for validity checks only
+
 if BattleManager == nil then
 	_G.BattleManager = class({})
 end

@@ -1,7 +1,8 @@
 # 离线战斗模拟器
 
-DESIGN.md §5.5 的平衡工具：在不启动 Dota 2 的情况下批量模拟战斗，复用
-`game/dota_addons/dota2_rpg/scripts/vscripts/battle/tactic_engine.lua` 的规则评估代码（同一套逻辑）。
+DESIGN.md §5.5 的平衡工具：在不启动 Dota 2 的情况下批量模拟战斗，复用离线模拟器专用的
+`game/dota_addons/dota2_rpg/scripts/vscripts/battle/tactic_engine.lua` 适配层；线上地图运行时使用
+`game/dota_addons/dota2_rpg/scripts/vscripts/tactics/tactic_engine.lua` 与 RuleService。
 
 ## 结构
 
@@ -9,7 +10,7 @@ DESIGN.md §5.5 的平衡工具：在不启动 Dota 2 的情况下批量模拟�
 | --- | --- |
 | `mock_env.lua` | Dota VScript 全局最小替代（`class`、`bit`、实体索引表等） |
 | `sim_units.lua` | 模拟单位模型：位置/HP/MP/普攻/冷却技能/移动结算，`Vector` 实现 |
-| `simulator.lua` | `SimAdapter`（引擎 adapter 的模拟实现）+ `run_battle(config)` + 自检 |
+| `simulator.lua` | 离线兼容引擎的 `SimAdapter` + `run_battle(config)` + 自检 |
 
 ## 运行
 

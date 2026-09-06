@@ -13,8 +13,18 @@ end
 DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
-require = function()
-	error("Dota modules are not needed by the shop-state test")
+local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
+require = function(name)
+	local localModules = {
+		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
+		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
+		["patches.progression_patch"] = moduleRoot .. "patches/progression_patch.lua",
+		["patches.enemy_items_patch"] = moduleRoot .. "patches/enemy_items_patch.lua",
+	}
+	if localModules[name] ~= nil then
+		return dofile(localModules[name])
+	end
+	error("Dota modules are not needed by the shop-state test: " .. tostring(name))
 end
 
 local heroData = {
@@ -34,7 +44,7 @@ local heroData = {
 		["1"] = "npc_dota_hero_marci",
 		["2"] = "npc_dota_hero_muerta",
 	},
-	hero_cost = "100",
+	hero_cost = "500",
 	refresh_cost = "20",
 	bench_slot_cost = "200",
 	bench_slot_max = "5",
@@ -98,6 +108,56 @@ for _ in pairs(uniqueOffers) do
 end
 assertEqual(offerCount, 5, "serialized offer size")
 assertEqual(uniqueCount, 5, "serialized unique offer size")
+
+-- 开局不是随机赠送：前两次从当前报价免费选择，第三次按 1 级固定 500 金币扣款。
+local recruitmentGame = newGame({
+	phase = "setup",
+	gold = 500,
+	freeRecruitChoices = 2,
+	ownedHeroes = {},
+	lineup = {},
+	benchSlots = 0,
+	shopCosts = { lineup_max = 5, bench_slot_max = 5 },
+	heroData = {},
+	heroOrder = 0,
+	shopOffers = {
+		{ hero = "npc_dota_hero_axe", level = 1, quality = "legendary", price = 500 },
+		{ hero = "npc_dota_hero_lina", level = 1, quality = "common", price = 500 },
+		{ hero = "npc_dota_hero_sven", level = 1, quality = "fine", price = 500 },
+	},
+	RespawnPlayerRoster = function(self) self.respawnCount = (self.respawnCount or 0) + 1 end,
+	BroadcastShopState = function(self) self.broadcastCount = (self.broadcastCount or 0) + 1 end,
+})
+recruitmentGame:OnShopBuy(nil, { hero = "npc_dota_hero_axe" })
+assertEqual(recruitmentGame.gold, 500, "first recruit choice must be free")
+assertEqual(recruitmentGame.freeRecruitChoices, 1, "first recruit consumes exactly one free choice")
+assertEqual(recruitmentGame.heroData.npc_dota_hero_axe.level, 1, "free recruit keeps the offered level")
+recruitmentGame:OnShopBuy(nil, { hero = "npc_dota_hero_lina" })
+assertEqual(recruitmentGame.gold, 500, "second recruit choice must be free")
+assertEqual(recruitmentGame.freeRecruitChoices, 0, "second recruit consumes the final free choice")
+recruitmentGame:OnShopBuy(nil, { hero = "npc_dota_hero_sven" })
+assertEqual(recruitmentGame.gold, 0, "third recruit must charge the fixed level-one price")
+assertEqual(#recruitmentGame.ownedHeroes, 3, "player-selected recruits must be retained")
+assertEqual(recruitmentGame.heroData.npc_dota_hero_axe.quality, "legendary", "quality changes effects, not the recruit price")
+
+-- XP 使用相邻累计阈值差值；经验按上阵/待命英雄分别发放，时间奖励上限为 10%。
+local progressionGame = newGame({
+	heroData = {
+		active = { level = 1, current_xp = 0, skill_points = 1 },
+		bench = { level = 1, current_xp = 0, skill_points = 1 },
+	},
+	ownedHeroes = { "active", "bench" },
+	lineup = { "active" },
+})
+progressionGame:AddXpToHero("active", 200)
+assertEqual(progressionGame.heroData.active.level, 2, "100 accumulated XP must be spent before the next level")
+assertEqual(progressionGame.heroData.active.current_xp, 100, "level two must require the 150 XP difference")
+local activeXp, benchXp = progressionGame:AwardStageXp(120)
+assertEqual(activeXp, 120, "stage XP is per active hero")
+assertEqual(benchXp, 60, "bench XP is floor(active XP * 0.5)")
+assertEqual(progressionGame.heroData.active.current_xp, 70, "active hero receives the full stage XP and levels with threshold differences")
+assertEqual(progressionGame.heroData.bench.current_xp, 60, "bench hero receives half the stage XP")
+assertEqual(progressionGame:CalculateTimeBonus(1000, 0, 120), 100, "time bonus cap is 10 percent")
 
 -- 首次创建战场时必须自动生成报价，不能只广播空 offer_text。
 local initial = newGame({
@@ -354,11 +414,11 @@ assert(not equipmentGame:ValidatePrepareOrder({
 }), "prepare order filter must reject dropping an item not held by the selected hero")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
-	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 2,
-}), "prepare order filter must allow moving a held item only to a valid own inventory slot")
+	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 8,
+}), "prepare order filter must allow moving a held item to a valid hero backpack slot")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
-	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 6,
+	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 9,
 }), "prepare order filter must reject moving a hero item to an out-of-range slot")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_TO_POINT,

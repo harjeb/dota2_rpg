@@ -6,9 +6,11 @@ var vm = require("vm");
 
 var repoRoot = path.resolve(__dirname, "..");
 var hudPath = path.join(repoRoot, "content", "dota_addons", "dota2_rpg", "panorama", "scripts", "custom_game", "rpg_demo_hud.js");
+var ruleSyncPath = path.join(repoRoot, "content", "dota_addons", "dota2_rpg", "panorama", "scripts", "custom_game", "panorama_rule_sync.js");
 var cssPath = path.join(repoRoot, "content", "dota_addons", "dota2_rpg", "panorama", "styles", "custom_game", "rpg_demo_hud.css");
 var layoutPath = path.join(repoRoot, "content", "dota_addons", "dota2_rpg", "panorama", "layout", "custom_game", "rpg_demo_hud.xml");
 var hudSource = fs.readFileSync(hudPath, "utf8");
+var ruleSyncSource = fs.readFileSync(ruleSyncPath, "utf8");
 var cssSource = fs.readFileSync(cssPath, "utf8");
 var layoutSource = fs.readFileSync(layoutPath, "utf8");
 
@@ -85,6 +87,23 @@ function assert(condition, message) {
     }
 }
 
+var ruleSyncContext = {
+    Date: Date,
+    GameEvents: {
+        SendCustomGameEventToServer: function () {}
+    }
+};
+vm.runInNewContext(ruleSyncSource, ruleSyncContext, { filename: ruleSyncPath });
+var firstHeroRule = ruleSyncContext.RpgRuleSync.serialize({
+    heroIndex: 0,
+    heroName: "npc_dota_hero_axe",
+    slot: 1,
+    actionId: "ability_1",
+    actionName: "axe_berserkers_call",
+    rule: { action: "ability_1", condition: "always", target: "enemy_distance_nearest" }
+});
+assert(firstHeroRule.hero_index === 0, "rule sync must not drop the first hero entity index");
+
 var hud = runHud();
 assert(hud.getLocalStorageCalls() === 0, "no-save design must not touch LocalStorage");
 assert(hud.sentEvents.every(function (e) { return e.name !== "rpg_save_sync"; }),
@@ -129,6 +148,14 @@ assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text
     "shop offer cards must show recruit level and quality");
 assert(hud.createdPanels.filter(function (p) { return p.classes.ShopOfferSlot; }).length === 5,
     "initial shop state must render five hero offer cards");
+// 结算奖励完全来自服务端字段，不能在客户端再次分配 XP 或重复加入时间奖励。
+hud.subscriptions.rpg_settlement({
+    winner: "radiant", level: "ch01", gold: 150,
+    xp_per_active_hero: 1000, xp_per_bench_hero: 500, stars: 3, loot_text: "item_blink"
+});
+assert(hud.panels["#RewardLabel"].text.indexOf("150") >= 0
+    && hud.panels["#RewardLabel"].text.indexOf("dota2_rpg_reward_xp") >= 0,
+    "settlement UI must render server-authoritative gold and active/bench XP without runtime errors");
 var radiantAbility = hud.createdPanels.filter(function (p) { return p.id === "RadiantActionAbility0"; })[0];
 var direAbility = hud.createdPanels.filter(function (p) { return p.id === "DireActionAbility0"; })[0];
 assert(radiantAbility && radiantAbility.abilityname === "axe_berserkers_call",

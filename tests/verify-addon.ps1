@@ -14,9 +14,15 @@ $requiredFiles = @(
     "content\dota_addons\dota2_rpg\panorama\layout\custom_game\custom_ui_manifest.xml",
     "content\dota_addons\dota2_rpg\panorama\layout\custom_game\rpg_demo_hud.xml",
     "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\rpg_demo_hud.js",
+    "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js",
     "content\dota_addons\dota2_rpg\panorama\styles\custom_game\rpg_demo_hud.css",
     "game\dota_addons\dota2_rpg\addoninfo.txt",
     "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\data\progression_data.lua",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\patches\recruitment_patch.lua",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\patches\progression_patch.lua",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\patches\enemy_items_patch.lua",
+    "game\dota_addons\dota2_rpg\scripts\vscripts\battle\unit_helpers.lua",
     "game\dota_addons\dota2_rpg\scripts\npc\npc_items_custom.txt",
     "game\dota_addons\dota2_rpg\scripts\vscripts\items.lua",
     "game\dota_addons\dota2_rpg\resource\addon_english.txt",
@@ -24,8 +30,7 @@ $requiredFiles = @(
     "scripts\generate-minimap.ps1",
     "tests\panorama-save.test.js",
     "tests\shop-state.test.lua",
-    "tests\precache-battlefield.test.lua",
-    "tests\fixtures\save-v1-zero-gold.json"
+    "tests\precache-battlefield.test.lua"
 )
 
 foreach ($relativePath in $requiredFiles) {
@@ -45,6 +50,10 @@ $javascriptPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\sc
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama JavaScript syntax validation failed"
 }
+& node --check (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js")
+if ($LASTEXITCODE -ne 0) {
+    throw "Panorama rule sync JavaScript syntax validation failed"
+}
 & node (Join-Path $repoRoot "tests\panorama-save.test.js")
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama save-state regression test failed"
@@ -54,7 +63,7 @@ if ($LASTEXITCODE -ne 0) {
 $luaChecks = @(
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua";
        Patterns = @(
-           'pcall\(require, .battle\.tactic_engine.\)',
+           'pcall\(require, .battle\.unit_helpers.\)',
            'pcall\(require, .battle\.battle_manager.\)',
            'pcall\(require, .data\.data_loader.\)',
            'RegisterListener\("rpg_start_battle"',
@@ -71,21 +80,22 @@ $luaChecks = @(
            'SetHeroRespawnEnabled\(false\)',
            'SetRespawnsDisabled\(true\)',
            'issuerPlayerId < 0',
-           'local SHOP_HERO_COST = 100',
            'local SHOP_REFRESH_COST = 20',
            'local SHOP_BENCH_SLOT_COST = 200',
-           'local INITIAL_GOLD = 500',
            'local BENCH_SLOT_MAX = 5',
            'local LINEUP_MAX = 5',
            'self\.currentLevelId',
            'RollShop',
-           'TIME_BONUS_CAP = 0.25',
-           'DistributeXpPool',
-           'RollRecruitLevel',
-           'RollQuality',
+           'ProgressionData',
+           'InitializeRecruitmentState',
+           'freeRecruitChoices',
+           'AwardStageXp',
+           'CalculateTimeBonus',
+           'runComplete',
+           'isFinalWin',
            'SCROLL_LIMIT_PER_STAGE',
            'tactic_bridge',
-           'battle.tactic_engine',
+           'battle.unit_helpers',
            'SetUseUniversalShopMode\(true\)',
            'SetCanSellAnywhere',
            'npc_items_custom.txt',
@@ -101,36 +111,62 @@ $luaChecks = @(
            'Vector\(650, 420, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'
        ) },
-    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\tactic_engine.lua";
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\unit_helpers.lua";
        Patterns = @(
-           'always = true',
-           'self_hp_below = true',
-           'self_mp_above = true',
-           'enemy_exists = true',
-           'ally_exists = true',
-           'enemy_count_ge = true',
-           'battle_time_ge = true',
-           'TARGET_METRICS = {',
-           'hp_pct = true',
-           'armor = true',
-           'attack = true',
-           'mr = true',
-           'IsValidTarget',
-           'GetTargetSide',
-           'enemy_casting',
-           'SelectSelectorTarget',
-           'item_1 = true',
-           'item_6 = true',
-           'forcedRuleIndex',
-           'forcedTargetIndex',
-           'ClearForcedLock',
-           'CountAlive',
-           'IsChanneling',
-           'rule\.enabled == false',
-           '"_enabled_"',
-           '"_target_"',
-           '"_value_"',
-           '"_forced_"'
+           'function UnitHelpers.IsValidUnit',
+           'function UnitHelpers.HealthPercent',
+           'function UnitHelpers.ManaPercent',
+           'return UnitHelpers'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\tactics\rule_service.lua";
+       Patterns = @(
+           'InstallEventListener',
+           'rpg_update_rule',
+           'get_hero_key',
+           'find_roster_hero',
+           'target_filters',
+           'target_priorities',
+           'use_conditions'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\tactics\tactic_bridge.lua";
+       Patterns = @(
+           'RuleService.new',
+           'InstallEventListener',
+           'get_hero_key',
+           'is_action_allowed_for_hero',
+           'allow_approach',
+           'getRules'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\data\progression_data.lua";
+       Patterns = @(
+           'INITIAL_GOLD = 500',
+           'TIME_BONUS_CAP = 0.10',
+           'BENCH_XP_RATE = 0.50',
+           'XP_TO_LEVEL',
+           'STAGE_XP',
+           'RECRUIT_BANDS',
+           'PriceForLevel'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\patches\recruitment_patch.lua";
+       Patterns = @(
+           'freeRecruitChoices',
+           'RollRecruitLevel',
+           'PriceFor',
+           'OnShopBuy',
+           'SpendGold'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\patches\progression_patch.lua";
+       Patterns = @(
+           'AddXpToHero',
+           'AwardStageXp',
+           'XpNeededForNextLevel',
+           'CalculateTimeBonus'
+       ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\patches\enemy_items_patch.lua";
+       Patterns = @(
+           'EquipConfiguredItems',
+           'AddItemByName',
+           'orderedValues'
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\battle_manager.lua";
        Patterns = @(
@@ -189,31 +225,48 @@ foreach ($dataCheck in $dataChecks) {
     }
 }
 
+# --- 进度与敌方配置静态契约 ---
+$levelsText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\data\levels.kv") -Raw
+if ($levelsText -match '"time_bonus_cap"\s+"0\.25"') {
+    throw "levels.kv must use the 10 percent time bonus cap"
+}
+foreach ($oldCondition in @('enemy_exists', 'ally_exists', 'self_hp_below')) {
+    if ($levelsText -match [regex]::Escape($oldCondition)) {
+        throw "levels.kv contains removed legacy condition: $oldCondition"
+    }
+}
+foreach ($heroStage in @(@(5, 8), @(10, 14), @(15, 19), @(20, 24), @(25, 28), @(30, 30))) {
+    $stage = $heroStage[0]
+    $expected = $heroStage[1]
+    $chapterMatch = [regex]::Match($levelsText, '(?s)"ch' + $stage.ToString('00') + '".*?(?=\n\t"ch\d+"\n\{|\z)')
+    if (-not $chapterMatch.Success -or $chapterMatch.Value -notmatch ('"level"\s+"' + $expected + '"')) {
+        throw "hero level configuration for ch$($stage.ToString('00')) must include level $expected"
+    }
+}
+
 # --- Panorama 事件与新系统接线 ---
 $javascript = Get-Content -LiteralPath $javascriptPath -Raw
+$ruleSyncJavascript = Get-Content -LiteralPath (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js") -Raw
 $hudLayout = Get-Content -LiteralPath $hudPath -Raw
 $gameModeText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua") -Raw
-foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set", "rpg_scroll_buy", "rpg_scroll_use", "rpg_item_equip", "rpg_item_unequip")) {
-    $combined = $javascript + "`n" + $gameModeText
+foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set", "rpg_scroll_buy", "rpg_scroll_use", "rpg_item_equip", "rpg_item_unequip", "rpg_update_rule")) {
+    $combined = $javascript + "`n" + $ruleSyncJavascript + "`n" + $gameModeText
     if ($combined -notmatch [regex]::Escape($eventName)) {
         throw "Missing event wiring: $eventName"
     }
 }
 
-$conditionSource = $javascript + "`n" + $hudLayout
+$conditionSource = $javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout
 $hudXml = [xml]$hudLayout
 $expectedConditionValues = @(
     "always",
-    "self_hp_below",
-    "self_mp_above",
-    "enemy_exists",
-    "ally_exists",
-    "enemy_count_ge",
-    "battle_time_ge",
-    "ally_under_attack",
-    "ally_hit_count_ge",
-    "ally_death_ge",
-    "toggle_state_off"
+    "self_hp_pct_lte",
+    "self_mana_pct_gte",
+    "alive_enemy_count_gte",
+    "elapsed_gte",
+    "self_recently_damaged",
+    "any_ally_recently_damaged",
+    "dead_ally_count_gte"
 )
 $actualConditionValues = @(
     $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |
@@ -251,8 +304,12 @@ if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
 if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy|rpg_item_sell' -or $hudLayout -match 'ItemCatalogList') {
     throw "Custom ordinary-item catalog/purchase controls must remain removed"
 }
-foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'NativeShopHint', 'ScrollShopList')) {
-    if (($javascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
+$scrollItemText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\npc\npc_items_custom.txt") -Raw
+if ($scrollItemText -match '"ItemPurchasable"\s+"1"') {
+    throw "project scrolls must not be natively purchasable; panel stock limits are server-authoritative"
+}
+foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule')) {
+    if (($javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
         throw "Native shop / scroll-only wiring is missing: $nativeShopPattern"
     }
 }
@@ -277,12 +334,13 @@ foreach ($localizationFile in $localizationFiles) {
 
 foreach ($conditionName in @(
     'always:',
-    'self_hp_below:',
-    'self_mp_above:',
-    'enemy_exists:',
-    'ally_exists:',
-    'enemy_count_ge:',
-    'battle_time_ge:'
+    'self_hp_pct_lte:',
+    'self_mana_pct_gte:',
+    'alive_enemy_count_gte:',
+    'elapsed_gte:',
+    'self_recently_damaged:',
+    'any_ally_recently_damaged:',
+    'dead_ally_count_gte:'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($conditionName)) {
         throw "Panorama UI is missing condition: $conditionName"
@@ -308,27 +366,30 @@ foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"
     }
 }
 
-foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", '"_value_"')) {
-    if ($javascript -notmatch [regex]::Escape($thresholdPattern)) {
+foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", "putCondition")) {
+    if (($javascript + "`n" + $ruleSyncJavascript) -notmatch [regex]::Escape($thresholdPattern)) {
         throw "Panorama JavaScript is missing configurable value behavior: $thresholdPattern"
     }
 }
 
-foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'id="NativeShopHint"', 'id="ScrollShopList"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState', '"_hero_"', '_hero_')) {
+foreach ($shopPattern in @('id="ShopOffer"', 'id="RefreshShopButton"', 'id="RefreshShopLabel"', 'id="BenchBuyButton"', 'id="BenchBuyLabel"', 'id="LineupStrip"', 'id="NativeShopHint"', 'id="ScrollShopList"', 'renderShop', 'renderLineupStrip', 'renderRadiantHeroStrip', 'localizeHeroName', 'updateShopEconomyLabels', 'selectedHeroIndex', 'selectHero', 'shopState')) {
     if ($conditionSource -notmatch [regex]::Escape($shopPattern)) {
         throw "Panorama UI is missing shop/lineup behavior: $shopPattern"
     }
 }
 
+$recruitmentPatchText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\patches\recruitment_patch.lua") -Raw
 foreach ($shopStatePattern in @(
-    'self\.gold = self\.shopCosts\.initial_gold or INITIAL_GOLD',
+    'ProgressionData\.INITIAL_GOLD',
+    'InitializeRecruitmentState',
+    'freeRecruitChoices',
     'local heroName = pool\[math\.random\(#pool\)\]',
     'for _, owned in ipairs\(self\.ownedHeroes\) do',
     'ownedSet\[owned\] = true',
-    'self:SpendGold\(offer\.price\)',
+    'self:SpendGold\(chargedPrice\)',
     'self:RespawnPlayerRoster\(\)'
 )) {
-    if ($gameModeText -notmatch $shopStatePattern) {
+    if (($gameModeText + "`n" + $recruitmentPatchText) -notmatch $shopStatePattern) {
         throw "Lua shop state is missing regression protection: $shopStatePattern"
     }
 }
@@ -350,7 +411,7 @@ if ($javascript -match 'owned: saveData\.owned' -or $javascript -match 'lineup: 
     throw "Panorama save sync still sends nested arrays"
 }
 
-foreach ($forcedPattern in @('dota2_rpg_force_column', 'forced: true', 'ForceToggle', 'toggleForced', '"_forced_"', 'dota2_rpg_force_enabled', 'dota2_rpg_force_disabled')) {
+foreach ($forcedPattern in @('dota2_rpg_force_column', 'forced: true', 'ForceToggle', 'toggleForced', 'approach', 'allow_approach', 'dota2_rpg_force_enabled', 'dota2_rpg_force_disabled')) {
     if ($conditionSource -notmatch [regex]::Escape($forcedPattern)) {
         throw "Panorama UI is missing forced execution toggle behavior: $forcedPattern"
     }

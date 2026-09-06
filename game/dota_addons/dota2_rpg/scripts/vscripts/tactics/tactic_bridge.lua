@@ -88,35 +88,34 @@ local function decomposeLegacyTarget(target)
 	return t, filters, priorities
 end
 
--- 旧条件 ID -> 修订版 use_condition（无法映射的返回 nil = 无条件）
-local function mapLegacyCondition(conditionType, value)
+-- 当前规则 ID -> RuleService use_condition。
+local function mapRuleCondition(conditionType, value)
 	local v = tonumber(value) or 50
-	if conditionType == "always" or conditionType == "none" then
-		return nil
+	if conditionType == nil or conditionType == "always" then
+		return { type = "always" }
 	end
-	if conditionType == "self_hp_below" then
+	if conditionType == "self_hp_pct_lte" then
 		return { type = "self_hp_pct_lte", value = v / 100 }
 	end
-	if conditionType == "self_mp_above" then
+	if conditionType == "self_mana_pct_gte" then
 		return { type = "self_mana_pct_gte", value = v / 100 }
 	end
-	if conditionType == "enemy_count_ge" then
+	if conditionType == "alive_enemy_count_gte" then
 		return { type = "alive_enemy_count_gte", value = v }
 	end
-	if conditionType == "battle_time_ge" then
+	if conditionType == "elapsed_gte" then
 		return { type = "elapsed_gte", value = v }
 	end
-	if conditionType == "ally_under_attack" then
-		return { type = "any_ally_recently_damaged", seconds = 3 }
+	if conditionType == "self_recently_damaged" then
+		return { type = "self_recently_damaged", seconds = math.max(1, v) }
 	end
-	if conditionType == "ally_hit_count_ge" then
-		return { type = "any_ally_recently_damaged", seconds = 5 }
+	if conditionType == "any_ally_recently_damaged" then
+		return { type = "any_ally_recently_damaged", seconds = math.max(1, v) }
 	end
-	if conditionType == "ally_death_ge" then
+	if conditionType == "dead_ally_count_gte" then
 		return { type = "dead_ally_count_gte", value = v }
 	end
-	-- enemy_exists / ally_exists：由目标选择失败自然表达，不需要使用条件
-	return nil
+	return { type = "always" }
 end
 
 -- 把旧负载规则（action/condition(组合)/value/target/forced）转换为修订版规则结构
@@ -130,17 +129,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 
 	local target, filters, priorities = decomposeLegacyTarget(legacy.target)
 
-	local useConditions = {}
-	local primary = mapLegacyCondition(legacy.condition, legacy.value)
-	if primary ~= nil then
-		table.insert(useConditions, primary)
-	end
-	if legacy.condition2 ~= nil and legacy.condition2 ~= "none" then
-		local secondary = mapLegacyCondition(legacy.condition2, legacy.value2)
-		if secondary ~= nil then
-			table.insert(useConditions, secondary)
-		end
-	end
+	local useConditions = { mapRuleCondition(legacy.condition, legacy.value) }
 
 	return {
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
@@ -245,7 +234,7 @@ function TacticBridge:Install()
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
-		-- 敌方单位：按关卡实例规则（teamRules 中以 enemyRuleIndex 定位）
+		-- 敌方单位：按关卡实例规则（teamRules 中以 enemyRuleIndex 定位）。
 		if unit.enemyRuleIndex ~= nil then
 			local enemyRules = gameMode.battleManager.teamRules[DOTA_TEAM_BADGUYS][unit.enemyRuleIndex] or {}
 			local converted = {}
@@ -256,9 +245,16 @@ function TacticBridge:Install()
 			end
 			return converted
 		end
-		-- 上阵英雄：按英雄名取玩家规则
+
+		-- 玩家规则优先来自新版 RuleService；实体重生后仍按 lineupHeroName 命中同一份规则。
+		local configured = manager.ruleService ~= nil and manager.ruleService:GetHeroRules(unit) or {}
+		if configured ~= nil and #configured > 0 then
+			return configured
+		end
+
+		-- 仅为旧版本当前 Run 内存数据提供迁移回退，不再在开战时覆盖新版规则。
 		local heroName = unit.lineupHeroName or unit:GetUnitName()
-		local cache = state.rules[unit:entindex()]
+		local cache = state.rules[heroName]
 		if cache ~= nil then
 			return cache
 		end
@@ -269,11 +265,12 @@ function TacticBridge:Install()
 				table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
 			end
 		end
-		state.rules[unit:entindex()] = converted
+		state.rules[heroName] = converted
 		return converted
 	end
 
 	function manager.invalidateRules()
+		-- 只清理旧规则迁移缓存；RuleService 的当前 Run 配置不能在开战时清空。
 		state.rules = {}
 	end
 
@@ -281,10 +278,20 @@ function TacticBridge:Install()
 		local team = unit:GetTeamNumber()
 		local enemies = gameMode.battleManager.teamHeroes[gameMode.battleManager:GetEnemyTeam(team)] or {}
 		local allies = gameMode.battleManager.teamHeroes[team] or {}
+		local aliveAllies = 0
+		local aliveEnemies = 0
+		for _, ally in ipairs(allies) do
+			if is_alive(ally) then aliveAllies = aliveAllies + 1 end
+		end
+		for _, enemy in ipairs(enemies) do
+			if is_alive(enemy) then aliveEnemies = aliveEnemies + 1 end
+		end
 		return {
 			caster = unit,
 			allies = allies,
 			enemies = enemies,
+			alive_ally_count = aliveAllies,
+			alive_enemy_count = aliveEnemies,
 			elapsed = gameMode.battleManager:GetBattleTime(),
 			dead_ally_count = gameMode.battleManager.allyDeathCount or 0,
 			get_candidates = function(caster, action_spec, ruleTarget)
@@ -318,7 +325,8 @@ function TacticBridge:Install()
 				return candidates
 			end,
 			get_tags = function(target)
-				return gameMode.battleManager.enemyTags[target:entindex()] or {}
+				local tags = gameMode.battleManager.enemyTags or {}
+				return tags[target:entindex()] or {}
 			end,
 			was_recently_damaged = function(target, seconds)
 				return self.combatMemory:WasDamagedWithin(target, seconds or 3)
@@ -337,6 +345,67 @@ function TacticBridge:Install()
 	end
 
 	local conditionsRegistry = Conditions
+	local function is_current_lineup_hero(hero, player_id)
+		if not is_valid_entity(hero) or hero.benchHeroName ~= nil then
+			return false
+		end
+		if player_id ~= nil and tonumber(player_id) ~= tonumber(gameMode.playerId) then
+			return false
+		end
+		if hero.GetTeamNumber == nil or hero:GetTeamNumber() ~= DOTA_TEAM_GOODGUYS then
+			return false
+		end
+		local key = hero.lineupHeroName or (hero.GetUnitName ~= nil and hero:GetUnitName() or nil)
+		if key == nil or gameMode.heroData == nil or gameMode.heroData[key] == nil then
+			return false
+		end
+		for _, candidate in ipairs(gameMode.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
+			if candidate == hero then
+				return true
+			end
+		end
+		return false
+	end
+
+	local function resolve_action_name_for_validation(hero, action)
+		if action == nil then
+			return nil
+		end
+		if action.kind == "attack" or action.kind == "move" or action.kind == "wait" then
+			return action.logical_id
+		end
+		local logical = tostring(action.logical_id or "")
+		if action.name ~= nil and action.name ~= "" then
+			return tostring(action.name)
+		end
+		return resolveActionName(hero, logical)
+	end
+
+	local function is_action_allowed_for_hero(player_id, hero, action)
+		if not is_current_lineup_hero(hero, player_id) then
+			return false
+		end
+		if action.kind == "attack" or action.kind == "move" or action.kind == "wait" then
+			return true
+		end
+		local realName = resolve_action_name_for_validation(hero, action)
+		if realName == nil or realName == "" then
+			return false
+		end
+		if action.kind == "ability" then
+			return hero.FindAbilityByName ~= nil and hero:FindAbilityByName(realName) ~= nil
+		end
+		if action.kind == "item" then
+			for slot = 0, 8 do
+				local item = hero:GetItemInSlot(slot)
+				if item ~= nil and not item:IsNull() and item:GetAbilityName() == realName then
+					return true
+				end
+			end
+		end
+		return false
+	end
+
 	-- 扩展：敌人数 ≥ N（注册表原本只有 lte）
 	conditionsRegistry:RegisterUseCondition("alive_enemy_count_gte", function(ctx, condition)
 		local value = tonumber(condition.value) or 0
@@ -352,15 +421,30 @@ function TacticBridge:Install()
 
 	self.ruleService = RuleService.new({
 		get_phase = getPhase,
-		is_roster_hero = function(_, hero)
-			return is_valid_entity(hero)
+		get_hero_key = function(hero)
+			if hero == nil then return nil end
+			if hero.lineupHeroName ~= nil and hero.lineupHeroName ~= "" then
+				return tostring(hero.lineupHeroName)
+			end
+			return hero.GetUnitName ~= nil and tostring(hero:GetUnitName()) or nil
 		end,
-		is_action_allowed = function(_, _, _)
-			return true -- 动作合法性由槽位生成时保证
+		is_roster_hero = function(player_id, hero)
+			return is_current_lineup_hero(hero, player_id)
 		end,
+		find_roster_hero = function(player_id, heroName)
+			if heroName == nil then return nil end
+			for _, hero in ipairs(gameMode.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
+				if is_current_lineup_hero(hero, player_id) and hero:GetUnitName() == tostring(heroName) then
+					return hero
+				end
+			end
+			return nil
+		end,
+		is_action_allowed = is_action_allowed_for_hero,
 		state = state,
 		conditions = conditionsRegistry,
 	})
+	self.ruleService:InstallEventListener()
 
 	self.tacticEngine = TacticEngine.new({
 		order_gate = orderGate,

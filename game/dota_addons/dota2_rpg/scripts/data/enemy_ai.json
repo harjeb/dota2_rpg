@@ -14,27 +14,27 @@
 	"focus_lowest_hp": {
 		"name": "集火模式：优先血量最低",
 		"rules": [
-			{ "cond": { "type": "enemy_exists" }, "action": { "type": "attack" }, "target": "enemy_hp_pct_lowest", "mode": "forced_chase" }
+			{ "cond": { "type": "always" }, "action": { "type": "attack" }, "target": "enemy_hp_pct_lowest", "mode": "forced_chase" }
 		]
 	},
 	"protect_healer": {
 		"name": "保排模式：治疗最低血友军",
 		"rules": [
-			{ "cond": { "type": "ally_exists" }, "action": { "type": "ability_1" }, "target": "ally_hp_pct_lowest", "mode": "range_only" }
+			{ "cond": { "type": "always" }, "action": { "type": "ability_1" }, "target": "ally_hp_pct_lowest", "mode": "range_only" }
 		]
 	},
 	"aggro_front": {
 		"name": "坦克模式：顶在最前，血量低开保命",
 		"rules": [
-			{ "cond": { "type": "self_hp_below", "value": 30 }, "action": { "type": "ability_1" }, "target": "self", "mode": "range_only" },
-			{ "cond": { "type": "enemy_exists" }, "action": { "type": "attack" }, "target": "enemy_nearest", "mode": "range_only" }
+			{ "cond": { "type": "self_hp_pct_lte", "value": 30 }, "action": { "type": "ability_1" }, "target": "self", "mode": "range_only" },
+			{ "cond": { "type": "always" }, "action": { "type": "attack" }, "target": "enemy_nearest", "mode": "range_only" }
 		]
 	},
 	"ai_healer_protect": {
 		"name": "辅助模式：治疗血量最低友军，自身危险先保命",
 		"rules": [
-			{ "cond": { "type": "ally_exists" }, "action": { "type": "ability_1" }, "target": "ally_hp_pct_lowest", "mode": "range_only" },
-			{ "cond": { "type": "self_hp_below", "value": 25 }, "action": { "type": "ultimate" }, "target": "self", "mode": "forced_chase" },
+			{ "cond": { "type": "always" }, "action": { "type": "ability_1" }, "target": "ally_hp_pct_lowest", "mode": "range_only" },
+			{ "cond": { "type": "self_hp_pct_lte", "value": 25 }, "action": { "type": "ultimate" }, "target": "self", "mode": "forced_chase" },
 			{ "cond": { "type": "always" }, "action": { "type": "attack" }, "target": "enemy_nearest", "mode": "range_only" }
 		]
 	}

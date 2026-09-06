@@ -18,7 +18,8 @@ local function grant_scroll_xp(item, default_xp)
 	end
 	local xp = SCROLL_XP[item:GetAbilityName()] or default_xp
 	if GameRules.Dota2RpgDemo ~= nil then
-		GameRules.Dota2RpgDemo:GrantScrollXPByUnit(target, xp)
+		-- 真实物品路径仍由服务端验证阶段、当前上阵英雄和物品持有关系。
+		GameRules.Dota2RpgDemo:GrantScrollXPByUnit(target, xp, item)
 	end
 end
 
