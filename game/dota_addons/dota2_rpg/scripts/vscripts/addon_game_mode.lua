@@ -36,6 +36,9 @@ local PLAYER_PLACEHOLDER_HERO = "npc_dota_hero_wisp"
 local HERO_LEVEL = 30
 local THINK_INTERVAL = 0.1
 local BATTLE_ACQUISITION_RANGE = 4000
+local CARRIER_INVENTORY_LAST_SLOT = 8 -- 0..5 主物品栏，6..8 背包
+local NATIVE_STASH_FIRST_SLOT = 9
+local NATIVE_STASH_LAST_SLOT = 14
 
 local function UnwrapKeyValues(data, rootName)
 	if type(data) == "table" and type(data[rootName]) == "table" then
@@ -897,12 +900,24 @@ function CDota2RpgDemo:FindEmptyActiveItemSlot(hero)
 	return nil
 end
 
+function CDota2RpgDemo:FindEmptyCarrierSlot(unit)
+	if unit == nil or unit.GetItemInSlot == nil then
+		return nil
+	end
+	for slot = 0, CARRIER_INVENTORY_LAST_SLOT do
+		if not self:IsLiveItem(unit:GetItemInSlot(slot)) then
+			return slot
+		end
+	end
+	return nil
+end
+
 function CDota2RpgDemo:HasFreeStashSlot()
 	local stash = self:GetStashUnit()
 	if stash == nil or stash.GetItemInSlot == nil then
 		return false
 	end
-	for slot = 0, 8 do
+	for slot = 0, NATIVE_STASH_LAST_SLOT do
 		if not self:IsLiveItem(stash:GetItemInSlot(slot)) then
 			return true
 		end
@@ -922,14 +937,15 @@ function CDota2RpgDemo:IsItemHeldBy(unit, item, firstSlot, lastSlot)
 	return false
 end
 
--- 从小精灵库存取出“同一个”物品实体。保留实体可避免拖拽/拾取后的物品残留在地上。
+-- 从小精灵库存或 Dota 原生储藏栏取出“同一个”物品实体。
+-- 原版远程购买会把物品放到 9..14；必须覆盖这些槽，否则面板永远无法转交该物品。
 function CDota2RpgDemo:TakeStashItem(itemName, expectedItemId)
 	local stash = self:GetStashUnit()
 	if stash == nil or stash.GetItemInSlot == nil then
 		return nil
 	end
 	local expected = tostring(expectedItemId or "")
-	for slot = 0, 8 do
+	for slot = 0, NATIVE_STASH_LAST_SLOT do
 		local item = stash:GetItemInSlot(slot)
 		if self:IsLiveItem(item) and item:GetAbilityName() == itemName
 			and (expected == "" or self:GetItemEntityId(item) == expected) then
@@ -940,13 +956,113 @@ function CDota2RpgDemo:TakeStashItem(itemName, expectedItemId)
 	return nil
 end
 
+function CDota2RpgDemo:TryAttachItem(unit, item)
+	if unit == nil or unit.AddItem == nil or not self:IsLiveItem(item) then
+		return false
+	end
+	if self:IsItemHeldBy(unit, item, 0, NATIVE_STASH_LAST_SLOT) then
+		return true
+	end
+	local ok = pcall(function()
+		unit:AddItem(item)
+	end)
+	return ok and self:IsItemHeldBy(unit, item, 0, NATIVE_STASH_LAST_SLOT)
+end
+
+-- 任何搬运失败都优先把原实体放回来源载体；若引擎拒绝 AddItem，最后放到来源脚下，绝不销毁或同名重建。
+function CDota2RpgDemo:PreserveDetachedItem(item, preferredCarrier, context)
+	if not self:IsLiveItem(item) then
+		return false
+	end
+	if self:TryAttachItem(preferredCarrier, item) then
+		return true
+	end
+	local stash = self:GetStashUnit()
+	if stash ~= preferredCarrier and self:TryAttachItem(stash, item) then
+		return true
+	end
+	local dropCarrier = preferredCarrier or stash
+	if CreateItemOnPositionSync ~= nil and dropCarrier ~= nil and dropCarrier.GetAbsOrigin ~= nil then
+		local ok = pcall(function()
+			CreateItemOnPositionSync(dropCarrier:GetAbsOrigin(), item)
+		end)
+		if ok then
+			print(string.format("[Dota2Rpg] WARNING: %s; preserved %s on the ground.",
+				tostring(context or "item transfer failed"), item:GetAbilityName()))
+			self.nativeShopTransactionPending = true
+			return true
+		end
+	end
+	print(string.format("[Dota2Rpg] ERROR: %s; could not reattach live item %s.",
+		tostring(context or "item transfer failed"), item:GetAbilityName()))
+	return false
+end
+
 function CDota2RpgDemo:PutItemInStash(item)
 	local stash = self:GetStashUnit()
 	if not self:IsLiveItem(item) or stash == nil or not self:HasFreeStashSlot() then
 		return false
 	end
-	stash:AddItem(item)
-	return self:IsItemHeldBy(stash, item, 0, 8)
+	-- 0..8 已满时 Dota 允许把物品放回该玩家的原生储藏栏 9..14。
+	return self:TryAttachItem(stash, item)
+end
+
+-- 原版商店在地图外/无泉水场景会把购买物品送入单位的原生储藏栏（9..14）。
+-- 准备阶段把它原实体移动到 0..8，使其可丢弃、可显示并可通过 Panorama 转交。
+function CDota2RpgDemo:PromoteNativeStashItem(unit, item, sourceSlot)
+	if not self:IsEquipmentCarrier(unit) or not self:IsLiveItem(item) then
+		return false
+	end
+	local destinationSlot = self:FindEmptyCarrierSlot(unit)
+	if destinationSlot == nil then
+		return false
+	end
+
+	if unit.SwapItems ~= nil then
+		local ok = pcall(function()
+			unit:SwapItems(sourceSlot, destinationSlot)
+		end)
+		if ok and unit:GetItemInSlot(destinationSlot) == item then
+			return true
+		end
+	end
+
+	-- 某些工具版本不允许 SwapItems 跨储藏栏边界；RemoveItem + AddItem 仍保留同一实体。
+	if unit.RemoveItem ~= nil and unit.AddItem ~= nil
+		and self:IsItemHeldBy(unit, item, NATIVE_STASH_FIRST_SLOT, NATIVE_STASH_LAST_SLOT) then
+		unit:RemoveItem(item)
+		if self:TryAttachItem(unit, item) then
+			-- AddItem 若仍送回原生储藏栏，实体没有丢失；下一次可由面板直接转交。
+			return self:IsItemHeldBy(unit, item, 0, CARRIER_INVENTORY_LAST_SLOT)
+		end
+		self:PreserveDetachedItem(item, unit, "native stash promotion failed")
+		return false
+	end
+	return false
+end
+
+function CDota2RpgDemo:NormalizeNativeStashItems()
+	local moved = 0
+	local seen = {}
+	local function normalize(unit)
+		if unit == nil or unit.GetItemInSlot == nil or seen[unit] then
+			return
+		end
+		seen[unit] = true
+		for slot = NATIVE_STASH_FIRST_SLOT, NATIVE_STASH_LAST_SLOT do
+			local item = unit:GetItemInSlot(slot)
+			if self:IsLiveItem(item) and self:PromoteNativeStashItem(unit, item, slot) then
+				moved = moved + 1
+				print(string.format("[Dota2Rpg] Native stash item promoted: %s slot %d -> inventory.",
+					item:GetAbilityName(), slot))
+			end
+		end
+	end
+	normalize(self:GetStashUnit())
+	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
+		normalize(hero)
+	end
+	return moved
 end
 
 function CDota2RpgDemo:GetItemPersistentState(item)
@@ -978,8 +1094,8 @@ function CDota2RpgDemo:SyncHeroInventoryFromUnit(hero)
 	local inventory = {}
 	local states = {}
 	local entities = {}
-	-- 0..5 是主动装备栏，6..8 是原版背包；两者都必须在阵容重铸时保留。
-	for slot = 0, 8 do
+	-- 0..8 是物品栏/背包；原版远程购买可能暂存在 9..14，也必须在阵容重铸时保留。
+	for slot = 0, NATIVE_STASH_LAST_SLOT do
 		local item = hero:GetItemInSlot(slot)
 		if self:IsLiveItem(item) then
 			table.insert(inventory, item:GetAbilityName())
@@ -1020,9 +1136,9 @@ function CDota2RpgDemo:BuildEquipmentSnapshot()
 			end
 		end
 	end
-	appendUnit(self:GetStashUnit(), "stash:", 8)
+	appendUnit(self:GetStashUnit(), "stash:", NATIVE_STASH_LAST_SLOT)
 	for _, heroName in ipairs(self.lineup or {}) do
-		appendUnit(self:FindLineupUnit(heroName), "hero:" .. heroName .. ":", 8)
+		appendUnit(self:FindLineupUnit(heroName), "hero:" .. heroName .. ":", NATIVE_STASH_LAST_SLOT)
 	end
 	return table.concat(parts, ";")
 end
@@ -1031,6 +1147,8 @@ function CDota2RpgDemo:SyncLiveEquipmentState(force)
 	if self.phase ~= "setup" then
 		return false
 	end
+	local promoted = self:NormalizeNativeStashItems()
+	force = force or promoted > 0
 	local snapshot = self:BuildEquipmentSnapshot()
 	if not force and snapshot == self.equipmentSnapshot then
 		return false
@@ -1050,7 +1168,7 @@ function CDota2RpgDemo:OnItemPickedUp(_)
 end
 
 function CDota2RpgDemo:OnNativeItemPurchased(event)
-	local playerId = tonumber(event ~= nil and event.PlayerID or -1) or -1
+	local playerId = tonumber(event ~= nil and (event.PlayerID or event.player_id or event.playerid) or -1) or -1
 	if self.phase == "setup" and playerId == self.playerId then
 		-- 事件可能在引擎真正扣款的同一帧触发；下一轮 Think 再读取钱包最可靠。
 		self.nativeShopTransactionPending = true
@@ -1071,11 +1189,11 @@ function CDota2RpgDemo:MoveStashItemToHero(heroName, itemName, itemId)
 		self:SyncHeroInventoryFromUnit(hero)
 		return true
 	end
-	-- AddItem 失败时绝不吞物品：从任何英雄槽移除后原样还给小精灵。
-	if self:IsItemHeldBy(hero, item, 0, 8) then
+	-- AddItem 失败时绝不吞物品：从英雄物品栏/背包/原生储藏栏移除后原样还给小精灵。
+	if self:IsItemHeldBy(hero, item, 0, NATIVE_STASH_LAST_SLOT) then
 		hero:RemoveItem(item)
 	end
-	self:PutItemInStash(item)
+	self:PreserveDetachedItem(item, self:GetStashUnit(), "equip rollback failed")
 	return false
 end
 
@@ -1088,8 +1206,9 @@ function CDota2RpgDemo:MoveHeroItemToStash(hero, item)
 		self:SyncHeroInventoryFromUnit(hero)
 		return true
 	end
-	-- 库存移动失败时把物品归还给原英雄，保持操作原子性。
-	hero:AddItem(item)
+	-- 库存移动失败时把原实体归还给原英雄；若引擎仍拒绝，保留在英雄脚下。
+	self:PreserveDetachedItem(item, hero, "unequip rollback failed")
+	self:SyncHeroInventoryFromUnit(hero)
 	return false
 end
 
@@ -1127,7 +1246,7 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 	local item = nil
 	if itemName ~= "" then
 		-- 面板按装备名称请求，服务端仍从真实槽位寻找，兼容玩家手动调整槽位。
-		for candidateSlot = 0, 5 do
+		for candidateSlot = 0, NATIVE_STASH_LAST_SLOT do
 			local candidate = hero:GetItemInSlot(candidateSlot)
 			if self:IsLiveItem(candidate) and candidate:GetAbilityName() == itemName
 				and (expectedItemId == "" or self:GetItemEntityId(candidate) == expectedItemId) then
@@ -1135,7 +1254,7 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 				break
 			end
 		end
-	elseif slot >= 0 and slot <= 5 then
+	elseif slot >= 0 and slot <= NATIVE_STASH_LAST_SLOT then
 		local candidate = hero:GetItemInSlot(slot)
 		if self:IsLiveItem(candidate) and self:GetItemEntityId(candidate) == expectedItemId then
 			item = candidate
@@ -1275,14 +1394,14 @@ function CDota2RpgDemo:StashAddItem(itemName)
 	if stash == nil then
 		return false
 	end
-	-- 物品栏 0..5 + 背包 6..8
-	for slot = 0, 8 do
+	-- 物品栏 0..5 + 背包 6..8 + 原生储藏栏 9..14。
+	for slot = 0, NATIVE_STASH_LAST_SLOT do
 		if stash:GetItemInSlot(slot) == nil then
 			local item = stash:AddItemByName(itemName)
 			return item ~= nil and not item:IsNull()
 		end
 	end
-	return false -- 仓库已满（9 格）
+	return false -- 小精灵物品栏、背包和原生储藏栏均已满
 end
 
 function CDota2RpgDemo:RemoveBattleBarrier()
@@ -1382,7 +1501,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 				data.inventory = {}
 				data.inventory_states = {}
 				data.inventory_entities = {}
-				for slot = 0, 8 do
+				for slot = 0, NATIVE_STASH_LAST_SLOT do
 					local item = hero:GetItemInSlot(slot)
 					if item ~= nil and not item:IsNull() then
 						table.insert(data.inventory, item:GetAbilityName())
@@ -1427,24 +1546,39 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			hero:SetAbilityPoints(points)
 			print(string.format("[Dota2Rpg] %s fielded: level=%d skill_points=%d (player picks abilities)",
 				heroName, heroData ~= nil and heroData.level or 1, points))
-			-- 重新佩戴个人装备
-			heroData.inventory = heroData.inventory or {}
-			heroData.inventory_states = heroData.inventory_states or {}
-			heroData.inventory_entities = heroData.inventory_entities or {}
-			for inventoryIndex, itemName in ipairs(heroData.inventory) do
-				local item = heroData.inventory_entities[inventoryIndex]
-				if not self:IsLiveItem(item) then
+			-- 重新佩戴个人装备。重铸只迁移现有实体；现有实体插入失败时绝不复制同名物品。
+			local priorInventory = heroData.inventory or {}
+			local priorStates = heroData.inventory_states or {}
+			local priorEntities = heroData.inventory_entities or {}
+			local restoredInventory = {}
+			local restoredStates = {}
+			local restoredEntities = {}
+			for inventoryIndex, itemName in ipairs(priorInventory) do
+				local item = priorEntities[inventoryIndex]
+				local state = priorStates[inventoryIndex] or { name = itemName }
+				local hadLiveEntity = self:IsLiveItem(item)
+				if hadLiveEntity then
+					self:TryAttachItem(hero, item)
+				elseif hero.AddItemByName ~= nil then
+					-- 只有旧实体已被引擎清理时才允许按名称重建。
 					item = hero:AddItemByName(itemName)
-				else
-					hero:AddItem(item)
+					print(string.format("[Dota2Rpg] WARNING: missing item entity for %s; recreated once.", itemName))
 				end
-				if not self:IsItemHeldBy(hero, item, 0, 8) then
-					-- 极端情况下实体已被引擎清理，才退回到同名重建并记录日志。
-					print(string.format("[Dota2Rpg] WARNING: item entity restore failed for %s; recreating.", itemName))
-					item = hero:AddItemByName(itemName)
+
+				if self:IsItemHeldBy(hero, item, 0, NATIVE_STASH_LAST_SLOT) then
+					self:RestoreItemPersistentState(item, state)
+					table.insert(restoredInventory, itemName)
+					table.insert(restoredStates, state)
+					table.insert(restoredEntities, item)
+				elseif self:IsLiveItem(item) then
+					-- 新英雄异常拒绝物品时，把原实体退到小精灵或地面，并从个人库存记录移除。
+					self:PreserveDetachedItem(item, self:GetStashUnit(),
+						"roster respawn could not restore " .. tostring(itemName))
 				end
-				self:RestoreItemPersistentState(item, heroData.inventory_states[inventoryIndex])
 			end
+			heroData.inventory = restoredInventory
+			heroData.inventory_states = restoredStates
+			heroData.inventory_entities = restoredEntities
 			-- 品质内置升级：魔晶/神杖（不占装备栏）
 			if heroData ~= nil and QUALITY_CONSUMED_MODIFIERS[heroData.quality] ~= nil then
 				for _, modifierName in ipairs(QUALITY_CONSUMED_MODIFIERS[heroData.quality]) do
@@ -1679,11 +1813,11 @@ function CDota2RpgDemo:FindEquipmentItemHolder(item)
 		return nil
 	end
 	local stash = self:GetStashUnit()
-	if stash ~= nil and self:IsItemHeldBy(stash, item, 0, 8) then
+	if stash ~= nil and self:IsItemHeldBy(stash, item, 0, NATIVE_STASH_LAST_SLOT) then
 		return stash
 	end
 	for _, hero in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
-		if self:IsLineupUnit(hero) and self:IsItemHeldBy(hero, item, 0, 5) then
+		if self:IsLineupUnit(hero) and self:IsItemHeldBy(hero, item, 0, NATIVE_STASH_LAST_SLOT) then
 			return hero
 		end
 	end
@@ -1693,7 +1827,8 @@ end
 function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 	local issuerPlayerId = tonumber(filterTable.issuer_player_id_const) or -1
 	if issuerPlayerId < 0 then
-		return true -- 服务器/引擎内部订单由 OrderGate 单独保护
+		-- OrderGate 的项目内部订单进入过滤器时已提前放行；到达这里的受管订单必须有真实玩家来源。
+		return false
 	end
 	if self.playerId ~= nil and self.playerId >= 0 and issuerPlayerId ~= self.playerId then
 		return false
@@ -1756,8 +1891,8 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		end
 		-- 少数原版出售订单不带 units，按物品在我方可控载体中的真实归属补齐来源。
 		local holder = source or self:FindEquipmentItemHolder(item)
-		-- 原版英雄背包槽也属于该当前上阵载体；允许原版出售/拆分正常处理 0..8。
-		local lastSlot = 8
+		-- 原版物品栏、背包和远程购买储藏栏都属于该当前上阵载体。
+		local lastSlot = NATIVE_STASH_LAST_SLOT
 		return holder ~= nil and self:IsEquipmentCarrier(holder)
 			and self:IsItemHeldBy(holder, item, 0, lastSlot)
 	end
@@ -1784,7 +1919,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		end
 		local itemIndex = tonumber(filterTable.entindex_ability) or -1
 		local item = itemIndex > 0 and EntIndexToHScript(itemIndex) or nil
-		local lastSlot = 8
+		local lastSlot = NATIVE_STASH_LAST_SLOT
 		if not isTransferableItem(item) or not self:IsItemHeldBy(source, item, 0, lastSlot) then
 			return false
 		end
@@ -2184,7 +2319,7 @@ function CDota2RpgDemo:BroadcastShopState()
 	local stockParts = {}
 	local stash = self:GetStashUnit()
 	if stash ~= nil then
-		for slot = 0, 8 do
+		for slot = 0, NATIVE_STASH_LAST_SLOT do
 			local item = stash:GetItemInSlot(slot)
 			if item ~= nil and not item:IsNull() then
 				local itemName = item:GetAbilityName()
@@ -2201,11 +2336,11 @@ function CDota2RpgDemo:BroadcastShopState()
 		local hero = self:FindLineupUnit(heroName)
 		local heroItems = {}
 		if hero ~= nil and hero.GetItemInSlot ~= nil then
-			-- UI 的主动装备列表仍展示 0..5；背包物品由 inventories_text 保留并在重铸时迁移。
-			for slot = 0, 5 do
+			-- 0..14 都携带真实实体 ID；UI 用槽号计算主动栏容量，并允许把背包/原生储藏物品卸回小精灵。
+			for slot = 0, NATIVE_STASH_LAST_SLOT do
 				local item = hero:GetItemInSlot(slot)
 				if self:IsLiveItem(item) then
-					table.insert(heroItems, item:GetAbilityName() .. "|" .. self:GetItemEntityId(item))
+					table.insert(heroItems, item:GetAbilityName() .. "|" .. self:GetItemEntityId(item) .. "|" .. slot)
 				end
 			end
 		end

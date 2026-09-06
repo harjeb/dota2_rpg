@@ -901,6 +901,7 @@
     }
 
     // ---------------- 英雄商店 + 阵容（服务端权威，事件镜像） ----------------
+    var MAX_STASH_SLOTS = 15; // 0..8 inventory/backpack + 9..14 native remote-purchase stash
     var shopState = {
         gold: 500,
         offers: [],
@@ -982,6 +983,7 @@
                 saveData.heroes[invParts[0]] = saveData.heroes[invParts[0]] || { level: 1, xp: 0, quality: "common" };
                 saveData.heroes[invParts[0]].inventory = invParts[1] === "" ? [] : invParts[1].split(",");
                 saveData.heroes[invParts[0]].inventoryIds = [];
+                saveData.heroes[invParts[0]].inventorySlots = [];
             }
         }
         // 实体 ID 只用于精确的卸下请求；名称仍用于展示和旧服务器兼容。
@@ -993,16 +995,19 @@
                 var equippedItems = equippedParts[1] === "" ? [] : equippedParts[1].split(",");
                 var names = [];
                 var ids = [];
+                var slots = [];
                 for (var equippedItemIndex = 0; equippedItemIndex < equippedItems.length; equippedItemIndex++) {
                     var equippedItem = equippedItems[equippedItemIndex].split("|");
                     if (equippedItem[0]) {
                         names.push(equippedItem[0]);
                         ids.push(equippedItem[1] || "");
+                        slots.push(equippedItem.length >= 3 ? Number(equippedItem[2]) : equippedItemIndex);
                     }
                 }
                 saveData.heroes[equippedHero] = saveData.heroes[equippedHero] || { level: 1, xp: 0, quality: "common" };
                 saveData.heroes[equippedHero].inventory = names;
                 saveData.heroes[equippedHero].inventoryIds = ids;
+                saveData.heroes[equippedHero].inventorySlots = slots;
             }
         }
         shopState.scroll_low_stock = Number(data.scroll_low_stock || 0);
@@ -1109,11 +1114,20 @@
         }
         var heroName = lineup[selectedHeroIndex.Radiant];
         var heroData = saveData.heroes[heroName] || {};
+        var inventorySlots = heroData.inventorySlots || [];
+        var activeCount = 0;
+        for (var slotIndex = 0; slotIndex < inventorySlots.length; slotIndex++) {
+            if (Number(inventorySlots[slotIndex]) >= 0 && Number(inventorySlots[slotIndex]) <= 5) {
+                activeCount += 1;
+            }
+        }
         return {
             name: heroName,
             index: selectedHeroIndex.Radiant,
             inventory: heroData.inventory || [],
-            inventoryIds: heroData.inventoryIds || []
+            inventoryIds: heroData.inventoryIds || [],
+            inventorySlots: inventorySlots,
+            activeCount: activeCount
         };
     }
 
@@ -1144,7 +1158,7 @@
 
         label.SetHasClass("Empty", false);
         label.text = $.Localize("#dota2_rpg_item_target") + "：" + localizeHeroName(target.name)
-            + "（" + target.inventory.length + "/6）";
+            + "（" + target.activeCount + "/6）";
 
         for (var heroIndex = 0; heroIndex < shopState.lineup.length; heroIndex++) {
             (function (index, heroName) {
@@ -1165,11 +1179,12 @@
         }
 
         for (var itemIndex = 0; itemIndex < target.inventory.length; itemIndex++) {
-            (function (itemName, itemId, index) {
+            (function (itemName, itemId, itemSlot, index) {
                 var row = $.CreatePanel("Panel", equipped, "Equipped_" + target.name + "_" + index);
                 row.AddClass("ItemEquippedRow");
                 createItemIcon(row, itemName);
-                createLabel(row, "ItemRowName", itemDisplayName(itemName));
+                var slotSuffix = itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]" : (itemSlot >= 6 ? " [背包 " + itemSlot + "]" : "");
+                createLabel(row, "ItemRowName", itemDisplayName(itemName) + slotSuffix);
                 var unequip = $.CreatePanel("Button", row, "Unequip_" + target.name + "_" + index);
                 unequip.AddClass("ItemRowBtn");
                 unequip.AddClass("ItemUnequipBtn");
@@ -1178,18 +1193,20 @@
                     GameEvents.SendCustomGameEventToServer("rpg_item_unequip", {
                         hero: target.name,
                         item: itemName,
-                        item_index: itemId
+                        item_index: itemId,
+                        slot: itemSlot
                     });
                 });
-                unequip.enabled = phase === "setup" && shopState.stock.length < 9 && Boolean(itemId);
-            }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "", itemIndex));
+                unequip.enabled = phase === "setup" && shopState.stock.length < MAX_STASH_SLOTS && Boolean(itemId);
+            }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "",
+                Number(target.inventorySlots[itemIndex] !== undefined ? target.inventorySlots[itemIndex] : itemIndex), itemIndex));
         }
     }
 
     function renderItemShop() {
         var stock = cemList(shopState.stock);
         var target = getSelectedEquipmentTarget();
-        var targetHasSpace = target && target.inventory.length < 6;
+        var targetHasSpace = target && target.activeCount < 6;
         var scrollDefs = [
             { kind: "low", label: $.Localize("#dota2_rpg_scroll_low"),
               remaining: shopState.scroll_low_remaining, stockCount: shopState.scroll_low_stock,

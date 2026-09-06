@@ -142,7 +142,7 @@ hud.subscriptions.rpg_shop_state({
     scroll_low_stock: 0,
     scroll_high_stock: 0,
     stock_text: "item_magic_wand|9001",
-    equipped_text: "npc_dota_hero_axe:item_blink|8001;npc_dota_hero_juggernaut:"
+    equipped_text: "npc_dota_hero_axe:item_blink|8001|0,item_force_staff|8002|14;npc_dota_hero_juggernaut:"
 });
 assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text === "Lv1 普通"; }),
     "shop offer cards must show recruit level and quality");
@@ -203,8 +203,18 @@ assert(unequip && unequip.events.onactivate,
 unequip.events.onactivate();
 var unequipEvent = hud.sentEvents[hud.sentEvents.length - 1];
 assert(unequipEvent.name === "rpg_item_unequip"
-    && unequipEvent.payload.item_index === "8001",
-    "unequip requests must identify the exact equipped item entity");
+    && unequipEvent.payload.item_index === "8001"
+    && unequipEvent.payload.slot === 0,
+    "unequip requests must identify the exact equipped item entity and slot");
+var nativeStashUnequip = hud.createdPanels.filter(function (p) { return p.id === "Unequip_npc_dota_hero_axe_1"; })[0];
+assert(nativeStashUnequip && nativeStashUnequip.events.onactivate,
+    "hero native stash items must remain visible in the transfer panel");
+nativeStashUnequip.events.onactivate();
+var nativeStashUnequipEvent = hud.sentEvents[hud.sentEvents.length - 1];
+assert(nativeStashUnequipEvent.name === "rpg_item_unequip"
+    && nativeStashUnequipEvent.payload.item_index === "8002"
+    && nativeStashUnequipEvent.payload.slot === 14,
+    "hero native stash transfer must preserve the exact entity id and source slot");
 
 var secondTarget = hud.createdPanels.filter(function (p) { return p.id === "ItemTarget_npc_dota_hero_juggernaut"; })[0];
 assert(secondTarget && secondTarget.events.onactivate,
@@ -235,6 +245,9 @@ assert(/\.NativeShopHint\s*\{/.test(cssSource)
     && /\.ItemUnequipBtn\s*\{/.test(cssSource)
     && /\.ItemScrollBuyBtn\s*\{/.test(cssSource),
     "native-shop hint, target, scroll, and unequip controls must have dedicated visible styles");
+assert(/MAX_STASH_SLOTS\s*=\s*15/.test(hudSource)
+    && /shopState\.stock\.length\s*<\s*MAX_STASH_SLOTS/.test(hudSource),
+    "equipment UI must account for inventory, backpack, and native stash slots 0 through 14");
 assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
     && hudSource.indexOf('SendCustomGameEventToServer("rpg_item_sell') < 0
     && hudSource.indexOf("rpg_item_equip") >= 0

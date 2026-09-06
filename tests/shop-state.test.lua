@@ -238,7 +238,11 @@ local function makeInventoryUnit(name, team, maxSlot)
 	function unit:IsRealHero() return true end
 	function unit:IsNull() return false end
 	function unit:GetItemInSlot(slot) return self.slots[slot] end
+	function unit:GetAbsOrigin() return { x = 0, y = 0, z = 0 } end
 	function unit:AddItem(item)
+		if self.rejectAdd then
+			return nil
+		end
 		for slot = 0, self.maxSlot do
 			if self.slots[slot] == nil then
 				self.slots[slot] = item
@@ -260,15 +264,23 @@ local function makeInventoryUnit(name, team, maxSlot)
 			end
 		end
 	end
+	function unit:SwapItems(firstSlot, secondSlot)
+		self.slots[firstSlot], self.slots[secondSlot] = self.slots[secondSlot], self.slots[firstSlot]
+	end
 	return unit
 end
 
 UTIL_Remove = function(item)
 	item.removed = true
 end
+local groundItems = {}
+CreateItemOnPositionSync = function(position, item)
+	table.insert(groundItems, { position = position, item = item })
+	return { item = item }
+end
 
-local wisp = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 8)
-local fieldedHero = makeInventoryUnit("npc_dota_hero_axe", DOTA_TEAM_GOODGUYS, 5)
+local wisp = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 14)
+local fieldedHero = makeInventoryUnit("npc_dota_hero_axe", DOTA_TEAM_GOODGUYS, 14)
 local equipmentGame = newGame({
 	phase = "setup",
 	gold = 3000,
@@ -297,6 +309,98 @@ equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_blink" })
 assert(equipmentGame.nativeShopTransactionPending, "native item purchase must request an inventory/UI sync")
 equipmentGame:SyncHeroInventoryFromUnit(fieldedHero)
 assertEqual(equipmentGame.heroData.npc_dota_hero_axe.inventory[1], "item_blink", "native direct purchase stays on the selected fielded hero")
+
+-- 原版远程购买会落入 9..14 储藏栏；同步时应把每个槽位的同一实体提升到可用物品栏。
+local remotePurchases = {}
+for slot = 9, 14 do
+	local item = makeItem("item_remote_" .. slot)
+	remotePurchases[slot] = item
+	wisp.slots[slot] = item
+	item.holder = wisp
+end
+equipmentGame:OnNativeItemPurchased({ player_id = 0, itemname = "item_remote_9" })
+assert(equipmentGame.nativeShopTransactionPending, "native purchase must accept lowercase player id fields")
+equipmentGame:SyncLiveEquipmentState(true)
+for slot = 9, 14 do
+	assert(wisp:GetItemInSlot(slot) == nil and wisp:GetItemInSlot(slot - 9) == remotePurchases[slot],
+		"remote-purchase stash slot " .. slot .. " must be promoted without recreating the entity")
+end
+
+-- 即使 0..8 已满，面板仍须能按实体 ID 直接从原生储藏栏转交给有空位的上阵英雄。
+for slot = 0, 8 do
+	wisp.slots[slot] = wisp.slots[slot] or makeItem("item_stash_filler_" .. slot)
+end
+local directFromNativeStash = makeItem("item_force_staff")
+wisp.slots[10] = directFromNativeStash
+directFromNativeStash.holder = wisp
+equipmentGame:OnItemEquip(nil, {
+	hero = "npc_dota_hero_axe", item = "item_force_staff",
+	item_index = tostring(directFromNativeStash:GetEntityIndex())
+})
+assert(wisp:GetItemInSlot(10) == nil and fieldedHero:GetItemInSlot(1) == directFromNativeStash,
+	"one-click transfer must take the exact entity directly from native stash slots")
+for slot = 0, 8 do
+	wisp.slots[slot] = nil
+end
+for _, item in pairs(remotePurchases) do
+	item.holder = nil
+end
+fieldedHero:RemoveItem(directFromNativeStash)
+
+for slot = 0, 14 do
+	local filler = makeItem("item_full_capacity_" .. slot)
+	wisp.slots[slot] = filler
+	filler.holder = wisp
+end
+assert(not equipmentGame:HasFreeStashSlot(), "all 15 wisp inventory/backpack/native-stash slots must count as full")
+for slot = 0, 14 do
+	wisp.slots[slot] = nil
+end
+
+-- 目标 AddItem 异常失败时，装备/卸下都必须把同一实体退回来源，不能吞物品或同名重建。
+local failedEquip = makeItem("item_failed_equip")
+wisp:AddItem(failedEquip)
+fieldedHero.rejectAdd = true
+equipmentGame:OnItemEquip(nil, {
+	hero = "npc_dota_hero_axe", item = "item_failed_equip",
+	item_index = tostring(failedEquip:GetEntityIndex())
+})
+assert(equipmentGame:IsItemHeldBy(wisp, failedEquip, 0, 14),
+	"failed equip must return the exact entity to the wisp")
+fieldedHero.rejectAdd = false
+wisp:RemoveItem(failedEquip)
+
+local failedUnequip = makeItem("item_failed_unequip")
+fieldedHero:AddItem(failedUnequip)
+wisp.rejectAdd = true
+assert(not equipmentGame:MoveHeroItemToStash(fieldedHero, failedUnequip),
+	"forced stash insertion failure must report failure")
+assert(equipmentGame:IsItemHeldBy(fieldedHero, failedUnequip, 0, 14),
+	"failed unequip must return the exact entity to its hero")
+wisp.rejectAdd = false
+fieldedHero:RemoveItem(failedUnequip)
+
+-- 双方都拒绝 AddItem 时，以同一实体掉落到来源脚下作为最终保险。
+local groundFallback = makeItem("item_ground_fallback")
+fieldedHero.rejectAdd = true
+wisp.rejectAdd = true
+assert(equipmentGame:PreserveDetachedItem(groundFallback, fieldedHero, "test rollback"),
+	"ground fallback must preserve a live detached item")
+assert(groundItems[#groundItems].item == groundFallback,
+	"ground fallback must use the exact original entity")
+fieldedHero.rejectAdd = false
+wisp.rejectAdd = false
+
+local heroNativeStashItem = makeItem("item_hero_native_stash")
+fieldedHero.slots[14] = heroNativeStashItem
+heroNativeStashItem.holder = fieldedHero
+equipmentGame:OnItemUnequip(nil, {
+	hero = "npc_dota_hero_axe", item = "item_hero_native_stash",
+	item_index = tostring(heroNativeStashItem:GetEntityIndex()), slot = 14
+})
+assert(equipmentGame:IsItemHeldBy(wisp, heroNativeStashItem, 0, 14),
+	"hero native stash slot 14 must remain visible and unloadable by exact entity id")
+wisp:RemoveItem(heroNativeStashItem)
 
 -- 自建区域只出售两种卷轴，但必须和原版商店共用同一个 PlayerResource 金额。
 equipmentGame:OnScrollBuy(nil, { kind = "low" })
@@ -357,8 +461,8 @@ equipmentGame:OnItemUnequip(nil, {
 	item_index = tostring(stashedWand:GetEntityIndex())
 })
 assert(fieldedHero:GetItemInSlot(1) == nil, "unequip removes the selected real hero item")
-assert(wisp:GetItemInSlot(1) == stashedWand or wisp:GetItemInSlot(0) == stashedWand,
-	"unequip returns the same entity to the wisp stash")
+assert(equipmentGame:IsItemHeldBy(wisp, stashedWand, 0, 14),
+	"unequip returns the same entity to the wisp inventory or native stash")
 assertEqual(#equipmentGame.heroData.npc_dota_hero_axe.inventory, 1, "unequip refreshes the recorded hero inventory")
 
 -- 原版 HUD 的地面拾取没有 CustomGameEvent；事件/轮询必须把其结果同步回装备 UI。
@@ -385,10 +489,14 @@ local groundDrop = {
 	GetContainedItem = function() return groundWand end,
 }
 local equippedBlink = fieldedHero:GetItemInSlot(0)
+local nativeStashSale = makeItem("item_ultimate_orb")
+wisp.slots[9] = nativeStashSale
+nativeStashSale.holder = wisp
 local entities = {
 	[501] = fieldedHero,
 	[502] = wisp,
 	[equippedBlink:GetEntityIndex()] = equippedBlink,
+	[nativeStashSale:GetEntityIndex()] = nativeStashSale,
 	[groundWand:GetEntityIndex()] = groundDrop,
 }
 EntIndexToHScript = function(index) return entities[index] end
@@ -396,10 +504,21 @@ equipmentGame.placedPositions = {}
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 }), "prepare order filter must allow an empty-units native purchase during setup")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = -1, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
+}), "managed native shop orders without a real player issuer must not bypass phase or ownership checks")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
 	units = {}, entindex_ability = equippedBlink:GetEntityIndex(),
 }), "prepare order filter must allow selling an item held by a managed hero")
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
+	units = {}, entindex_ability = nativeStashSale:GetEntityIndex(),
+}), "prepare order filter must allow selling an item held in native stash slots")
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_DROP_ITEM,
+	units = { ["0"] = 502 }, entindex_ability = nativeStashSale:GetEntityIndex(),
+}), "prepare order filter must not reject a managed item merely because it is in slot 9")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_DROP_ITEM,
 	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(),
@@ -416,10 +535,14 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
 	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 8,
 }), "prepare order filter must allow moving a held item to a valid hero backpack slot")
-assert(not equipmentGame:ValidatePrepareOrder({
+assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
 	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 9,
-}), "prepare order filter must reject moving a hero item to an out-of-range slot")
+}), "prepare order filter must allow moving a hero item into the native remote-purchase stash")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
+	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 15,
+}), "prepare order filter must reject moving a hero item beyond the native stash")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_TO_POINT,
 	units = { ["0"] = 502 }, position_x = -200, position_y = 10,
