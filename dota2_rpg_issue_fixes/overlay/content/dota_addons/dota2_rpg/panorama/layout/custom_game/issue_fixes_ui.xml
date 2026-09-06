@@ -1,0 +1,9 @@
+<root>
+    <styles>
+        <include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
+    </styles>
+    <scripts>
+        <include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
+    </scripts>
+    <Panel id="RpgIssueFixUiRoot" hittest="false" />
+</root>

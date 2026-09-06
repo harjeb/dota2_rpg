@@ -1,0 +1,9 @@
+fix: resolve current battle, shop, tactic UI, and arena issues
+
+- preserve item handles when transferring warehouse equipment
+- allow preparation skill training and native shop orders
+- keep one default tactic rule instead of padding every slot
+- drive enemy AI from current-stage spawned units
+- separate stage 1 and stage 2 enemy compositions
+- fix action panel collapse sizing and transparent hero shop styling
+- add compact 2400×900 arena bounds, middle-gate control, and battle-team-only enforcement

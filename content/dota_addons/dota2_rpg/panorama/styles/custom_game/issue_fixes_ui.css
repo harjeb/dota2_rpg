@@ -1,0 +1,89 @@
+/* Action-panel collapse control: never shrink to a one-pixel vertical strip. */
+.RpgFixedActionPanel
+{
+    min-width: 52px;
+}
+
+.RpgActionPanelArrowButton
+{
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    horizontal-align: right;
+    vertical-align: top;
+    margin: 6px;
+    padding: 0px;
+    background-color: #111111cc;
+    border: 1px solid #c9c9c966;
+    border-radius: 3px;
+    box-shadow: none;
+    overflow: noclip;
+}
+
+.RpgActionPanelArrowButton Label
+{
+    width: 100%;
+    height: 100%;
+    horizontal-align: center;
+    vertical-align: center;
+    text-align: center;
+    font-size: 30px;
+    line-height: 38px;
+    color: white;
+    text-shadow: 0px 1px 2px 2.0 #000000;
+}
+
+.RpgActionPanelCollapsed
+{
+    width: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    background-color: transparent !important;
+    border: 0px !important;
+    box-shadow: none !important;
+    overflow: noclip;
+}
+
+.RpgActionPanelCollapsed .ActionPanelBody,
+.RpgActionPanelCollapsed .TacticPanelBody,
+.RpgActionPanelCollapsed .RulesBody,
+.RpgActionPanelCollapsed #ActionPanelBody,
+.RpgActionPanelCollapsed #TacticPanelBody,
+.RpgActionPanelCollapsed #RulesBody
+{
+    visibility: collapse;
+}
+
+/* Hero shop: remove the large opaque frame while preserving readable controls. */
+.RpgTransparentHeroShop,
+.RpgTransparentHeroShop .ShopFrame,
+.RpgTransparentHeroShop .ShopBody,
+.RpgTransparentHeroShop .PanelBackground,
+.RpgTransparentHeroShop #ShopFrame,
+.RpgTransparentHeroShop #ShopBody,
+.RpgTransparentHeroShop #PanelBackground
+{
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0px !important;
+    box-shadow: none !important;
+}
+
+.RpgTransparentHeroShop Label
+{
+    text-shadow: 0px 1px 3px 3.0 #000000;
+}
+
+.RpgTransparentHeroShop Button,
+.RpgTransparentHeroShop .HeroOffer,
+.RpgTransparentHeroShop .ShopOffer
+{
+    /* Keep only the individual interactive cards readable; no full-panel mask. */
+    background-color: #11111199;
+    border: 1px solid #ffffff22;
+    box-shadow: none;
+}

@@ -40,6 +40,13 @@ local CARRIER_INVENTORY_LAST_SLOT = 8 -- 0..5 主物品栏，6..8 背包
 local NATIVE_STASH_FIRST_SLOT = 9
 local NATIVE_STASH_LAST_SLOT = 14
 
+-- 紧凑战场：两个略大于原待命区（1040×760）的准备区拼成 2400×900。
+-- 准备期场上英雄只可在左侧区域排位；小精灵/待命区不受此场地钳制。
+local BATTLEFIELD_HALF_WIDTH = 1200
+local BATTLEFIELD_HALF_HEIGHT = 450
+local BATTLEFIELD_MOVE_MARGIN = 64
+local PREPARE_DIVIDER_MARGIN = 150
+
 local function UnwrapKeyValues(data, rootName)
 	if type(data) == "table" and type(data[rootName]) == "table" then
 		return data[rootName]
@@ -47,20 +54,21 @@ local function UnwrapKeyValues(data, rootName)
 	return data
 end
 
+-- 所有默认出生点都留出边界和中线安全距离；三单位同槽展开（±220）也不会出界。
 local TEAM_SPAWNS = {
 	[DOTA_TEAM_GOODGUYS] = {
-		Vector(-650, -420, 128),
-		Vector(-800, 0, 128),
-		Vector(-650, 420, 128),
-		Vector(-500, -700, 128),
-		Vector(-500, 700, 128),
+		Vector(-720, -220, 128),
+		Vector(-880, 0, 128),
+		Vector(-720, 220, 128),
+		Vector(-520, -340, 128),
+		Vector(-520, 340, 128),
 	},
 	[DOTA_TEAM_BADGUYS] = {
-		Vector(650, 420, 128),
-		Vector(800, 0, 128),
-		Vector(650, -420, 128),
-		Vector(500, 700, 128),
-		Vector(500, -700, 128),
+		Vector(720, 220, 128),
+		Vector(880, 0, 128),
+		Vector(720, -220, 128),
+		Vector(520, 340, 128),
+		Vector(520, -340, 128),
 	},
 }
 
@@ -82,10 +90,10 @@ local BENCH_TREE_DURATION = 999999
 local BENCH_GRID_COLS = 3
 local BENCH_GRID_SPACING = 260
 
--- 战场隔断：一排能量屏障单位分隔双方，开战瞬间移除
+-- 战场隔断：覆盖紧凑战场的整条中线，开战瞬间移除。
 local BARRIER_X = 0
-local BARRIER_HALF_SPAN = 1500
-local BARRIER_SPACING = 150
+local BARRIER_HALF_SPAN = BATTLEFIELD_HALF_HEIGHT
+local BARRIER_SPACING = 100
 
 -- 招募等级/价格、经验和奖励曲线统一由 data/progression_data.lua 提供。
 QUALITY_ANCHORS = {
@@ -1686,22 +1694,9 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 					end
 				end
 			end
-			if found ~= nil and not routed and found.changed and found.holder ~= recipient then
-				-- 原版把新购买合并到已有堆时，已有实体不属于本次订单；只拆出新增的
-				-- charge，不能把原有整堆搬到另一个英雄。
-				local split, splitItem = self:SplitMergedPurchaseStack(purchase, found, recipient)
-				if split then
-					self.nativePurchaseClaimedIds = self.nativePurchaseClaimedIds or {}
-					local splitId = self:GetItemEntityId(splitItem)
-					if splitId ~= "" then
-						self.nativePurchaseClaimedIds[splitId] = purchase.recipient_key
-					end
-					routed = true
-				else
-					found = nil
-				end
-			end
 			if found ~= nil and not routed then
+				-- FindNewPurchasedItem 已排除归属另一名英雄的已认领堆；留在这里的
+				-- charge 变化仍是本次未认领原版购买实体，应整体转交而非拆掉旧 charge。
 				self.nativePurchaseClaimedIds = self.nativePurchaseClaimedIds or {}
 				self.nativePurchaseClaimedIds[found.item_id] = purchase.recipient_key
 				if found.holder == recipient then
@@ -2647,15 +2642,23 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		or orderType == DOTA_UNIT_ORDER_MOVE_TO_TARGET
 		or orderType == DOTA_UNIT_ORDER_HOLD_POSITION
 	if isMove then
-		if isMoveToPoint then
+		if isMoveToPoint and isLineupSource then
 			local pos = filterTable.position_2 or filterTable.position
-			local x = tonumber(filterTable.position_x or (pos and pos.x) or 0)
-			if x ~= 0 and x > -150 then
-				return false -- 不可越过中线排位
-			end
-			if x ~= 0 and isLineupSource then
+			local hasPosition = filterTable.position_x ~= nil or (pos and pos.x ~= nil)
+			if hasPosition then
+				-- Lua 边界和默认出生点使用同一紧凑布局：左方 1200×900 准备区。
+				local x = tonumber(filterTable.position_x or (pos and pos.x) or 0)
+				local y = tonumber(filterTable.position_y or (pos and pos.y) or 0)
+				local minX = -BATTLEFIELD_HALF_WIDTH + BATTLEFIELD_MOVE_MARGIN
+				local maxX = -PREPARE_DIVIDER_MARGIN
+				local minY = -BATTLEFIELD_HALF_HEIGHT + BATTLEFIELD_MOVE_MARGIN
+				local maxY = BATTLEFIELD_HALF_HEIGHT - BATTLEFIELD_MOVE_MARGIN
+				x = math.max(minX, math.min(maxX, x))
+				y = math.max(minY, math.min(maxY, y))
+				filterTable.position_x = x
+				filterTable.position_y = y
 				self.placedPositions = self.placedPositions or {}
-				self.placedPositions[source:GetUnitName()] = { x = x, y = tonumber(filterTable.position_y or 0) }
+				self.placedPositions[source:GetUnitName()] = { x = x, y = y }
 			end
 		end
 		return true
@@ -3117,3 +3120,8 @@ function CDota2RpgDemo:ScheduleStateBroadcast(delay)
 		return nil
 	end, delay or 0)
 end
+
+-- RPG_ISSUE_FIX_BOOTSTRAP_BEGIN
+-- Installed after all class methods are defined and before any module return.
+require("issue_fixes.bootstrap").Install(CDota2RpgDemo)
+-- RPG_ISSUE_FIX_BOOTSTRAP_END

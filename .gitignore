@@ -2,6 +2,11 @@
 .beads/*.lock
 .claude/settings.local.json
 *.log
+__pycache__/
+*.py[cod]
+
+# One-time local issue-fix installer backups
+.rpg_issue_fix_backup/
 
 # Local credentials and private keys
 .env

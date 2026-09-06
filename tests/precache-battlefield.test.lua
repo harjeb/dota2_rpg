@@ -18,7 +18,12 @@ end
 DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
-require = function()
+require = function(moduleName)
+	-- The production entry point installs the issue-fix bootstrap at EOF.  This
+	-- focused test exercises precache/spawn geometry, so only stub that module.
+	if moduleName == "issue_fixes.bootstrap" then
+		return { Install = function() end }
+	end
 	error("Dota modules are not needed by the precache/battlefield test")
 end
 
@@ -126,6 +131,7 @@ local function newUnit(unitName, position, team)
 		entityIndex = nextEntityIndex,
 	}
 	function unit:GetEntityIndex() return self.entityIndex end
+	function unit:GetUnitName() return self.name end
 	function unit:IsRealHero() return false end
 	function unit:IsAlive() return true end
 	function unit:IsNull() return false end
@@ -225,11 +231,43 @@ spawnGame:SpawnLevelEnemies("ch01")
 local teamCounts = { [DOTA_TEAM_GOODGUYS] = 0, [DOTA_TEAM_BADGUYS] = 0 }
 for _, unit in ipairs(spawned) do
 	teamCounts[unit.team] = teamCounts[unit.team] + 1
-	assert(math.abs(unit.position.x) <= 800, "battlefield x spawn must stay within 800 units of center")
-	assert(math.abs(unit.position.y) <= 700, "battlefield y spawn must stay within 700 units of center")
+	assert(math.abs(unit.position.x) <= 1200, "battlefield x spawn must stay inside compact boundary")
+	assert(math.abs(unit.position.y) <= 450, "battlefield y spawn must stay inside compact boundary")
+	if unit.team == DOTA_TEAM_GOODGUYS then
+		assert(unit.position.x <= -150, "friendly spawn must stay in the left preparation zone")
+	else
+		assert(unit.position.x >= 150, "enemy spawn must stay in the right preparation zone")
+	end
 end
 assert(teamCounts[DOTA_TEAM_GOODGUYS] == 5, "five friendly spawn slots must be available")
 assert(teamCounts[DOTA_TEAM_BADGUYS] == 5, "five enemy spawn slots must be available")
+
+-- Player placement must be clamped to the compact left preparation zone before
+-- the position is persisted for roster respawns.
+DOTA_UNIT_ORDER_MOVE_TO_POSITION = 1
+function EntIndexToHScript(index)
+	for _, unit in ipairs(spawned) do
+		if unit.entityIndex == index then return unit end
+	end
+	return nil
+end
+local placementOrder = {
+	issuer_player_id_const = 0,
+	order_type = DOTA_UNIT_ORDER_MOVE_TO_POSITION,
+	units = { ["0"] = spawned[1]:GetEntityIndex() },
+	position_x = 9999,
+	position_y = 9999,
+}
+assert(spawnGame:ValidatePrepareOrder(placementOrder), "fielded placement order must be accepted")
+assert(placementOrder.position_x == -150 and placementOrder.position_y == 386,
+	"placement must clamp to the compact preparation boundary")
+assert(spawnGame.placedPositions[spawned[1]:GetUnitName()].x == -150,
+	"clamped placement must be persisted")
+placementOrder.position_x = -9999
+placementOrder.position_y = -9999
+assert(spawnGame:ValidatePrepareOrder(placementOrder), "far placement order must be accepted and clamped")
+assert(placementOrder.position_x == -1136 and placementOrder.position_y == -386,
+	"placement must clamp to the compact outer boundary")
 
 local radiant = newUnit("npc_dota_hero_axe", Vector(-650, 0, 128), DOTA_TEAM_GOODGUYS)
 local dire = newUnit("npc_dota_hero_lion", Vector(650, 0, 128), DOTA_TEAM_BADGUYS)
@@ -252,4 +290,4 @@ assert(radiant.idleAcquire and dire.idleAcquire, "both teams must enable idle ac
 assert(radiant.acquisitionRange == 4000 and dire.acquisitionRange == 4000,
 	"both teams must use the expanded 4000-unit acquisition range")
 
-print("PASS: categorized unit precache, close team spawns, and expanded battle acquisition range")
+print("PASS: categorized unit precache, compact team spawns, and expanded battle acquisition range")

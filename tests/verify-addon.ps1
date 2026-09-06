@@ -107,8 +107,10 @@ $luaChecks = @(
            'rpg_item_equip',
            'rpg_item_unequip',
            'StashAddItem',
-           'Vector\(-650, -420, 128\)',
-           'Vector\(650, 420, 128\)',
+           'BATTLEFIELD_HALF_WIDTH = 1200',
+           'BATTLEFIELD_HALF_HEIGHT = 450',
+           'Vector\(-720, -220, 128\)',
+           'Vector\(720, 220, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\unit_helpers.lua";

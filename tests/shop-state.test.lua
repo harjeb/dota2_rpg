@@ -36,6 +36,9 @@ require = function(name)
 	if localModules[name] ~= nil then
 		return dofile(localModules[name])
 	end
+	if name == "issue_fixes.bootstrap" then
+		return { Install = function() end }
+	end
 	error("Dota modules are not needed by the shop-state test: " .. tostring(name))
 end
 
