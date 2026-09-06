@@ -6,4 +6,4 @@ fix: resolve current battle, shop, tactic UI, and arena issues
 - drive enemy AI from current-stage spawned units
 - separate stage 1 and stage 2 enemy compositions
 - fix action panel collapse sizing and transparent hero shop styling
-- add compact 2400×900 arena bounds, middle-gate control, and battle-team-only enforcement
+- add compact 2400×900 arena bounds, VMAP walls/nav slabs, toggleable middle gates, and battle-team-only enforcement

@@ -271,6 +271,42 @@ do
     assert_equal(legacy.max.x, 1600, "legacy arena max x")
     assert_equal(legacy.min.y, -800, "legacy arena min y")
     assert_equal(legacy.max.y, 800, "legacy arena max y")
+
+    -- The authored map uses separate visual and physical func_brush gates.
+    -- Exercise both generic and class-specific Hammer inputs without Dota.
+    local fired = {}
+    DoEntFire = function(target, input, value, delay, activator, caller)
+        fired[#fired + 1] = {
+            target = target,
+            input = input,
+            value = value,
+            delay = delay,
+            activator = activator,
+            caller = caller,
+        }
+    end
+    arena:OpenMiddleGate()
+    arena:CloseMiddleGate()
+    DoEntFire = nil
+    local expectedGateInputs = {
+        { "rpg_mid_gate_visual", "Alpha", "0" },
+        { "rpg_mid_gate_visual", "Disable", "" },
+        { "rpg_mid_gate_nav", "SetNonsolid", "" },
+        { "rpg_mid_gate_nav", "Disable", "" },
+        { "rpg_mid_gate_visual", "Enable", "" },
+        { "rpg_mid_gate_visual", "Alpha", "255" },
+        { "rpg_mid_gate_nav", "Enable", "" },
+        { "rpg_mid_gate_nav", "SetSolid", "" },
+    }
+    assert_equal(#fired, #expectedGateInputs, "all gate inputs fired")
+    for index, expected in ipairs(expectedGateInputs) do
+        assert_equal(fired[index].target, expected[1], "gate target " .. index)
+        assert_equal(fired[index].input, expected[2], "gate input " .. index)
+        assert_equal(fired[index].value, expected[3], "gate value " .. index)
+        assert_equal(fired[index].delay, 0, "gate delay " .. index)
+        assert_equal(fired[index].activator, nil, "gate activator " .. index)
+        assert_equal(fired[index].caller, nil, "gate caller " .. index)
+    end
 end
 
 -- Current-game bootstrap: use battleManager.teamHeroes instead of broad scans so

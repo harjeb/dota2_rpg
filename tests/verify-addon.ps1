@@ -30,7 +30,8 @@ $requiredFiles = @(
     "scripts\generate-minimap.ps1",
     "tests\panorama-save.test.js",
     "tests\shop-state.test.lua",
-    "tests\precache-battlefield.test.lua"
+    "tests\precache-battlefield.test.lua",
+    "tests\compile-vmap.ps1"
 )
 
 foreach ($relativePath in $requiredFiles) {
@@ -513,6 +514,142 @@ try {
             throw "$($entry.Key) must contain only zero values"
         }
     }
+
+    # The combat arena is authored in the VMAP rather than relying only on Lua.
+    # Parse complete CMapEntity blocks so a future map edit cannot silently detach
+    # a target name from its class, transform, or brush material.
+    function Get-VmapBlocks([string]$source, [string]$elementType) {
+        $blocks = @()
+        $elementMatches = [regex]::Matches($source, '"' + [regex]::Escape($elementType) + '"\s*\{')
+        foreach ($match in $elementMatches) {
+            $open = $source.IndexOf('{', $match.Index)
+            $depth = 0
+            $end = -1
+            for ($index = $open; $index -lt $source.Length; $index++) {
+                if ($source[$index] -eq '{') {
+                    $depth++
+                }
+                elseif ($source[$index] -eq '}') {
+                    $depth--
+                    if ($depth -eq 0) {
+                        $end = $index
+                        break
+                    }
+                }
+            }
+            if ($end -lt 0) {
+                throw "Unclosed $elementType block in VMAP"
+            }
+            $blocks += $source.Substring($match.Index, $end - $match.Index + 1)
+        }
+        return $blocks
+    }
+
+    $mapEntities = @(Get-VmapBlocks $mapText "CMapEntity")
+    $mapMeshes = @(Get-VmapBlocks $mapText "CMapMesh")
+    $markerOrigins = @{
+        rpg_arena_min = "-1200 -450 128"
+        rpg_arena_max = "1200 450 128"
+        rpg_arena_center = "0 0 128"
+    }
+    foreach ($marker in $markerOrigins.GetEnumerator()) {
+        $targetPattern = '"targetname"\s+"string"\s+"' + [regex]::Escape($marker.Key) + '"'
+        $entityMatches = @($mapEntities | Where-Object { $_ -match $targetPattern })
+        if ($entityMatches.Count -ne 1) {
+            throw "VMAP must contain exactly one $($marker.Key) marker"
+        }
+        $entity = $entityMatches[0]
+        if ($entity -notmatch '"classname"\s+"string"\s+"info_target"' -or
+            $entity -notmatch ('"origin"\s+"vector3"\s+"' + [regex]::Escape($marker.Value) + '"')) {
+            throw "$($marker.Key) must be an info_target at $($marker.Value)"
+        }
+    }
+
+    $wallGeometry = @{
+        rpg_arena_wall_north = @("0 466 384", '1\.59375\s+0\.03125\s+2')
+        rpg_arena_wall_south = @("0 -466 384", '1\.59375\s+0\.03125\s+2')
+        rpg_arena_wall_east = @("1216 0 384", '0\.02083333[0-9]*\s+0\.91015625\s+2')
+        rpg_arena_wall_west = @("-1216 0 384", '0\.02083333[0-9]*\s+0\.91015625\s+2')
+    }
+    foreach ($wallName in $wallGeometry.Keys) {
+        $targetPattern = '"targetname"\s+"string"\s+"' + $wallName + '"'
+        $entityMatches = @($mapEntities | Where-Object { $_ -match $targetPattern })
+        if ($entityMatches.Count -ne 1) {
+            throw "VMAP must contain exactly one permanent wall: $wallName"
+        }
+        $wall = $entityMatches[0]
+        foreach ($required in @(
+            '"classname"\s+"string"\s+"func_brush"',
+            '"Solidity"\s+"string"\s+"2"',
+            '"AlwaysSolidIgnoreNav"\s+"string"\s+"0"',
+            'materials/dev/primary_white\.vmat'
+        )) {
+            if ($wall -notmatch $required) {
+                throw "$wallName is missing required permanent-wall data: $required"
+            }
+        }
+        $geometry = $wallGeometry[$wallName]
+        if ($wall -notmatch ('"origin"\s+"vector3"\s+"' + [regex]::Escape($geometry[0]) + '"') -or
+            $wall -notmatch ('"scales"\s+"vector3"\s+"' + $geometry[1] + '"')) {
+            throw "$wallName does not retain its 2400x900 boundary transform"
+        }
+    }
+
+    $gateChecks = @{
+        rpg_mid_gate_visual = @(
+            '"classname"\s+"string"\s+"func_brush"',
+            '"StartDisabled"\s+"string"\s+"0"',
+            '"Solidity"\s+"string"\s+"1"',
+            'materials/dev/primary_white\.vmat'
+        )
+        rpg_mid_gate_nav = @(
+            '"classname"\s+"string"\s+"func_brush"',
+            '"StartDisabled"\s+"string"\s+"0"',
+            '"Solidity"\s+"string"\s+"2"',
+            '"AlwaysSolidIgnoreNav"\s+"string"\s+"0"',
+            'materials/tools/toolsclip\.vmat'
+        )
+    }
+    $gateGeometry = @{
+        rpg_mid_gate_visual = @("0 0 384", '0\.03125\s+0\.87890625\s+2')
+        rpg_mid_gate_nav = @("0 0 384", '0\.03125\s+0\.87890625\s+2')
+    }
+    foreach ($gateName in $gateChecks.Keys) {
+        $targetPattern = '"targetname"\s+"string"\s+"' + $gateName + '"'
+        $entityMatches = @($mapEntities | Where-Object { $_ -match $targetPattern })
+        if ($entityMatches.Count -ne 1) {
+            throw "VMAP must contain exactly one gate entity: $gateName"
+        }
+        foreach ($required in $gateChecks[$gateName]) {
+            if ($entityMatches[0] -notmatch $required) {
+                throw "$gateName is missing required gate data: $required"
+            }
+        }
+        $geometry = $gateGeometry[$gateName]
+        if ($entityMatches[0] -notmatch ('"origin"\s+"vector3"\s+"' + [regex]::Escape($geometry[0]) + '"') -or
+            $entityMatches[0] -notmatch ('"scales"\s+"vector3"\s+"' + $geometry[1] + '"')) {
+            throw "$gateName does not retain its full-height middle-divider transform"
+        }
+    }
+
+    # Four separately authored nonavclip slabs keep nav generation off each
+    # outer edge; the fifth material occurrence is the map asset reference.
+    $nonavGeometry = @{
+        "0 466 128" = '1\.59375\s+0\.0625\s+0\.25'
+        "0 -466 128" = '1\.59375\s+0\.0625\s+0\.25'
+        "1200 0 128" = '0\.04166666[0-9]*\s+0\.91015625\s+0\.25'
+        "-1200 0 128" = '0\.04166666[0-9]*\s+0\.91015625\s+0\.25'
+    }
+    foreach ($origin in $nonavGeometry.Keys) {
+        $meshMatches = @($mapMeshes | Where-Object {
+            $_ -match 'materials/tools/nonavclip\.vmat' -and
+            $_ -match ('"origin"\s+"vector3"\s+"' + [regex]::Escape($origin) + '"') -and
+            $_ -match ('"scales"\s+"vector3"\s+"' + $nonavGeometry[$origin] + '"')
+        })
+        if ($meshMatches.Count -ne 1) {
+            throw "VMAP must retain exactly one NONAV edge slab at $origin"
+        }
+    }
 }
 finally {
     if (Test-Path -LiteralPath $temporaryMap) {
@@ -520,4 +657,4 @@ finally {
     }
 }
 
-Write-Host "PASS: modular TacticEngine/BattleManager/DataLoader, hero shop + lineup economy, unified levels, 20 data-driven levels, target selectors, forced/range modes, minimap contrast, Panorama wiring, and the 64x64 flat VMAP are valid."
+Write-Host "PASS: modular TacticEngine/BattleManager/DataLoader, hero shop + lineup economy, unified levels, 20 data-driven levels, target selectors, forced/range modes, minimap contrast, Panorama wiring, the 64x64 terrain, and compact-arena VMAP contracts are valid."

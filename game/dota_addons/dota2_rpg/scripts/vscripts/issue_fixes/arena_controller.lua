@@ -213,7 +213,12 @@ function ArenaController:OpenMiddleGate()
     if self.center == nil then self:LoadBounds() end
 
     if DoEntFire ~= nil then
+        -- The authored visual and physical gate are separate func_brush
+        -- entities. Send the common Hammer Enable/Disable pair plus the
+        -- class-specific inputs so rendering and collision change together.
+        DoEntFire(self.gate_visual_name, "Alpha", "0", 0, nil, nil)
         DoEntFire(self.gate_visual_name, "Disable", "", 0, nil, nil)
+        DoEntFire(self.gate_nav_name, "SetNonsolid", "", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "Disable", "", 0, nil, nil)
     end
 
@@ -232,7 +237,9 @@ end
 function ArenaController:CloseMiddleGate()
     if DoEntFire ~= nil then
         DoEntFire(self.gate_visual_name, "Enable", "", 0, nil, nil)
+        DoEntFire(self.gate_visual_name, "Alpha", "255", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "Enable", "", 0, nil, nil)
+        DoEntFire(self.gate_nav_name, "SetSolid", "", 0, nil, nil)
     end
 end
 

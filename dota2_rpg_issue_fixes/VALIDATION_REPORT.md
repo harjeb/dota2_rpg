@@ -8,7 +8,9 @@
 - 通过 Lupa 执行 `tests/test_runtime.lua`：验证紧凑边界钳制、旧尺寸兼容，以及 bootstrap 只把 `battleManager.teamHeroes` 的场上/敌方单位注册到战场，不会拖入待命英雄或小精灵。
 - 通过 Lupa 执行根目录 `tests/precache-battlefield.test.lua`：验证五个双方出生点和准备期持久化排位均落在紧凑边界内。
 - `node --check`、Panorama UI 模拟、Python 语法检查及安装器幂等测试均通过；没有 `texlua` 时已由 Lupa 执行 Lua 检查。
-- 根目录的 `tests/shop-state.test.lua`、`tests/panorama-save.test.js` 与 `pwsh tests/verify-addon.ps1` 均通过；后者还完成了 VMAP 的 dmxconvert 静态验证。尚未进行实际进游戏的 Workshop Tools 回归。
+- 根目录的 `tests/shop-state.test.lua`、`tests/panorama-save.test.js` 与 `pwsh tests/verify-addon.ps1` 均通过；后者现会静态验证实际 VMAP 的三枚 marker、四面永久墙、两枚中线 `func_brush` 和四块 `nonavclip` slab。
+- 实际 VMAP 已通过 `dmxconvert` KeyValues2 → binary → KeyValues2 往返，以及 `pwsh -NoProfile -ExecutionPolicy Bypass -File tests/compile-vmap.ps1` 的临时副本 `resourcecompiler` world/physics/gridnav 构建（`19 compiled, 0 failed`）；脚本会清理测试 VPK，构建日志确认生成四面墙与 visual/nav 中线门。
+- 按用户要求，本次没有启动 Dota 2 或 Workshop Tools 客户端进行实机回归。
 
 ## 已执行检查
 
@@ -41,6 +43,7 @@ python tests/run_checks.py
 - FIGHT 阶段玩家控制订单被阻止，issuer=-1 的 AI 订单放行。
 - FIGHT 阶段即使购买订单没有 unit 列表，也会被阻止。
 - 默认紧凑矩形边界为 2400×900；准备阶段场上英雄移动被限制在左侧 1200×900 区域，且不会拉动小精灵或待命英雄。旧的显式 `square_size = 1600` 调用保持兼容。
+- 中线门模拟覆盖 `Enable`/`Disable` 与 `func_brush` 的 `Alpha`、`SetSolid`/`SetNonsolid` 成对调用；这样 visual 和物理/导航门不会只切换其中一面。
 - UI 展开/收起箭头、固定按钮尺寸、透明商店类和单条默认规则归一化通过模拟。
 - 安装器会备份覆盖文件、加载 UI manifest、在顶层 return 之前安装 bootstrap、修正准备类 modifier，并可安全重复执行。
 
@@ -53,7 +56,7 @@ python tests/run_checks.py
 - 原版商店在本地 Tools 和已上传专用服务器上的购买测试；
 - 当前项目 TacticBridge 的实际 profile 注册函数和指令优先级测试；
 - 当前 HUD 的真实 Panel ID、分辨率和 UI 缩放测试；
-- `.vmap` 外墙、中线门、导航阻挡及寻路连通性测试；
+- `.vmap` 在真实比赛中的外墙碰撞、中线门开关后的路径更新、导航连通性及位移交互测试；静态结构/编译检查已完成。
 - 30 关完整回归。
 
 因此本包的状态是：**源码修复层和安装流程已通过静态/模拟验证；合并前必须按 `integration/TEST_CHECKLIST.md` 做引擎内回归。**

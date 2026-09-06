@@ -47,6 +47,8 @@
 
 ## 9. 矩形战场
 
+已完成的静态前置条件：`tests/verify-addon.ps1` 会检查实际 VMAP 的 marker、四面 `func_brush` 墙、四块 `nonavclip` slab 和 visual/nav 中线门；`dmxconvert` 与 `resourcecompiler` 已完成一次结构/构建验证。以下仍是**引擎内**验收项，不能由静态结果替代；本次按要求未启动 Dota 2。
+
 - [ ] 两个 1200×900 准备区（总 2400×900）的尺寸和外墙正确。
 - [ ] 准备阶段中线阻挡有效。
 - [ ] 开战中线门消失，寻路立即连通。

@@ -21,15 +21,16 @@ python tools/apply_issue_fixes.py /你的路径/dota2_rpg --expected-head cab44f
 <repo>/.rpg_issue_fix_backup/<时间戳>/
 ```
 
-需要回退时，把该目录下文件复制回原位置，并删除新增的 `issue_fixes/`、UI overlay 和 bootstrap 标记块。
+需要回退时，把该目录下文件复制回原位置，并删除新增的 `issue_fixes/`、UI overlay 和 bootstrap 标记块。若安装器覆盖了 `content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap`，同一备份目录中也会有原 VMAP；用它恢复后需重新构建地图。
 
 ## 方式 B：手工合并
 
 1. 把 `overlay/game/...` 和 `overlay/content/...` 复制到仓库同路径。
 2. 按 `integration/ADDON_GAME_MODE_INTEGRATION.md` 接入服务端生命周期。
 3. 按 `integration/PANORAMA_INTEGRATION.md` 显式绑定现有 Panel ID。
-4. 按 `integration/HAMMER_ARENA_SETUP.md` 修改 `.vmap`。
-5. 按 `integration/TEST_CHECKLIST.md` 回归。
+4. 选择安装 overlay 中已完成的 `dota2_rpg_demo.vmap`，或按 `integration/HAMMER_ARENA_SETUP.md` 将三枚 marker、外墙、NONAV slab 和两枚中线门手工合并到自定义地图。
+5. 使用 Workshop Tools 重新构建地图；安装器不提交生成的 VPK。
+6. 按 `integration/TEST_CHECKLIST.md` 回归。
 
 ## 提交到 GitHub
 

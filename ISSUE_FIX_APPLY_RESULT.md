@@ -2,7 +2,7 @@
 
 本次只处理 issue.txt 中的 10 项，不修改 EXP、GOLD、招募价格、存档、羁绊或词缀。
 
-后续按使用反馈将第 9 项战场回退边界从 3200×1600 收紧为 **2400×900**（左右各 1200×900，略大于原 1040×760 待命区）；对应出生点、中线树障、准备期落点钳制和 Hammer 说明已同步。
+后续按使用反馈将第 9 项战场回退边界从 3200×1600 收紧为 **2400×900**（左右各 1200×900，略大于原 1040×760 待命区）；对应出生点、准备期落点钳制和 Hammer 说明已同步。实际 `dota2_rpg_demo.vmap` 现已写入三枚边界 marker、四面永久 `func_brush` 外墙、四块 `nonavclip` slab 与可恢复的 visual/nav 中线门；静态 DMX/resourcecompiler 构建通过，但本次未启动 Dota 进行实机测试。
 
 ## 新增文件
 - `content/dota_addons/dota2_rpg/panorama/layout/custom_game/issue_fixes_ui.xml`

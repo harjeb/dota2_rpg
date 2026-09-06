@@ -59,7 +59,7 @@ hero_entindex
 
 逻辑默认使用两个 1200×900 准备区拼成 2400×900 紧凑矩形；单个准备区略大于原 1040×760 待命区。准备阶段我方只能位于左半区、敌方只能位于右半区；开战关闭中线视觉/导航门并开放全场。Lua 同时钳制场上英雄的移动订单并定时纠正战斗单位越界，避免影响小精灵和待命区。
 
-外墙、导航阻挡、出生点和可重复启停的中线门属于 `.vmap` 内容，必须按修复包的 Hammer 说明实际放置并重新构建地图。
+`content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap` 现已实际包含三枚边界 marker、四面永久可视 `func_brush` 外墙、四块 `nonavclip` 导航 slab，以及分离的 visual/nav 中线 `func_brush`。`ArenaController` 在开战时同时隐藏 visual、解除 nav 碰撞，在准备/结算时恢复二者；Lua 的 0.2 秒纠正仍只是第二层保护。修复包 overlay 也包含同一 VMAP，安装到有自定义地图的 checkout 前应先审查/备份并按 Hammer 说明合并。
 
 ## 10. 原版商店购买
 
