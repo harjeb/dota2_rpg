@@ -214,6 +214,38 @@
     };
     var phase = "setup";
     var serverReady = false;
+    var lastNativePurchaseTarget = -1;
+    var lastNativePurchaseHero = "";
+    var selectedEquipmentHeroName = "";
+
+    // 原版商店对额外生成的英雄仍可能把物品送到 assigned hero（小精灵）。
+    // 把当前世界选择同步给服务端，购买后即可将新增的同一物品实体补转给上阵或待命英雄。
+    function syncNativePurchaseTarget(force) {
+        if (phase !== "setup" || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) {
+            return;
+        }
+        var unitIndex = Number(Players.GetLocalPlayerPortraitUnit());
+        if (unitIndex > 0 && (force || unitIndex !== lastNativePurchaseTarget)) {
+            lastNativePurchaseTarget = unitIndex;
+            lastNativePurchaseHero = "";
+            GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", { unit_index: unitIndex });
+        }
+    }
+
+    function heartbeatNativePurchaseTarget() {
+        // 原版选中状态事件会强制刷新；此处只补一次延迟刷新，避免在工具测试的同步 Schedule
+        // 实现中递归调用，同时覆盖服务端刚重置目标的短窗口。
+        syncNativePurchaseTarget(true);
+    }
+
+    function sendNativePurchaseHero(heroName, force) {
+        heroName = String(heroName || "");
+        if (phase !== "setup" || !heroName || (!force && heroName === lastNativePurchaseHero)) {
+            return;
+        }
+        lastNativePurchaseHero = heroName;
+        GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", { hero: heroName });
+    }
 
     function getSelectedRules(side) {
         return getRules(side, selectedHeroIndex[side]);
@@ -729,7 +761,15 @@
     }
 
     function selectHero(side, index) {
-        if (index < 0 || index >= HEROES[side].length || selectedHeroIndex[side] === index) {
+        if (index < 0 || index >= HEROES[side].length) {
+            return;
+        }
+        if (selectedHeroIndex[side] === index) {
+            if (side === "Radiant" && HEROES.Radiant[index]) {
+                selectedEquipmentHeroName = HEROES.Radiant[index].name;
+                sendNativePurchaseHero(selectedEquipmentHeroName, true);
+                renderItemShop();
+            }
             return;
         }
         if (phase === "setup") {
@@ -740,6 +780,8 @@
         renderSide(side);
         // 装备目标与行动面板使用同一名上阵英雄；切换头像后无需重新上阵/刷新。
         if (side === "Radiant") {
+            selectedEquipmentHeroName = HEROES.Radiant[index] ? HEROES.Radiant[index].name : selectedEquipmentHeroName;
+            sendNativePurchaseHero(selectedEquipmentHeroName, true);
             renderItemShop();
         }
     }
@@ -945,6 +987,11 @@
         }
         shopState.owned = splitList(data.owned_text);
         shopState.lineup = splitList(data.lineup_text);
+        if (shopState.lineup.length
+            && (!selectedEquipmentHeroName || shopState.owned.indexOf(selectedEquipmentHeroName) < 0)) {
+            selectedEquipmentHeroName = shopState.lineup[Math.min(selectedHeroIndex.Radiant, shopState.lineup.length - 1)];
+            sendNativePurchaseHero(selectedEquipmentHeroName);
+        }
         shopState.bench_slots = Number(data.bench_slots || 0);
         shopState.free_recruit_choices = Number(data.free_recruit_choices !== undefined ? data.free_recruit_choices : shopState.free_recruit_choices);
         // 个人等级/经验："name:level:xp:quality"
@@ -1105,14 +1152,16 @@
 
     // ---------------- 装备购买与转移：固定目标 + 直接装备 ----------------
     function getSelectedEquipmentTarget() {
-        var lineup = shopState.lineup || [];
-        if (!lineup.length) {
+        var owned = shopState.owned || [];
+        if (!owned.length) {
             return null;
         }
-        if (selectedHeroIndex.Radiant < 0 || selectedHeroIndex.Radiant >= lineup.length) {
-            selectedHeroIndex.Radiant = 0;
+        var lineup = shopState.lineup || [];
+        if (!selectedEquipmentHeroName || owned.indexOf(selectedEquipmentHeroName) < 0) {
+            selectedEquipmentHeroName = lineup.length ? lineup[0] : owned[0];
         }
-        var heroName = lineup[selectedHeroIndex.Radiant];
+        var heroName = selectedEquipmentHeroName;
+        sendNativePurchaseHero(heroName);
         var heroData = saveData.heroes[heroName] || {};
         var inventorySlots = heroData.inventorySlots || [];
         var activeCount = 0;
@@ -1123,12 +1172,29 @@
         }
         return {
             name: heroName,
-            index: selectedHeroIndex.Radiant,
+            index: owned.indexOf(heroName),
+            lineupIndex: lineup.indexOf(heroName),
+            isBench: lineup.indexOf(heroName) < 0,
             inventory: heroData.inventory || [],
             inventoryIds: heroData.inventoryIds || [],
             inventorySlots: inventorySlots,
             activeCount: activeCount
         };
+    }
+
+    function setEquipmentTarget(heroName) {
+        heroName = String(heroName || "");
+        if (!heroName || (shopState.owned || []).indexOf(heroName) < 0) {
+            return;
+        }
+        selectedEquipmentHeroName = heroName;
+        sendNativePurchaseHero(heroName, true);
+        var lineupIndex = (shopState.lineup || []).indexOf(heroName);
+        if (lineupIndex >= 0 && selectedHeroIndex.Radiant !== lineupIndex) {
+            selectHero("Radiant", lineupIndex);
+        } else {
+            renderItemShop();
+        }
     }
 
     function itemDisplayName(itemName) {
@@ -1158,19 +1224,19 @@
 
         label.SetHasClass("Empty", false);
         label.text = $.Localize("#dota2_rpg_item_target") + "：" + localizeHeroName(target.name)
-            + "（" + target.activeCount + "/6）";
+            + (target.isBench ? "（待命）" : "") + " " + target.activeCount + "/6";
 
-        for (var heroIndex = 0; heroIndex < shopState.lineup.length; heroIndex++) {
+        for (var heroIndex = 0; heroIndex < shopState.owned.length; heroIndex++) {
             (function (index, heroName) {
                 var portrait = $.CreatePanel("DOTAHeroImage", heroes, "ItemTarget_" + heroName);
                 portrait.AddClass("ItemTargetPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
-                portrait.SetHasClass("Selected", index === target.index);
+                portrait.SetHasClass("Selected", heroName === target.name);
                 portrait.SetPanelEvent("onactivate", function () {
-                    selectHero("Radiant", index);
+                    setEquipmentTarget(heroName);
                 });
-            }(heroIndex, shopState.lineup[heroIndex]));
+            }(heroIndex, shopState.owned[heroIndex]));
         }
 
         if (!target.inventory.length) {
@@ -1625,6 +1691,12 @@
 
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
+    GameEvents.Subscribe("dota_player_update_selected_unit", function () {
+        syncNativePurchaseTarget(true);
+    });
+    GameEvents.Subscribe("dota_player_update_query_unit", function () {
+        syncNativePurchaseTarget(true);
+    });
     // 服务端数据（商店/关卡/动作槽）通过 CEM 事件推送
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
@@ -1659,5 +1731,9 @@
     updateShopEconomyLabels(shopState.gold);
     updateTeamLevelLabels();
     sendHeroLevels();
+    $.Schedule(0.2, function () {
+        syncNativePurchaseTarget(true);
+        $.Schedule(0.75, heartbeatNativePurchaseTarget);
+    });
     GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
 }());

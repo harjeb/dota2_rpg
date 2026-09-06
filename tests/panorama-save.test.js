@@ -55,6 +55,7 @@ function runHud() {
         return panel;
     };
     panorama.Localize = function (token) { return token; };
+    panorama.Schedule = function (_, callback) { callback(); };
     panorama.LocalStorage = {
         Get: function () { localStorageCalls++; return "null"; },
         Set: function () { localStorageCalls++; }
@@ -68,6 +69,9 @@ function runHud() {
             SendCustomGameEventToServer: function (name, payload) {
                 sentEvents.push({ name: name, payload: payload });
             }
+        },
+        Players: {
+            GetLocalPlayerPortraitUnit: function () { return 503; }
         }
     };
     vm.runInNewContext(hudSource, context, { filename: hudPath });
@@ -133,7 +137,7 @@ hud.subscriptions.rpg_shop_state({
         "npc_dota_hero_marci|1|common|100",
         "npc_dota_hero_sven|1|epic|150"
     ].join(";"),
-    owned_text: "npc_dota_hero_axe;npc_dota_hero_juggernaut",
+    owned_text: "npc_dota_hero_axe;npc_dota_hero_juggernaut;npc_dota_hero_lion",
     lineup_text: "npc_dota_hero_axe;npc_dota_hero_juggernaut",
     bench_slots: 0,
     refresh_cost: 20,
@@ -142,7 +146,7 @@ hud.subscriptions.rpg_shop_state({
     scroll_low_stock: 0,
     scroll_high_stock: 0,
     stock_text: "item_magic_wand|9001",
-    equipped_text: "npc_dota_hero_axe:item_blink|8001|0,item_force_staff|8002|14;npc_dota_hero_juggernaut:"
+    equipped_text: "npc_dota_hero_axe:item_blink|8001|0,item_force_staff|8002|14;npc_dota_hero_juggernaut:;npc_dota_hero_lion:item_manta|8100|0"
 });
 assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text === "Lv1 普通"; }),
     "shop offer cards must show recruit level and quality");
@@ -222,6 +226,14 @@ assert(secondTarget && secondTarget.events.onactivate,
 secondTarget.events.onactivate();
 assert(hud.panels["#ItemTargetLabel"].text.indexOf("juggernaut") >= 0,
     "changing the equipment target must update in place instead of requiring a re-field click");
+var benchTarget = hud.createdPanels.filter(function (p) { return p.id === "ItemTarget_npc_dota_hero_lion"; })[0];
+assert(benchTarget && benchTarget.events.onactivate,
+    "equipment panel must expose owned standby heroes as direct purchase targets");
+benchTarget.events.onactivate();
+var benchTargetEvent = hud.sentEvents[hud.sentEvents.length - 1];
+assert(benchTargetEvent.name === "rpg_native_purchase_target"
+    && benchTargetEvent.payload.hero === "npc_dota_hero_lion",
+    "standby hero target selection must be sent to the server for native purchases");
 
 assert(/\.EditorBody\s*\{[^}]*height:\s*fill-parent-flow\(1\.0\)/s.test(cssSource),
     "action editor body must fill the remaining panel height");
@@ -248,6 +260,9 @@ assert(/\.NativeShopHint\s*\{/.test(cssSource)
 assert(/MAX_STASH_SLOTS\s*=\s*15/.test(hudSource)
     && /shopState\.stock\.length\s*<\s*MAX_STASH_SLOTS/.test(hudSource),
     "equipment UI must account for inventory, backpack, and native stash slots 0 through 14");
+assert(hud.sentEvents.some(function (event) {
+    return event.name === "rpg_native_purchase_target" && event.payload.unit_index === 503;
+}), "Panorama must tell the server which active or bench hero is selected for native purchases");
 assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
     && hudSource.indexOf('SendCustomGameEventToServer("rpg_item_sell') < 0
     && hudSource.indexOf("rpg_item_equip") >= 0

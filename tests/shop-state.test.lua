@@ -12,6 +12,18 @@ end
 
 DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
+DOTA_UNIT_ORDER_DROP_ITEM = 12
+DOTA_UNIT_ORDER_GIVE_ITEM = 13
+DOTA_UNIT_ORDER_PICKUP_ITEM = 14
+DOTA_UNIT_ORDER_MOVE_ITEM = 19
+DOTA_UNIT_ORDER_PURCHASE_ITEM = 16
+DOTA_UNIT_ORDER_SELL_ITEM = 17
+DOTA_UNIT_ORDER_DISASSEMBLE_ITEM = 18
+DOTA_UNIT_ORDER_MOVE_TO_POINT = 1
+DOTA_UNIT_ORDER_MOVE_TO_POSITION = 1
+DOTA_UNIT_ORDER_MOVE_TO_TARGET = 2
+DOTA_UNIT_ORDER_HOLD_POSITION = 10
+DOTA_UNIT_ORDER_ATTACK_TARGET = 4
 
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
@@ -223,6 +235,8 @@ local function makeItem(name)
 		IsNull = function() return false end,
 		GetAbilityName = function(self) return self.name end,
 		GetEntityIndex = function(self) return self.entityIndex end,
+		GetCurrentCharges = function(self) return self.charges end,
+		SetCurrentCharges = function(self, charges) self.charges = charges end,
 	}
 end
 
@@ -238,6 +252,9 @@ local function makeInventoryUnit(name, team, maxSlot)
 	function unit:IsRealHero() return true end
 	function unit:IsNull() return false end
 	function unit:GetItemInSlot(slot) return self.slots[slot] end
+	function unit:SetOwner(owner) self.owner = owner end
+	function unit:SetControllableByPlayer(playerId) self.controllingPlayerId = playerId end
+	function unit:GetPlayerOwnerID() return self.controllingPlayerId or -1 end
 	function unit:GetAbsOrigin() return { x = 0, y = 0, z = 0 } end
 	function unit:AddItem(item)
 		if self.rejectAdd then
@@ -281,13 +298,21 @@ end
 
 local wisp = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 14)
 local fieldedHero = makeInventoryUnit("npc_dota_hero_axe", DOTA_TEAM_GOODGUYS, 14)
+fieldedHero.lineupHeroName = "npc_dota_hero_axe"
+local benchHero = makeInventoryUnit("npc_dota_hero_lion", DOTA_TEAM_GOODGUYS, 14)
+benchHero.benchHeroName = "npc_dota_hero_lion"
 local equipmentGame = newGame({
 	phase = "setup",
 	gold = 3000,
 	playerId = 0,
 	lineup = { "npc_dota_hero_axe" },
-	heroData = { npc_dota_hero_axe = { inventory = {} } },
+	heroData = {
+		npc_dota_hero_axe = { inventory = {} },
+		npc_dota_hero_lion = { inventory = {} },
+	},
 	placeholderHero = wisp,
+	benchUnits = { benchHero },
+	pendingNativePurchases = {},
 	battleManager = {
 		teamHeroes = { [DOTA_TEAM_GOODGUYS] = { fieldedHero }, [DOTA_TEAM_BADGUYS] = {} },
 	},
@@ -346,6 +371,143 @@ for _, item in pairs(remotePurchases) do
 	item.holder = nil
 end
 fieldedHero:RemoveItem(directFromNativeStash)
+
+-- 选中待命英雄购买时，原版若把新物品交给 assigned hero 小精灵，下一轮必须补转同一实体。
+equipmentGame.pendingNativePurchases = {}
+assert(equipmentGame:IsEquipmentCarrier(benchHero), "bench hero must be a managed equipment carrier")
+equipmentGame:SetNativePurchaseSelection(benchHero)
+local beforeBenchPurchase = equipmentGame:CollectManagedItemIds()
+local benchPurchase = wisp:AddItem(makeItem("item_manta"))
+equipmentGame.nativePurchaseOrderContexts = {
+	{
+		recipient_key = "npc_dota_hero_lion",
+		before_ids = beforeBenchPurchase,
+		item_name = "item_manta",
+		created_tick = equipmentGame.nativePurchaseTick or 0,
+	}
+}
+equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_manta" })
+equipmentGame:RoutePendingNativePurchases()
+assert(not equipmentGame:IsItemHeldBy(wisp, benchPurchase, 0, 14)
+	and equipmentGame:IsItemHeldBy(benchHero, benchPurchase, 0, 14),
+	"bench direct purchase must route the exact newly purchased entity away from the wisp")
+assertEqual(equipmentGame.heroData.npc_dota_hero_lion.inventory[1], "item_manta",
+	"bench purchase must immediately update persistent current-run inventory")
+
+-- 待命转上阵时继续携带同一实体，而不是清空或重建同名装备。
+equipmentGame:CaptureHeroInventoryForRespawn(benchHero)
+local promotedLion = makeInventoryUnit("npc_dota_hero_lion", DOTA_TEAM_GOODGUYS, 14)
+promotedLion.lineupHeroName = "npc_dota_hero_lion"
+equipmentGame:BindEquipmentCarrierToPlayer(promotedLion)
+equipmentGame:RestoreHeroInventoryToUnit("npc_dota_hero_lion", promotedLion)
+assert(equipmentGame:IsItemHeldBy(promotedLion, benchPurchase, 0, 14),
+	"bench-to-lineup rebuild must preserve the exact item entity")
+assert(promotedLion.owner == wisp and promotedLion.controllingPlayerId == 0,
+	"additional heroes must be owned and controllable by the player for native shop selection")
+local savedSetOwner = benchHero.SetOwner
+benchHero.SetOwner = function() error("owner binding failure") end
+assert(not equipmentGame:SetNativePurchaseSelection(benchHero),
+	"native purchase target selection must reject an unbound hero")
+benchHero.SetOwner = savedSetOwner
+assert(equipmentGame:SetNativePurchaseSelection(benchHero),
+	"native purchase target selection must recover after ownership binding succeeds")
+promotedLion:RemoveItem(benchPurchase)
+equipmentGame.heroData.npc_dota_hero_lion.inventory = {}
+equipmentGame.heroData.npc_dota_hero_lion.inventory_states = {}
+equipmentGame.heroData.npc_dota_hero_lion.inventory_entities = {}
+
+-- 没有成功购买事件的旧订单不能污染下一次原版购买。
+equipmentGame.nativePurchaseTick = 10
+equipmentGame.nativePurchaseOrderContexts = {
+	{ recipient_key = "npc_dota_hero_lion", before_ids = {}, created_tick = 0 }
+}
+equipmentGame:PruneNativePurchaseOrderContexts()
+assertEqual(#equipmentGame.nativePurchaseOrderContexts, 0,
+	"stale native purchase contexts must expire before a later successful purchase")
+
+-- 两次快速购买必须各自保留购买前快照，并按事件顺序把同名/不同名的新实体分配给不同目标。
+equipmentGame.pendingNativePurchases = {}
+equipmentGame.nativePurchaseOrderContexts = {}
+equipmentGame.nativePurchaseClaimedIds = {}
+equipmentGame:SetNativePurchaseSelection(benchHero)
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = "item_rapid",
+}), "first rapid purchase must enqueue its own target context")
+equipmentGame:SetNativePurchaseSelection(fieldedHero)
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = "item_rapid",
+}), "second rapid purchase must enqueue independently")
+local rapidBenchItem = wisp:AddItem(makeItem("item_rapid"))
+local rapidFieldedItem = wisp:AddItem(makeItem("item_rapid"))
+equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_rapid" })
+equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_rapid" })
+equipmentGame:RoutePendingNativePurchases()
+assert(equipmentGame:IsItemHeldBy(benchHero, rapidBenchItem, 0, 14)
+	and equipmentGame:IsItemHeldBy(fieldedHero, rapidFieldedItem, 0, 14),
+	"rapid same-name purchases must route distinct exact entities to their queued targets")
+benchHero:RemoveItem(rapidBenchItem)
+fieldedHero:RemoveItem(rapidFieldedItem)
+
+-- 购买可堆叠物品时可能没有新实体 ID；charges 变化也必须触发同一实体转移。
+local stackedPurchase = makeItem("item_clarity")
+stackedPurchase.charges = 1
+wisp:AddItem(stackedPurchase)
+equipmentGame:SetNativePurchaseSelection(benchHero)
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = "item_clarity",
+}), "stack purchase must capture the pre-purchase item state")
+stackedPurchase.charges = 2
+equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_clarity" })
+equipmentGame:RoutePendingNativePurchases()
+assert(equipmentGame:IsItemHeldBy(benchHero, stackedPurchase, 0, 14)
+	and stackedPurchase.charges == 2,
+	"stacking purchase must route the changed original item entity and preserve charges")
+
+-- 另一目标购买同名堆叠物时只拆出本次增加的 1 个 charge，不把整个旧堆转走。
+equipmentGame:SetNativePurchaseSelection(fieldedHero)
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = "item_clarity",
+}), "second stack purchase must capture the existing routed stack")
+stackedPurchase.charges = 3
+equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_clarity" })
+equipmentGame:RoutePendingNativePurchases()
+assert(stackedPurchase.charges == 2 and equipmentGame:IsItemHeldBy(benchHero, stackedPurchase, 0, 14),
+	"split stack purchase must leave the earlier target's charges intact")
+local splitStackItem = nil
+for slot = 0, 14 do
+	local candidate = fieldedHero:GetItemInSlot(slot)
+	if candidate ~= nil and candidate:GetAbilityName() == "item_clarity" then
+		splitStackItem = candidate
+		break
+	end
+end
+assert(splitStackItem ~= nil and splitStackItem:GetCurrentCharges() == 1,
+	"split stack purchase must give the second target one charge")
+
+-- 目标已有同名堆时，拆分只能把 +1 合并到旧 charge，不能把旧堆重置成 1。
+fieldedHero:RemoveItem(splitStackItem)
+local existingTargetStack = makeItem("item_clarity")
+existingTargetStack.charges = 5
+fieldedHero:AddItem(existingTargetStack)
+local originalAddItemByName = fieldedHero.AddItemByName
+stackedPurchase.charges = 3
+function fieldedHero:AddItemByName(itemName)
+	if itemName == "item_clarity" then
+		existingTargetStack.charges = existingTargetStack.charges + 1
+		return existingTargetStack
+	end
+	return originalAddItemByName(self, itemName)
+end
+local splitMerged, splitMergedItem = equipmentGame:SplitMergedPurchaseStack({
+	item_name = "item_clarity", recipient_key = "npc_dota_hero_axe",
+	before_ids = { [tostring(stackedPurchase:GetEntityIndex())] = { name = "item_clarity", charges = 2 } },
+}, { holder = benchHero, item = stackedPurchase, item_id = tostring(stackedPurchase:GetEntityIndex()) }, fieldedHero)
+assert(splitMerged and splitMergedItem == existingTargetStack and existingTargetStack.charges == 6
+	and stackedPurchase.charges == 2,
+	"split into an existing stack must preserve old charges and decrement the source once")
+fieldedHero.AddItemByName = originalAddItemByName
+fieldedHero:RemoveItem(existingTargetStack)
+benchHero:RemoveItem(stackedPurchase)
 
 for slot = 0, 14 do
 	local filler = makeItem("item_full_capacity_" .. slot)
@@ -495,6 +657,7 @@ nativeStashSale.holder = wisp
 local entities = {
 	[501] = fieldedHero,
 	[502] = wisp,
+	[503] = benchHero,
 	[equippedBlink:GetEntityIndex()] = equippedBlink,
 	[nativeStashSale:GetEntityIndex()] = nativeStashSale,
 	[groundWand:GetEntityIndex()] = groundDrop,
@@ -504,6 +667,10 @@ equipmentGame.placedPositions = {}
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 }), "prepare order filter must allow an empty-units native purchase during setup")
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = { ["0"] = 503 },
+}), "prepare order filter must allow a player-owned bench hero to issue native purchases")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = -1, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 }), "managed native shop orders without a real player issuer must not bypass phase or ownership checks")

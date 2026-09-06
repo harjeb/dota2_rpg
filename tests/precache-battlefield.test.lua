@@ -140,6 +140,8 @@ local function newUnit(unitName, position, team)
 	function unit:GetAbilityCount() return 0 end
 	function unit:AddNewModifier() end
 	function unit:RemoveSelf() self.removed = true end
+	function unit:SetOwner(owner) self.owner = owner end
+	function unit:GetPlayerOwnerID() return self.controlledByPlayer or -1 end
 	function unit:SetControllableByPlayer(playerId, value)
 		self.controlledByPlayer = value and playerId or nil
 	end
@@ -180,6 +182,10 @@ local function newBattleManager()
 	return manager
 end
 
+local commander = {
+	GetPlayerOwnerID = function() return 0 end,
+	IsNull = function() return false end,
+}
 local spawnGame = setmetatable({
 	phase = "setup",
 	lineup = {
@@ -191,6 +197,7 @@ local spawnGame = setmetatable({
 	},
 	playerLevel = 30,
 	playerId = 0,
+	placeholderHero = commander,
 	heroData = {},
 	heroOrder = 0,
 	placedPositions = {},
