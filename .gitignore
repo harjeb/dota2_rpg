@@ -27,3 +27,10 @@ secrets.yaml
 kubeconfig
 _revised_review/
 dota2_rpg_revised_package/
+
+# 图片不上传（小地图源图除外）
+*.png
+*.jpg
+*.jpeg
+*.gif
+!content/dota_addons/dota2_rpg/materials/overviews/dota2_rpg_demo.png
