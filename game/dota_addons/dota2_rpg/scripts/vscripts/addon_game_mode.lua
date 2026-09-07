@@ -337,6 +337,7 @@ function CDota2RpgDemo:InitGameMode()
 	self.nativePurchaseClaimedIds = {}
 	self.nativePurchaseTick = 0
 	self.pendingNativePurchases = {}
+	self.rosterAbilitySnapshot = nil
 	self.barrierUnits = nil
 	self.placedPositions = {}  -- heroName -> {x, y}（准备阶段玩家排的站位）
 
@@ -1333,7 +1334,12 @@ function CDota2RpgDemo:BuildRosterAbilitySnapshot()
 end
 
 function CDota2RpgDemo:SyncRosterAbilities()
-	local before = self:BuildRosterAbilitySnapshot()
+	-- Compare against the previous think's entity state. Comparing snapshots made
+	-- before and after CaptureHeroAbilities in the same call can never observe a
+	-- native TRAIN_ABILITY mutation, because capture only mirrors the entity.
+	local current = self:BuildRosterAbilitySnapshot()
+	local changed = self.rosterAbilitySnapshot ~= nil
+		and current ~= self.rosterAbilitySnapshot
 	local seen = {}
 	local function capture(hero)
 		if hero == nil or seen[hero] or not TacticEngine.IsValidUnit(hero) then return end
@@ -1342,7 +1348,8 @@ function CDota2RpgDemo:SyncRosterAbilities()
 	end
 	for _, heroName in ipairs(self.lineup or {}) do capture(self:FindLineupUnit(heroName)) end
 	for _, hero in ipairs(self.benchUnits or {}) do capture(hero) end
-	return before ~= self:BuildRosterAbilitySnapshot()
+	self.rosterAbilitySnapshot = self:BuildRosterAbilitySnapshot()
+	return changed
 end
 
 -- 原版 HUD 可以把物品拖到地上、给小精灵或让英雄拾取；这些操作没有 CustomGameEvent。

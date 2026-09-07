@@ -495,16 +495,13 @@ fieldedHero:RemoveItem(directFromNativeStash)
 equipmentGame.pendingNativePurchases = {}
 assert(equipmentGame:IsEquipmentCarrier(benchHero), "bench hero must be a managed equipment carrier")
 equipmentGame:SetNativePurchaseSelection(benchHero)
-local beforeBenchPurchase = equipmentGame:CollectManagedItemIds()
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
+	itemname = "item_manta",
+}), "bench direct purchase must capture the authoritative preflight wallet snapshot")
+assertEqual(equipmentGame.nativePurchaseOrderContexts[1].gold_before, 750,
+	"native purchase preflight must retain the wallet snapshot consumed by the event path")
 local benchPurchase = wisp:AddItem(makeItem("item_manta"))
-equipmentGame.nativePurchaseOrderContexts = {
-	{
-		recipient_key = "npc_dota_hero_lion",
-		before_ids = beforeBenchPurchase,
-		item_name = "item_manta",
-		created_tick = equipmentGame.nativePurchaseTick or 0,
-	}
-}
 equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_manta" })
 equipmentGame:RoutePendingNativePurchases()
 assert(not equipmentGame:IsItemHeldBy(wisp, benchPurchase, 0, 14)
@@ -548,6 +545,11 @@ assertEqual(#equipmentGame.nativePurchaseOrderContexts, 0,
 equipmentGame.pendingNativePurchases = {}
 equipmentGame.nativePurchaseOrderContexts = {}
 equipmentGame.nativePurchaseClaimedIds = {}
+-- Keep the fixture wallet funded for the following real preflight/debit sequence;
+-- production receives the corresponding balance from PlayerResource.
+nativeWalletReliable[0] = 3000
+nativeWalletUnreliable[0] = 0
+equipmentGame:SyncGoldFromPlayer()
 equipmentGame:SetNativePurchaseSelection(benchHero)
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = "item_rapid",
@@ -684,6 +686,10 @@ assert(equipmentGame:IsItemHeldBy(wisp, heroNativeStashItem, 0, 14),
 wisp:RemoveItem(heroNativeStashItem)
 
 -- 自建区域只出售两种卷轴，但必须和原版商店共用同一个 PlayerResource 金额。
+-- Reset this independent fixture segment after the native purchase routing cases.
+nativeWalletReliable[0] = 750
+nativeWalletUnreliable[0] = 0
+equipmentGame:SyncGoldFromPlayer()
 equipmentGame:OnScrollBuy(nil, { kind = "low" })
 assertEqual(nativeWalletGold(0), 650, "scroll purchase must debit the same wallet as the native shop")
 assertEqual(equipmentGame.scrollStock.low, 1, "scroll panel must retain the two-scroll stock flow")
