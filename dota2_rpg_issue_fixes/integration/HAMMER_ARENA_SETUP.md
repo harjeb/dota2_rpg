@@ -36,14 +36,16 @@ models/props_rock/riveredge_rock_wall002a.vmdl
 
 ## 中间隔断：原生树木
 
-已移除 `rpg_mid_gate_visual` 可见刷子。只保留覆盖 `x=-24~24`、`y=-450~450`、`z=128~640` 的 `rpg_mid_gate_nav` 不可见碰撞门。
+Both `rpg_mid_gate_visual` and `rpg_mid_gate_nav` are absent from the current VMAP. The former nav brush occupied `x=-24..24`, `y=-450..450`, `z=128..640` with `Solidity=2`, `AlwaysSolidIgnoreNav=0`, and `solidbsp=1`. Installed `game/core/base.fgd:1294-1311` defines this as always solid and participating in navigation generation. Toggling physical collision at runtime does not remove the authored navigation/height obstruction.
 
-| 阶段 | 树木 | nav 输入 |
+| Phase | Native trees | Legacy brush compatibility inputs |
 | --- | --- | --- |
-| 准备/结算 | 生成整条中线树木并补齐被砍的树 | `Enable`、`SetSolid` |
-| 战斗 | 逐个砍掉并移除本控制器创建的树 | `SetNonsolid`、`Disable` |
+| Prepare/settle | Create the entire row and replace cut trees | `Disable`, then `SetNonsolid` |
+| Fight | Cut each owned tree, then remove its handle | `Disable`, then `SetNonsolid` |
 
-`ArenaController:EnsureMiddleTrees()` 使用 `CreateTempTree`，默认在 `x=0`、`y=-426~426` 生成 10 棵树，相邻距离不超过 96。不会通过中心半径清树影响待命区或其他装饰；下一关重新生成，重复准备调用不叠加树木。
+`ArenaController:EnsureMiddleTrees()` creates 10 temporary trees at `x=0`, `y=-426..426`, with gaps at most 96 units. Roots use the flat arena marker plane (`z=128`), not a ground query over the obsolete brush. Direct `OpenMiddleGate()` calls suspend repair even before the phase wrapper runs. Subsequent preparation recreates the row. Cleanup never clears unrelated trees by radius.
+
+`python scripts/update-arena-map.py` removes only the obsolete brush and its private mesh graph, including when nested in a Hammer group, and syncs the binary source overlay. The operation is idempotent. Existing compiled VPKs must be rebuilt and the map reloaded; Lua-only deployment cannot repair baked grid navigation.
 
 Lua 每 0.2 秒的越界纠正仅针对场上战斗单位。小精灵和待命英雄不注册进战场边界控制。
 
@@ -56,6 +58,12 @@ pwsh -NoProfile -File tests/verify-addon.ps1
 pwsh -NoProfile -File tests/compile-vmap.ps1
 ```
 
-前两项是可在无 Dota 安装环境中执行的结构/模拟回归。`verify-addon.ps1` 也可运行离线部分，并明确报告跳过引擎转换；地图编译仍需要 Workshop Tools。本轮环境没有 `dmxconvert.exe` 和 `resourcecompiler.exe`，未完成重新编译，也没有部署或启动 Dota。
+2026-09-07 evidence for this divider change (Beads `dota2_rpg-8lz`):
 
-旧文档中 `19 compiled, 0 failed` 属于原几何墙地图的历史结果，不适用于本轮岩石地图。必须在 Workshop Tools 确认原生岩石无错误模型、准备阶段不能跨线、开战整条中线开放且双方能接敌、下一关树木/碰撞恢复、外围不能逃出，以及位移异常会被纠正。实机验收由 Beads `dota2_rpg-4rk` 跟踪。
+- The new map regression failed against the original source because `rpg_mid_gate_nav` was present. The new tree-height regression failed against the original runtime with a mocked ground height of 640; the fixed runtime uses marker height 128.
+- `tests/vmap.test.py`: 10 passed, 1 optional external-model-provenance check skipped. Includes unchanged perimeter/terrain contracts, no middle brush or crossing collision mesh, typed-data preservation, nested-group migration, idempotence, and overlay byte equality.
+- Lupa runtime tests and focused arena tree tests passed for both live and overlay modules. These are mocks, not engine navigation or rendering measurements.
+- `tests/verify-addon.ps1` passed, including native DMX conversion.
+- `tests/compile-vmap.ps1` passed an isolated static `resourcecompiler` build and wrote a 3,126,207-byte temporary VPK. The script removed its temporary outputs. No playable VPK was replaced and no Dota client was launched.
+
+Static compilation does not prove that units cross the center or trees render at the correct height in-game. Rebuild/reload the playable map before user verification of preparation blocking, battle crossing, repeated stages, perimeter containment, and unrelated bench trees. In-engine acceptance is tracked by Beads `dota2_rpg-ef9` (the previously documented `dota2_rpg-4rk` is absent from the current database).

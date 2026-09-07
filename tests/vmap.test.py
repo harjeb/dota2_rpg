@@ -5,6 +5,7 @@ The vendored MIT Blender Source Tools parser needs only Python's standard librar
 These tests do not compile the map or validate model bounds/rendering in Dota.
 """
 import argparse
+import importlib.util
 import io
 import math
 from pathlib import Path
@@ -23,6 +24,9 @@ ROCK_MODELS = (
     'models/props_rock/riveredge_rock_wall002a.vmdl',
 )
 NATIVE_MAP = None
+spec = importlib.util.spec_from_file_location('update_arena_map', ROOT / 'scripts/update-arena-map.py')
+updater = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(updater)
 
 
 def reachable(root):
@@ -150,13 +154,43 @@ class VmapTests(unittest.TestCase):
             self.brush('rpg_arena_wall_' + side, (x, 0, 384), (1 / 48, .91015625, 2),
                        ((low_x, -466, 128), (high_x, 466, 640)))
 
-    def test_only_invisible_middle_gate(self):
-        self.assertFalse(any(e.get('entity_properties', {}).get('targetname') == 'rpg_mid_gate_visual'
-                             for e in self.model.elements))
-        self.brush('rpg_mid_gate_nav', (0, 0, 384), (.03125, .87890625, 2),
-                   ((-24, -450, 128), (24, 450, 640)))
-        self.assertEqual(len(self.meshes), 9, 'Only four walls, four NONAV slabs, and one nav gate')
-        self.assertEqual(sum(e['entity_properties']['classname'] == 'func_brush' for e in self.entities), 5)
+    def test_no_static_middle_obstruction(self):
+        for name in ('rpg_mid_gate_visual', 'rpg_mid_gate_nav'):
+            self.assertFalse(any(e.get('entity_properties', {}).get('targetname') == name
+                                 for e in self.model.elements), name)
+        self.assertEqual(len(self.meshes), 8, 'Only four walls and four NONAV slabs')
+        self.assertEqual(sum(e['entity_properties']['classname'] == 'func_brush' for e in self.entities), 4)
+        # No authored collision may cross the playable middle corridor. Native
+        # temporary trees own preparation navigation and are cut for battle.
+        for mesh in self.meshes:
+            streams = mesh['meshData']['vertexData']['streams']
+            vertices = next(s['data'] for s in streams if s['semanticName'] == 'position')
+            low = [min(v[i] * mesh['scales'][i] + mesh['origin'][i] for v in vertices) for i in range(2)]
+            high = [max(v[i] * mesh['scales'][i] + mesh['origin'][i] for v in vertices) for i in range(2)]
+            self.assertFalse(low[0] < 96 and high[0] > -96 and low[1] < 400 and high[1] > -400)
+
+    def test_map_update_removes_only_legacy_brush_and_is_idempotent(self):
+        model = dmx.load(in_file=io.BytesIO(MAP.read_bytes()))
+        group = model.add_element('gate group', 'CMapGroup')
+        group['children'] = dmx.make_array([], dmx.Element)
+        model.root['world']['children'].append(group)
+        before = signature(model)
+        gate = model.add_element('legacy gate', 'CMapEntity')
+        props = model.add_element('legacy gate properties', 'DmeElement')
+        props['classname'] = 'func_brush'
+        props['targetname'] = 'rpg_mid_gate_nav'
+        props['Solidity'] = '2'
+        props['AlwaysSolidIgnoreNav'] = '0'
+        gate['entity_properties'] = props
+        gate['children'] = dmx.make_array([model.add_element('legacy mesh', 'CMapMesh')], dmx.Element)
+        group['children'].append(gate)
+        self.assertTrue(updater.remove_middle_brush(model))
+        self.assertEqual(signature(model), before, 'Unrelated typed data must remain unchanged')
+        self.assertFalse(updater.remove_middle_brush(model))
+        restored = dmx.load(in_file=io.BytesIO(model.echo('binary', 9)))
+        self.assertEqual(signature(restored), before)
+        self.assertFalse(any(e.get('entity_properties', {}).get('targetname') == 'rpg_mid_gate_nav'
+                             for e in restored.elements))
 
     def test_four_nonav_slabs(self):
         slabs = [e for e in self.meshes if e['meshData']['materials'] == [NONAV]]

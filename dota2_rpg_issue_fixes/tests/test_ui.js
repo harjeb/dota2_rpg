@@ -53,6 +53,7 @@ if (!api) { throw new Error("API not exported"); }
 if (!action.BHasClass("RpgFixedActionPanel")) { throw new Error("action panel not bound"); }
 if (!shop.BHasClass("RpgTransparentHeroShop")) { throw new Error("shop not transparent"); }
 if (label.text !== "<") { throw new Error("expanded arrow must be <"); }
+assert.strictEqual(button.hittest, true, "hit testing must be set on the panel, not in CSS");
 button.onactivate();
 if (!action.BHasClass("RpgActionPanelCollapsed")) { throw new Error("collapse class missing"); }
 if (label.text !== ">") { throw new Error("collapsed arrow must be >"); }

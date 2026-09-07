@@ -194,6 +194,6 @@
 			<Label id="RewardLabel" />
 		</Panel>
 
-		<Panel id="DropdownLayer" class="DropdownLayer" />
+		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
 	</Panel>
 </root>

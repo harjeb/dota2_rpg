@@ -74,6 +74,7 @@
 
         panel.AddClass("RpgFixedActionPanel");
         button.AddClass("RpgActionPanelArrowButton");
+        button.hittest = true;
 
         var collapsed = panel.BHasClass("RpgActionPanelCollapsed");
         setArrow(button, collapsed, options.label);

@@ -44,6 +44,7 @@ function runHud() {
     var createdPanels = [];
     var sentEvents = [];
     var subscriptions = {};
+    var nativeSelections = [];
     var localStorageCalls = 0;
 
     // Unknown IDs return null as they do in Panorama; never invent missing live controls.
@@ -74,7 +75,10 @@ function runHud() {
 
     var customConfig = {};
     var context = {
-        GameUI: { CustomUIConfig: function () { return customConfig; } },
+        GameUI: {
+            CustomUIConfig: function () { return customConfig; },
+            SelectUnit: function (index, additive) { nativeSelections.push({ index: index, additive: additive }); }
+        },
         console: console,
         $: panorama,
         GameEvents: {
@@ -98,6 +102,7 @@ function runHud() {
         panels: panels,
         createdPanels: createdPanels,
         sentEvents: sentEvents,
+        nativeSelections: nativeSelections,
         subscriptions: subscriptions,
         getLocalStorageCalls: function () { return localStorageCalls; }
     };
@@ -227,6 +232,7 @@ hud.subscriptions.rpg_shop_state({
     ].join(";"),
     owned_text: "npc_dota_hero_axe;npc_dota_hero_juggernaut;npc_dota_hero_lion",
     lineup_text: "npc_dota_hero_axe;npc_dota_hero_juggernaut",
+    hero_entity_indices: { npc_dota_hero_axe: 501, npc_dota_hero_juggernaut: 504, npc_dota_hero_lion: 503 },
     bench_slots: 0,
     refresh_cost: 20,
     scroll_low_remaining: 3,
@@ -312,16 +318,36 @@ var secondTarget = hud.createdPanels.filter(function (p) { return p.id === "Item
 assert(secondTarget && secondTarget.events.onactivate,
     "equipment panel must provide a direct target selector for every fielded hero");
 secondTarget.events.onactivate();
+assert(hud.nativeSelections.at(-1).index === 504 && hud.nativeSelections.at(-1).additive === false,
+    "fielded equipment portrait must select the actual native hero for ability training");
 assert(hud.panels["#ItemTargetLabel"].text.indexOf("juggernaut") >= 0,
     "changing the equipment target must update in place instead of requiring a re-field click");
 var benchTarget = hud.createdPanels.filter(function (p) { return p.id === "ItemTarget_npc_dota_hero_lion"; })[0];
 assert(benchTarget && benchTarget.events.onactivate,
     "equipment panel must expose owned standby heroes as direct purchase targets");
 benchTarget.events.onactivate();
+assert(hud.nativeSelections.at(-1).index === 503,
+    "bench equipment portrait must select its native hero, not leave abilities on the commander");
 var benchTargetEvent = hud.sentEvents[hud.sentEvents.length - 1];
 assert(benchTargetEvent.name === "rpg_native_purchase_target"
     && benchTargetEvent.payload.hero === "npc_dota_hero_lion",
     "standby hero target selection must be sent to the server for native purchases");
+var selectionsBeforeRefresh = hud.nativeSelections.length;
+hud.subscriptions.rpg_shop_state({
+    owned_text: "npc_dota_hero_axe;npc_dota_hero_lion",
+    lineup_text: "npc_dota_hero_axe",
+    hero_entity_indices: { npc_dota_hero_axe: 601, npc_dota_hero_lion: 603 }
+});
+assert(hud.nativeSelections.length === selectionsBeforeRefresh,
+    "state broadcasts must not steal native selection");
+created(hud, "ItemTarget_npc_dota_hero_lion").events.onactivate();
+assert(hud.nativeSelections.at(-1).index === 603,
+    "a rebuilt bench portrait must select the replacement entity, not the destroyed hero");
+hud.subscriptions.rpg_shop_state({ owned_text: "npc_dota_hero_lion", lineup_text: "" });
+var selectionsWithoutEntity = hud.nativeSelections.length;
+created(hud, "ItemTarget_npc_dota_hero_lion").events.onactivate();
+assert(hud.nativeSelections.length === selectionsWithoutEntity,
+    "missing entity metadata must not reuse a stale native selection ID");
 
 assert(/\.EditorBody\s*\{[^}]*height:\s*fill-parent-flow\(1\.0\)/s.test(cssSource),
     "action editor body must fill the remaining panel height");
@@ -357,9 +383,14 @@ assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
     && hudSource.indexOf("rpg_item_unequip") >= 0,
     "equipment UI must remove custom ordinary-item buy/sell events and retain exact transfer events");
 
+assert(/id="DropdownLayer"[^>]*hittest="false"[^>]*hittestchildren="true"/.test(layoutSource),
+    "fullscreen dropdown layer must pass through native shop/ability clicks while menus remain interactive");
+
 var currentSave = runHud();
 assert(currentSave.createdPanels.length > 0, "HUD must initialize and create panels");
 
+assert(!/\b(?:hitest|hittest|hittestchildren)\s*:/i.test(fixesCssSource + cssSource),
+    "Panorama hit testing is a panel property, never a CSS declaration");
 assert(layoutSource.indexOf("styles/custom_game/issue_fixes_ui.css") > layoutSource.indexOf("styles/custom_game/rpg_demo_hud.css"),
     "fix styles must load after base styles in the live HUD, not just a sibling layout");
 assert(/\.TeamEditor \.RpgActionPanelArrowButton\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/s.test(fixesCssSource),

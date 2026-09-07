@@ -275,8 +275,8 @@ do
     assert_equal(legacy.min.y, -800, "legacy arena min y")
     assert_equal(legacy.max.y, 800, "legacy arena max y")
 
-    -- The authored map uses separate visual and physical func_brush gates.
-    -- Exercise both generic and class-specific Hammer inputs without Dota.
+    -- Legacy compiled maps can still contain the obsolete middle brush.
+    -- Preparation must not turn it back into a solid/ground-height obstruction.
     local fired = {}
     DoEntFire = function(target, input, value, delay, activator, caller)
         fired[#fired + 1] = {
@@ -292,10 +292,10 @@ do
     arena:CloseMiddleGate()
     DoEntFire = nil
     local expectedGateInputs = {
+        { "rpg_mid_gate_nav", "Disable", "" },
         { "rpg_mid_gate_nav", "SetNonsolid", "" },
         { "rpg_mid_gate_nav", "Disable", "" },
-        { "rpg_mid_gate_nav", "Enable", "" },
-        { "rpg_mid_gate_nav", "SetSolid", "" },
+        { "rpg_mid_gate_nav", "SetNonsolid", "" },
     }
     assert_equal(#fired, #expectedGateInputs, "all gate inputs fired")
     for index, expected in ipairs(expectedGateInputs) do

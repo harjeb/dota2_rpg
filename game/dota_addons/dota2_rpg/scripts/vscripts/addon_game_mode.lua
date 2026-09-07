@@ -1481,6 +1481,17 @@ function CDota2RpgDemo:GetNativePurchaseClock()
 	return 0
 end
 
+function CDota2RpgDemo:GetNativePurchaseItemName(order)
+	-- PURCHASE_ITEM carries a definition ID in entindex_ability, not an entity.
+	local definitionId = tonumber(order.entindex_ability)
+	if definitionId ~= nil and definitionId > 0 then
+		if type(GetAbilityNameByID) ~= "function" then return "" end
+		local ok, name = pcall(GetAbilityNameByID, definitionId)
+		return ok and type(name) == "string" and string.sub(name, 1, 5) == "item_" and name or ""
+	end
+	return tostring(order.itemname or order.item_name or order.item or "")
+end
+
 function CDota2RpgDemo:GetNativePurchaseCost(itemName, payload)
 	local keys = { "itemcost", "item_cost", "gold_cost", "cost" }
 	for _, key in ipairs(keys) do
@@ -2826,6 +2837,18 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		source = candidate
 		sourceCount = sourceCount + 1
 	end
+	-- A unitless training order is unambiguous only when it names a live ability
+	-- whose caster is in our roster. Never infer its source from UI selection.
+	if sourceCount == 0 and orderType == DOTA_UNIT_ORDER_TRAIN_ABILITY then
+		local abilityIndex = tonumber(filterTable.entindex_ability) or -1
+		local ability = abilityIndex > 0 and EntIndexToHScript(abilityIndex) or nil
+		if ability ~= nil and not ability:IsNull() and ability.GetCaster ~= nil then
+			local caster = ability:GetCaster()
+			if self:IsLineupUnit(caster) or self:IsBenchUnit(caster) then
+				source, sourceCount = caster, 1
+			end
+		end
+	end
 	-- 原版购买/出售有时是玩家级订单，不携带 units；其余物品操作必须来自一个明确载体。
 	if sourceCount > 1 or ((not isPurchase and not isSell and not isDisassemble) and sourceCount ~= 1) then
 		return false
@@ -2886,7 +2909,8 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		end
 		self:PruneNativePurchaseOrderContexts()
 		self.nativePurchaseOrderContexts = self.nativePurchaseOrderContexts or {}
-		local itemName = tostring(filterTable.itemname or filterTable.item_name or filterTable.item or "")
+		local itemName = self:GetNativePurchaseItemName(filterTable)
+		if itemName == "" then return false end
 		local affordable, itemCost = self:CanAffordNativePurchase(itemName, filterTable)
 		if not affordable then
 			print(string.format("[Dota2Rpg] Native purchase rejected: item=%s cost=%s balance=%d.",
@@ -3377,11 +3401,15 @@ function CDota2RpgDemo:BroadcastShopState()
 	end
 	local inventoryParts = {}
 	local equippedParts = {}
+	local heroEntityIndices = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
 		local d = self.heroData[heroName]
 		table.insert(inventoryParts, heroName .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 		local hero = self:FindOwnedHeroUnit(heroName)
 		local heroItems = {}
+		if hero ~= nil and hero.GetEntityIndex ~= nil then
+			heroEntityIndices[heroName] = hero:GetEntityIndex()
+		end
 		if hero ~= nil and hero.GetItemInSlot ~= nil then
 			-- 0..14 都携带真实实体 ID；UI 用槽号计算主动栏容量，并允许把背包/原生储藏物品卸回小精灵。
 			for slot = 0, NATIVE_STASH_LAST_SLOT do
@@ -3408,6 +3436,7 @@ function CDota2RpgDemo:BroadcastShopState()
 		stock_text = table.concat(stockParts, ";"),
 		inventories_text = table.concat(inventoryParts, ";"),
 		equipped_text = table.concat(equippedParts, ";"),
+		hero_entity_indices = heroEntityIndices,
 		cost_bench_slot = self.shopCosts.bench_slot,
 		bench_slot_max = self.shopCosts.bench_slot_max,
 		lineup_max = self.shopCosts.lineup_max,

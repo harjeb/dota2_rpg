@@ -349,6 +349,28 @@ assert(not equipmentGame:ValidatePrepareOrder({
 }), "native purchase must fail closed when its cost is unknown")
 nativeWalletReliable[0] = 3000
 equipmentGame.nativePurchaseOrderContexts = {}
+-- Native PURCHASE_ITEM uses a definition ID, not an item entity or a name.
+GetAbilityNameByID = function(id)
+	if id == 1001 then return "item_native_definition" end
+	if id == 1002 then return "axe_berserkers_call" end
+	if id == 1003 then return "item_manta" end
+	return nil
+end
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, entindex_ability = 1001,
+}), "native numeric item definition must resolve before cost preflight")
+assertEqual(equipmentGame.nativePurchaseOrderContexts[1].item_name, "item_native_definition",
+	"numeric purchase context must retain the resolved name for event matching")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, entindex_ability = 1002,
+}), "ability definitions must not be accepted as purchasable items")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, entindex_ability = 999999,
+}), "unknown item definition must still fail closed")
+equipmentGame.nativePurchaseOrderContexts = {}
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
 	units = {}, itemname = "item_reserved_a",
@@ -497,8 +519,8 @@ assert(equipmentGame:IsEquipmentCarrier(benchHero), "bench hero must be a manage
 equipmentGame:SetNativePurchaseSelection(benchHero)
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
-	itemname = "item_manta",
-}), "bench direct purchase must capture the authoritative preflight wallet snapshot")
+	entindex_ability = 1003,
+}), "bench numeric purchase must capture the authoritative preflight wallet snapshot")
 assertEqual(equipmentGame.nativePurchaseOrderContexts[1].gold_before, 750,
 	"native purchase preflight must retain the wallet snapshot consumed by the event path")
 local benchPurchase = wisp:AddItem(makeItem("item_manta"))
@@ -833,6 +855,26 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
 	units = { ["0"] = 501 }, entindex_ability = 0,
 }), "slot-based skill upgrade must pass the native order validator")
+entities[8801] = skillAbility
+function skillAbility:GetCaster() return fieldedHero end
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 8801,
+}), "unitless skill training must resolve the managed caster from the ability entity")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 1, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 8801,
+}), "unitless training must reject a foreign issuer")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 0,
+}), "unitless training must not infer a hero from an ambiguous ability slot")
+function skillAbility:GetCaster() return wisp end
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 8801,
+}), "unitless training must reject a caster outside the player hero roster")
+function skillAbility:GetCaster() return fieldedHero end
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
 	units = { ["0"] = 501 }, entindex_ability = 9999,
@@ -884,12 +926,15 @@ assert(equipmentGame:ValidatePrepareOrder({
 -- OrderFilter 也必须锁住非战斗名单中的小精灵，不能在战斗阶段绕过 ValidatePrepareOrder。
 local orderFilterModule = assert(loadfile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/tactics/order_filter.lua"))()
 local activePhase = "PREPARE"
+equipmentGame.nativePurchaseOrderContexts = {}
+equipmentGame.pendingNativePurchases = {}
 local nativeFilter = orderFilterModule.OrderFilter.new({
 	get_phase = function() return activePhase end,
 	is_battle_unit = function(unit) return unit == fieldedHero end,
 	is_inventory_unit = function(unit) return unit == wisp end,
 	is_managed_order = function(filterTable) return equipmentGame:IsNativeItemShopOrder(filterTable) end,
 	validate_prepare_order = function(filterTable) return equipmentGame:ValidatePrepareOrder(filterTable) end,
+	validate_inventory_order = function(filterTable) return equipmentGame:ValidatePrepareOrder(filterTable) end,
 })
 entities[502] = wisp
 entities[stashedWand:GetEntityIndex()] = stashedWand
@@ -901,7 +946,19 @@ assert(nativeFilter:Filter({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 	itemname = "item_filter_prepare",
 }), "OrderFilter must admit an affordable native purchase with no units during prepare")
+assert(nativeFilter:Filter({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 8801,
+}), "outer filter must route unitless training through roster validation")
+assert(not nativeFilter:Filter({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 9999,
+}), "outer filter must not bypass training ownership validation")
 activePhase = "FIGHT"
+assert(not nativeFilter:Filter({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = {}, entindex_ability = 8801,
+}), "outer filter must block unitless training during combat")
 assert(not nativeFilter:Filter({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_DROP_ITEM,
 	units = { ["0"] = 502 }, entindex_ability = stashedWand:GetEntityIndex(),
@@ -919,5 +976,37 @@ local replacementWand = makeItem("item_magic_wand")
 wisp:AddItem(replacementWand)
 assert(snapshotBeforeReplacement ~= equipmentGame:BuildEquipmentSnapshot(),
 	"equipment snapshot must include entity IDs, not only item names and slots")
+
+-- The real shop payload must identify active and bench entities, and refresh
+-- those identifiers after a roster rebuild so native HUD selection cannot go stale.
+local shopPayload
+local priorEvents = CustomGameEventManager
+CustomGameEventManager = {
+	Send_ServerToAllClients = function(_, name, data)
+		assertEqual(name, "rpg_shop_state", "shop broadcast event")
+		shopPayload = data
+	end,
+}
+function fieldedHero:GetEntityIndex() return 501 end
+function benchHero:GetEntityIndex() return 503 end
+local broadcastGame = newGame({
+	ownedHeroes = { "npc_dota_hero_axe", "npc_dota_hero_lion" },
+	heroData = equipmentGame.heroData,
+	lineup = { "npc_dota_hero_axe" }, benchSlots = 1, refreshCount = 0,
+	shopCosts = { bench_slot = 200, bench_slot_max = 5, lineup_max = 5 },
+	scrollPurchases = {}, scrollStock = {},
+	GetGoldBalance = function() return 500 end,
+	GetStashUnit = function() return wisp end,
+	FindOwnedHeroUnit = function(_, name)
+		return name == "npc_dota_hero_axe" and fieldedHero or benchHero
+	end,
+})
+broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_axe, 501, "active native selection ID")
+assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 503, "bench native selection ID")
+function benchHero:GetEntityIndex() return 603 end
+broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 603, "respawn refreshes native selection ID")
+CustomGameEventManager = priorEvents
 
 print("PASS: initial hero shop rolls five unique offers and broadcasts before setup UI; direct equipment, wisp transfer, native pickup sync, and prep item orders work")

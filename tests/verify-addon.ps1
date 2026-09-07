@@ -634,34 +634,11 @@ try {
         }
     }
 
-    $gateChecks = @{
-        rpg_mid_gate_nav = @(
-            '"classname"\s+"string"\s+"func_brush"',
-            '"StartDisabled"\s+"string"\s+"0"',
-            '"Solidity"\s+"string"\s+"2"',
-            '"AlwaysSolidIgnoreNav"\s+"string"\s+"0"',
-            'materials/tools/toolsclip\.vmat'
-        )
+    if ($mapEntities | Where-Object { $_ -match '"targetname"\s+"string"\s+"rpg_mid_gate_nav"' }) {
+        throw "Static middle brush must be removed; temporary trees own preparation navigation"
     }
-    $gateGeometry = @{
-        rpg_mid_gate_nav = @("0 0 384", '0\.03125\s+0\.87890625\s+2')
-    }
-    foreach ($gateName in $gateChecks.Keys) {
-        $targetPattern = '"targetname"\s+"string"\s+"' + $gateName + '"'
-        $entityMatches = @($mapEntities | Where-Object { $_ -match $targetPattern })
-        if ($entityMatches.Count -ne 1) {
-            throw "VMAP must contain exactly one gate entity: $gateName"
-        }
-        foreach ($required in $gateChecks[$gateName]) {
-            if ($entityMatches[0] -notmatch $required) {
-                throw "$gateName is missing required gate data: $required"
-            }
-        }
-        $geometry = $gateGeometry[$gateName]
-        if ($entityMatches[0] -notmatch ('"origin"\s+"vector3"\s+"' + [regex]::Escape($geometry[0]) + '"') -or
-            $entityMatches[0] -notmatch ('"scales"\s+"vector3"\s+"' + $geometry[1] + '"')) {
-            throw "$gateName does not retain its full-height middle-divider transform"
-        }
+    if ($mapMeshes.Count -ne 8) {
+        throw "VMAP must contain only four perimeter wall meshes and four NONAV slabs"
     }
 
     # Four separately authored nonavclip slabs keep nav generation off each

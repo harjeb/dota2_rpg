@@ -70,7 +70,6 @@
 .RpgActionPanelCollapsed .RpgActionPanelArrowButton
 {
     visibility: visible;
-    hittest: true;
 }
 
 .TeamEditor.RpgActionPanelCollapsed .TeamHeader

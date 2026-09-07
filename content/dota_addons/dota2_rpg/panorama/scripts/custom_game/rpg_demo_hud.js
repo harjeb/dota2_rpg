@@ -212,6 +212,14 @@
     var lastNativePurchaseTarget = -1;
     var lastNativePurchaseHero = "";
     var selectedEquipmentHeroName = "";
+    var heroEntityIndices = {};
+
+    function selectNativeHero(heroName) {
+        var unitIndex = Number(heroEntityIndices[heroName] || -1);
+        if (phase === "setup" && unitIndex > 0 && GameUI.SelectUnit) {
+            GameUI.SelectUnit(unitIndex, false);
+        }
+    }
 
     // 原版商店对额外生成的英雄仍可能把物品送到 assigned hero（小精灵）。
     // 把当前世界选择同步给服务端，购买后即可将新增的同一物品实体补转给上阵或待命英雄。
@@ -759,6 +767,9 @@
         if (index < 0 || index >= HEROES[side].length) {
             return;
         }
+        if (side === "Radiant") {
+            selectNativeHero(HEROES.Radiant[index].name);
+        }
         if (selectedHeroIndex[side] === index) {
             if (side === "Radiant" && HEROES.Radiant[index]) {
                 selectedEquipmentHeroName = HEROES.Radiant[index].name;
@@ -985,6 +996,8 @@
         }
         shopState.owned = splitList(data.owned_text);
         shopState.lineup = splitList(data.lineup_text);
+        // Entity indices are replaced on every roster rebuild, including bench units.
+        heroEntityIndices = data.hero_entity_indices || {};
         if (shopState.lineup.length
             && (!selectedEquipmentHeroName || shopState.owned.indexOf(selectedEquipmentHeroName) < 0)) {
             selectedEquipmentHeroName = shopState.lineup[Math.min(selectedHeroIndex.Radiant, shopState.lineup.length - 1)];
@@ -1185,6 +1198,7 @@
         if (lineupIndex >= 0 && selectedHeroIndex.Radiant !== lineupIndex) {
             selectHero("Radiant", lineupIndex);
         } else {
+            selectNativeHero(heroName);
             renderItemShop();
         }
     }

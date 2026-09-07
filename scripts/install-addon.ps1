@@ -38,6 +38,9 @@ if ($Compile) {
         (Join-Path $targetContent "panorama\layout\custom_game\custom_ui_manifest.xml"),
         (Join-Path $targetContent "panorama\layout\custom_game\rpg_demo_hud.xml"),
         (Join-Path $targetContent "panorama\styles\custom_game\rpg_demo_hud.css"),
+        (Join-Path $targetContent "panorama\layout\custom_game\issue_fixes_ui.xml"),
+        (Join-Path $targetContent "panorama\styles\custom_game\issue_fixes_ui.css"),
+        (Join-Path $targetContent "panorama\scripts\custom_game\issue_fixes_ui.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\rpg_demo_hud.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\panorama_rule_sync.js")
     )
@@ -48,6 +51,9 @@ if ($Compile) {
         Write-Host $compilerOutput
         if ($LASTEXITCODE -ne 0) {
             throw "Resource compilation failed for $resource with exit code $LASTEXITCODE"
+        }
+        if ($compilerOutput -match '(?i)invalid property name|associate compile failed|\b[1-9][0-9]* failed\b') {
+            throw "Resource compiler reported invalid properties or failed resources for $resource"
         }
         if ($resource -like "*maps\dota2_rpg_demo.vmap") {
             $vpk = Join-Path $targetGame "maps\dota2_rpg_demo.vpk"

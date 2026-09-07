@@ -1,6 +1,6 @@
 -- Compact rectangular arena: two preparation zones joined side by side.
--- Hammer provides the outer blockers; this controller opens/closes the middle
--- divider and prevents combat units from escaping the rectangle.
+-- Hammer provides the outer blockers; native temporary trees close the middle
+-- divider without baking a permanent obstruction into terrain/grid navigation.
 -- The default 2400×900 arena is two 1200×900 zones, each slightly roomier
 -- than the original 1040×760 bench/preparation enclosure.
 
@@ -70,6 +70,7 @@ function ArenaController.new(options)
         gate_nav_name = options.gate_nav_name or "rpg_mid_gate_nav",
         gate_tree_spacing = math.max(32, math.min(96, tonumber(options.gate_tree_spacing) or 96)),
         gate_trees = {},
+        middle_gate_open = false,
         half_width = half_width,
         half_height = half_height,
         correction_interval = tonumber(options.correction_interval) or 0.20,
@@ -211,7 +212,7 @@ function ArenaController:ValidateOrder(filter_table)
 end
 
 function ArenaController:EnsureMiddleTrees()
-    if CreateTempTree == nil then return end
+    if self.middle_gate_open or CreateTempTree == nil then return end
     if self.center == nil then self:LoadBounds() end
     local length = math.max(0, self.max.y - self.min.y - 48)
     local intervals = math.max(1, math.ceil(length / self.gate_tree_spacing))
@@ -219,19 +220,26 @@ function ArenaController:EnsureMiddleTrees()
         local tree = self.gate_trees[index + 1]
         if not is_valid(tree) or not safe_call(tree, "IsStanding", true) then
             if is_valid(tree) and UTIL_Remove ~= nil then UTIL_Remove(tree) end
+            -- The authored arena is flat. Ground queries at the divider can
+            -- return the top of an older compiled clip brush instead of terrain.
             local position = make_vector(self.center.x, self.min.y + 24 + length * index / intervals, self.center.z)
-            if GetGroundPosition ~= nil then position = GetGroundPosition(position, nil) end
             self.gate_trees[index + 1] = CreateTempTree(position, 86400)
         end
     end
 end
 
-function ArenaController:OpenMiddleGate()
-    if self.center == nil then self:LoadBounds() end
+function ArenaController:DisableLegacyMiddleBrush()
+    -- Older maps may still contain this entity. Never re-enable it: only a
+    -- rebuilt map can remove the baked navigation/height obstruction.
     if DoEntFire ~= nil then
-        DoEntFire(self.gate_nav_name, "SetNonsolid", "", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "Disable", "", 0, nil, nil)
+        DoEntFire(self.gate_nav_name, "SetNonsolid", "", 0, nil, nil)
     end
+end
+
+function ArenaController:OpenMiddleGate()
+    self.middle_gate_open = true
+    self:DisableLegacyMiddleBrush()
     -- Cut only our temporary divider trees, including both ends of the row.
     -- Cutting updates native tree navigation; removing the handle avoids stumps.
     for _, tree in pairs(self.gate_trees) do
@@ -245,10 +253,8 @@ function ArenaController:OpenMiddleGate()
 end
 
 function ArenaController:CloseMiddleGate()
-    if DoEntFire ~= nil then
-        DoEntFire(self.gate_nav_name, "Enable", "", 0, nil, nil)
-        DoEntFire(self.gate_nav_name, "SetSolid", "", 0, nil, nil)
-    end
+    self.middle_gate_open = false
+    self:DisableLegacyMiddleBrush()
     self:EnsureMiddleTrees()
 end
 
