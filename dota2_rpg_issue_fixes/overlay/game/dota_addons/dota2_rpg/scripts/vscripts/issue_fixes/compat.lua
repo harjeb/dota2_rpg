@@ -397,6 +397,16 @@ function Compat:OnNpcSpawned(event)
     local unit = EntIndexToHScript(tonumber(event.entindex) or -1)
     if not is_valid(unit) or not safe_call(unit, "IsHero", false) then return end
 
+    local unit_name = tostring(safe_call(unit, "GetUnitName", "") or "")
+    if unit_name == "npc_dota_hero_wisp" then
+        -- The forced hero is only the hidden inventory/control carrier; do not
+        -- let a respawn or camera transition expose it in the arena.
+        if unit.AddNoDraw ~= nil then
+            pcall(unit.AddNoDraw, unit)
+        end
+        return
+    end
+
     local player_id = tonumber(safe_call(unit, "GetPlayerOwnerID", -1)) or -1
     local good_team = rawget(_G, "DOTA_TEAM_GOODGUYS") or 2
     if player_id >= 0 and safe_call(unit, "GetTeamNumber", -1) == good_team then

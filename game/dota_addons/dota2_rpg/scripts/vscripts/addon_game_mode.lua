@@ -598,6 +598,11 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	end
 	if unit:GetUnitName() == PLAYER_PLACEHOLDER_HERO then
 		self.placeholderHero = unit
+		-- The commander is an inventory/control carrier only. Hide it explicitly
+		-- instead of relying on the out-of-bounds position.
+		if unit.AddNoDraw ~= nil then
+			pcall(function() unit:AddNoDraw() end)
+		end
 	end
 	self.playerId = math.max(self.playerId, ownerId)
 	if self.nativeGoldSnapshot == nil then
@@ -1397,6 +1402,25 @@ function CDota2RpgDemo:GetNativePurchaseClock()
 	return 0
 end
 
+function CDota2RpgDemo:GetNativePurchaseCost(itemName, payload)
+	local keys = { "itemcost", "item_cost", "gold_cost", "cost" }
+	for _, key in ipairs(keys) do
+		local value = payload ~= nil and tonumber(payload[key]) or nil
+		if value ~= nil and value > 0 then
+			return math.floor(value)
+		end
+	end
+	itemName = tostring(itemName or "")
+	if itemName ~= "" and type(GetItemCost) == "function" then
+		local ok, value = pcall(GetItemCost, itemName)
+		value = ok and tonumber(value) or nil
+		if value ~= nil and value > 0 then
+			return math.floor(value)
+		end
+	end
+	return nil
+end
+
 function CDota2RpgDemo:PruneNativePurchaseOrderContexts()
 	local contexts = self.nativePurchaseOrderContexts or {}
 	local now = self:GetNativePurchaseClock()
@@ -1653,10 +1677,65 @@ function CDota2RpgDemo:SplitMergedPurchaseStack(purchase, claimed, recipient)
 	return true, added
 end
 
+function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
+	if purchase == nil or purchase.gold_checked then
+		return
+	end
+	purchase.gold_checked = true
+
+	local cost = tonumber(purchase.item_cost or purchase.itemcost or purchase.cost)
+	if cost == nil or cost <= 0 then
+		cost = self:GetNativePurchaseCost(purchase.item_name, purchase.event)
+	end
+	if cost == nil or cost <= 0 then
+		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no readable cost; leaving engine wallet unchanged.",
+			tostring(purchase.item_name)))
+		return
+	end
+	cost = math.floor(cost)
+	local before = tonumber(purchase.gold_before)
+	if before == nil or walletState == nil then
+		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no wallet snapshot; leaving engine wallet unchanged.",
+			tostring(purchase.item_name)))
+		return
+	end
+
+	-- A single Think can receive several purchase events. Compare the wallet
+	-- decrease once for the batch, then consume that observed decrease in order;
+	-- otherwise the second engine-free purchase could be mistaken for an already
+	-- charged order because both orders share the same gold_before snapshot.
+	local nativeCovered = math.min(walletState.observed_decrease, cost)
+	walletState.observed_decrease = walletState.observed_decrease - nativeCovered
+	local missing = cost - nativeCovered
+	if missing > 0 then
+		if self:SpendGold(missing) then
+			purchase.gold_source = nativeCovered > 0 and "mixed" or "rpg"
+			print(string.format("[Dota2Rpg] Native purchase charged %d gold for %s.", missing, tostring(purchase.item_name)))
+		else
+			print(string.format("[Dota2Rpg] WARNING: native purchase %s charge failed.", tostring(purchase.item_name)))
+		end
+	else
+		purchase.gold_source = "native"
+	end
+end
+
 function CDota2RpgDemo:RoutePendingNativePurchases()
+	local pending = self.pendingNativePurchases or {}
+	local walletState = nil
+	for _, purchase in ipairs(pending) do
+		local before = tonumber(purchase.gold_before)
+		if before ~= nil then
+			local current = self:GetGoldBalance()
+			walletState = {
+				observed_decrease = math.max(0, before - current),
+			}
+			break
+		end
+	end
 	local remaining = {}
-	for _, purchase in ipairs(self.pendingNativePurchases or {}) do
+	for _, purchase in ipairs(pending) do
 		purchase.attempts = (purchase.attempts or 0) + 1
+		self:DebitNativePurchase(purchase, walletState)
 		local recipient = self:ResolveNativePurchaseRecipient(purchase.recipient_key)
 		local routed = false
 		if recipient == nil or not self:IsEquipmentCarrier(recipient) then
@@ -1743,12 +1822,17 @@ function CDota2RpgDemo:OnNativeItemPurchased(event)
 		local context = contextIndex ~= nil and table.remove(self.nativePurchaseOrderContexts, contextIndex) or nil
 		if context == nil then
 			-- 缺少可关联的购买前快照时固定留在原版默认载体，不使用当前选择。
+			-- nativeGoldSnapshot is the last pre-event wallet observed by OnThink;
+			-- using it avoids making an unmatched engine-free event free either.
 			context = {
 				recipient_key = "__wisp",
 				before_ids = self.nativePurchaseBaseline or self:CollectManagedItemIds(),
+				gold_before = self.nativeGoldSnapshot,
 			}
 		end
 		context.item_name = itemName
+		context.event = event
+		context.item_cost = context.item_cost or self:GetNativePurchaseCost(itemName, event)
 		context.attempts = 0
 		table.insert(self.pendingNativePurchases, context)
 		-- 事件可能在引擎真正扣款/入栏的同一帧触发；下一轮 Think 再定位新实体并同步钱包。
@@ -1965,13 +2049,19 @@ end
 
 -- 玩家阵容：按 lineup 顺序在己方出生点生成，统一等级 self.playerLevel
 function CDota2RpgDemo:SpawnBattleBarrier()
+	-- The issue-fixes arena owns the divider. The old entity row created a
+	-- second set of trees (and floating props on some maps).
+	if self.issueFixes ~= nil and self.issueFixes.arena ~= nil then
+		self.issueFixes.arena:CloseMiddleGate()
+		self.barrierUnits = nil
+		return
+	end
 	self:RemoveBattleBarrier()
 	self.barrierUnits = {}
 	local y = -BARRIER_HALF_SPAN
 	while y <= BARRIER_HALF_SPAN do
 		local pos = GetGroundPosition(Vector(BARRIER_X, y, 128), nil)
-		-- 树木实体：不可选中/不可摧毁，阻挡中线
-		local ok, tree = pcall(SpawnEntityFromTableSynchronous, "ent_dota_tree", { origin = pos })
+		local ok, tree = pcall(CreateTempTree, pos, 86400)
 		if ok and tree ~= nil then
 			table.insert(self.barrierUnits, tree)
 		else
@@ -1979,8 +2069,7 @@ function CDota2RpgDemo:SpawnBattleBarrier()
 		end
 		y = y + BARRIER_SPACING
 	end
-	-- 装备仓库 = 玩家自己的小精灵（指挥官），不再生成独立的仓库单位
-	print("[Dota2Rpg] Battle barrier spawned.")
+	print("[Dota2Rpg] Battle barrier spawned (legacy fallback).")
 end
 
 -- 仓库 = 玩家自己的小精灵（指挥官）：购买的装备直接放在它身上，
@@ -2009,6 +2098,11 @@ function CDota2RpgDemo:StashAddItem(itemName)
 end
 
 function CDota2RpgDemo:RemoveBattleBarrier()
+	if self.issueFixes ~= nil and self.issueFixes.arena ~= nil then
+		self.issueFixes.arena:OpenMiddleGate()
+		self.barrierUnits = nil
+		return
+	end
 	for _, unit in ipairs(self.barrierUnits or {}) do
 		if unit ~= nil and (unit.IsNull == nil or not unit:IsNull()) then
 			pcall(function()
@@ -2590,10 +2684,15 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 
 	if orderType == DOTA_UNIT_ORDER_TRAIN_ABILITY then
 		if source == nil or not (self:IsLineupUnit(source) or self:IsBenchUnit(source)) then return false end
-		local abilityIndex = tonumber(filterTable.entindex_ability) or -1
+		local abilityIndex = tonumber(filterTable.entindex_ability or filterTable.ability_index) or -1
 		for slot = 0, source:GetAbilityCount() - 1 do
 			local ability = source:GetAbilityByIndex(slot)
-			if ability ~= nil and not ability:IsNull() and ability:entindex() == abilityIndex then return true end
+			if ability ~= nil and not ability:IsNull() then
+				local entityIndex = ability.entindex ~= nil and ability:entindex() or -1
+				-- Panorama revisions differ: some submit the ability entity index,
+				-- others submit its slot. Accept either only for this source hero.
+				if entityIndex == abilityIndex or slot == abilityIndex then return true end
+			end
 		end
 		return false
 	end
@@ -2629,10 +2728,16 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		end
 		self:PruneNativePurchaseOrderContexts()
 		self.nativePurchaseOrderContexts = self.nativePurchaseOrderContexts or {}
+		local itemName = tostring(filterTable.itemname or filterTable.item_name or filterTable.item or "")
 		local context = {
 			recipient_key = recipientKey or "__wisp",
 			before_ids = self:CollectManagedItemIds(),
-			item_name = tostring(filterTable.itemname or filterTable.item_name or filterTable.item or ""),
+			item_name = itemName,
+			-- dota_item_purchased is not guaranteed to arrive before the next think.
+			-- Keep the pre-order wallet so a native shop implementation that does not
+			-- debit PlayerResource can still be charged exactly once below.
+			gold_before = self:GetGoldBalance(),
+			item_cost = self:GetNativePurchaseCost(itemName, filterTable),
 			created_at = self:GetNativePurchaseClock(),
 			created_tick = self.nativePurchaseTick or 0,
 		}
@@ -2815,6 +2920,12 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	end
 
 	self:RemoveBattleBarrier()
+	-- Open the Hammer gate from the authoritative battle transition too; this
+	-- avoids leaving the invisible func_brush solid if the compatibility wrapper
+	-- is installed after this method or misses the phase edge.
+	if self.issueFixes ~= nil and self.issueFixes.arena ~= nil then
+		self.issueFixes.arena:OpenMiddleGate()
+	end
 	self.tacticBridge:ResetState()
 	self.battleManager:ResetBattleStats()
 	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then

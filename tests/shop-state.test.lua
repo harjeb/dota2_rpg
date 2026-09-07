@@ -16,6 +16,7 @@ DOTA_UNIT_ORDER_DROP_ITEM = 12
 DOTA_UNIT_ORDER_GIVE_ITEM = 13
 DOTA_UNIT_ORDER_PICKUP_ITEM = 14
 DOTA_UNIT_ORDER_MOVE_ITEM = 19
+DOTA_UNIT_ORDER_TRAIN_ABILITY = 11
 DOTA_UNIT_ORDER_PURCHASE_ITEM = 16
 DOTA_UNIT_ORDER_SELL_ITEM = 17
 DOTA_UNIT_ORDER_DISASSEMBLE_ITEM = 18
@@ -329,6 +330,40 @@ local equipmentGame = newGame({
 equipmentGame:SetGoldBalance(3000)
 assertEqual(equipmentGame:GetGoldBalance(), 3000, "PlayerResource is the shared item/shop wallet")
 
+-- Native shop engines differ: some debit PlayerResource before emitting
+-- dota_item_purchased, while others only create the item. Both paths must
+-- charge exactly once, and retries must not charge again.
+equipmentGame.pendingNativePurchases = {
+	{ recipient_key = "__wisp", item_name = "item_engine_charged",
+		gold_before = 1000, item_cost = 250 }
+}
+nativeWalletReliable[0] = 750
+nativeWalletUnreliable[0] = 0
+equipmentGame:RoutePendingNativePurchases()
+assertEqual(equipmentGame:GetGoldBalance(), 750, "engine-charged native purchase must not be double charged")
+equipmentGame:RoutePendingNativePurchases()
+assertEqual(equipmentGame:GetGoldBalance(), 750, "native purchase retry must remain idempotent")
+
+equipmentGame.pendingNativePurchases = {
+	{ recipient_key = "__wisp", item_name = "item_engine_free",
+		gold_before = 1000, item_cost = 250 }
+}
+nativeWalletReliable[0] = 1000
+nativeWalletUnreliable[0] = 0
+equipmentGame:RoutePendingNativePurchases()
+assertEqual(equipmentGame:GetGoldBalance(), 750, "engine-free native purchase must debit the shared wallet")
+
+equipmentGame.pendingNativePurchases = {
+	{ recipient_key = "__wisp", item_name = "item_engine_free_a",
+		gold_before = 1000, item_cost = 250 },
+	{ recipient_key = "__wisp", item_name = "item_engine_free_b",
+		gold_before = 1000, item_cost = 250 },
+}
+nativeWalletReliable[0] = 1000
+nativeWalletUnreliable[0] = 0
+equipmentGame:RoutePendingNativePurchases()
+assertEqual(equipmentGame:GetGoldBalance(), 500, "rapid engine-free purchases must each be charged")
+
 -- 模拟原版商店直接给英雄购买；服务端只吸收真实余额与库存，不重建物品。
 local nativeBlink = fieldedHero:AddItemByName("item_blink")
 nativeWalletReliable[0] = 750
@@ -641,6 +676,7 @@ DOTA_UNIT_ORDER_DROP_ITEM = 12
 DOTA_UNIT_ORDER_GIVE_ITEM = 13
 DOTA_UNIT_ORDER_PICKUP_ITEM = 14
 DOTA_UNIT_ORDER_MOVE_ITEM = 19
+DOTA_UNIT_ORDER_TRAIN_ABILITY = 11
 DOTA_UNIT_ORDER_PURCHASE_ITEM = 16
 DOTA_UNIT_ORDER_SELL_ITEM = 17
 DOTA_UNIT_ORDER_DISASSEMBLE_ITEM = 18
@@ -675,6 +711,26 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
 	units = { ["0"] = 503 },
 }), "prepare order filter must allow a player-owned bench hero to issue native purchases")
+
+-- Skill-up clicks can submit either the ability entity index or its slot.
+local skillAbility = {
+	IsNull = function() return false end,
+	entindex = function() return 8801 end,
+}
+function fieldedHero:GetAbilityCount() return 1 end
+function fieldedHero:GetAbilityByIndex(index) return index == 0 and skillAbility or nil end
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = { ["0"] = 501 }, entindex_ability = 8801,
+}), "fielded hero skill upgrade must pass the native order validator")
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = { ["0"] = 501 }, entindex_ability = 0,
+}), "slot-based skill upgrade must pass the native order validator")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
+	units = { ["0"] = 501 }, entindex_ability = 9999,
+}), "skill upgrade must reject an ability not owned by the source hero")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = -1, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 }), "managed native shop orders without a real player issuer must not bypass phase or ownership checks")

@@ -370,8 +370,9 @@ assert(/\.TeamEditor\.RpgActionPanelCollapsed \.TeamHeader\s*\{[^}]*width:\s*56p
     "nested header must fit the collapsed editor without clipping its button");
 assert(/\.RpgActionPanelCollapsed \.EditorBody,[\s\S]*visibility:\s*collapse;/.test(fixesCssSource),
     "actual editor body, identity and portraits must be hidden when collapsed");
-assert(/\.RpgTransparentHeroShop #ShopOffer\s*\{[^}]*background-color:\s*transparent !important;[^}]*background-image:\s*none !important;[^}]*border:\s*0px !important;[^}]*box-shadow:\s*none !important;/s.test(fixesCssSource),
-    "shop root/frame/body and actual multi-offer wrapper must have no opaque mask");
+assert(/\.RpgTransparentHeroShop #ShopOffer\s*\{[^}]*background-color:\s*transparent !important;[^}]*border:\s*0px !important;[^}]*box-shadow:\s*none !important;/s.test(fixesCssSource)
+    && !/background-image\s*:/.test(fixesCssSource),
+    "shop root/frame/body and actual multi-offer wrapper must have no opaque or unsupported background declaration");
 assert(/\.RpgTransparentHeroShop \.ShopOfferSlot\s*\{[^}]*background-color:\s*#11111199;/s.test(fixesCssSource),
     "only individual hero offer cards retain a translucent background");
 assert(!/\.RpgTransparentHeroShop \.ShopOffer\s*\{/.test(fixesCssSource),
