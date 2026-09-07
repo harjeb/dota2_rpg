@@ -12,6 +12,7 @@ TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
     if name == "issue_fixes.bootstrap" then return { Install = function() end } end
     local modules = {
+        ["battle.damage_stats"] = true,
         ["battle.enemy_scaling"] = true,
         ["data.progression_data"] = true,
         ["patches.recruitment_patch"] = true,

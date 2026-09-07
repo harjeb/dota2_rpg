@@ -8,6 +8,7 @@ if not okHelpers then
 	}
 end
 local TacticEngine = UnitHelpers
+local DamageStats = require("battle.damage_stats")
 local EnemyScaling = require("battle.enemy_scaling")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -446,7 +447,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-trace-20260907 loaded; log=dota2_rpg_runtime.log")
+	RuntimeLog.Write("BUILD rpg-dps-point-casts-20260907 loaded; log=dota2_rpg_runtime.log")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3169,6 +3170,7 @@ function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
 	self:BroadcastShopState()
 	self:BroadcastLevelInfo()
 	self:BroadcastHeroInfo()
+	self:BroadcastDamageStats()
 end
 
 function CDota2RpgDemo:OnSelectLevel(_, payload)
@@ -3239,13 +3241,41 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 		-- 战斗中玩家小精灵无敌，避免被敌方波及
 		self.placeholderHero:AddNewModifier(self.placeholderHero, nil, "modifier_invulnerable", {})
 	end
+	self.damageStats = DamageStats.new()
+	local damageUnits = {}
+	for _, team in ipairs({ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS }) do
+		for _, unit in ipairs(self.battleManager.teamHeroes[team] or {}) do
+			table.insert(damageUnits, { unit = unit, team = team })
+		end
+	end
+	self.damageStats:Start(damageUnits, GameRules:GetGameTime())
+	self.nextDamageBroadcast = 0
 	self.battleManager:StartBattle(self.battleManager.teamRules)
+	self:BroadcastDamageStats()
 	self:BroadcastBattleState()
 	print("[Dota2Rpg] Battle started on level " .. self.currentLevelId .. ".")
 end
 
 function CDota2RpgDemo:OnEntityHurt(event)
 	self.battleManager:RecordDamage(tonumber(event.entindex_killed or -1))
+	if self.phase ~= "fight" or self.damageStats == nil then return end
+	local function entity(value)
+		local id = tonumber(value)
+		if id == nil or id <= 0 then return nil end
+		return EntIndexToHScript(id)
+	end
+	self.damageStats:Record(entity(event.entindex_attacker), entity(event.entindex_killed),
+		entity(event.entindex_inflictor), tonumber(event.damage), GameRules:GetGameTime())
+end
+
+function CDota2RpgDemo:BroadcastDamageStats()
+	if self.damageStats ~= nil then
+		local now = GameRules:GetGameTime()
+		CustomGameEventManager:Send_ServerToAllClients("rpg_damage_stats", {
+			elapsed = math.max(0, (self.damageStats.stoppedAt or now) - self.damageStats.startedAt),
+			units = self.damageStats:Snapshot(now),
+		})
+	end
 end
 
 function CDota2RpgDemo:OnEntityKilled(event)
@@ -3289,7 +3319,8 @@ function CDota2RpgDemo:OnThink()
 		local abilitiesChanged = self:SyncRosterAbilities()
 		-- 原版 HUD 的购买、出售、拖放/拾取绕过自定义按钮，也要立即同步到库存与装备面板。
 		self:SyncLiveEquipmentState(self.nativeShopTransactionPending)
-		if abilitiesChanged then
+		local walletChanged = self.lastBroadcastGold ~= self:GetGoldBalance()
+		if abilitiesChanged or walletChanged then
 			self:BroadcastShopState()
 		end
 		self.nativeShopTransactionPending = nil
@@ -3299,6 +3330,11 @@ function CDota2RpgDemo:OnThink()
 		self.battleManager:OnThink() -- 胜负/超时判定
 		if self.phase == "fight" then
 			self.tacticBridge:OnThink()
+			local now = GameRules:GetGameTime()
+			if now >= (self.nextDamageBroadcast or 0) then
+				self:BroadcastDamageStats()
+				self.nextDamageBroadcast = now + 0.5
+			end
 		end
 	end
 
@@ -3310,6 +3346,10 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		return
 	end
 
+	if self.damageStats ~= nil then
+		self.damageStats:Stop(GameRules:GetGameTime())
+		self:BroadcastDamageStats()
+	end
 	local clearTime = self.battleManager:GetBattleTime()
 	local level = self.dataLoader:GetLevel(self.currentLevelId)
 	local timeLimit = tonumber(level ~= nil and level.time_limit or 120) or 120
@@ -3474,6 +3514,13 @@ local function DescribeAction(hero, action)
 end
 
 function CDota2RpgDemo:BroadcastHeroInfo()
+	local roster = {}
+	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
+		if TacticEngine.IsValidUnit(unit) then
+			table.insert(roster, { id = unit:entindex(), name = unit:GetUnitName() })
+		end
+	end
+	CustomGameEventManager:Send_ServerToAllClients("rpg_enemy_roster", { units = roster })
 	local sides = {
 		{ key = "radiant", team = DOTA_TEAM_GOODGUYS },
 		{ key = "dire", team = DOTA_TEAM_BADGUYS },
@@ -3508,6 +3555,7 @@ end
 function CDota2RpgDemo:BroadcastShopState()
 	-- 先从原版钱包读取，再推送项目 HUD；绝不把旧 self.gold 回写为商店余额。
 	local gold = self:GetGoldBalance()
+	self.lastBroadcastGold = gold
 	-- CEM 载荷一律拍平；英雄数据用 "name:level:xp:quality" 分号串
 	local heroEntries = {}
 	for _, heroName in ipairs(self.ownedHeroes) do

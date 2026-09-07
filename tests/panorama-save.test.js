@@ -499,3 +499,44 @@ assert(!/\.RpgTransparentHeroShop \.ShopOffer\s*\{/.test(fixesCssSource),
 });
 
 console.log("PASS: live HUD single defaults, authored rows, collapse wiring, transparent shop, no-save, transfers, icons and overlay parity");
+
+// Real roster events replace fixed portraits and preserve identity/count across refreshes.
+var damageHud = runHud();
+damageHud.subscriptions.rpg_enemy_roster({units: {"1": {id: 80, name: "npc_dota_neutral_centaur_khan"}, "2": {id: 81, name: "npc_dota_hero_sniper"}}});
+assert(damageHud.panels["#DireHeroStrip"].children.length === 2, "enemy strip follows actual roster count");
+assert(damageHud.panels["#DireHeroDyn1"].type === "Button", "neutral receives readable unit label");
+assert(damageHud.panels["#DireHeroDyn2"].heroname === "npc_dota_hero_sniper", "actual enemy hero portrait");
+damageHud.panels["#DireHeroDyn2"].events.onactivate();
+assert(damageHud.panels["#DireSelectedHero"].text.indexOf("sniper") >= 0, "actual enemy selection updates editor");
+damageHud.subscriptions.rpg_enemy_roster({units: [{id: 82, name: "npc_dota_hero_lina"}]});
+assert(damageHud.panels["#DireHeroStrip"].children.length === 1, "next stage drops stale enemies");
+damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
+["Radiant", "Dire"].forEach(function (side) {
+    assert(damageHud.panels["#" + side + "Editor"].visible === false, "battle auto collapses " + side);
+    assert(damageHud.panels["#" + side + "RestoreButton"].visible === true, "battle keeps restore " + side);
+});
+damageHud.panels["#DireRestoreButton"].events.onactivate();
+damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
+assert(damageHud.panels["#DireEditor"].visible === true, "same-phase update respects manual restore");
+var victimA = {id: 80, name: "npc_dota_hero_axe", total: 60};
+var victimB = {id: 81, name: "npc_dota_hero_lion", total: 40};
+damageHud.subscriptions.rpg_damage_stats({elapsed: 2, units: {"1": {id: 1, name: "npc_dota_hero_sniper", team: 2, total: 100, dps: 50,
+    sources: {"1": {name: "attack", total: 60, targets: [victimA]}, "2": {name: "sniper_shrapnel", total: 40, targets: [victimB]}}, targets: [victimA, victimB]},
+    "2": {id: 80, name: "npc_dota_hero_axe", team: 3, total: 30, dps: 15, sources: [{name: "attack", total: 30, targets: [{id: 1, name: "npc_dota_hero_sniper", total: 30}]}], targets: [{id: 1, name: "npc_dota_hero_sniper", total: 30}]}}});
+assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "DPS shown in battle");
+var unitRow = damageHud.panels["#DamageUnits"].children[0];
+assert(unitRow.children[0].text.indexOf("50 DPS") >= 0, "DPS uses server measurement");
+var segments = unitRow.children[1].children;
+assert(segments.length === 2 && segments[0].style.backgroundColor !== segments[1].style.backgroundColor, "attack and skill get distinct bar colors");
+assert(segments[0].style.width === "60%" && segments[1].style.width === "40%", "bar segments preserve source proportions");
+assert(damageHud.panels["#DamageTargets"].children.length === 2, "all-source view lists both victims");
+damageHud.panels["#DamageSources"].children[2].events.onactivate();
+assert(damageHud.panels["#DamageTargets"].children.length === 1 && damageHud.panels["#DamageTargets"].children[0].text.indexOf("lion") >= 0,
+    "skill selection filters per-target damage");
+damageHud.panels["#DamageEnemy"].events.onactivate();
+assert(damageHud.panels["#DamageUnits"].children[0].id === "DamageUnit80", "enemy tab shows actual enemy statistics");
+damageHud.subscriptions.rpg_battle_state({phase: "result"});
+assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "result retains final damage panel");
+damageHud.subscriptions.rpg_battle_state({phase: "setup", ready: 1});
+assert(damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "setup hides previous battle DPS");
+console.log("PASS: actual enemy roster, battle collapse, DPS teams, source colors and target filtering");

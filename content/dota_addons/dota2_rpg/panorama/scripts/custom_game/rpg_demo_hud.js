@@ -110,11 +110,7 @@
 
     var HEROES = {
         Radiant: [],  // 动态：由商店/阵容决定（CustomNetTables shop 表）
-        Dire: [
-            { panelId: "DireHero1", name: "npc_dota_hero_axe" },
-            { panelId: "DireHero2", name: "npc_dota_hero_lion" },
-            { panelId: "DireHero3", name: "npc_dota_hero_crystal_maiden" }
-        ]
+        Dire: [] // Server-spawned roster, including neutral units.
     };
 
     // 每个动作槽的默认规则模板（玩家可套用后微调）
@@ -1597,8 +1593,121 @@
         resultPanel.SetHasClass("Hidden", false);
     }
 
+    function eventArray(value) {
+        if (!value) { return []; }
+        if (Array.isArray(value)) { return value; }
+        return Object.keys(value).sort(function (a, b) { return Number(a) - Number(b); }).map(function (key) { return value[key]; });
+    }
+    var enemyRosterSignature = null;
+    function onEnemyRoster(data) {
+        var roster = eventArray(data.units);
+        var signature = roster.map(function (u) { return u.id + ":" + u.name; }).join(";");
+        if (signature === enemyRosterSignature) { return; }
+        enemyRosterSignature = signature;
+        rulesBySide.Dire = [];
+        var container = $("#DireHeroStrip");
+        container.RemoveAndDeleteChildren();
+        HEROES.Dire = [];
+        Object.keys(heroSlots).forEach(function (key) { if (key.indexOf("dire_") === 0) { delete heroSlots[key]; } });
+        roster.forEach(function (unit, index) {
+            var isHero = String(unit.name).indexOf("npc_dota_hero_") === 0;
+            var portrait = $.CreatePanel(isHero ? "DOTAHeroImage" : "Button", container, "DireHeroDyn" + (index + 1));
+            portrait.AddClass("HeroPortrait");
+            if (isHero) { portrait.heroname = unit.name; portrait.heroimagestyle = "portrait"; }
+            else { damageLabel(portrait, localizeHeroName(unit.name)); }
+            portrait.SetPanelEvent("onactivate", function () { selectHero("Dire", index); });
+            HEROES.Dire.push({ panelId: portrait.id, name: unit.name });
+        });
+        selectedHeroIndex.Dire = Math.min(selectedHeroIndex.Dire, Math.max(0, roster.length - 1));
+        renderSide("Dire");
+    }
+    var damageState = { elapsed: 0, units: [] };
+    var damageTeam = 2;
+    var selectedDamageUnit = null;
+    var selectedDamageSource = null;
+    var damageColors = ["#59bceb", "#b486ef", "#f5c05b", "#eb7272", "#70c997", "#ef91cb", "#9ab9ed", "#d7a278"];
+    var damageSourceColors = { attack: "#b8bec5", other: "#798691" };
+    function damageColor(name) {
+        if (!damageSourceColors[name]) { damageSourceColors[name] = damageColors[(Object.keys(damageSourceColors).length - 2) % damageColors.length]; }
+        return damageSourceColors[name];
+    }
+    function damageName(name) {
+        if (name === "attack") { return $.Localize("#dota2_rpg_damage_attack"); }
+        if (name === "other") { return $.Localize("#dota2_rpg_damage_other"); }
+        var token = "#DOTA_Tooltip_ability_" + name;
+        var label = $.Localize(token);
+        return label === token ? name : label;
+    }
+    function damageLabel(parent, text) {
+        var label = $.CreatePanel("Label", parent, ""); label.text = text; label.hittest = false; return label;
+    }
+    function renderDamage() {
+        var units = eventArray(damageState.units).filter(function (u) { return Number(u.team) === damageTeam; });
+        units.sort(function (a, b) { return Number(b.total) - Number(a.total) || Number(a.id) - Number(b.id); });
+        var selected = null;
+        units.forEach(function (u) { if (String(u.id) === String(selectedDamageUnit)) { selected = u; } });
+        if (!selected && units.length) { selected = units[0]; selectedDamageUnit = selected.id; selectedDamageSource = null; }
+        $("#DamageTitle").text = "DPS · " + Number(damageState.elapsed || 0).toFixed(1) + "s";
+        $("#DamageFriendly").SetHasClass("Selected", damageTeam === 2);
+        $("#DamageEnemy").SetHasClass("Selected", damageTeam === 3);
+        var container = $("#DamageUnits"); container.RemoveAndDeleteChildren();
+        var maxTotal = units.length ? Math.max(1, Number(units[0].total)) : 1;
+        units.forEach(function (unit) {
+            var row = $.CreatePanel("Button", container, "DamageUnit" + unit.id); row.AddClass("DamageUnit");
+            row.SetHasClass("Selected", !!selected && String(selected.id) === String(unit.id));
+            damageLabel(row, localizeHeroName(unit.name) + " · " + Math.round(unit.dps || 0) + " DPS · " + Math.round(unit.total || 0));
+            var bar = $.CreatePanel("Panel", row, ""); bar.AddClass("DamageBar"); bar.hittest = false;
+            eventArray(unit.sources).forEach(function (source) {
+                var segment = $.CreatePanel("Panel", bar, ""); segment.AddClass("DamageSegment");
+                segment.style.width = Math.max(0, Math.min(100, Number(source.total) / maxTotal * 100)) + "%";
+                segment.style.backgroundColor = damageColor(source.name); segment.hittest = false;
+            });
+            row.SetPanelEvent("onactivate", function () { selectedDamageUnit = unit.id; selectedDamageSource = null; renderDamage(); });
+        });
+        var sources = $("#DamageSources"); sources.RemoveAndDeleteChildren();
+        var targets = $("#DamageTargets"); targets.RemoveAndDeleteChildren();
+        $("#DamageSelection").text = selected ? localizeHeroName(selected.name) : $.Localize("#dota2_rpg_damage_empty");
+        $("#DamageTargetsTitle").text = $.Localize("#dota2_rpg_damage_targets");
+        if (!selected) { return; }
+        var buckets = [{ name: "all", total: selected.total, targets: selected.targets }].concat(eventArray(selected.sources));
+        var active = buckets[0];
+        buckets.forEach(function (source) {
+            if (source.name === selectedDamageSource) { active = source; }
+            var button = $.CreatePanel("Button", sources, ""); button.AddClass("DamageSource");
+            button.SetHasClass("Selected", source.name === (selectedDamageSource || "all"));
+            if (source.name !== "all") {
+                var swatch = $.CreatePanel("Panel", button, ""); swatch.AddClass("DamageSwatch");
+                swatch.style.backgroundColor = damageColor(source.name); swatch.hittest = false;
+            }
+            damageLabel(button, (source.name === "all" ? $.Localize("#dota2_rpg_damage_all") : damageName(source.name)) + " · " + Math.round(source.total));
+            button.SetPanelEvent("onactivate", function () { selectedDamageSource = source.name; renderDamage(); });
+        });
+        $("#DamageTargetsTitle").text += " · " + (active.name === "all" ? $.Localize("#dota2_rpg_damage_all") : damageName(active.name));
+        eventArray(active.targets).sort(function (a, b) { return Number(b.total) - Number(a.total); }).forEach(function (target) {
+            damageLabel(targets, localizeHeroName(target.name) + " [" + target.id + "] · " + Math.round(target.total) + " (" +
+                (100 * Number(target.total) / Math.max(1, Number(active.total))).toFixed(1) + "%)");
+        });
+    }
+    function onDamageStats(data) { damageState = data || { elapsed: 0, units: [] }; renderDamage(); }
+
     function onBattleState(data) {
+        var previousPhase = phase;
         phase = data.phase || "setup";
+        var fighting = phase === "fight" || phase === "battle";
+        if (fighting && previousPhase !== "fight" && previousPhase !== "battle") {
+            ["Radiant", "Dire"].forEach(function (side) {
+                var editor = $("#" + side + "Editor");
+                if (editor.RpgSetCollapsed) { editor.RpgSetCollapsed(true); }
+            });
+        }
+        $("#DamagePanel").SetHasClass("Hidden", phase === "setup");
+        $("#DireEditor").SetHasClass("WithDamagePanel", phase !== "setup");
+        if (phase === "setup" && previousPhase !== "setup") {
+            damageState = { elapsed: 0, units: [] };
+            selectedDamageUnit = null;
+            selectedDamageSource = null;
+            renderDamage();
+        }
         serverReady = Number(data.ready || 0) === 1;
         if (data.gold !== undefined) {
             shopState.gold = Math.max(0, Number(data.gold) || 0);
@@ -1729,6 +1838,10 @@
         GameEvents.SendCustomGameEventToServer("rpg_start_battle", buildPayload());
     });
 
+    $("#DamageFriendly").SetPanelEvent("onactivate", function () { damageTeam = 2; selectedDamageUnit = null; selectedDamageSource = null; renderDamage(); });
+    $("#DamageEnemy").SetPanelEvent("onactivate", function () { damageTeam = 3; selectedDamageUnit = null; selectedDamageSource = null; renderDamage(); });
+    GameEvents.Subscribe("rpg_enemy_roster", onEnemyRoster);
+    GameEvents.Subscribe("rpg_damage_stats", onDamageStats);
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
     GameEvents.Subscribe("dota_player_update_selected_unit", function () {

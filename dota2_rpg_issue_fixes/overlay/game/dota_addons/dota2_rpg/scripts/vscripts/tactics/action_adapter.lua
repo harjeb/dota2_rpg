@@ -79,6 +79,10 @@ local function ability_cast_range(caster, ability, target)
         return 0
     end
     local origin = caster:GetAbsOrigin()
+    -- GetCastRange accepts an entity, not the Vector selected for point spells.
+    if target ~= nil and target.GetAbsOrigin == nil then
+        target = nil
+    end
     local ok, value = pcall(function()
         return ability:GetCastRange(origin, target)
     end)
@@ -178,6 +182,7 @@ function ActionAdapter:Resolve(caster, action, ctx)
         cast_type = cast_type,
         desired_toggle_state = action.desired_toggle_state,
         aoe_radius = tonumber(action.aoe_radius or 0),
+        cast_range_override = tonumber(action.cast_range_override),
         cast_range = tonumber(action.cast_range_override) or ability_cast_range(caster, source, nil),
         source = source,
     }
@@ -208,7 +213,15 @@ function ActionAdapter:CanExecute(caster, spec, ctx)
     if source.IsActivated ~= nil and not source:IsActivated() then
         return false, "action_deactivated"
     end
-    if source.IsCooldownReady ~= nil and not source:IsCooldownReady() then
+    local maxCharges = spec.kind == "ability" and source.GetMaxAbilityCharges ~= nil
+        and tonumber(source:GetMaxAbilityCharges(source:GetLevel())) or 0
+    local charges = maxCharges > 0 and source.GetCurrentAbilityCharges ~= nil
+        and tonumber(source:GetCurrentAbilityCharges()) or nil
+    if charges ~= nil and charges <= 0 then
+        return false, "no_charges"
+    end
+    -- A charge-restoration cooldown does not prevent spending a remaining charge.
+    if (charges == nil or charges <= 0) and source.IsCooldownReady ~= nil and not source:IsCooldownReady() then
         return false, "cooldown"
     end
     if source.IsFullyCastable ~= nil and not source:IsFullyCastable() then
@@ -239,6 +252,9 @@ function ActionAdapter:GetRequiredRange(caster, spec, target)
     end
     if spec.kind == "move" or spec.kind == "wait" or spec.target_mode == "none" then
         return 0
+    end
+    if spec.cast_range_override ~= nil then
+        return spec.cast_range_override
     end
     if spec.source ~= nil then
         return ability_cast_range(caster, spec.source, target)
@@ -298,7 +314,8 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         order.AbilityIndex = spec.source:entindex()
     elseif spec.cast_type == "point" then
         order.OrderType = DOTA_UNIT_ORDER_CAST_POSITION
-        order.Position = target_or_point
+        order.Position = target_or_point ~= nil and target_or_point.GetAbsOrigin ~= nil
+            and target_or_point:GetAbsOrigin() or target_or_point
         order.AbilityIndex = spec.source:entindex()
     elseif spec.cast_type == "none" then
         order.OrderType = DOTA_UNIT_ORDER_CAST_NO_TARGET

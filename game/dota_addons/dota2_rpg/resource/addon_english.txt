@@ -5,7 +5,7 @@
 	{
 		"dota2_rpg_level_progress"		"Level %s1 / %s2"
 		"dota2_rpg_battle_title"		"3v3 Automated Battle"
-		"dota2_rpg_build_tag"			"UI version 5"
+		"dota2_rpg_build_tag"			"UI version 6"
 		"dota2_rpg_versus"				"Versus"
 		"dota2_rpg_radiant_logic"		"Radiant Action Logic"
 		"dota2_rpg_dire_logic"			"Dire Action Logic"
@@ -100,5 +100,12 @@
 		"dota2_rpg_result_dire"			"Dire Victory"
 		"dota2_rpg_result_timeout"		"Time limit reached — defeat"
 		"dota2_rpg_result_draw"			"Both teams were eliminated"
+		"dota2_rpg_damage_friendly" "Allies"
+		"dota2_rpg_damage_enemy" "Enemies"
+		"dota2_rpg_damage_attack" "Attack"
+		"dota2_rpg_damage_other" "Other"
+		"dota2_rpg_damage_empty" "No damage yet"
+		"dota2_rpg_damage_targets" "Damage to targets"
+		"dota2_rpg_damage_all" "All sources"
 	}
 }

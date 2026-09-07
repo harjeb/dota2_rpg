@@ -30,6 +30,7 @@ local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
 	local localModules = {
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
+		["battle.damage_stats"] = moduleRoot .. "battle/damage_stats.lua",
 		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
 		["patches.progression_patch"] = moduleRoot .. "patches/progression_patch.lua",
@@ -95,6 +96,37 @@ end
 
 local function assertEqual(actual, expected, message)
 	assert(actual == expected, string.format("%s: expected %s, got %s", message, tostring(expected), tostring(actual)))
+end
+
+-- A native wallet change must publish even with no fielded heroes/inventory changes.
+do
+	local previousResource = PlayerResource
+	local nativeGold, broadcasts = 1000, 0
+	PlayerResource = { GetGold = function() return nativeGold end }
+	local walletGame = newGame({
+		phase = "setup", teamsSpawned = true, playerId = 0, gold = 1000,
+		lastBroadcastGold = 1000,
+		ReconcileNativePurchaseOrders = function() end,
+		SyncRosterAbilities = function() return false end,
+		SyncLiveEquipmentState = function() return false end,
+		BroadcastShopState = function(self)
+			broadcasts = broadcasts + 1
+			self.lastBroadcastGold = self:GetGoldBalance()
+		end,
+	})
+	walletGame:OnThink()
+	assertEqual(broadcasts, 0, "unchanged wallet does not spam display")
+	nativeGold = 750
+	walletGame:GetGoldBalance() -- Other readers must not consume the display change.
+	walletGame:OnThink()
+	assertEqual(broadcasts, 1, "bench purchase publishes wallet without equipment change")
+	assertEqual(walletGame.lastBroadcastGold, 750, "display receives native balance")
+	walletGame:OnThink()
+	assertEqual(broadcasts, 1, "wallet publication is deduplicated")
+	nativeGold = 900
+	walletGame:OnThink()
+	assertEqual(broadcasts, 2, "native refund also publishes")
+	PlayerResource = previousResource
 end
 
 local game = newGame({
@@ -414,7 +446,10 @@ assertEqual(equipmentGame:SyncGoldToPlayer(), 3000, "legacy wallet sync must nev
 local refreshFlow = newGame({
 	phase = "setup", playerId = 0, gold = 500, refreshCount = 0,
 	shopOffers = {}, pendingNativePurchases = {}, nativePurchaseOrderContexts = {},
-	BroadcastShopState = function(self) self.refreshBroadcasts = (self.refreshBroadcasts or 0) + 1 end,
+	BroadcastShopState = function(self)
+		self.refreshBroadcasts = (self.refreshBroadcasts or 0) + 1
+		self.lastBroadcastGold = self:GetGoldBalance()
+	end,
 	RollShop = function(self) self.rolls = (self.rolls or 0) + 1; self:BroadcastShopState() end,
 	teamsSpawned = true,
 	SyncLiveEquipmentState = function() end,

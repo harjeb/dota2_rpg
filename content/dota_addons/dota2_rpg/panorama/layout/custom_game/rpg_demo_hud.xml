@@ -161,11 +161,7 @@
 						<Label id="DireTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
 						<Label id="DireSelectedHero" class="SelectedHeroName" />
 					</Panel>
-				<Panel class="HeroStrip">
-					<DOTAHeroImage id="DireHero1" class="HeroPortrait" heroname="npc_dota_hero_axe" heroimagestyle="portrait" hittest="true" />
-					<DOTAHeroImage id="DireHero2" class="HeroPortrait" heroname="npc_dota_hero_lion" heroimagestyle="portrait" hittest="true" />
-					<DOTAHeroImage id="DireHero3" class="HeroPortrait" heroname="npc_dota_hero_crystal_maiden" heroimagestyle="portrait" hittest="true" />
-				</Panel>
+				<Panel id="DireHeroStrip" class="HeroStrip" />
 				<Button id="DireCollapseButton" class="CollapseButton">
 					<Label id="DireCollapseLabel" class="CollapseGlyph" text="&lt;" />
 				</Button>
@@ -196,6 +192,18 @@
 			<Label text="&lt;" hittest="false" />
 		</Button>
 
+		<Panel id="DamagePanel" class="DamagePanel Hidden" hittest="true">
+			<Label id="DamageTitle" class="DamageTitle" />
+			<Panel class="DamageTabs">
+				<Button id="DamageFriendly"><Label text="#dota2_rpg_damage_friendly" /></Button>
+				<Button id="DamageEnemy"><Label text="#dota2_rpg_damage_enemy" /></Button>
+			</Panel>
+			<Panel id="DamageUnits" class="DamageUnits" />
+			<Label id="DamageSelection" class="DamageTitle" />
+			<Panel id="DamageSources" class="DamageSources" />
+			<Label id="DamageTargetsTitle" class="DamageTitle" />
+			<Panel id="DamageTargets" class="DamageTargets" />
+		</Panel>
 		<Panel id="BattleResult" class="BattleResult Hidden">
 			<Label id="BattleResultLabel" />
 			<Label id="RewardLabel" />

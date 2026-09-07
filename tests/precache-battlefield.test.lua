@@ -19,6 +19,9 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
 require = function(moduleName)
+	if moduleName == "battle.damage_stats" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
+	end
 	if moduleName == "battle.enemy_scaling" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/enemy_scaling.lua")
 	end
@@ -135,6 +138,8 @@ local function newUnit(unitName, position, team)
 		modifiers = {},
 	}
 	function unit:GetEntityIndex() return self.entityIndex end
+	function unit:entindex() return self.entityIndex end
+	function unit:GetTeamNumber() return self.team end
 	function unit:GetUnitName() return self.name end
 	function unit:IsRealHero() return false end
 	function unit:IsAlive() return true end
@@ -298,7 +303,24 @@ local bench = newUnit("npc_dota_hero_sven", Vector(-2300, 0, 128), DOTA_TEAM_GOO
 bench.modifiers.modifier_rpg_prepare_bench = true
 fightGame.selectedHero = bench
 fightGame.BroadcastBattleState = function() end
+GameRules = { GetGameTime = function() return 0 end }
+local damagePacket
+CustomGameEventManager = { Send_ServerToAllClients = function(_, event, data)
+	if event == "rpg_damage_stats" then damagePacket = data end
+end }
 fightGame:OnStartBattle(nil, { radiant_hero_1_count = 1 })
+assert(damagePacket and #damagePacket.units == 2 and damagePacket.elapsed == 0,
+	"battle start publishes both real combatants with zero damage")
+fightGame.battleManager.RecordDamage = function() end
+EntIndexToHScript = function(id)
+	if id == radiant:entindex() then return radiant end
+	if id == dire:entindex() then return dire end
+end
+GameRules.GetGameTime = function() return 2 end
+fightGame:OnEntityHurt({entindex_attacker=radiant:entindex(), entindex_killed=dire:entindex(), damage=120})
+fightGame:BroadcastDamageStats()
+assert(damagePacket.elapsed == 2 and damagePacket.units[1].total == 120 and damagePacket.units[1].dps == 60,
+	"real event adapter publishes post-mitigation damage and elapsed DPS")
 assert(bench.modifiers.modifier_rpg_prepare_bench, "selected bench hero remains restricted")
 
 assert(fightGame.battleManager.started, "battle manager must start")

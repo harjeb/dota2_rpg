@@ -86,6 +86,10 @@
             }
         }
 
+        panel.RpgSetCollapsed = function (value) {
+            if (options.onToggle) { options.onToggle(!!value); }
+            applyCollapsed(!!value);
+        };
         var collapsed = panel.BHasClass("RpgActionPanelCollapsed");
         applyCollapsed(collapsed);
 

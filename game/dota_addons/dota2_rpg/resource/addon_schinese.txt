@@ -5,7 +5,7 @@
 	{
 		"dota2_rpg_level_progress"		"第 %s1 / %s2 关"
 		"dota2_rpg_battle_title"		"3 对 3 自动战斗"
-		"dota2_rpg_build_tag"			"界面版本 5"
+		"dota2_rpg_build_tag"			"界面版本 6"
 		"dota2_rpg_versus"				"对战"
 		"dota2_rpg_radiant_logic"		"我方行动逻辑"
 		"dota2_rpg_dire_logic"			"敌方行动逻辑"
@@ -100,5 +100,12 @@
 		"dota2_rpg_result_dire"			"敌方胜利"
 		"dota2_rpg_result_timeout"		"超时判负"
 		"dota2_rpg_result_draw"			"双方同时全灭"
+		"dota2_rpg_damage_friendly" "我方"
+		"dota2_rpg_damage_enemy" "敌方"
+		"dota2_rpg_damage_attack" "普攻"
+		"dota2_rpg_damage_other" "其他"
+		"dota2_rpg_damage_empty" "尚无伤害"
+		"dota2_rpg_damage_targets" "受击目标"
+		"dota2_rpg_damage_all" "全部来源"
 	}
 }
