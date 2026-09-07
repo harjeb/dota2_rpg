@@ -444,7 +444,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	print("[Dota2Rpg] BUILD rpg-shop-lineup-v2 loaded. Setup disabled, shop enabled.")
+	print("[Dota2Rpg] BUILD rpg-runtime-followup-20260907 loaded. Setup disabled, shop enabled.")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -511,16 +511,12 @@ function CDota2RpgDemo:ReadNativeGold()
 	if not self:HasNativeGoldWallet() then
 		return nil
 	end
-	local reliable = tonumber(PlayerResource:GetGold(self.playerId))
-	if reliable == nil then
+	local total = tonumber(PlayerResource:GetGold(self.playerId))
+	if total == nil then
 		return nil
 	end
-	-- GetGold reports the reliable bucket; include unreliable gold if the API exposes it.
-	local unreliable = 0
-	if PlayerResource.GetUnreliableGold ~= nil then
-		unreliable = tonumber(PlayerResource:GetUnreliableGold(self.playerId)) or 0
-	end
-	return math.max(0, math.floor(reliable + unreliable))
+	-- GetGold already includes both reliable and unreliable gold.
+	return math.max(0, math.floor(total))
 end
 
 function CDota2RpgDemo:GetGoldBalance()
@@ -1482,12 +1478,37 @@ function CDota2RpgDemo:GetNativePurchaseClock()
 end
 
 function CDota2RpgDemo:GetNativePurchaseItemName(order)
-	-- PURCHASE_ITEM carries a definition ID in entindex_ability, not an entity.
+	-- PURCHASE_ITEM carries an item definition ID, not an entity index.
 	local definitionId = tonumber(order.entindex_ability)
 	if definitionId ~= nil and definitionId > 0 then
-		if type(GetAbilityNameByID) ~= "function" then return "" end
-		local ok, name = pcall(GetAbilityNameByID, definitionId)
-		return ok and type(name) == "string" and string.sub(name, 1, 5) == "item_" and name or ""
+		if definitionId ~= math.floor(definitionId) then return "" end
+		if self.nativePurchaseItemNames == nil then
+			if type(LoadKeyValues) ~= "function" then return "" end
+			-- This is the engine's ID registry in dota/pak01_dir.vpk. Item IDs
+			-- have their own namespace; never index UnitAbilities here.
+			local ok, registry = pcall(LoadKeyValues, "scripts/npc/npc_ability_ids.txt")
+			if not ok or type(registry) ~= "table" then return "" end
+			registry = registry.DOTAAbilityIDs or registry
+			local items = type(registry) == "table" and registry.ItemAbilities or nil
+			if type(items) ~= "table" then return "" end
+			local names = {}
+			local function indexItems(entries)
+				for name, value in pairs(entries) do
+					if type(value) == "table" then
+						indexItems(value)
+					elseif type(name) == "string" and string.sub(name, 1, 5) == "item_" then
+						local id = tonumber(value)
+						if id ~= nil and id > 0 and id == math.floor(id) then
+							names[id] = names[id] == nil and name or (names[id] == name and name or false)
+						end
+					end
+				end
+			end
+			indexItems(items)
+			if next(names) == nil then return "" end
+			self.nativePurchaseItemNames = names
+		end
+		return self.nativePurchaseItemNames[definitionId] or ""
 	end
 	return tostring(order.itemname or order.item_name or order.item or "")
 end
@@ -3088,6 +3109,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	for _, heroes in pairs(self.battleManager.teamHeroes) do
 		for _, hero in ipairs(heroes) do
 			if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then
+				hero:RemoveModifierByName("modifier_rpg_prepare_bench")
 				for _, modifierName in ipairs(PRE_BATTLE_MODIFIERS) do
 					hero:RemoveModifierByName(modifierName)
 				end

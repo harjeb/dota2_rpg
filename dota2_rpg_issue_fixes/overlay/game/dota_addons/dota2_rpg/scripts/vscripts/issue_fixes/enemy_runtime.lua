@@ -26,6 +26,10 @@ local function safe_call(entity, method_name, default_value, ...)
     return result
 end
 
+local function is_native_neutral(unit)
+    return tostring(safe_call(unit, "GetUnitName", "")):match("^npc_dota_neutral_") ~= nil
+end
+
 local function unit_index(unit)
     return tonumber(safe_call(unit, "entindex", -1)) or -1
 end
@@ -140,11 +144,6 @@ function EnemyRuntime.new(options)
             "modifier_rpg_battle_preparation",
             "modifier_rpg_waiting",
             "modifier_rpg_prepare_bench",
-            "modifier_invulnerable",
-            "modifier_stunned",
-            "modifier_rooted",
-            "modifier_disarmed",
-            "modifier_silence",
         },
         stage_entries = {},
         enemy_units = {},
@@ -199,7 +198,7 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
         end
     end
 
-    safe_call(unit, "SetIdleAcquire", nil, true)
+    safe_call(unit, "SetIdleAcquire", nil, not is_native_neutral(unit))
     safe_call(unit, "SetAcquisitionRange", nil, self.acquisition_range)
     safe_call(unit, "SetForceAttackTarget", nil, nil)
 end
@@ -207,6 +206,12 @@ end
 function EnemyRuntime:IssueAttack(unit, target)
     if not is_alive(unit) or not is_alive(target) then return false end
 
+    -- Native neutral templates retain autonomous idle/return behavior on Dire.
+    -- Own the fallback target only until a tactic or cast takes control.
+    if is_native_neutral(unit) then
+        safe_call(unit, "SetForceAttackTarget", nil, target)
+        unit.rpg_fallback_force_target = target
+    end
     return self.execute_order({
         UnitIndex = unit_index(unit),
         OrderType = DOTA_UNIT_ORDER_ATTACK_TARGET,
@@ -233,7 +238,8 @@ function EnemyRuntime:CanFallbackOrder(unit)
     if safe_call(unit, "IsStunned", false) then return false end
     if safe_call(unit, "IsCommandRestricted", false) then return false end
     if safe_call(unit, "GetCurrentActiveAbility", nil) ~= nil then return false end
-    if unit.IsIdle ~= nil and not safe_call(unit, "IsIdle", true) then return false end
+    if not is_native_neutral(unit)
+        and unit.IsIdle ~= nil and not safe_call(unit, "IsIdle", true) then return false end
 
     if self.has_tactic_order ~= nil then
         local ok, has_order = pcall(self.has_tactic_order, unit)
@@ -262,9 +268,14 @@ function EnemyRuntime:Think()
                 if target ~= nil then
                     self:IssueAttack(unit, target)
                 else
+                    safe_call(unit, "SetForceAttackTarget", nil, nil)
+                    unit.rpg_fallback_force_target = nil
                     self:IssueAttackMove(unit)
                 end
             end
+        elseif is_valid(unit) and unit.rpg_fallback_force_target ~= nil then
+            safe_call(unit, "SetForceAttackTarget", nil, nil)
+            unit.rpg_fallback_force_target = nil
         end
     end
 
@@ -298,6 +309,12 @@ function EnemyRuntime:Start(player_units, fight_center)
 end
 
 function EnemyRuntime:Stop()
+    for _, unit in ipairs(self.enemy_units) do
+        if is_valid(unit) and unit.rpg_fallback_force_target ~= nil then
+            safe_call(unit, "SetForceAttackTarget", nil, nil)
+            unit.rpg_fallback_force_target = nil
+        end
+    end
     self.running = false
     self.player_units = {}
     self.enemy_units = {}

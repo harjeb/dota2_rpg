@@ -132,13 +132,14 @@ local function newUnit(unitName, position, team)
 		position = position,
 		team = team,
 		entityIndex = nextEntityIndex,
+		modifiers = {},
 	}
 	function unit:GetEntityIndex() return self.entityIndex end
 	function unit:GetUnitName() return self.name end
 	function unit:IsRealHero() return false end
 	function unit:IsAlive() return true end
 	function unit:IsNull() return false end
-	function unit:RemoveModifierByName() end
+	function unit:RemoveModifierByName(name) self.modifiers[name] = nil end
 	function unit:GetMaxHealth() return 1000 end
 	function unit:GetMaxMana() return 500 end
 	function unit:SetHealth(value) self.health = value end
@@ -187,6 +188,12 @@ local function newBattleManager()
 	function manager:RegisterEnemyTags() end
 	function manager:ResetBattleStats() self.reset = true end
 	function manager:StartBattle()
+		for _, heroes in pairs(self.teamHeroes) do
+			for _, hero in ipairs(heroes) do
+				assert(not hero.modifiers.modifier_rpg_prepare_bench,
+					"fielded preparation restriction must be removed before battle manager starts")
+			end
+		end
 		self.started = true
 	end
 	return manager
@@ -286,8 +293,13 @@ local fightGame = setmetatable({
 }, CDota2RpgDemo)
 fightGame.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = { radiant }
 fightGame.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] = { dire }
+radiant.modifiers.modifier_rpg_prepare_bench = true
+local bench = newUnit("npc_dota_hero_sven", Vector(-2300, 0, 128), DOTA_TEAM_GOODGUYS)
+bench.modifiers.modifier_rpg_prepare_bench = true
+fightGame.selectedHero = bench
 fightGame.BroadcastBattleState = function() end
 fightGame:OnStartBattle(nil, { radiant_hero_1_count = 1 })
+assert(bench.modifiers.modifier_rpg_prepare_bench, "selected bench hero remains restricted")
 
 assert(fightGame.battleManager.started, "battle manager must start")
 assert(radiant.idleAcquire and dire.idleAcquire, "both teams must enable idle acquisition")

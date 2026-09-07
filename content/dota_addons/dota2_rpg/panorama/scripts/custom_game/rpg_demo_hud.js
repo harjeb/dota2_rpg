@@ -401,7 +401,9 @@
                 actionIcon.AddClass("ActionIcon");
                 var abilityImage = $.CreatePanel("DOTAAbilityImage", actionIcon, side + "ActionAbility" + idx);
                 abilityImage.AddClass("ActionAbilityImage");
+                abilityImage.hittest = false;
                 var actionFallback = createLabel(actionIcon, "ActionName", "");
+                actionFallback.hittest = false;
                 actionIcon.SetPanelEvent("onactivate", function () {
                     if (phase === "setup") {
                         openActionMenu(side, idx);
@@ -430,8 +432,10 @@
                 });
                 addButton.enabled = idx === 0;
                 var actionMenu = $.CreatePanel("Panel", row, side + "ActionMenu" + idx);
-                actionMenu.AddClass("ActionMenu Hidden");
+                actionMenu.AddClass("ActionMenu");
+                actionMenu.AddClass("Hidden");
                 rowPanels[side].push({
+                    actionSelect: actionIcon,
                     actionMenu: actionMenu,
                     actionAbilityImage: abilityImage,
                     actionFallback: actionFallback,
@@ -488,13 +492,25 @@
         }
     }
 
-    // 悬浮下拉：菜单移动到全屏浮层，按行位置覆盖显示（不撑开面板）
-    var DROPDOWN_TYPE_OFFSET = {
-        condition: 6,
-        effect: 6,
-        targetAttr: 48,
-        targetSide: 48
-    };
+    // Anchor menus to rendered buttons, including HUD scale and rule-list scrolling.
+    function positionEditorMenu(menu, layer, anchor, menuType) {
+        var scaleX = layer.actualuiscale_x || 1;
+        var scaleY = layer.actualuiscale_y || 1;
+        var origin = layer.GetPositionWithinWindow();
+        var position = anchor.GetPositionWithinWindow();
+        var width = 300;
+        var height = menuType === "action" ? 300 : menuType === "condition" ? 280
+            : menuType === "effect" ? 136 : 374;
+        var layerWidth = layer.actuallayoutwidth / scaleX;
+        var layerHeight = layer.actuallayoutheight / scaleY;
+        var left = (position.x - origin.x) / scaleX;
+        var top = (position.y - origin.y + anchor.actuallayoutheight) / scaleY;
+        if (top + height > layerHeight) {
+            top = (position.y - origin.y) / scaleY - height;
+        }
+        menu.style.marginLeft = Math.max(0, Math.min(left, layerWidth - width)) + "px";
+        menu.style.marginTop = Math.max(0, Math.min(top, layerHeight - height)) + "px";
+    }
 
     function openDropdownMenu(side, index, menuType) {
         var panels = rowPanels[side][index];
@@ -518,13 +534,15 @@
             return menu;
         }
         menu.SetParent(layer);
-        menu.SetHasClass("DropRight", side === "Dire");
-        menu.style.marginTop = (EDITOR_TOP + index * ROW_HEIGHT + (DROPDOWN_TYPE_OFFSET[menuType] || 0)) + "px;";
+        var anchor = menuType === "action" ? panels.actionSelect
+            : menuType === "effect" ? panels.effectSelect
+            : menuType === "targetAttr" ? panels.targetAttrSelect
+            : menuType === "targetSide" ? panels.targetSideSelect : panels.conditionSelect;
+        positionEditorMenu(menu, layer, anchor, menuType);
         menu.SetHasClass("Hidden", false);
         return menu;
     }
 
-    var EDITOR_TOP = 268;
     var ROW_HEIGHT = 130;
 
     function toggleEditorMenu(side, index, menuType) {
@@ -568,8 +586,21 @@
                 var option = $.CreatePanel("Button", menu, "ActionOpt_" + side + index + "_" + actionKey);
                 option.AddClass("ConditionOption");
                 var detail = getActionDetail(side, selectedHeroIndex[side], actionKey);
-                var text = detail !== "" ? detail : $.Localize(ACTION_TOKENS[actionKey] || actionKey);
-                createLabel(option, "", text);
+                if (actionKey !== "attack" && detail) {
+                    var image = $.CreatePanel(detail.indexOf("item_") === 0 ? "DOTAItemImage" : "DOTAAbilityImage", option, "");
+                    image.AddClass("ActionOptionImage");
+                    image.hittest = false;
+                    if (detail.indexOf("item_") === 0) {
+                        image.itemname = detail;
+                    } else {
+                        image.abilityname = detail;
+                    }
+                }
+                var text = actionKey !== "attack" && detail
+                    ? $.Localize("#DOTA_Tooltip_Ability_" + detail)
+                    : $.Localize(ACTION_TOKENS[actionKey] || actionKey);
+                var label = createLabel(option, "ActionOptionLabel", text);
+                label.hittest = false;
                 option.SetPanelEvent("onactivate", function () {
                     chooseAction(side, index, actionKey);
                 });
@@ -1460,8 +1491,8 @@
         ruleScroll[side] = pos;
         var container = $("#" + side + "Rules");
         if (container) {
-            container.style.marginTop = -pos + "px;";
-            container.style.height = Math.max(RULE_VIEW_HEIGHT, getSelectedRules(side).length * ROW_HEIGHT) + "px;";
+            container.style.marginTop = -pos + "px";
+            container.style.height = Math.max(RULE_VIEW_HEIGHT, getSelectedRules(side).length * ROW_HEIGHT) + "px";
         }
         var thumb = $("#" + side + "RulesScrollThumb");
         var track = $("#" + side + "RulesScrollTrack");
@@ -1470,9 +1501,9 @@
             var trackH = 380 - 52 - 4; // 上下按钮占位后的轨道高度
             var thumbH = Math.max(48, Math.floor(trackH * RULE_VIEW_HEIGHT
                 / Math.max(RULE_VIEW_HEIGHT, getSelectedRules(side).length * ROW_HEIGHT)));
-            thumb.style.height = thumbH + "px;";
+            thumb.style.height = thumbH + "px";
             var thumbTop = maxScroll > 0 ? Math.floor((pos / maxScroll) * (trackH - thumbH)) : 0;
-            thumb.style.marginTop = thumbTop + "px;";
+            thumb.style.marginTop = thumbTop + "px";
         }
         var rail = $("#" + side + "RulesScrollRail");
         if (rail) {
@@ -1481,6 +1512,7 @@
     }
 
     function scrollRulesBy(side, delta) {
+        closeEditorMenus();
         ruleScroll[side] = Math.max(0, Math.min(ruleScrollMax(side), ruleScroll[side] + delta));
         applyRuleScroll(side);
     }

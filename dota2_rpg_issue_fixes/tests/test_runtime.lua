@@ -528,7 +528,9 @@ do
     for _, name in ipairs({ "modifier_rooted", "modifier_disarmed", "modifier_silence" }) do a.modifiers[name] = true end
     runtime:RegisterStage({ "a" }, { a })
     runtime:Start({ Unit.new(2, Vector(-200, 0, 0)) }, Vector(0, 0, 0))
-    assert_equal(next(a.modifiers), nil, "all native preparation locks removed")
+    for _, name in ipairs({ "modifier_rooted", "modifier_disarmed", "modifier_silence" }) do
+        assert_equal(a.modifiers[name], true, "combat modifier preserved: " .. name)
+    end
     local before = orders
     busy = true
     runtime:Think()
@@ -546,6 +548,64 @@ do
     assert_equal(orders, before + 1, "idle enemy receives fallback")
 end
 
+-- Returning native neutrals recover without overriding casts or tactic orders.
+do
+    local neutral, hero, target = Unit.new(3), Unit.new(3), Unit.new(2)
+    neutral.unit_name = "npc_dota_neutral_centaur_khan"
+    neutral.IsIdle = function() return false end
+    hero.IsIdle = function() return false end
+    local busy, orders = false, 0
+    local runtime = require("issue_fixes.enemy_runtime").new({
+        has_tactic_order = function() return busy end,
+        execute_order = function() orders = orders + 1; return true end,
+    })
+    runtime:RegisterStage({}, { neutral, hero })
+    runtime:Start({ target }, Vector(0, 0, 0))
+    assert_equal(neutral.idle_acquire, false, "neutral native idle acquisition disabled")
+    assert_equal(hero.idle_acquire, true, "hero acquisition unchanged")
+    assert_equal(neutral.force_target, target, "neutral fallback owns target")
+    local before = orders
+    runtime:Think()
+    assert_equal(orders, before + 1, "returning neutral recovered, moving hero untouched")
+    busy = true
+    runtime:Think()
+    assert_equal(orders, before + 1, "tactic order respected")
+    assert_equal(neutral.force_target, nil, "force target released to tactic")
+    busy = false
+    neutral.IsChanneling = function() return true end
+    runtime:Think()
+    assert_equal(orders, before + 1, "channel not interrupted")
+    neutral.IsChanneling = nil
+    target.alive = false
+    local replacement = Unit.new(2)
+    runtime.player_units = { replacement }
+    runtime:Think()
+    assert_equal(neutral.force_target, replacement, "dead target replaced")
+    runtime:Stop()
+    assert_equal(neutral.force_target, nil, "force target cleared on stop")
+end
+
+-- Authored actions take ownership before issuing orders, including direct attacks.
+do
+    local caster, target = Unit.new(3), Unit.new(2)
+    local adapter = require("tactics/action_adapter").new({ Execute = function()
+        assert_equal(caster.force_target, nil, "fallback released before tactical order")
+    end })
+    local function arm()
+        caster.force_target = target
+        caster.rpg_fallback_force_target = target
+    end
+    arm()
+    adapter:Issue(caster, { kind = "attack", logical_id = "attack" }, target, {})
+    assert_equal(caster.rpg_fallback_force_target, nil, "attack releases fallback ownership")
+    arm()
+    adapter:IssueApproach(caster, {}, target)
+    assert_equal(caster.rpg_fallback_force_target, nil, "approach releases fallback ownership")
+    arm()
+    adapter:Issue(caster, { kind = "wait", logical_id = "wait" }, nil, {})
+    assert_equal(caster.force_target, nil, "wait releases forced attack")
+end
+
 -- Rejected and repeated start events must not activate/reset enemy AI.
 do
     local Bootstrap = require("issue_fixes.bootstrap")
@@ -559,9 +619,21 @@ do
         RegisterCurrentStage = function() end,
         OnBattleStarted = function() started = started + 1 end,
     }
+    local active, bench, portrait = Unit.new(2), Unit.new(2), Unit.new(2)
+    for _, unit in ipairs({ active, bench, portrait }) do
+        unit.modifiers.modifier_rpg_prepare_bench = true
+        unit.modifiers.modifier_silence = true
+    end
+    game.battleManager = { teamHeroes = { [2] = { active }, [3] = {} } }
+    game.selectedHero = portrait
     game:OnStartBattle(false)
+    assert_equal(active.modifiers.modifier_rpg_prepare_bench, true, "rejected start retains preparation")
     assert_equal(started, 0, "rejected start does not activate runtime")
     game:OnStartBattle(true)
+    assert_equal(active.modifiers.modifier_rpg_prepare_bench, nil, "fielded hero released")
+    assert_equal(active.modifiers.modifier_silence, true, "combat silence preserved")
+    assert_equal(bench.modifiers.modifier_rpg_prepare_bench, true, "bench stays locked")
+    assert_equal(portrait.modifiers.modifier_rpg_prepare_bench, true, "UI portrait does not choose release target")
     game:OnStartBattle(true)
     assert_equal(started, 1, "runtime starts only on phase transition")
 end

@@ -76,6 +76,12 @@ function RosterAccess.SetBenchState(hero, player_id, is_bench)
     return true
 end
 
+function RosterAccess.ReleaseFieldedRoster(heroes)
+    for _, hero in ipairs(heroes or {}) do
+        safe_method(hero, "RemoveModifierByName", "modifier_rpg_prepare_bench")
+    end
+end
+
 function RosterAccess.PrepareRoster(player_id, active_heroes, bench_heroes)
     for _, hero in ipairs(active_heroes or {}) do
         RosterAccess.SetBenchState(hero, player_id, false)

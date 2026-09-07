@@ -4,6 +4,7 @@
 local IssueFixes = require("issue_fixes.init")
 local DefaultRules = require("issue_fixes.default_rules")
 local Compat = require("issue_fixes.compat")
+local RosterAccess = require("issue_fixes.roster_access")
 
 local Bootstrap = {}
 
@@ -98,7 +99,10 @@ local function install_runtime(game)
     game.issueFixes = IssueFixes.new({
         game_mode_entity = GameRules:GetGameModeEntity(),
         get_phase = function() return compat:GetPhase() end,
-        get_player_units = function() return compat:GetPlayerUnits() end,
+        get_player_units = function()
+            local players = current_battle_teams(game, compat)
+            return players
+        end,
         is_roster_hero = function(player_id, hero)
             return compat:IsRosterHero(player_id, hero)
         end,
@@ -213,6 +217,7 @@ function Bootstrap.Install(class_table)
                     self.rpgIssueFixCompat:GetStageEntries(),
                     enemies
                 )
+                RosterAccess.ReleaseFieldedRoster(players)
                 self.issueFixes:OnBattleStarted(players, enemies)
             end
             return return_values(results)

@@ -14,6 +14,19 @@ var ruleSyncSource = fs.readFileSync(ruleSyncPath, "utf8");
 var cssSource = fs.readFileSync(cssPath, "utf8");
 var layoutSource = fs.readFileSync(layoutPath, "utf8");
 var fixesCssSource = fs.readFileSync(path.join(path.dirname(cssPath), "issue_fixes_ui.css"), "utf8");
+var snippetTree = JSON.parse(require("child_process").execFileSync("python", ["-c",
+    "import json,sys,xml.etree.ElementTree as E; " +
+    "encode=lambda e:dict(type=e.tag,attrs=e.attrib,children=[encode(c) for c in e]); " +
+    "print(json.dumps(encode(E.parse(sys.argv[1]).find('.//snippet'))))", layoutPath], { encoding: "utf8" }));
+
+function instantiateSnippet(node, parent) {
+    var panel = createPanel(node.attrs.id || "");
+    panel.parent = parent;
+    panel.attributes = node.attrs;
+    (node.attrs.class || "").split(/\s+/).filter(Boolean).forEach(function (name) { panel.AddClass(name); });
+    panel.children = node.children.map(function (child) { return instantiateSnippet(child, panel); });
+    return panel;
+}
 
 function createPanel(id) {
     var classes = {};
@@ -21,18 +34,41 @@ function createPanel(id) {
         id: id || "",
         text: "",
         enabled: true,
+        children: [],
+        attributes: {},
+        actualuiscale_x: 1,
+        actualuiscale_y: 1,
+        actuallayoutwidth: id === "DropdownLayer" ? 1920 : 300,
+        actuallayoutheight: id === "DropdownLayer" ? 1080 : 42,
+        position: { x: 120, y: 400 },
+        GetPositionWithinWindow: function () { return this.id === "DropdownLayer" ? { x: 0, y: 0 } : this.position; },
         AddClass: function (name) { classes[name] = true; },
         SetHasClass: function (name, enabled) { classes[name] = Boolean(enabled); },
         BHasClass: function (name) { return Boolean(classes[name]); },
         events: {},
         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
-        BLoadLayoutSnippet: function () {},
-        FindChildTraverse: function (childId) { return createPanel(childId); },
-        GetChildCount: function () { return 0; },
-        GetChild: function () { return createPanel(""); },
-        GetAttributeString: function (_, fallback) { return fallback; },
-        RemoveAndDeleteChildren: function () {},
-        SetParent: function (parent) { this.parent = parent; },
+        BLoadLayoutSnippet: function () {
+            this.children = snippetTree.children.map(function (child) { return instantiateSnippet(child, this); }, this);
+        },
+        FindChildTraverse: function (childId) {
+            for (var child of this.children) {
+                if (child.id === childId) { return child; }
+                var found = child.FindChildTraverse(childId);
+                if (found) { return found; }
+            }
+            return null;
+        },
+        GetChildCount: function () { return this.children.length; },
+        GetChild: function (index) { return this.children[index]; },
+        GetAttributeString: function (name, fallback) { return this.attributes[name] || fallback; },
+        RemoveAndDeleteChildren: function () { this.children = []; },
+        SetParent: function (parent) {
+            if (this.parent) {
+                this.parent.children = this.parent.children.filter(function (child) { return child !== this; }, this);
+            }
+            this.parent = parent;
+            parent.children.push(this);
+        },
         GetParent: function () { return this.parent || null; },
         style: {},
         classes: classes
@@ -54,9 +90,11 @@ function runHud() {
     function panorama(selector) {
         return panels[selector] || null;
     }
-    panorama.CreatePanel = function (_, parent, id) {
+    panorama.CreatePanel = function (type, parent, id) {
         var panel = createPanel(id || "");
+        panel.type = type;
         panel.parent = parent;
+        parent.children.push(panel);
         createdPanels.push(panel);
         if (id) {
             panels["#" + id] = panel;
@@ -132,6 +170,35 @@ var firstHeroRule = ruleSyncContext.RpgRuleSync.serialize({
 assert(firstHeroRule.hero_index === 0, "rule sync must not drop the first hero entity index");
 
 var hud = runHud();
+var firstMenu = created(hud, "DireActionMenu0");
+assert(firstMenu.BHasClass("Hidden"), "fresh action menu starts hidden as a separate class");
+created(hud, "DireActionSelect0").events.onactivate();
+assert(!firstMenu.BHasClass("Hidden"), "first click opens the action list");
+assert(firstMenu.parent.id === "DropdownLayer", "action list escapes editor clipping");
+created(hud, "DireActionSelect0").events.onactivate();
+assert(firstMenu.BHasClass("Hidden"), "second click closes action list");
+var conditionEditor = created(hud, "DireConditionEditor0");
+var conditionButton = conditionEditor.FindChildTraverse("ConditionSelect");
+var conditionMenu = conditionEditor.FindChildTraverse("ConditionMenu");
+conditionButton.position = { x: 1780, y: 1020 };
+conditionButton.events.onactivate();
+assert(!conditionMenu.BHasClass("Hidden"), "real XML condition menu opens on first click");
+assert(conditionMenu.style.marginLeft === "1620px" && conditionMenu.style.marginTop === "740px",
+    "menus clamp to viewport edge and flip above bottom-row buttons");
+conditionMenu.FindChildTraverse("SelfHpPctOption").events.onactivate();
+assert(conditionMenu.BHasClass("Hidden"), "condition selection closes menu");
+assert(conditionEditor.FindChildTraverse("ConditionValue").text === "#dota2_rpg_condition_self_hp_pct_lte",
+    "real XML condition selection updates visible rule");
+conditionButton.position = { x: 360, y: 540 };
+hud.panels["#DropdownLayer"].actualuiscale_x = 1.5;
+hud.panels["#DropdownLayer"].actualuiscale_y = 1.5;
+conditionButton.events.onactivate();
+assert(conditionMenu.style.marginLeft === "240px" && conditionMenu.style.marginTop === "388px",
+    "menu coordinates account for HUD scale and current button position");
+conditionButton.events.onactivate();
+hud.panels["#DropdownLayer"].actualuiscale_x = 1;
+hud.panels["#DropdownLayer"].actualuiscale_y = 1;
+hud = runHud();
 assert(hud.getLocalStorageCalls() === 0, "no-save design must not touch LocalStorage");
 assert(hud.sentEvents.every(function (e) { return e.name !== "rpg_save_sync"; }),
     "no-save design must not send save sync events");
@@ -162,6 +229,12 @@ function visibleRules(hud, side) {
 }
 function chooseAction(hud, side, row, action) {
     created(hud, side + "ActionSelect" + row).events.onactivate();
+    assert(!created(hud, side + "ActionMenu" + row).BHasClass("Hidden"), "action menu must actually open");
+    var images = created(hud, side + "ActionMenu" + row).children.reduce(function (all, option) {
+        return all.concat(option.children.filter(function (child) { return child.type === "DOTAAbilityImage"; }));
+    }, []);
+    assert(images.some(function (image) { return image.abilityname && image.hittest === false; }),
+        "ability list must render actual skill icons without intercepting clicks");
     var option = created(hud, "ActionOpt_" + side + row + "_" + action);
     assert(option && option.events.onactivate, "selected hero action must be available on every authored row");
     option.events.onactivate();
@@ -205,11 +278,11 @@ created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 3, "a second Add creates the third rule");
 assert(!hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "rail appears when authored rows overflow");
 hud.panels["#RadiantRulesScrollDown"].events.onactivate();
-assert(hud.panels["#RadiantRules"].style.marginTop === "-10px;", "scroll maximum derives from three rows, not ten");
+assert(hud.panels["#RadiantRules"].style.marginTop === "-10px", "scroll maximum derives from three rows, not ten");
 created(hud, "RadiantDeleteRule2").events.onactivate();
 created(hud, "RadiantDeleteRule1").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 1, "delete removes rows without padding");
-assert(hud.panels["#RadiantRules"].style.marginTop === "0px;", "delete clamps stale scroll offset");
+assert(hud.panels["#RadiantRules"].style.marginTop === "0px", "delete clamps stale scroll offset");
 assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "delete hides unnecessary rail");
 assert(hud.sentEvents.some(function (e) {
     return e.name === "rpg_update_rule" && e.payload.hero_index === 501 && e.payload.rule_count === 1 && e.payload.slot === 1;

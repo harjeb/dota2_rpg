@@ -69,7 +69,18 @@ local heroData = {
 	initial_gold = "500",
 }
 
+local nativeIdLoads = 0
+local nativeIdRegistry = {
+	-- Structure and sample IDs verified in installed dota/pak01_dir.vpk.
+	UnitAbilities = { Locked = { axe_berserkers_call = "5007", item_wrong_namespace = "999999" } },
+	ItemAbilities = { Locked = { ability_base = "0", item_blink = "1", item_manta = "147",
+		item_recipe_magic_wand = "35", item_overwhelming_blink = "600" } },
+}
 function LoadKeyValues(path)
+	if path == "scripts/npc/npc_ability_ids.txt" then
+		nativeIdLoads = nativeIdLoads + 1
+		return nativeIdRegistry
+	end
 	assert(path == "scripts/data/heroes.kv", "unexpected data path: " .. tostring(path))
 	return heroData
 end
@@ -225,6 +236,8 @@ end
 
 PlayerResource = {
 	GetGold = function(_, playerId) return nativeWalletGold(playerId) end,
+	GetReliableGold = function(_, playerId) return nativeWalletReliable[playerId] or 0 end,
+	GetUnreliableGold = function(_, playerId) return nativeWalletUnreliable[playerId] or 0 end,
 	SetGold = function(_, playerId, amount, reliable)
 		if reliable then
 			nativeWalletReliable[playerId] = math.max(0, math.floor(tonumber(amount) or 0))
@@ -350,26 +363,40 @@ assert(not equipmentGame:ValidatePrepareOrder({
 nativeWalletReliable[0] = 3000
 equipmentGame.nativePurchaseOrderContexts = {}
 -- Native PURCHASE_ITEM uses a definition ID, not an item entity or a name.
-GetAbilityNameByID = function(id)
-	if id == 1001 then return "item_native_definition" end
-	if id == 1002 then return "axe_berserkers_call" end
-	if id == 1003 then return "item_manta" end
-	return nil
-end
+GetAbilityNameByID = nil
+GetItemNameByID = nil
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
-	units = {}, entindex_ability = 1001,
+	units = {}, entindex_ability = 1,
 }), "native numeric item definition must resolve before cost preflight")
-assertEqual(equipmentGame.nativePurchaseOrderContexts[1].item_name, "item_native_definition",
+assertEqual(equipmentGame.nativePurchaseOrderContexts[1].item_name, "item_blink",
 	"numeric purchase context must retain the resolved name for event matching")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
-	units = {}, entindex_ability = 1002,
+	units = {}, entindex_ability = 5007,
 }), "ability definitions must not be accepted as purchasable items")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
 	units = {}, entindex_ability = 999999,
 }), "unknown item definition must still fail closed")
+assertEqual(equipmentGame:GetNativePurchaseItemName({ entindex_ability = "35" }), "item_recipe_magic_wand",
+	"recipe and string definition IDs resolve through the engine registry")
+assertEqual(equipmentGame:GetNativePurchaseItemName({ entindex_ability = 600 }), "item_overwhelming_blink",
+	"newer item IDs resolve without a maintained hardcoded list")
+assertEqual(equipmentGame:GetNativePurchaseItemName({ entindex_ability = 1.5 }), "", "fractional IDs fail closed")
+assertEqual(equipmentGame:GetNativePurchaseItemName({ entindex_ability = 999999, itemname = "item_blink" }), "",
+	"unknown IDs cannot be overridden by a name payload")
+assertEqual(nativeIdLoads, 1, "successful ID registry is cached across orders")
+local registryLoader = LoadKeyValues
+local retryGame = newGame()
+LoadKeyValues = function() error("registry unavailable") end
+assertEqual(retryGame:GetNativePurchaseItemName({ entindex_ability = 1 }), "", "registry errors fail closed")
+LoadKeyValues = function() return {} end
+assertEqual(retryGame:GetNativePurchaseItemName({ entindex_ability = 1 }), "", "missing item namespace fails closed")
+LoadKeyValues = function() return { DOTAAbilityIDs = nativeIdRegistry } end
+assertEqual(retryGame:GetNativePurchaseItemName({ entindex_ability = 1 }), "item_blink",
+	"failed loads are retried and wrapped KV roots are accepted")
+LoadKeyValues = registryLoader
 equipmentGame.nativePurchaseOrderContexts = {}
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
@@ -393,8 +420,12 @@ local refreshFlow = newGame({
 	SyncLiveEquipmentState = function() end,
 	SyncRosterAbilities = function() return false end,
 })
-refreshFlow:SetGoldBalance(500)
+-- Starting gold may be entirely unreliable. GetGold already includes it.
+nativeWalletReliable[0] = 0
+nativeWalletUnreliable[0] = 500
+assertEqual(refreshFlow:EnsureGoldWalletInitialized(), 500, "unreliable starting gold must not be counted twice")
 refreshFlow:OnShopRefresh(nil, {})
+assertEqual(nativeWalletGold(0), 480, "refresh must not turn 500 unreliable gold into 980")
 assertEqual(refreshFlow:GetGoldBalance(), 480, "refresh must debit the authoritative wallet")
 refreshFlow.gold = 999
 refreshFlow:OnThink()
@@ -519,7 +550,7 @@ assert(equipmentGame:IsEquipmentCarrier(benchHero), "bench hero must be a manage
 equipmentGame:SetNativePurchaseSelection(benchHero)
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
-	entindex_ability = 1003,
+	entindex_ability = 147,
 }), "bench numeric purchase must capture the authoritative preflight wallet snapshot")
 assertEqual(equipmentGame.nativePurchaseOrderContexts[1].gold_before, 750,
 	"native purchase preflight must retain the wallet snapshot consumed by the event path")
