@@ -4,9 +4,21 @@
 		"type": "creep",
 		"enemies": [
 			{
-				"unit": "npc_dota_neutral_gnoll_assassin",
+				"unit": "npc_dota_neutral_centaur_khan",
 				"level": 1,
-				"count": 3,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.0,
+				"attack_multiplier": 1.0,
+				"bonus_armor": 0,
+				"magic_resistance": 25,
+				"status_resistance": 0
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 1,
+				"count": 2,
 				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.0,
@@ -30,9 +42,9 @@
 		"type": "creep",
 		"enemies": [
 			{
-				"unit": "npc_dota_neutral_gnoll_assassin",
+				"unit": "npc_dota_neutral_centaur_khan",
 				"level": 2,
-				"count": 2,
+				"count": 1,
 				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.1,
@@ -42,10 +54,22 @@
 				"status_resistance": 1
 			},
 			{
-				"unit": "npc_dota_neutral_kobold",
+				"unit": "npc_dota_neutral_alpha_wolf",
+				"level": 2,
+				"count": 1,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 1.1,
+				"attack_multiplier": 1.05,
+				"bonus_armor": 1,
+				"magic_resistance": 26,
+				"status_resistance": 1
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
 				"level": 2,
 				"count": 2,
-				"template": "minion",
+				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.1,
 				"attack_multiplier": 1.05,
@@ -68,9 +92,9 @@
 		"type": "creep",
 		"enemies": [
 			{
-				"unit": "npc_dota_neutral_gnoll_assassin",
+				"unit": "npc_dota_neutral_centaur_khan",
 				"level": 3,
-				"count": 3,
+				"count": 1,
 				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.2,
@@ -80,7 +104,7 @@
 				"status_resistance": 2
 			},
 			{
-				"unit": "npc_dota_neutral_dark_troll_warlord",
+				"unit": "npc_dota_neutral_satyr_hellcaller",
 				"level": 3,
 				"count": 1,
 				"template": "specialist",
@@ -92,10 +116,22 @@
 				"status_resistance": 2
 			},
 			{
-				"unit": "npc_dota_neutral_kobold",
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 3,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.2,
+				"attack_multiplier": 1.1,
+				"bonus_armor": 2,
+				"magic_resistance": 27,
+				"status_resistance": 2
+			},
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
 				"level": 3,
 				"count": 1,
-				"template": "minion",
+				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.2,
 				"attack_multiplier": 1.1,
@@ -118,9 +154,9 @@
 		"type": "creep",
 		"enemies": [
 			{
-				"unit": "npc_dota_neutral_gnoll_assassin",
+				"unit": "npc_dota_neutral_centaur_khan",
 				"level": 5,
-				"count": 3,
+				"count": 2,
 				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.35,
@@ -130,9 +166,9 @@
 				"status_resistance": 3
 			},
 			{
-				"unit": "npc_dota_neutral_dark_troll_warlord",
+				"unit": "npc_dota_neutral_satyr_hellcaller",
 				"level": 5,
-				"count": 2,
+				"count": 1,
 				"template": "specialist",
 				"ai": "focus_lowest_hp",
 				"hp_multiplier": 1.35,
@@ -142,10 +178,22 @@
 				"status_resistance": 3
 			},
 			{
-				"unit": "npc_dota_neutral_kobold",
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 5,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.35,
+				"attack_multiplier": 1.2,
+				"bonus_armor": 3,
+				"magic_resistance": 28,
+				"status_resistance": 3
+			},
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
 				"level": 5,
 				"count": 1,
-				"template": "minion",
+				"template": "standard",
 				"ai": "simple_nearest",
 				"hp_multiplier": 1.35,
 				"attack_multiplier": 1.2,

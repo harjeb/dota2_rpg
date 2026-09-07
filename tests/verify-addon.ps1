@@ -473,6 +473,11 @@ if ($mapHeaderText -notmatch "dmx encoding binary") {
 
 # Parse binary-v9 data directly, including exact brush vertex bounds, material
 # indices, native prop transforms, scene attachment, and overlay synchronization.
+& python (Join-Path $repoRoot "tests\opening-balance.test.py")
+if ($LASTEXITCODE -ne 0) {
+    throw "Opening encounter balance contracts failed"
+}
+
 & python (Join-Path $repoRoot "tests\vmap.test.py")
 if ($LASTEXITCODE -ne 0) {
     throw "Offline structured VMAP regression tests failed"
