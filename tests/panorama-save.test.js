@@ -540,3 +540,68 @@ assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "result retains fi
 damageHud.subscriptions.rpg_battle_state({phase: "setup", ready: 1});
 assert(damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "setup hides previous battle DPS");
 console.log("PASS: actual enemy roster, battle collapse, DPS teams, source colors and target filtering");
+
+// Stage transitions retain authored conditions by name and duplicate occurrence.
+var persistenceHud = runHud();
+function slots(side, index, name, entity) {
+    persistenceHud.subscriptions.rpg_hero_slots({slot_key: side.toLowerCase() + "_" + index,
+        hero_name: name, hero_index: entity, actions_text: "ability_1;attack", details_text: "lion_impale;attack"});
+}
+function setHealthCondition(side) {
+    var editor = created(persistenceHud, side + "ConditionEditor0");
+    var menu = editor.FindChildTraverse("ConditionMenu");
+    editor.FindChildTraverse("ConditionSelect").events.onactivate();
+    menu.FindChildTraverse("SelfHpPctOption").events.onactivate();
+}
+function healthCondition(side) {
+    return created(persistenceHud, side + "ConditionEditor0").FindChildTraverse("ConditionValue").text
+        === "#dota2_rpg_condition_self_hp_pct_lte";
+}
+var lionName = "npc_dota_hero_lion";
+var axeName = "npc_dota_hero_axe";
+persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 101, name: lionName}, {id: 102, name: lionName}]});
+slots("Dire", 1, lionName, 101);
+slots("Dire", 2, lionName, 102);
+setHealthCondition("Dire");
+created(persistenceHud, "DireAddRule0").events.onactivate();
+persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
+assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 1,
+    "duplicate enemies have independent authored rules");
+persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 201, name: lionName}, {id: 202, name: lionName}]});
+slots("Dire", 1, lionName, 201);
+slots("Dire", 2, lionName, 202);
+persistenceHud.panels["#DireHeroDyn1"].events.onactivate();
+assert(healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
+    "enemy respawn preserves condition and authored row count by occurrence");
+persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
+assert(!healthCondition("Dire"), "second duplicate stays independent after respawn");
+persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 301, name: axeName}]});
+slots("Dire", 1, axeName, 301);
+assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 1,
+    "new enemy identity starts with default rules");
+slots("Radiant", 1, axeName, 401);
+slots("Radiant", 2, lionName, 402);
+persistenceHud.subscriptions.rpg_shop_state({lineup_text: axeName + ";" + lionName, owned_text: axeName + ";" + lionName});
+setHealthCondition("Radiant");
+slots("Radiant", 1, axeName, 501);
+assert(healthCondition("Radiant"), "player condition survives replacement entity");
+persistenceHud.subscriptions.rpg_shop_state({lineup_text: lionName + ";" + axeName, owned_text: axeName + ";" + lionName});
+assert(!healthCondition("Radiant"), "reordered player does not inherit previous slot rules");
+slots("Radiant", 1, lionName, 502);
+slots("Radiant", 2, axeName, 501);
+persistenceHud.panels["#RadiantHeroDyn2"].events.onactivate();
+assert(healthCondition("Radiant"), "authored condition follows player hero name after reorder");
+assert(persistenceHud.sentEvents.some(function (event) {
+    return event.name === "rpg_update_rule" && event.payload.hero_index === 501
+        && event.payload.use_condition_1_type === "self_hp_pct_lte";
+}), "retained player condition is synchronized to the replacement entity");
+console.log("PASS: stage rule persistence, duplicate enemy isolation, new enemy defaults and player reorder");
+
+var walletHud = runHud();
+walletHud.subscriptions.rpg_shop_state({gold: 500, owned_text: "npc_dota_hero_lion", lineup_text: "", equipped_text: ""});
+assert(walletHud.panels["#WalletBalance"].text === "#dota2_rpg_wallet_balance 500", "visible wallet renders server total in preparation");
+walletHud.subscriptions.rpg_shop_state({gold: 400, owned_text: "npc_dota_hero_lion", lineup_text: "", equipped_text: ""});
+assert(walletHud.panels["#WalletBalance"].text === "#dota2_rpg_wallet_balance 400", "bench purchase updates visible balance without fielding or inventory change");
+walletHud.subscriptions.rpg_shop_state({gold: 375, offer_text: {invalid: true}});
+assert(walletHud.panels["#WalletBalance"].text === "#dota2_rpg_wallet_balance 375", "wallet update survives optional shop renderer errors");
+console.log("PASS: visible authoritative wallet updates independently of lineup and inventory");

@@ -81,6 +81,7 @@
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
 			<Label id="LevelProgress" text="1/20" />
 			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
+			<Label id="WalletBalance" text="" hittest="false" />
 			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>
 

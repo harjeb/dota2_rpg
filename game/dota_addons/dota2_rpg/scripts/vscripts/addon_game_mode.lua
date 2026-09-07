@@ -447,7 +447,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-dps-point-casts-20260907 loaded; log=dota2_rpg_runtime.log")
+	RuntimeLog.Write("BUILD rpg-persist-wallet-burrow-20260907 loaded; log=dota2_rpg_runtime.log")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3050,6 +3050,16 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		-- 原版购买事件按提交顺序到达；每个订单都保留独立快照，不能用单一可覆盖字段。
 		table.insert(self.nativePurchaseOrderContexts, context)
 		self:LogNativePurchase(context, "preflight", "accepted")
+		-- The assigned hero owns the native shop wallet. Extra roster heroes are
+		-- delivery recipients, not native purchasers; route the order through Wisp
+		-- and keep recipient_key for the existing confirmed-item transfer.
+		local purchaser = self:GetStashUnit()
+		if purchaser ~= nil and purchaser.GetEntityIndex ~= nil then
+			filterTable.units = { ["0"] = purchaser:GetEntityIndex() }
+			if target ~= nil and target.GetItemInSlot ~= nil then
+				filterTable.entindex_target = purchaser:GetEntityIndex()
+			end
+		end
 		return true
 	end
 

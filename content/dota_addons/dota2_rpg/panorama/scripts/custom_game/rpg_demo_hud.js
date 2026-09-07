@@ -185,15 +185,26 @@
     }
 
     function getRules(side, heroIndex) {
-        if (!rulesBySide[side][heroIndex]) {
-            rulesBySide[side][heroIndex] = buildRulesForHero(side, heroIndex);
+        var heroes = HEROES[side] || [];
+        var entry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
+        var name = heroes[heroIndex] ? heroes[heroIndex].name : (entry ? entry.name : "");
+        var occurrence = 0;
+        for (var index = 0; index < heroIndex; index++) {
+            var prior = heroSlots[side.toLowerCase() + "_" + (index + 1)];
+            var priorName = heroes[index] ? heroes[index].name : (prior ? prior.name : "");
+            if (priorName === name) { occurrence++; }
         }
-        return rulesBySide[side][heroIndex];
+        // Entity indices and lineup positions change across stages; authored rules do not.
+        var identity = name + ":" + occurrence;
+        if (!rulesBySide[side][identity]) {
+            rulesBySide[side][identity] = buildRulesForHero(side, heroIndex);
+        }
+        return rulesBySide[side][identity];
     }
 
     var rulesBySide = {
-        Radiant: [],
-        Dire: []
+        Radiant: {},
+        Dire: {}
     };
     var selectedHeroIndex = {
         Radiant: 0,
@@ -902,7 +913,8 @@
         }
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots[key];
-        if (!entry || entry.hero_index === undefined) {
+        if (!entry || entry.hero_index === undefined
+                || (HEROES[side][heroIndex] && HEROES[side][heroIndex].name !== entry.name)) {
             return;
         }
         var rules = getRules(side, heroIndex);
@@ -991,6 +1003,8 @@
     };
 
     function onShopState(data) {
+        // Publish the authoritative wallet before optional inventory/menu rendering.
+        if (data && data.gold !== undefined) { updateWalletLabel(data.gold); }
         try {
             onShopStateInner(data);
         } catch (e) {
@@ -998,8 +1012,12 @@
         }
     }
 
+    function updateWalletLabel(gold) {
+        $("#WalletBalance").text = $.Localize("#dota2_rpg_wallet_balance") + " " + Math.max(0, Math.floor(Number(gold) || 0));
+    }
+
     function updateShopEconomyLabels(gold) {
-        // 金币显示在 Dota 原版 HUD 钱包，这里只更新价格标签
+        updateWalletLabel(gold);
         $("#RefreshShopLabel").text = localizeFormat("#dota2_rpg_shop_refresh", shopState.costs.refresh);
         $("#BenchBuyLabel").text = localizeFormat("#dota2_rpg_bench_buy", shopState.costs.bench_slot);
     }
@@ -1604,11 +1622,16 @@
         var signature = roster.map(function (u) { return u.id + ":" + u.name; }).join(";");
         if (signature === enemyRosterSignature) { return; }
         enemyRosterSignature = signature;
-        rulesBySide.Dire = [];
         var container = $("#DireHeroStrip");
         container.RemoveAndDeleteChildren();
         HEROES.Dire = [];
-        Object.keys(heroSlots).forEach(function (key) { if (key.indexOf("dire_") === 0) { delete heroSlots[key]; } });
+        Object.keys(heroSlots).forEach(function (key) {
+            if (key.indexOf("dire_") !== 0) { return; }
+            var unit = roster[Number(key.slice(5)) - 1];
+            if (!unit || heroSlots[key].name !== unit.name || heroSlots[key].hero_index !== Number(unit.id)) {
+                delete heroSlots[key];
+            }
+        });
         roster.forEach(function (unit, index) {
             var isHero = String(unit.name).indexOf("npc_dota_hero_") === 0;
             var portrait = $.CreatePanel(isHero ? "DOTAHeroImage" : "Button", container, "DireHeroDyn" + (index + 1));
@@ -1858,7 +1881,6 @@
             return;
         }
         var slotKey = String(data.slot_key);
-        var previous = heroSlots[slotKey];
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
             hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
@@ -1869,12 +1891,7 @@
         if (match) {
             var side = match[1] === "radiant" ? "Radiant" : "Dire";
             var heroIndex = Math.max(0, Number(match[2]) - 1);
-            if (!previous || previous.name !== heroSlots[slotKey].name) {
-                rulesBySide[side][heroIndex] = null;
-            }
-            if (!rulesBySide[side][heroIndex]) {
-                rulesBySide[side][heroIndex] = buildRulesForHero(side, heroIndex);
-            }
+            getRules(side, heroIndex);
             renderSide(side);
             syncAllRulesToServer();
         }

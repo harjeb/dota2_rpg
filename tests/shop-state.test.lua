@@ -1011,10 +1011,15 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 	itemname = "item_prepare_empty_units",
 }), "prepare order filter must allow an affordable empty-units native purchase during setup")
-assert(equipmentGame:ValidatePrepareOrder({
+function wisp:GetEntityIndex() return 502 end
+local benchPurchaseOrder = {
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
 	units = { ["0"] = 503 }, itemname = "item_prepare_bench",
-}), "prepare order filter must allow an affordable player-owned bench purchase")
+}
+assert(equipmentGame:ValidatePrepareOrder(benchPurchaseOrder), "prepare order filter allows affordable bench delivery")
+assertEqual(benchPurchaseOrder.units["0"], 502, "native purchase executes on assigned hero wallet")
+assertEqual(equipmentGame.nativePurchaseOrderContexts[#equipmentGame.nativePurchaseOrderContexts].recipient_key,
+	"npc_dota_hero_lion", "rerouting purchaser preserves bench delivery target")
 
 -- Skill-up clicks can submit either the ability entity index or its slot.
 local skillAbility = {

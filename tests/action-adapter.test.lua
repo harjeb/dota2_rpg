@@ -53,4 +53,22 @@ spec.cast_range_override = nil
 DOTA_UNIT_ORDER_CAST_POSITION = 5
 adapter:Issue(caster, spec, { GetAbsOrigin = function() return point end }, {})
 assert(order.Position == point and order.OrderType == 5, "point casts normalize entity selection")
+-- Shipped scripts/npc/heroes/npc_dota_hero_sand_king.txt declares the
+-- level-one range as AbilityValues.AbilityCastRange.value = 550 (no top-level field).
+source.GetCastRange = function() return 0 end
+source.GetSpecialValueFor = function(_, key)
+    assert(key == "AbilityCastRange")
+    return 550
+end
+assert(adapter:GetRequiredRange(caster, spec, point) == 550, "native AbilityValues range survives zero legacy accessor")
+assert(adapter:IsInRange(caster, spec, {x=500}), "Burrowstrike may cast inside its native range")
+assert(not adapter:IsInRange(caster, spec, {x=600}), "Burrowstrike does not invent global range")
+source.GetEffectiveCastRange = function(_, _, target)
+    assert(target == nil, "effective range also receives an entity or nil")
+    return 750
+end
+assert(adapter:GetRequiredRange(caster, spec, point) == 750, "effective native range including upgrades wins")
+source.GetEffectiveCastRange = function() return 0 end
+source.GetCastRange = function() return 625 end
+assert(adapter:GetRequiredRange(caster, spec, point) == 625, "zero effective accessor falls back to positive native range")
 print("action-adapter tests passed")

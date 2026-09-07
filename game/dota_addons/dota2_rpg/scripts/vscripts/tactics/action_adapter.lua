@@ -75,7 +75,7 @@ local function infer_cast_type(ability)
 end
 
 local function ability_cast_range(caster, ability, target)
-    if not is_valid(ability) or ability.GetCastRange == nil then
+    if not is_valid(ability) then
         return 0
     end
     local origin = caster:GetAbsOrigin()
@@ -83,13 +83,25 @@ local function ability_cast_range(caster, ability, target)
     if target ~= nil and target.GetAbsOrigin == nil then
         target = nil
     end
-    local ok, value = pcall(function()
-        return ability:GetCastRange(origin, target)
-    end)
-    if ok and value ~= nil then
-        return math.max(0, tonumber(value) or 0)
+    local function read_range(method)
+        if ability[method] == nil then return nil end
+        local ok, value = pcall(ability[method], ability, origin, target)
+        return ok and tonumber(value) or nil
     end
-    return 0
+    local value = read_range("GetEffectiveCastRange")
+    if value == nil or value <= 0 then value = read_range("GetCastRange") end
+    if value ~= nil and value > 0 then return value end
+    -- Current native Sand King data stores range in AbilityValues.AbilityCastRange,
+    -- not the legacy top-level cast-range field. Resolve that value when the
+    -- native range accessor gives zero; never invent a fixed range.
+    if ability.GetSpecialValueFor ~= nil then
+        local ok, special = pcall(ability.GetSpecialValueFor, ability, "AbilityCastRange")
+        if ok and tonumber(special) ~= nil and tonumber(special) > 0 then
+            local bonus = caster.GetCastRangeBonus ~= nil and caster:GetCastRangeBonus() or 0
+            return tonumber(special) + (tonumber(bonus) or 0)
+        end
+    end
+    return math.max(0, value or 0)
 end
 
 function ActionAdapter.new(order_gate)
