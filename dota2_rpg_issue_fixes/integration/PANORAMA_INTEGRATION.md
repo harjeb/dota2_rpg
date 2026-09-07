@@ -8,13 +8,16 @@
 
 UI 脚本会尝试识别常见 Panel ID。若你的 ID 不同，在现有 HUD 初始化完成后显式调用。
 
+本仓库的主 HUD 已直接加载 `issue_fixes_ui.css`（放在基础 CSS 之后）和修复脚本，并显式绑定 `RadiantEditor` / `DireEditor`、各自 CollapseButton/CollapseLabel 和 `ShopPanel`。兄弟布局的 CSS 不保证作用于主 HUD，不能只加 manifest 就认为接线完成。独立 overlay 不覆盖整份主 HUD；移植时需要手工合并这些接线以及 `rpg_demo_hud.js`、`panorama_rule_sync.js` 的实际规则行数同步逻辑。附加布局根 Panel 不得设置 `id`，否则 Panorama 编译会失败。
+
 ## 1. 行动面板最小化按钮
 
 ```javascript
 var fixUi = GameUI.CustomUIConfig().RpgIssueFixUI;
 fixUi.bindActionPanel({
     panel: $("#你的行动面板ID"),
-    button: $("#你的最小化按钮ID")
+    button: $("#你的最小化按钮ID"),
+    label: $("#你的箭头LabelID")
 });
 ```
 
@@ -82,4 +85,8 @@ for (var i = 0; i < activeSkills.length + activeItems.length + 1; i++) {
 - 没有有效规则：显示 1 条默认普通攻击规则。
 - 有 N 条玩家规则：显示 N 条，不补齐空白规则。
 - 点击“新增规则”才增加一条。
-- 删除最后一条玩家规则后，恢复单条默认普攻兜底。
+- 至少保留一条规则；无有效规则时恢复单条默认普攻兜底。
+- `MAX_RULE_ROWS = 10` 仅是编辑上限，不是初始化或同步行数。
+- 每条 `rpg_update_rule` 携带整数 `rule_count`（1..10），`slot` 不得超过该值；实际 `RuleService` 校验权限后裁掉多余旧槽位。只发送实际行，不发送禁用占位行。
+- 删除后重新发送当前实际行，保留玩家主动禁用的有效规则。
+- 服务端 `RuleService` 与客户端 `panorama_rule_sync.js` 必须一起合并；仅复制 UI helper 不会实现裁剪协议。

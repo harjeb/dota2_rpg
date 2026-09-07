@@ -1,5 +1,7 @@
 "use strict";
 
+var assert = require("assert");
+
 function Panel(id) {
     this.id = id;
     this.classes = {};
@@ -66,4 +68,34 @@ var authored = api.normalizeDefaultRules([
 ]);
 if (authored.length !== 2) { throw new Error("authored rules must remain without padding"); }
 
-console.log("UI tests passed");
+assert.strictEqual(defaults[0].target_filters.team, "enemy");
+assert.deepStrictEqual(defaults[0].target_priorities, ["nearest"]);
+assert.strictEqual(defaults[0].approach, "range_only");
+assert.strictEqual(api.normalizeDefaultRules([
+    null, {}, { action: {} }, { action: "" },
+    { is_padding: true, action: { kind: "attack" } },
+    { placeholder: true, action: { kind: "attack" } }
+]).length, 1, "invalid/padded rules must produce exactly one fallback");
+assert.strictEqual(api.normalizeDefaultRules(authored).length, 2, "normalizing twice must not append defaults");
+button.onactivate();
+assert.strictEqual(label.text, "<", "re-expansion restores the left arrow");
+assert.strictEqual(action.BHasClass("RpgActionPanelCollapsed"), false);
+
+// Distinct live layouts can reuse IDs, and a deleted panel may be recreated.
+var secondAction = new Panel("ActionPanel");
+var secondButton = secondAction.add(new Panel("ActionPanelMinimizeButton"));
+var secondLabel = secondButton.add(new Panel("ActualArrowLabel"));
+secondLabel.text = "";
+var toggles = 0;
+api.bindActionPanel({ panel: secondAction, button: secondButton, label: secondLabel,
+    onToggle: function () { toggles++; } });
+assert.strictEqual(secondLabel.text, "<", "explicit live labels must initialize");
+secondButton.onactivate();
+assert.strictEqual(secondLabel.text, ">", "same-ID replacement button must still bind");
+assert.strictEqual(toggles, 1, "HUD menu cleanup hook must run");
+assert.strictEqual(action.BHasClass("RpgActionPanelCollapsed"), false, "editors collapse independently");
+var handler = secondButton.onactivate;
+api.bindActionPanel({ panel: secondAction, button: secondButton });
+assert.strictEqual(secondButton.onactivate, handler, "binding a panel twice must not overwrite its handler");
+
+console.log("UI tests passed: defaults, authored rules, explicit labels, independent and recreated panels");

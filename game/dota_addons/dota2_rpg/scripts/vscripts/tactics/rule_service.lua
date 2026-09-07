@@ -246,9 +246,14 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
     if self.get_phase() ~= "PREPARE" then
         return false, "wrong_phase"
     end
-    slot = math.floor(tonumber(slot or 0))
-    if slot < 1 or slot > MAX_RULES then
+    slot = tonumber(slot)
+    if slot == nil or slot < 1 or slot > MAX_RULES or slot ~= math.floor(slot) then
         return false, "invalid_rule_slot"
+    end
+    local rule_count = flat_args.rule_count ~= nil and tonumber(flat_args.rule_count) or nil
+    if flat_args.rule_count ~= nil and (rule_count == nil or rule_count < 1
+        or rule_count > MAX_RULES or rule_count ~= math.floor(rule_count) or slot > rule_count) then
+        return false, "invalid_rule_count"
     end
 
     local hero = EntIndexToHScript(tonumber(hero_index or -1))
@@ -270,7 +275,14 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
         return false, reason
     end
 
-    self:GetHeroRules(hero)[slot] = rule
+    local rules = self:GetHeroRules(hero)
+    if rule_count ~= nil then
+        for index = rule_count + 1, MAX_RULES do
+            rules[index] = nil
+            CustomNetTables:SetTableValue("rpg_rules", hero_key .. ":" .. tostring(index), {})
+        end
+    end
+    rules[slot] = rule
     self:SyncRule(player_id, hero, slot, rule)
     return true, nil
 end

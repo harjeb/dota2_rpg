@@ -28,7 +28,7 @@ python tools/apply_issue_fixes.py /你的路径/dota2_rpg --expected-head cab44f
 1. 把 `overlay/game/...` 和 `overlay/content/...` 复制到仓库同路径。
 2. 按 `integration/ADDON_GAME_MODE_INTEGRATION.md` 接入服务端生命周期。
 3. 按 `integration/PANORAMA_INTEGRATION.md` 显式绑定现有 Panel ID。
-4. 选择安装 overlay 中已完成的 `dota2_rpg_demo.vmap`，或按 `integration/HAMMER_ARENA_SETUP.md` 将三枚 marker、外墙、NONAV slab 和两枚中线门手工合并到自定义地图。
+4. 选择安装 overlay 中已完成的 `dota2_rpg_demo.vmap`，或按 `integration/HAMMER_ARENA_SETUP.md` 将三枚 marker、原版岩石、不可见边界、NONAV slab 和 nav 中线门（树木由 Lua 生成）手工合并到自定义地图。
 5. 使用 Workshop Tools 重新构建地图；安装器不提交生成的 VPK。
 6. 按 `integration/TEST_CHECKLIST.md` 回归。
 

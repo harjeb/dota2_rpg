@@ -102,6 +102,12 @@ local function install_runtime(game)
         is_roster_hero = function(player_id, hero)
             return compat:IsRosterHero(player_id, hero)
         end,
+        is_inventory_source = function(player_id, source)
+            return compat:IsInventorySource(player_id, source)
+        end,
+        on_transfer_success = function()
+            if game.SyncLiveEquipmentState ~= nil then game:SyncLiveEquipmentState(true) end
+        end,
         bind_tactic_profile = function(unit, profile, entry)
             return compat:BindTacticProfile(unit, profile, entry)
         end,
@@ -174,7 +180,8 @@ function Bootstrap.Install(class_table)
     }, function(original)
         return function(self, ...)
             local results = pack_values(original(self, ...))
-            if self.issueFixes ~= nil then
+            if self.issueFixes ~= nil and self.rpgIssueFixCompat ~= nil
+                and self.rpgIssueFixCompat:GetPhase() == "PREPARE" then
                 -- Register only fielded heroes, so the periodic boundary guard
                 -- corrects retained placements without dragging the bench/wisp.
                 local players = battle_team_units(
@@ -194,8 +201,10 @@ function Bootstrap.Install(class_table)
         "StartFight",
     }, function(original)
         return function(self, ...)
+            local previous_phase = self.rpgIssueFixCompat and self.rpgIssueFixCompat:GetPhase()
             local results = pack_values(original(self, ...))
-            if self.issueFixes ~= nil and self.rpgIssueFixCompat ~= nil then
+            if self.issueFixes ~= nil and self.rpgIssueFixCompat ~= nil
+                and previous_phase ~= "FIGHT" and self.rpgIssueFixCompat:GetPhase() == "FIGHT" then
                 local players, enemies = current_battle_teams(
                     self,
                     self.rpgIssueFixCompat
@@ -217,8 +226,10 @@ function Bootstrap.Install(class_table)
         "SettleBattle",
     }, function(original)
         return function(self, ...)
+            local previous_phase = self.rpgIssueFixCompat and self.rpgIssueFixCompat:GetPhase()
             local results = pack_values(original(self, ...))
-            if self.issueFixes ~= nil then
+            if self.issueFixes ~= nil and previous_phase == "FIGHT"
+                and self.rpgIssueFixCompat:GetPhase() ~= "FIGHT" then
                 self.issueFixes:OnBattleEnded(
                     all_battle_units(self, self.rpgIssueFixCompat)
                 )

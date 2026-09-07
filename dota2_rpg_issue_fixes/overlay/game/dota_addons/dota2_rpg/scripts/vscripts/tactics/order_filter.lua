@@ -58,6 +58,9 @@ function OrderFilter.new(options)
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_battle_unit = assert(options.is_battle_unit, "is_battle_unit is required"),
         validate_prepare_order = options.validate_prepare_order,
+        validate_inventory_order = options.validate_inventory_order,
+        is_inventory_unit = options.is_inventory_unit,
+        is_managed_order = options.is_managed_order,
     }, OrderFilter)
 end
 
@@ -89,6 +92,15 @@ function OrderFilter:Filter(filter_table)
     local issuer = tonumber(filter_table.issuer_player_id_const) or -1
     local order_type = filter_table.order_type
     local contains_battle_unit = self:ContainsBattleUnit(filter_table)
+    local managed = self.is_managed_order ~= nil and self.is_managed_order(filter_table)
+    local contains_inventory_unit = false
+    if self.is_inventory_unit ~= nil then
+        for _, index in pairs(filter_table.units or {}) do
+            local unit = EntIndexToHScript(tonumber(index) or -1)
+            if unit ~= nil and (unit.IsNull == nil or not unit:IsNull())
+                and self.is_inventory_unit(unit) then contains_inventory_unit = true end
+        end
+    end
 
     -- Engine AI and server-issued enemy orders commonly use issuer -1. Let them
     -- execute during FIGHT; player-issued orders still have a real PlayerID and
@@ -100,7 +112,7 @@ function OrderFilter:Filter(filter_table)
     if phase == "COUNTDOWN" or phase == "FIGHT" or phase == "SETTLE" then
         -- Purchase/train orders can arrive without a unit list. They must still be
         -- blocked outside PREPARE instead of escaping through ContainsBattleUnit.
-        if PREPARE_UI_ORDERS[order_type] == true then
+        if PREPARE_UI_ORDERS[order_type] == true or managed then
             return false
         end
         if contains_battle_unit then
@@ -122,11 +134,14 @@ function OrderFilter:Filter(filter_table)
 
     -- These orders must bypass placement-only validation. Blocking them is why
     -- both field and bench heroes could not train abilities or use native shop.
-    if PREPARE_UI_ORDERS[order_type] == true then
+    if PREPARE_UI_ORDERS[order_type] == true or managed then
+        if self.validate_inventory_order ~= nil then
+            return self.validate_inventory_order(filter_table) == true
+        end
         return true
     end
 
-    if not contains_battle_unit then
+    if not contains_battle_unit and not contains_inventory_unit then
         return true
     end
 

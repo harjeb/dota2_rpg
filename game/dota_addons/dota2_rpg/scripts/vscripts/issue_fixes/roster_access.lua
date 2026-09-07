@@ -40,12 +40,15 @@ function RosterAccess.AssignToPlayer(hero, player_id)
         player = PlayerResource:GetPlayer(player_id)
     end
 
-    if player ~= nil then
-        safe_method(hero, "SetOwner", player)
+    if player == nil or not safe_method(hero, "SetOwner", player) then
+        return false, "owner_assignment_failed"
     end
-    safe_method(hero, "SetPlayerID", player_id)
-    safe_method(hero, "SetControllableByPlayer", player_id, true)
-
+    if not safe_method(hero, "SetPlayerID", player_id) then
+        return false, "player_assignment_failed"
+    end
+    if not safe_method(hero, "SetControllableByPlayer", player_id, true) then
+        return false, "control_assignment_failed"
+    end
     return true
 end
 

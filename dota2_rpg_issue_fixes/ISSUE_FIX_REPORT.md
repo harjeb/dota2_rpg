@@ -1,4 +1,6 @@
-# 当前 10 项 issue 修复报告
+# 初版 10 项 issue 修复报告（历史记录）
+
+本文件保留初版设计和旧地图构建记录。本轮核查已发现并补上多项实际接线缺失，外围改为原版岩石、中线改为原生树木。当前状态以 `../docs/ISSUE_FIX_IMPLEMENTATION.md`、`VALIDATION_REPORT.md` 和 `integration/HAMMER_ARENA_SETUP.md` 为准；下文旧编译结果不适用于新地图。
 
 ## 结论
 

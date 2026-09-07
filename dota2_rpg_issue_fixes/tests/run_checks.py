@@ -11,9 +11,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(command: list[str]) -> None:
-    print("+", " ".join(command))
-    process = subprocess.run(command, text=True, cwd=ROOT)
+def run(command: list[str], cwd: Path = ROOT) -> None:
+    print("+", " ".join(command), flush=True)
+    process = subprocess.run(command, text=True, cwd=cwd)
     if process.returncode != 0:
         raise SystemExit(process.returncode)
 
@@ -33,6 +33,9 @@ def run_lua_checks(lua_files: list[Path]) -> None:
         finally:
             checker.unlink(missing_ok=True)
         run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT)])
+        run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT), "live"])
+        for name in ("arena-trees.test.lua", "shop-state.test.lua", "precache-battlefield.test.lua"):
+            run([texlua, str(ROOT.parent / "tests" / name)], cwd=ROOT.parent)
         return
 
     try:
@@ -52,9 +55,14 @@ def run_lua_checks(lua_files: list[Path]) -> None:
         load_file(lua_file.as_posix())
     print(f"lua syntax ok: {len(lua_files)}")
 
-    runtime = LuaRuntime(unpack_returned_tuples=True)
-    runtime.globals().arg = runtime.table_from({1: ROOT.as_posix()})
-    runtime.globals().dofile((ROOT / "tests/test_runtime.lua").as_posix())
+    for mode in ("overlay", "live"):
+        runtime = LuaRuntime(unpack_returned_tuples=True)
+        runtime.globals().arg = runtime.table_from({1: ROOT.as_posix(), 2: mode})
+        runtime.globals().dofile((ROOT / "tests/test_runtime.lua").as_posix())
+    for name in ("arena-trees.test.lua", "shop-state.test.lua", "precache-battlefield.test.lua"):
+        runtime = LuaRuntime(unpack_returned_tuples=True)
+        runtime.globals().TEST_REPO_ROOT = ROOT.parent.as_posix()
+        runtime.globals().dofile((ROOT.parent / "tests" / name).as_posix())
 
 
 def check_python_syntax(paths: list[Path]) -> None:
@@ -68,6 +76,7 @@ def main() -> None:
     check_python_syntax(py_files)
 
     lua_files = sorted((ROOT / "overlay").rglob("*.lua"))
+    lua_files += sorted((ROOT.parent / "game/dota_addons/dota2_rpg/scripts/vscripts").rglob("*.lua"))
     run_lua_checks(lua_files)
 
     node = shutil.which("node")
@@ -79,14 +88,20 @@ def main() -> None:
         str(ROOT / "overlay/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/issue_fixes_ui.js"),
     ])
     run([node, str(ROOT / "tests/test_ui.js")])
+    run([node, str(ROOT.parent / "tests/panorama-save.test.js")])
+    for script in (ROOT.parent / "content/dota_addons/dota2_rpg/panorama/scripts/custom_game").glob("*.js"):
+        run([node, "--check", str(script)])
 
-    ET.parse(
-        ROOT
-        / "overlay/content/dota_addons/dota2_rpg/panorama/layout/custom_game/issue_fixes_ui.xml"
-    )
-    print("Panorama XML parse passed")
+    layouts = list((ROOT / "overlay/content/dota_addons/dota2_rpg/panorama/layout").rglob("*.xml"))
+    layouts += list((ROOT.parent / "content/dota_addons/dota2_rpg/panorama/layout").rglob("*.xml"))
+    for layout in layouts:
+        tree = ET.parse(layout)
+        for panel in tree.getroot().findall("Panel"):
+            assert "id" not in panel.attrib, f"Panorama root Panel cannot have an id: {layout}"
+    print("Panorama XML parse and root-panel contracts passed")
 
     run([sys.executable, str(ROOT / "tests/test_installer.py")])
+    run([sys.executable, str(ROOT.parent / "tests/vmap.test.py")])
     print("all checks passed")
 
 

@@ -1,3 +1,5 @@
+> 初版 PR 正文历史模板：下文 visual/nav 几何门和编译结果已被后续原生岩石/树木方案替代。当前修复及验证状态见 `../docs/ISSUE_FIX_IMPLEMENTATION.md` 和 `VALIDATION_REPORT.md`，不要直接将此模板作为本轮完成声明。
+
 ## 范围
 
 只修复当前 issue.txt 中的 10 项，不增加其他需求，也不修改经济、经验、招募、存档、羁绊或词缀。

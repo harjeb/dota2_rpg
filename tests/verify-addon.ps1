@@ -31,7 +31,9 @@ $requiredFiles = @(
     "tests\panorama-save.test.js",
     "tests\shop-state.test.lua",
     "tests\precache-battlefield.test.lua",
-    "tests\compile-vmap.ps1"
+    "tests\compile-vmap.ps1",
+    "tests\vmap.test.py",
+    "tests\vendor\datamodel.py"
 )
 
 foreach ($relativePath in $requiredFiles) {
@@ -44,7 +46,7 @@ foreach ($relativePath in $requiredFiles) {
 $manifestPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\layout\custom_game\custom_ui_manifest.xml"
 $hudPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\layout\custom_game\rpg_demo_hud.xml"
 [xml](Get-Content -LiteralPath $manifestPath -Raw) | Out-Null
-[xml](Get-Content -LiteralPath $hudPath -Raw) | Out-Null
+[xml](Get-Content -LiteralPath $hudPath -Raw -Encoding UTF8) | Out-Null
 
 $javascriptPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\rpg_demo_hud.js"
 & node --check $javascriptPath
@@ -250,7 +252,7 @@ foreach ($heroStage in @(@(5, 8), @(10, 14), @(15, 19), @(20, 24), @(25, 28), @(
 # --- Panorama 事件与新系统接线 ---
 $javascript = Get-Content -LiteralPath $javascriptPath -Raw
 $ruleSyncJavascript = Get-Content -LiteralPath (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js") -Raw
-$hudLayout = Get-Content -LiteralPath $hudPath -Raw
+$hudLayout = Get-Content -LiteralPath $hudPath -Raw -Encoding UTF8
 $gameModeText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\vscripts\addon_game_mode.lua") -Raw
 foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_battle_state", "rpg_settlement", "rpg_shop_buy", "rpg_shop_refresh", "rpg_bench_buy", "rpg_lineup_set", "rpg_scroll_buy", "rpg_scroll_use", "rpg_item_equip", "rpg_item_unequip", "rpg_update_rule")) {
     $combined = $javascript + "`n" + $ruleSyncJavascript + "`n" + $gameModeText
@@ -469,9 +471,18 @@ if ($mapHeaderText -notmatch "dmx encoding binary") {
     throw "The VMAP source does not have a valid Source 2 DMX header"
 }
 
+# Parse binary-v9 data directly, including exact brush vertex bounds, material
+# indices, native prop transforms, scene attachment, and overlay synchronization.
+& python (Join-Path $repoRoot "tests\vmap.test.py")
+if ($LASTEXITCODE -ne 0) {
+    throw "Offline structured VMAP regression tests failed"
+}
+
 $dmxConverter = Join-Path $DotaPath "game\bin\win64\dmxconvert.exe"
 if (-not (Test-Path -LiteralPath $dmxConverter)) {
-    throw "dmxconvert.exe was not found at $dmxConverter"
+    Write-Warning "dmxconvert.exe unavailable: engine conversion skipped. Offline checks passed; compilation and in-engine appearance/navigation remain unverified. Run tests\compile-vmap.ps1 on a Dota Workshop Tools installation."
+    Write-Host "PASS: addon static checks and offline binary-v9 VMAP contracts (no engine compilation performed)."
+    return
 }
 
 $temporaryMap = Join-Path ([System.IO.Path]::GetTempPath()) ("dota2_rpg_verify_{0}.vmap" -f [guid]::NewGuid().ToString("N"))
@@ -582,7 +593,7 @@ try {
             '"classname"\s+"string"\s+"func_brush"',
             '"Solidity"\s+"string"\s+"2"',
             '"AlwaysSolidIgnoreNav"\s+"string"\s+"0"',
-            'materials/dev/primary_white\.vmat'
+            'materials/tools/toolsclip\.vmat'
         )) {
             if ($wall -notmatch $required) {
                 throw "$wallName is missing required permanent-wall data: $required"
@@ -595,13 +606,25 @@ try {
         }
     }
 
+    if ($mapEntities | Where-Object { $_ -match '"targetname"\s+"string"\s+"rpg_mid_gate_visual"' }) {
+        throw "The visible middle gate brush must be removed; runtime native trees provide the divider"
+    }
+    if ($mapMeshes | Where-Object { $_ -match 'materials/dev/primary_white\.vmat' }) {
+        throw "Arena collision brushes must use invisible tool materials, not visible developer material"
+    }
+    $rockEntities = @($mapEntities | Where-Object { $_ -match '"targetname"\s+"string"\s+"rpg_arena_rock_(north|south|east|west)_\d+"' })
+    if ($rockEntities.Count -ne 28) {
+        throw "VMAP must retain 28 native perimeter rock props"
+    }
+    foreach ($rock in $rockEntities) {
+        if ($rock -notmatch '"classname"\s+"string"\s+"prop_static"' -or
+            $rock -notmatch '"model"\s+"string"\s+"models/props_rock/riveredge_rock_wall00[23]a\.vmdl"' -or
+            $rock -notmatch '"solid"\s+"string"\s+"0"') {
+            throw "Perimeter scenery must use verified native rock models with collision owned by clip brushes"
+        }
+    }
+
     $gateChecks = @{
-        rpg_mid_gate_visual = @(
-            '"classname"\s+"string"\s+"func_brush"',
-            '"StartDisabled"\s+"string"\s+"0"',
-            '"Solidity"\s+"string"\s+"1"',
-            'materials/dev/primary_white\.vmat'
-        )
         rpg_mid_gate_nav = @(
             '"classname"\s+"string"\s+"func_brush"',
             '"StartDisabled"\s+"string"\s+"0"',
@@ -611,7 +634,6 @@ try {
         )
     }
     $gateGeometry = @{
-        rpg_mid_gate_visual = @("0 0 384", '0\.03125\s+0\.87890625\s+2')
         rpg_mid_gate_nav = @("0 0 384", '0\.03125\s+0\.87890625\s+2')
     }
     foreach ($gateName in $gateChecks.Keys) {

@@ -4,16 +4,20 @@
     min-width: 52px;
 }
 
-.RpgActionPanelArrowButton
+.RpgActionPanelArrowButton,
+.TeamEditor .RpgActionPanelArrowButton
 {
     width: 44px;
     min-width: 44px;
     max-width: 44px;
     height: 44px;
     min-height: 44px;
+    max-height: 44px;
     horizontal-align: right;
     vertical-align: top;
     margin: 6px;
+    margin-left: 6px;
+    margin-right: 6px;
     padding: 0px;
     background-color: #111111cc;
     border: 1px solid #c9c9c966;
@@ -30,24 +34,29 @@
     vertical-align: center;
     text-align: center;
     font-size: 30px;
-    line-height: 38px;
     color: white;
     text-shadow: 0px 1px 2px 2.0 #000000;
 }
 
-.RpgActionPanelCollapsed
+.RpgActionPanelCollapsed,
+.TeamEditor.RpgActionPanelCollapsed
 {
     width: 56px !important;
     min-width: 56px !important;
     max-width: 56px !important;
     height: 56px !important;
     min-height: 56px !important;
+    max-height: 56px !important;
+    padding: 0px !important;
     background-color: transparent !important;
     border: 0px !important;
     box-shadow: none !important;
     overflow: noclip;
 }
 
+.RpgActionPanelCollapsed .EditorBody,
+.RpgActionPanelCollapsed .TeamIdentity,
+.RpgActionPanelCollapsed .HeroStrip,
 .RpgActionPanelCollapsed .ActionPanelBody,
 .RpgActionPanelCollapsed .TacticPanelBody,
 .RpgActionPanelCollapsed .RulesBody,
@@ -58,6 +67,15 @@
     visibility: collapse;
 }
 
+.TeamEditor.RpgActionPanelCollapsed .TeamHeader
+{
+    width: 56px;
+    height: 56px;
+    padding: 0px;
+    border: 0px;
+    flow-children: none;
+}
+
 /* Hero shop: remove the large opaque frame while preserving readable controls. */
 .RpgTransparentHeroShop,
 .RpgTransparentHeroShop .ShopFrame,
@@ -65,7 +83,8 @@
 .RpgTransparentHeroShop .PanelBackground,
 .RpgTransparentHeroShop #ShopFrame,
 .RpgTransparentHeroShop #ShopBody,
-.RpgTransparentHeroShop #PanelBackground
+.RpgTransparentHeroShop #PanelBackground,
+.RpgTransparentHeroShop #ShopOffer
 {
     background-color: transparent !important;
     background-image: none !important;
@@ -80,10 +99,9 @@
 
 .RpgTransparentHeroShop Button,
 .RpgTransparentHeroShop .HeroOffer,
-.RpgTransparentHeroShop .ShopOffer
+.RpgTransparentHeroShop .ShopOfferSlot
 {
     /* Keep only the individual interactive cards readable; no full-panel mask. */
     background-color: #11111199;
-    border: 1px solid #ffffff22;
     box-shadow: none;
 }

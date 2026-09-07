@@ -13,6 +13,7 @@ var hudSource = fs.readFileSync(hudPath, "utf8");
 var ruleSyncSource = fs.readFileSync(ruleSyncPath, "utf8");
 var cssSource = fs.readFileSync(cssPath, "utf8");
 var layoutSource = fs.readFileSync(layoutPath, "utf8");
+var fixesCssSource = fs.readFileSync(path.join(path.dirname(cssPath), "issue_fixes_ui.css"), "utf8");
 
 function createPanel(id) {
     var classes = {};
@@ -31,6 +32,8 @@ function createPanel(id) {
         GetChild: function () { return createPanel(""); },
         GetAttributeString: function (_, fallback) { return fallback; },
         RemoveAndDeleteChildren: function () {},
+        SetParent: function (parent) { this.parent = parent; },
+        GetParent: function () { return this.parent || null; },
         style: {},
         classes: classes
     };
@@ -43,17 +46,25 @@ function runHud() {
     var subscriptions = {};
     var localStorageCalls = 0;
 
+    // Unknown IDs return null as they do in Panorama; never invent missing live controls.
+    for (var match of layoutSource.matchAll(/\bid="([^"]+)"/g)) {
+        panels["#" + match[1]] = createPanel(match[1]);
+    }
     function panorama(selector) {
-        if (!panels[selector]) {
-            panels[selector] = createPanel(selector);
-        }
-        return panels[selector];
+        return panels[selector] || null;
     }
     panorama.CreatePanel = function (_, parent, id) {
         var panel = createPanel(id || "");
+        panel.parent = parent;
         createdPanels.push(panel);
+        if (id) {
+            panels["#" + id] = panel;
+        }
         return panel;
     };
+    var rootPanel = createPanel("HudRoot");
+    rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
+    panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) { return token; };
     panorama.Schedule = function (_, callback) { callback(); };
     panorama.LocalStorage = {
@@ -61,7 +72,9 @@ function runHud() {
         Set: function () { localStorageCalls++; }
     };
 
+    var customConfig = {};
     var context = {
+        GameUI: { CustomUIConfig: function () { return customConfig; } },
         console: console,
         $: panorama,
         GameEvents: {
@@ -74,7 +87,12 @@ function runHud() {
             GetLocalPlayerPortraitUnit: function () { return 503; }
         }
     };
-    vm.runInNewContext(hudSource, context, { filename: hudPath });
+    // Load the scripts in the same order as the real HUD layout.
+    var scriptIncludes = layoutSource.matchAll(/<include src="file:\/\/\{resources\}\/scripts\/custom_game\/([^"]+)"/g);
+    for (var include of scriptIncludes) {
+        var scriptPath = path.join(path.dirname(hudPath), include[1]);
+        vm.runInNewContext(fs.readFileSync(scriptPath, "utf8"), context, { filename: scriptPath });
+    }
 
     return {
         panels: panels,
@@ -117,15 +135,85 @@ assert(hud.sentEvents.every(function (e) { return e.name !== "rpg_save_sync"; })
 hud.subscriptions.rpg_hero_slots({
     slot_key: "radiant_1",
     hero_name: "npc_dota_hero_axe",
+    hero_index: 501,
     actions_text: "ability_1;ability_2;ultimate;attack",
     details_text: "axe_berserkers_call;axe_battle_hunger;axe_culling_blade;attack"
 });
 hud.subscriptions.rpg_hero_slots({
     slot_key: "dire_1",
     hero_name: "npc_dota_hero_lion",
+    hero_index: 502,
     actions_text: "ability_1;attack",
     details_text: "lion_impale;attack"
 });
+
+function created(hud, id) {
+    return hud.createdPanels.filter(function (panel) { return panel.id === id; }).slice(-1)[0];
+}
+function visibleRules(hud, side) {
+    return hud.createdPanels.filter(function (panel) {
+        return panel.classes.RuleRow && panel.id.indexOf(side) === 0 && !panel.BHasClass("Hidden");
+    });
+}
+function chooseAction(hud, side, row, action) {
+    created(hud, side + "ActionSelect" + row).events.onactivate();
+    var option = created(hud, "ActionOpt_" + side + row + "_" + action);
+    assert(option && option.events.onactivate, "selected hero action must be available on every authored row");
+    option.events.onactivate();
+}
+
+["Radiant", "Dire"].forEach(function (side) {
+    assert(visibleRules(hud, side).length === 1, side + " must have one default rule");
+    assert(hud.createdPanels.filter(function (p) { return p.classes.RuleRow && p.id.indexOf(side) === 0; }).length === 1,
+        side + " must not preallocate fixed rule rows");
+    var defaults = hud.sentEvents.filter(function (e) {
+        return e.name === "rpg_update_rule" && e.payload.hero_index === (side === "Radiant" ? 501 : 502)
+            && e.payload.enabled === 1;
+    });
+    assert(defaults.length > 0 && defaults.every(function (e) {
+        return e.payload.slot === 1 && e.payload.action_kind === "attack"
+            && e.payload.target_team === "enemy" && e.payload.target_priority_1_type === "nearest"
+            && e.payload.approach === "range_only";
+    }), side + " default must serialize as attack/enemy/nearest/range_only");
+    assert(hud.panels["#" + side + "RulesScrollRail"].BHasClass("Hidden"), "single row has no empty scrolling space");
+    assert(hud.panels["#" + side + "CollapseLabel"].text === "<", "expanded arrow must be <");
+    hud.panels["#" + side + "CollapseButton"].events.onactivate();
+    assert(hud.panels["#" + side + "Editor"].BHasClass("RpgActionPanelCollapsed"), "live editor must collapse");
+    assert(hud.panels["#" + side + "CollapseLabel"].text === ">", "collapsed arrow must be >");
+    hud.panels["#" + side + "CollapseButton"].events.onactivate();
+    assert(!hud.panels["#" + side + "Editor"].BHasClass("RpgActionPanelCollapsed"), "live editor must re-expand");
+    assert(hud.panels["#" + side + "CollapseLabel"].text === "<", "re-expanded arrow must be <");
+});
+assert(hud.panels["#ShopPanel"].BHasClass("RpgTransparentHeroShop"), "live shop must receive transparent class");
+
+created(hud, "RadiantAddRule0").events.onactivate();
+assert(visibleRules(hud, "Radiant").length === 2, "Add must create exactly one row");
+chooseAction(hud, "Radiant", 1, "ability_2");
+hud.subscriptions.rpg_hero_slots({
+    slot_key: "radiant_1", hero_name: "npc_dota_hero_axe", hero_index: 501,
+    actions_text: "ability_1;ability_2;ultimate;item_1;item_2;attack",
+    details_text: "axe_berserkers_call;axe_battle_hunger;axe_culling_blade;item_blink;item_force_staff;attack"
+});
+assert(visibleRules(hud, "Radiant").length === 2, "active skills/items refresh must preserve N authored rules without padding");
+assert(created(hud, "RadiantActionAbility1").abilityname === "axe_battle_hunger", "authored action survives slot refresh");
+created(hud, "RadiantAddRule0").events.onactivate();
+assert(visibleRules(hud, "Radiant").length === 3, "a second Add creates the third rule");
+assert(!hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "rail appears when authored rows overflow");
+hud.panels["#RadiantRulesScrollDown"].events.onactivate();
+assert(hud.panels["#RadiantRules"].style.marginTop === "-10px;", "scroll maximum derives from three rows, not ten");
+created(hud, "RadiantDeleteRule2").events.onactivate();
+created(hud, "RadiantDeleteRule1").events.onactivate();
+assert(visibleRules(hud, "Radiant").length === 1, "delete removes rows without padding");
+assert(hud.panels["#RadiantRules"].style.marginTop === "0px;", "delete clamps stale scroll offset");
+assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "delete hides unnecessary rail");
+assert(hud.sentEvents.some(function (e) {
+    return e.name === "rpg_update_rule" && e.payload.hero_index === 501 && e.payload.rule_count === 1 && e.payload.slot === 1;
+}), "delete must send the reduced rule count to clear stale server slots");
+assert(hud.sentEvents.filter(function (e) { return e.name === "rpg_update_rule"; }).every(function (e) {
+    return e.payload.rule_count >= 1 && e.payload.slot <= e.payload.rule_count;
+}), "rule sync must send actual rows, not disabled padding slots");
+chooseAction(hud, "Radiant", 0, "ability_1");
+chooseAction(hud, "Dire", 0, "ability_1");
 
 // 服务端状态推送后，首批五个英雄报价与阵容 UI 正常渲染。
 hud.subscriptions.rpg_shop_state({
@@ -272,4 +360,29 @@ assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
 var currentSave = runHud();
 assert(currentSave.createdPanels.length > 0, "HUD must initialize and create panels");
 
-console.log("PASS: no-save design, initial hero shop, scrollable action panels, and real ability icons render");
+assert(layoutSource.indexOf("styles/custom_game/issue_fixes_ui.css") > layoutSource.indexOf("styles/custom_game/rpg_demo_hud.css"),
+    "fix styles must load after base styles in the live HUD, not just a sibling layout");
+assert(/\.TeamEditor \.RpgActionPanelArrowButton\s*\{[^}]*width:\s*44px;[^}]*height:\s*44px;/s.test(fixesCssSource),
+    "live editor button selector must override both team-specific 26px styles with 44x44");
+assert(/\.TeamEditor\.RpgActionPanelCollapsed\s*\{[^}]*width:\s*56px !important;[^}]*height:\s*56px !important;[^}]*padding:\s*0px !important;/s.test(fixesCssSource),
+    "collapsed live editor must be 56x56 with no inherited 16px padding");
+assert(/\.TeamEditor\.RpgActionPanelCollapsed \.TeamHeader\s*\{[^}]*width:\s*56px;[^}]*height:\s*56px;[^}]*padding:\s*0px;/s.test(fixesCssSource),
+    "nested header must fit the collapsed editor without clipping its button");
+assert(/\.RpgActionPanelCollapsed \.EditorBody,[\s\S]*visibility:\s*collapse;/.test(fixesCssSource),
+    "actual editor body, identity and portraits must be hidden when collapsed");
+assert(/\.RpgTransparentHeroShop #ShopOffer\s*\{[^}]*background-color:\s*transparent !important;[^}]*background-image:\s*none !important;[^}]*border:\s*0px !important;[^}]*box-shadow:\s*none !important;/s.test(fixesCssSource),
+    "shop root/frame/body and actual multi-offer wrapper must have no opaque mask");
+assert(/\.RpgTransparentHeroShop \.ShopOfferSlot\s*\{[^}]*background-color:\s*#11111199;/s.test(fixesCssSource),
+    "only individual hero offer cards retain a translucent background");
+assert(!/\.RpgTransparentHeroShop \.ShopOffer\s*\{/.test(fixesCssSource),
+    "offer strip must not be mistaken for an individual offer card");
+
+[
+    [path.join(path.dirname(hudPath), "issue_fixes_ui.js"), "scripts/custom_game/issue_fixes_ui.js"],
+    [path.join(path.dirname(cssPath), "issue_fixes_ui.css"), "styles/custom_game/issue_fixes_ui.css"]
+].forEach(function (entry) {
+    var overlayPath = path.join(repoRoot, "dota2_rpg_issue_fixes", "overlay", "content", "dota_addons", "dota2_rpg", "panorama", entry[1]);
+    assert(fs.readFileSync(entry[0]).equals(fs.readFileSync(overlayPath)), "overlay must match live UI: " + entry[1]);
+});
+
+console.log("PASS: live HUD single defaults, authored rows, collapse wiring, transparent shop, no-save, transfers, icons and overlay parity");

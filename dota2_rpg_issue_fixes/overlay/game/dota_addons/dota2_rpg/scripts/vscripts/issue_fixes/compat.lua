@@ -65,14 +65,16 @@ end
 
 function Compat:GetPhase()
     local game = self.game
-    local candidates = {
-        game.phase,
-        game.battlePhase,
-        game.battle_state,
-        game.battleState,
-        game.state and game.state.phase,
-        game.runState and game.runState.phase,
-    }
+    local candidates = {}
+    local function append(value)
+        if value ~= nil then candidates[#candidates + 1] = value end
+    end
+    append(game.phase)
+    append(game.battlePhase)
+    append(game.battle_state)
+    append(game.battleState)
+    append(game.state and game.state.phase)
+    append(game.runState and game.runState.phase)
 
     if game.battleManager ~= nil then
         if game.battleManager.GetPhase ~= nil then
@@ -86,10 +88,10 @@ function Compat:GetPhase()
     for _, value in ipairs(candidates) do
         if type(value) == "string" then
             local upper = string.upper(value)
-            if upper == "PREPARE" or upper == "PREPARATION" then return "PREPARE" end
+            if upper == "PREPARE" or upper == "PREPARATION" or upper == "SETUP" then return "PREPARE" end
             if upper == "COUNTDOWN" then return "COUNTDOWN" end
             if upper == "FIGHT" or upper == "BATTLE" then return "FIGHT" end
-            if upper == "SETTLE" or upper == "SETTLEMENT" then return "SETTLE" end
+            if upper == "SETTLE" or upper == "SETTLEMENT" or upper == "RESULT" then return "SETTLE" end
         end
     end
 
@@ -178,6 +180,10 @@ function Compat:GetAllUnits()
 end
 
 function Compat:GetPlayerUnits()
+    local teams = self.game.battleManager and self.game.battleManager.teamHeroes
+    if type(teams) == "table" then
+        return teams[rawget(_G, "DOTA_TEAM_GOODGUYS") or 2] or {}
+    end
     local known = {}
     local seen = {}
     collect_fields(self.game, {
@@ -187,8 +193,6 @@ function Compat:GetPlayerUnits()
         "current_player_units",
         "lineupUnits",
         "lineup_units",
-        "benchUnits",
-        "bench_units",
     }, known, seen)
     if self.game.state ~= nil then
         collect_fields(self.game.state, {
@@ -213,6 +217,15 @@ function Compat:GetPlayerUnits()
 end
 
 function Compat:GetEnemyUnits()
+    local teams = self.game.battleManager and self.game.battleManager.teamHeroes
+    if type(teams) == "table" then
+        return teams[rawget(_G, "DOTA_TEAM_BADGUYS") or 3] or {}
+    end
+    -- An explicitly empty current-stage list is authoritative, not a scan request.
+    for _, field in ipairs({ "currentEnemyUnits", "current_enemy_units", "enemyUnits",
+        "enemy_units", "spawnedEnemies", "spawned_enemies" }) do
+        if type(self.game[field]) == "table" then return self.game[field] end
+    end
     local known = {}
     local seen = {}
     collect_fields(self.game, {
@@ -248,17 +261,29 @@ end
 
 function Compat:IsRosterHero(player_id, hero)
     if not is_valid(hero) then return false end
-    local owner_id = tonumber(safe_call(hero, "GetPlayerOwnerID", -1)) or -1
-    if owner_id == tonumber(player_id) then return true end
-
-    for _, candidate in ipairs(self:GetPlayerUnits()) do
-        if candidate == hero then return true end
+    player_id = tonumber(player_id)
+    if player_id == nil or player_id < 0 then return false end
+    if self.game.playerId ~= nil and player_id ~= tonumber(self.game.playerId) then return false end
+    if self.game.IsLineupUnit ~= nil and self.game.IsBenchUnit ~= nil then
+        return self.game:IsLineupUnit(hero) or self.game:IsBenchUnit(hero)
     end
-    return false
+    return tonumber(safe_call(hero, "GetPlayerOwnerID", -1)) == player_id
+end
+
+function Compat:IsInventorySource(player_id, source)
+    player_id = tonumber(player_id)
+    if player_id == nil or player_id < 0 then return false end
+    if self.game.playerId ~= nil and player_id ~= tonumber(self.game.playerId) then return false end
+    if self.game.IsEquipmentCarrier ~= nil then return self.game:IsEquipmentCarrier(source) end
+    return tonumber(safe_call(source, "GetPlayerOwnerID", -1)) == player_id
 end
 
 function Compat:GetStageEntries()
     local game = self.game
+    if game.dataLoader ~= nil and game.dataLoader.GetLevel ~= nil then
+        local level = game.dataLoader:GetLevel(game.currentLevelId)
+        return type(level) == "table" and (level.enemies or {}) or {}
+    end
     local stage_data = game.currentLevelData
         or game.current_level_data
         or game.currentStageData
@@ -287,10 +312,20 @@ function Compat:GetStageEntries()
 end
 
 function Compat:GetLevels()
+    if self.game.dataLoader ~= nil and self.game.dataLoader.GetAllLevels ~= nil then
+        return self.game.dataLoader:GetAllLevels()
+    end
     return self.game.levels or self.game.levelData or self.game.level_data
 end
 
 function Compat:HasTacticOrder(unit)
+    local engine = self.game.tacticBridge and self.game.tacticBridge.tacticEngine
+    local index = safe_call(unit, "entindex", -1)
+    local state = engine and engine.states and engine.states[index]
+    if state ~= nil then
+        local now = GameRules and GameRules.GetGameTime and GameRules:GetGameTime() or 0
+        if state.chase ~= nil or (state.wait_until or 0) > now then return true end
+    end
     local candidates = {
         self.game.tacticBridge,
         self.game.tactics,
@@ -304,7 +339,7 @@ function Compat:HasTacticOrder(unit)
         "IsUnitBusy",
     }
 
-    for _, object in ipairs(candidates) do
+    for _, object in pairs(candidates) do
         if object ~= nil then
             for _, method_name in ipairs(methods) do
                 if type(object[method_name]) == "function" then
@@ -318,6 +353,13 @@ function Compat:HasTacticOrder(unit)
 end
 
 function Compat:BindTacticProfile(unit, profile, entry)
+    local manager = self.game.battleManager
+    if manager ~= nil and manager.teamRules ~= nil and unit.enemyRuleIndex ~= nil
+        and self.game.BuildEnemyRules ~= nil then
+        local team = rawget(_G, "DOTA_TEAM_BADGUYS") or 3
+        manager.teamRules[team][unit.enemyRuleIndex] = self.game:BuildEnemyRules(profile)
+        return true
+    end
     local candidates = {
         self.game.tacticBridge,
         self.game.tactics,
@@ -331,10 +373,10 @@ function Compat:BindTacticProfile(unit, profile, entry)
         "BindProfile",
     }
 
-    for _, object in ipairs(candidates) do
+    for _, object in pairs(candidates) do
         if object ~= nil then
             for _, method_name in ipairs(methods) do
-                if object[method_name] ~= nil then
+                if type(object[method_name]) == "function" then
                     local ok = pcall(
                         object[method_name],
                         object,

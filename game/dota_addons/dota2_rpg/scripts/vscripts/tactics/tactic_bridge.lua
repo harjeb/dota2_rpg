@@ -10,6 +10,7 @@ local OrderGateModule = OrderFilterModule.OrderGate
 local CombatMemory = require("tactics/combat_memory")
 local TacticEngine = require("tactics/tactic_engine")
 local RuleService = require("tactics/rule_service")
+local DefaultRules = require("issue_fixes.default_rules")
 
 local function is_valid_entity(entity)
 	return entity ~= nil and (entity.IsNull == nil or not entity:IsNull())
@@ -231,6 +232,7 @@ function TacticBridge:Install()
 	end
 
 	local state = { rules = {} }
+	local legacyCache = {}
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
@@ -254,7 +256,7 @@ function TacticBridge:Install()
 
 		-- 仅为旧版本当前 Run 内存数据提供迁移回退，不再在开战时覆盖新版规则。
 		local heroName = unit.lineupHeroName or unit:GetUnitName()
-		local cache = state.rules[heroName]
+		local cache = legacyCache[heroName]
 		if cache ~= nil then
 			return cache
 		end
@@ -265,13 +267,14 @@ function TacticBridge:Install()
 				table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
 			end
 		end
-		state.rules[heroName] = converted
+		converted = DefaultRules.Normalize(converted)
+		legacyCache[heroName] = converted
 		return converted
 	end
 
 	function manager.invalidateRules()
 		-- 只清理旧规则迁移缓存；RuleService 的当前 Run 配置不能在开战时清空。
-		state.rules = {}
+		legacyCache = {}
 	end
 
 	local function buildContext(unit)
@@ -474,6 +477,9 @@ function TacticBridge:Install()
 			return gameMode:IsNativeItemShopOrder(filterTable)
 		end,
 		validate_prepare_order = function(filterTable)
+			return gameMode:ValidatePrepareOrder(filterTable)
+		end,
+		validate_inventory_order = function(filterTable)
 			return gameMode:ValidatePrepareOrder(filterTable)
 		end,
 	})

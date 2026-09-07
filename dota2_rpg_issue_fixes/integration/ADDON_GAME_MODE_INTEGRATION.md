@@ -149,7 +149,7 @@ self.issueFixes:OnBattleStarted(
 
 这会：
 
-- 打开中线 visual/nav gate；
+- 清除本控制器的整条原生树木隔断并打开中线 nav gate；
 - 清理中线可选树木；
 - 解除敌人准备状态；
 - 开启 IdleAcquire 和 AcquisitionRange；

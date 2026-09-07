@@ -20,12 +20,12 @@ function DefaultRules.CreateAttackNearestRule()
         enabled = true,
         action = {
             kind = "attack",
+            logical_id = "basic_attack",
         },
-        target_filters = {
-            team = "enemy",
-        },
+        target = { team = "enemy", types = { "hero", "monster", "summon" } },
+        target_filters = {},
         target_priorities = {
-            "nearest",
+            { type = "nearest" },
         },
         use_conditions = {},
         approach = "range_only",
@@ -38,7 +38,7 @@ function DefaultRules.Normalize(saved_rules)
 
     -- Preserve real player-authored rules. Remove only explicitly marked padding or
     -- empty placeholders; never infer that a valid-looking rule is disposable.
-    for _, rule in ipairs(saved_rules or {}) do
+    for _, rule in ipairs(type(saved_rules) == "table" and saved_rules or {}) do
         if type(rule) == "table"
             and rule.is_padding ~= true
             and rule.placeholder ~= true

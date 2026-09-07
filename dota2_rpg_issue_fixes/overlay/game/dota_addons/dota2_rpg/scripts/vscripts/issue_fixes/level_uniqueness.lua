@@ -33,6 +33,7 @@ local function get_stage(levels, stage_number)
         "level_" .. tostring(stage_number),
         "level" .. tostring(stage_number),
         "ch" .. tostring(stage_number),
+        string.format("ch%02d", stage_number),
     }
 
     for _, key in ipairs(candidates) do
@@ -118,14 +119,12 @@ function LevelUniqueness.ApplyStageOneTwoFix(levels)
     assert(type(levels) == "table", "levels must be a table")
 
     local stage_one = get_stage(levels, 1)
-    local stage_two, stage_two_key = get_stage(levels, 2)
+    local stage_two = get_stage(levels, 2)
     local one_signature = LevelUniqueness.CompositionSignature(stage_one)
     local two_signature = LevelUniqueness.CompositionSignature(stage_two)
 
-    if stage_two == nil then
-        stage_two_key = "2"
-        levels[stage_two_key] = { enemies = LevelUniqueness.StageTwoEnemies() }
-        return true, "stage_2_created"
+    if stage_one == nil or stage_two == nil then
+        return false, "stage_missing"
     end
 
     if one_signature == "" or one_signature ~= two_signature then

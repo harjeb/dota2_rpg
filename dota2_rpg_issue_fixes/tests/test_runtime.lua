@@ -1,6 +1,9 @@
 local package_root = assert(arg[1], "package root required")
-local vscripts = package_root .. "/overlay/game/dota_addons/dota2_rpg/scripts/vscripts"
-package.path = vscripts .. "/?.lua;" .. vscripts .. "/?/init.lua;" .. package.path
+local live_vscripts = package_root .. "/../game/dota_addons/dota2_rpg/scripts/vscripts"
+local vscripts = arg[2] == "live" and live_vscripts
+    or package_root .. "/overlay/game/dota_addons/dota2_rpg/scripts/vscripts"
+package.path = vscripts .. "/?.lua;" .. vscripts .. "/?/init.lua;"
+    .. live_vscripts .. "/?.lua;" .. package.path
 
 local function assert_equal(actual, expected, label)
     if actual ~= expected then
@@ -289,12 +292,8 @@ do
     arena:CloseMiddleGate()
     DoEntFire = nil
     local expectedGateInputs = {
-        { "rpg_mid_gate_visual", "Alpha", "0" },
-        { "rpg_mid_gate_visual", "Disable", "" },
         { "rpg_mid_gate_nav", "SetNonsolid", "" },
         { "rpg_mid_gate_nav", "Disable", "" },
-        { "rpg_mid_gate_visual", "Enable", "" },
-        { "rpg_mid_gate_visual", "Alpha", "255" },
         { "rpg_mid_gate_nav", "Enable", "" },
         { "rpg_mid_gate_nav", "SetSolid", "" },
     }
@@ -406,4 +405,365 @@ do
     )
 end
 
-print("runtime tests passed")
+-- Transfers must authenticate both ends and inspect exact post-operation ownership.
+do
+    local Transfer = require("issue_fixes.inventory_transfer")
+    local source, target = Unit.new(), Unit.new()
+    local item = Item.new("item_blink")
+    source.inventory[0] = item
+    local service = Transfer.new({
+        is_inventory_source = function(id, unit) return id == 0 and unit == source end,
+        is_roster_hero = function(id, unit) return id == 0 and unit == target end,
+    })
+    assert_equal(service:Transfer(1, source, item, target), false, "foreign player rejected")
+    assert_equal(service:Transfer(0, target, item, target), false, "foreign source rejected")
+    target.AddItem = function(self)
+        self.inventory[1] = Item.new("unrelated_change")
+    end
+    assert_equal(service:Transfer(0, source, item, target), false, "unrelated mutation is not transfer")
+    assert_equal(source.inventory[0], item, "same handle rolled back")
+    target.AddItem = function(self, value)
+        self.inventory[0] = value
+        error("engine throws after successful attach")
+    end
+    assert_equal(service:Transfer(0, source, item, target), true, "post-attach exception retains success")
+    assert_equal(target.inventory[0], item, "successful handle retained")
+    assert_equal(item.purchaser, nil, "transfer preserves original purchaser")
+    target:RemoveItem(item)
+    source.inventory[0] = item
+    target.AddItem = function(self, value)
+        value.valid = false
+        self.inventory[0] = Item.new("combined_item")
+    end
+    assert_equal(service:Transfer(0, source, item, target), true, "engine combination accepted")
+end
+
+-- The default rule is executable under the actual RuleService schema.
+do
+    local DefaultRules = require("issue_fixes.default_rules")
+    local RuleService = require("tactics.rule_service")
+    local service = RuleService.new({
+        get_phase = function() return "PREPARE" end,
+        is_roster_hero = function() return true end,
+        is_action_allowed = function() return true end,
+        state = { rules = {} },
+    })
+    local rule = DefaultRules.Normalize(false)[1]
+    assert_equal(service:ValidateRule(0, Unit.new(), rule), true, "valid default schema")
+    assert_equal(rule.target.team, "enemy", "default enemy team")
+    assert_equal(rule.target_priorities[1].type, "nearest", "default nearest target")
+    assert_equal(rule.approach, "range_only", "default current range only")
+end
+
+-- Actual ch01/ch02 keys, missing stages and already-distinct stages.
+do
+    local Levels = require("issue_fixes.level_uniqueness")
+    local levels = {
+        ch01 = { enemies = { { unit = "same", count = 2 } } },
+        ch02 = { enemies = { { unit = "same" }, { unit = "same" } }, reward = { gold = 19 } },
+    }
+    local reward = levels.ch02.reward
+    assert_equal(Levels.ApplyStageOneTwoFix(levels), true, "padded chapter repair")
+    assert_equal(levels.ch02.reward, reward, "reward identity preserved")
+    assert_equal(levels["2"], nil, "no phantom stage created")
+    local enemies = levels.ch02.enemies
+    assert_equal(Levels.ApplyStageOneTwoFix(levels), false, "distinct chapter untouched")
+    assert_equal(levels.ch02.enemies, enemies, "distinct enemy identity retained")
+    assert_equal(Levels.ApplyStageOneTwoFix({ ch01 = levels.ch01 }), false, "missing chapter not invented")
+end
+
+-- Live dataLoader/teamHeroes and native ai presets are authoritative.
+do
+    local Compat = require("issue_fixes.compat")
+    local field, bench, enemy = Unit.new(), Unit.new(), Unit.new(DOTA_TEAM_BADGUYS)
+    enemy.enemyRuleIndex = 1
+    local levels = { ch02 = { enemies = { { unit = "centaur", ai = "bruiser" } } } }
+    local game = {
+        phase = "result", playerId = 0, currentLevelId = "ch02", benchUnits = { bench },
+        dataLoader = { GetLevel = function(_, key) return levels[key] end, GetAllLevels = function() return levels end },
+        battleManager = { teamHeroes = { [2] = { field }, [3] = { enemy } }, teamRules = { [3] = {} } },
+        tacticBridge = { tacticEngine = { states = {} } },
+        BuildEnemyRules = function(_, profile) return { profile } end,
+        IsLineupUnit = function(_, unit) return unit == field end,
+        IsBenchUnit = function(_, unit) return unit == bench end,
+    }
+    local compat = Compat.new(game)
+    assert_equal(compat:GetPhase(), "SETTLE", "live result phase recognized")
+    assert_equal(compat:GetPlayerUnits()[1], field, "bench excluded from AI targets")
+    assert_equal(compat:GetEnemyUnits()[1], enemy, "actual enemies used")
+    assert_equal(compat:GetLevels(), levels, "actual level registry used")
+    assert_equal(compat:GetStageEntries(), levels.ch02.enemies, "current chapter entries used")
+    assert_equal(compat:IsRosterHero(0, bench), true, "owned bench accepted")
+    assert_equal(compat:IsRosterHero(1, bench), false, "other player rejected")
+    compat:BindTacticProfile(enemy, "bruiser", {})
+    assert_equal(game.battleManager.teamRules[3][1][1], "bruiser", "profile reaches live rules")
+    game.tacticBridge.tacticEngine.states[enemy:entindex()] = { chase = {} }
+    assert_equal(compat:HasTacticOrder(enemy), true, "live chase detected")
+    game.battleManager.teamHeroes[3] = {}
+    assert_equal(#compat:GetEnemyUnits(), 0, "empty team remains authoritative")
+    game.battleManager = nil
+    game.currentEnemyUnits = {}
+    game.enemyUnits = { enemy }
+    assert_equal(#compat:GetEnemyUnits(), 0, "empty current-stage list wins stale list")
+    game.phase = nil
+    game.battlePhase = "COUNTDOWN"
+    assert_equal(compat:GetPhase(), "COUNTDOWN", "phase lookup survives nil fields")
+end
+
+-- Name matching never assigns another unit's profile to an unmatched name.
+do
+    local Runtime = require("issue_fixes.enemy_runtime")
+    local a, b, extra = Unit.new(3), Unit.new(3), Unit.new(3)
+    a.unit_name, b.unit_name, extra.unit_name = "a", "b", "summon"
+    local orders = 0
+    local busy = false
+    local runtime = Runtime.new({
+        execute_order = function() orders = orders + 1; return true end,
+        has_tactic_order = function() return busy end,
+    })
+    runtime:RegisterStage({ { unit = "a", ai = "profile_a" }, { unit = "b", ai_profile = "profile_b" } }, { extra, b, a })
+    assert_equal(extra.rpg_ai_profile, "attack_nearest", "unknown named unit keeps fallback")
+    assert_equal(a.rpg_ai_profile, "profile_a", "legacy ai field bound by name")
+    assert_equal(b.rpg_ai_profile, "profile_b", "explicit profile bound by name")
+    for _, name in ipairs({ "modifier_rooted", "modifier_disarmed", "modifier_silence" }) do a.modifiers[name] = true end
+    runtime:RegisterStage({ "a" }, { a })
+    runtime:Start({ Unit.new(2, Vector(-200, 0, 0)) }, Vector(0, 0, 0))
+    assert_equal(next(a.modifiers), nil, "all native preparation locks removed")
+    local before = orders
+    busy = true
+    runtime:Think()
+    assert_equal(orders, before, "tactic chase not interrupted")
+    busy = false
+    a.IsInAbilityPhase = function() return true end
+    runtime:Think()
+    assert_equal(orders, before, "cast phase not interrupted")
+    a.IsInAbilityPhase = nil
+    a.attack_target = Unit.new(2)
+    runtime:Think()
+    assert_equal(orders, before, "live attack target not interrupted")
+    a.attack_target = nil
+    runtime:Think()
+    assert_equal(orders, before + 1, "idle enemy receives fallback")
+end
+
+-- Rejected and repeated start events must not activate/reset enemy AI.
+do
+    local Bootstrap = require("issue_fixes.bootstrap")
+    local Game = { InitGameMode = function() end }
+    function Game:OnStartBattle(accept) if accept then self.phase = "fight" end end
+    Bootstrap.Install(Game)
+    local started = 0
+    local game = setmetatable({ phase = "setup" }, { __index = Game })
+    game.rpgIssueFixCompat = require("issue_fixes.compat").new(game)
+    game.issueFixes = {
+        RegisterCurrentStage = function() end,
+        OnBattleStarted = function() started = started + 1 end,
+    }
+    game:OnStartBattle(false)
+    assert_equal(started, 0, "rejected start does not activate runtime")
+    game:OnStartBattle(true)
+    game:OnStartBattle(true)
+    assert_equal(started, 1, "runtime starts only on phase transition")
+end
+
+-- Native order side effects run even without battle units, but never in combat.
+do
+    local Filters = require("tactics.order_filter")
+    local phase, validated = "PREPARE", 0
+    local unit = Unit.new()
+    local filter = Filters.OrderFilter.new({
+        get_phase = function() return phase end,
+        is_battle_unit = function() return false end,
+        is_inventory_unit = function(u) return u == unit end,
+        validate_inventory_order = function() validated = validated + 1; return true end,
+    })
+    for _, order_type in ipairs({ DOTA_UNIT_ORDER_PURCHASE_ITEM, DOTA_UNIT_ORDER_TRAIN_ABILITY,
+        DOTA_UNIT_ORDER_SELL_ITEM, DOTA_UNIT_ORDER_DISASSEMBLE_ITEM,
+        DOTA_UNIT_ORDER_GIVE_ITEM, DOTA_UNIT_ORDER_MOVE_ITEM, DOTA_UNIT_ORDER_PICKUP_ITEM,
+        DOTA_UNIT_ORDER_DROP_ITEM, DOTA_UNIT_ORDER_SET_ITEM_COMBINE_LOCK }) do
+        local order = { order_type = order_type, issuer_player_id_const = 0, units = {} }
+        phase = "PREPARE"
+        assert_equal(filter:Filter(order), true, "prepare native order " .. order_type)
+        for _, locked in ipairs({ "COUNTDOWN", "FIGHT", "SETTLE" }) do
+            phase = locked
+            assert_equal(filter:Filter(order), false, "locked native order " .. order_type)
+        end
+    end
+    assert_equal(validated, 9, "native validator invoked once per preparation order")
+end
+
+-- Load the actual addon class: standalone compatibility mocks cannot prove wiring.
+do
+    function class()
+        local result = {}
+        result.__index = result
+        return result
+    end
+    dofile(live_vscripts .. "/addon_game_mode.lua")
+    local game = setmetatable({ playerId = 0, phase = "setup", heroData = {} }, CDota2RpgDemo)
+    local hero = Unit.new()
+    local ability = Item.new("test_spell")
+    ability.level = 0
+    function ability:GetLevel() return self.level end
+    function ability:SetLevel(value) self.level = value end
+    hero.level, hero.points = 1, 1
+    function hero:GetLevel() return self.level end
+    function hero:HeroLevelUp() self.level = self.level + 1; self.points = self.points + 1 end
+    function hero:GetAbilityCount() return 1 end
+    function hero:GetAbilityByIndex() return ability end
+    function hero:GetAbilityPoints() return self.points end
+    function hero:SetAbilityPoints(value) self.points = value end
+    function hero:GetEntityIndex() return self:entindex() end
+    function hero:SetRespawnsDisabled() end
+    function hero:SetHealth() end
+    function hero:SetMana() end
+    function hero:GetMaxHealth() return 100 end
+    function hero:GetMaxMana() return 100 end
+    function hero:AddNewModifier(_, _, name) self.modifiers[name] = true end
+    function hero:SetOwner(owner) self.owner = owner end
+    function hero:SetPlayerID(id) self.player_id = id end
+    function hero:SetControllableByPlayer(id) self.controlled = id end
+    function hero:GetPlayerOwnerID() return self.player_id or -1 end
+    hero.benchHeroName = "test_hero"
+    game.heroData.test_hero = { level = 3, skill_points = 3 }
+    game.autoAbilityHeroes = {}
+    game:PrepareBattleHero(hero, 3)
+    assert_equal(hero.points, 3, "bench retains manual skill points")
+    assert_equal(ability.level, 0, "bench not auto-trained")
+    assert_equal(hero.modifiers.modifier_rpg_prepare_bench, true, "bench uses non-stunning lock")
+    ability.level, hero.points = 1, 2
+    game:CaptureHeroAbilities(hero)
+    assert_equal(game.heroData.test_hero.skill_points, 2, "native spent point recorded")
+    game.heroData.test_hero.level = 4
+    game:PrepareBattleHero(hero, 4)
+    assert_equal(hero.points, 3, "only earned level point added")
+    assert_equal(ability.level, 1, "trained ability retained through level-up")
+    local stash = Unit.new()
+    game.GetStashUnit = function() return stash end
+    assert_equal(game:BindEquipmentCarrierToPlayer(hero), true, "live carrier binding works")
+    assert_equal(hero.player_id, 0, "native PlayerID assigned")
+    assert_equal(hero.owner, stash, "native owner assigned")
+    game.IsLineupUnit = function() return false end
+    game.IsBenchUnit = function(_, unit) return unit == hero end
+    local order = { units = { hero:entindex() }, issuer_player_id_const = 0,
+        order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY, entindex_ability = ability:entindex() }
+    assert_equal(game:ValidatePrepareOrder(order), true, "actual bench training validation")
+    order.entindex_ability = Item.new("foreign_spell"):entindex()
+    assert_equal(game:ValidatePrepareOrder(order), false, "foreign ability rejected")
+    local item = Item.new("item_blink")
+    hero.inventory[0] = item
+    order.order_type, order.entindex_ability = DOTA_UNIT_ORDER_SET_ITEM_COMBINE_LOCK, item:entindex()
+    assert_equal(game:ValidatePrepareOrder(order), true, "actual combine lock allowed")
+    local transfer = require("issue_fixes.inventory_transfer").new({
+        is_inventory_source = function(id, unit) return id == 0 and unit == stash end,
+        is_roster_hero = function(id, unit) return id == 0 and unit == hero end,
+    })
+    game.issueFixes = { TransferWarehouseItem = function(_, ...) return transfer:Transfer(...) end }
+    game.FindOwnedHeroUnit = function() return hero end
+    game.SyncLiveEquipmentState = function(self) self.inventory_synced = true end
+    for slot = 0, 5 do hero.inventory[slot] = Item.new("full_active_" .. slot) end
+    local gift = Item.new("item_force_staff")
+    stash.inventory[0] = gift
+    game:OnItemEquip(nil, { hero = "test_hero", item = gift.name, item_index = gift:entindex() })
+    assert_equal(hero.inventory[6], gift, "live HUD event transfers exact handle into backpack")
+    assert_equal(stash.inventory[0], nil, "live HUD event removes source handle")
+    assert_equal(game.inventory_synced, true, "live HUD event synchronizes state")
+    local presets = { rules = {
+        ["2"] = { action = { type = "attack" }, target = "enemy_distance_nearest" },
+        ["1"] = { action = { type = "ability_1" }, target = "self" },
+    } }
+    game.dataLoader = { GetEnemyAI = function() return presets end }
+    local enemy_rules = game:BuildEnemyRules("configured")
+    assert_equal(#enemy_rules, 2, "string-keyed KV AI rules loaded")
+    assert_equal(enemy_rules[1].action, "ability_1", "KV AI priority order retained")
+end
+
+-- The real bridge preserves authored rules across its battle ResetState call.
+do
+    local field = Unit.new()
+    field.unit_name, field.lineupHeroName = "test_hero", "test_hero"
+    local listeners, net_values = {}, {}
+    CustomGameEventManager = {
+        RegisterListener = function(_, name, callback) listeners[name] = callback end,
+    }
+    CustomNetTables = {
+        SetTableValue = function(_, name, key, value) net_values[key] = value end,
+    }
+    Dynamic_Wrap = function(object, method) return object[method] end
+    local mode = {
+        SetExecuteOrderFilter = function(self, callback, context)
+            self.filter, self.context = callback, context
+        end,
+    }
+    GameRules = { GetGameModeEntity = function() return mode end, GetGameTime = function() return 0 end }
+    local game = {
+        phase = "setup", playerId = 0, heroData = { test_hero = {} }, heroRulesByName = {},
+        battleManager = { teamHeroes = { [2] = { field }, [3] = {} }, teamRules = { [2] = {}, [3] = {} } },
+        IsEquipmentCarrier = function(_, unit) return unit == field end,
+        IsNativeItemShopOrder = function(_, order) return order.order_type == DOTA_UNIT_ORDER_PURCHASE_ITEM end,
+        ValidatePrepareOrder = function(self) self.validated = (self.validated or 0) + 1; return true end,
+    }
+    local bridge = TacticBridge.new({ game_mode = game })
+    bridge:Install()
+    assert_equal(#bridge.getRules(field), 1, "live bridge supplies one default without client")
+    assert_equal(bridge.getRules(field)[1].approach, "range_only", "live bridge default is range-only")
+    local authored = require("issue_fixes.default_rules").CreateAttackNearestRule()
+    authored.enabled = false
+    bridge.ruleService.state.rules.test_hero = { authored, authored, authored }
+    bridge:ResetState()
+    assert_equal(#bridge.getRules(field), 3, "battle reset preserves authored rows")
+    local args = { action_kind = "attack", action_id = "basic_attack", target_team = "enemy",
+        approach = "range_only", enabled = 0, rule_count = 1 }
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), 1, args), true, "authorized truncate accepted")
+    assert_equal(#bridge.getRules(field), 1, "server stale rows truncated")
+    assert_equal(bridge.getRules(field)[1].enabled, false, "authored disabled rule retained")
+    assert_equal(next(net_values["test_hero:2"]), nil, "stale published rule cleared")
+    args.rule_count = 0
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), 1, args), false, "zero rule count rejected")
+    args.rule_count = 1.5
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), 1, args), false, "fractional count rejected")
+    args.rule_count = 1
+    assert_equal(bridge.ruleService:UpdateRule(1, field:entindex(), 1, args), false, "foreign truncation rejected")
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), "bad", args), false, "malformed slot rejected")
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), 2, args), false, "disabled row beyond count rejected")
+    assert_equal(#bridge.getRules(field), 1, "invalid update never adds disabled padding")
+    args.enabled = 1
+    assert_equal(bridge.ruleService:UpdateRule(0, field:entindex(), 2, args), false, "active row beyond count rejected")
+    local order = { order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, issuer_player_id_const = 0, units = {} }
+    assert_equal(mode.filter(mode.context, order), true, "installed bridge filter allows native purchase")
+    assert_equal(game.validated, 1, "installed bridge invokes native purchase context validator")
+    game.phase = "fight"
+    assert_equal(mode.filter(mode.context, order), false, "installed bridge blocks fight purchase")
+end
+
+-- Native shop API configuration and roster assignment failures are observable.
+do
+    local Roster = require("issue_fixes.roster_access")
+    local easybuy, universal
+    SendToServerConsole = function(command) easybuy = command end
+    GameRules.SetUseUniversalShopMode = function(_, enabled) universal = enabled end
+    Roster.EnableNativeShop({ enable_easy_buy = true })
+    assert_equal(universal, true, "universal native shop enabled")
+    assert_equal(easybuy, "dota_easybuy 1", "native easy-buy enabled")
+    SendToServerConsole = nil
+    local player = {}
+    PlayerResource = { GetPlayer = function() return player end }
+    local hero = Unit.new()
+    function hero:SetOwner(value) self.owner = value end
+    function hero:SetPlayerID(value) self.player_id = value end
+    function hero:SetControllableByPlayer(value) self.controlled = value end
+    assert_equal(Roster.AssignToPlayer(hero, 0), true, "all ownership APIs succeed")
+    assert_equal(hero.owner, player, "roster owner assigned")
+    assert_equal(hero.player_id, 0, "roster player id assigned")
+    hero.SetPlayerID = function() error("assignment rejected") end
+    assert_equal(Roster.AssignToPlayer(hero, 0), false, "assignment error not reported as success")
+    MODIFIER_STATE_INVULNERABLE, MODIFIER_STATE_ROOTED = 1, 2
+    MODIFIER_STATE_DISARMED, MODIFIER_STATE_SILENCED, MODIFIER_STATE_NO_UNIT_COLLISION = 3, 4, 5
+    MODIFIER_STATE_STUNNED, MODIFIER_STATE_COMMAND_RESTRICTED = 6, 7
+    require("modifiers.modifier_rpg_prepare_bench")
+    local states = modifier_rpg_prepare_bench:CheckState()
+    assert_equal(states[MODIFIER_STATE_STUNNED], nil, "bench is not stunned")
+    assert_equal(states[MODIFIER_STATE_COMMAND_RESTRICTED], nil, "bench accepts native commands")
+end
+
+print("runtime tests passed (" .. (arg[2] or "overlay") .. ")")

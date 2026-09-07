@@ -143,6 +143,7 @@ local function newUnit(unitName, position, team)
 	function unit:SetIdleAcquire(value) self.idleAcquire = value end
 	function unit:SetAcquisitionRange(value) self.acquisitionRange = value end
 	function unit:SetAbilityPoints(value) self.abilityPoints = value end
+	function unit:GetAbilityPoints() return self.abilityPoints or 1 end
 	function unit:GetAbilityCount() return 0 end
 	function unit:AddNewModifier() end
 	function unit:RemoveSelf() self.removed = true end

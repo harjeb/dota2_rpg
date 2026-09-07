@@ -1,75 +1,61 @@
-# 已落地的 Hammer 紧凑矩形战场
+# 原生岩石边界与树木隔断
 
-第 9 项的地图内容已写入仓库和修复包中的：
+地图源码位于 `content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap`，修复包 overlay 保存同一份二进制 VMAP。场地仍为两个相邻 1200×900 准备区，总计 2400×900。
 
-```text
-content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap
-```
+安装器会备份并覆盖 VMAP；有自行编辑地图的 checkout 应先审查差异并在 Hammer 中合并，不能盲目覆盖。
 
-地图使用两个相邻的 **1200×900** 准备区，整体为 **2400×900**。Lua 仍保留越界纠正作为异常兜底；正常移动、寻路和中线切换由以下 VMAP 几何负责。
-
-> 自动安装器现在会备份并复制该 VMAP。对有自行编辑地图的 checkout，应先保留备份或在 Hammer 中手工合并下列实体，而不是忽略地图冲突。
-
-## 坐标契约
-
-地面 Z 为 `128`；Lua 读取的标记已经实际写入地图：
+## 坐标与不可见保护
 
 | targetname | 坐标 | 用途 |
 | --- | --- | --- |
-| `rpg_arena_min` | `(-1200, -450, 128)` | 整体左下角 |
-| `rpg_arena_max` | `(1200, 450, 128)` | 整体右上角 |
-| `rpg_arena_center` | `(0, 0, 128)` | 中线和攻击移动目标 |
+| `rpg_arena_min` | `(-1200, -450, 128)` | 左下角 |
+| `rpg_arena_max` | `(1200, 450, 128)` | 右上角 |
+| `rpg_arena_center` | `(0, 0, 128)` | 中线中心 |
 
-因此当前 Lua 的 X 轴左右划分为：
+四个永久 `func_brush` 使用不可见 `materials/tools/toolsclip.vmat`，只承担物理边界，`Solidity = 2`：
+
+| targetname | 中心 | 半尺寸 (X, Y, Z) |
+| --- | --- | --- |
+| `rpg_arena_wall_north` | `(0, 466, 384)` | `(1224, 16, 256)` |
+| `rpg_arena_wall_south` | `(0, -466, 384)` | `(1224, 16, 256)` |
+| `rpg_arena_wall_east` | `(1216, 0, 384)` | `(16, 466, 256)` |
+| `rpg_arena_wall_west` | `(-1216, 0, 384)` | `(16, 466, 256)` |
+
+四块 `materials/tools/nonavclip.vmat` 地面 slab 继续覆盖外边缘，禁止该处生成地面导航。不要用可见岩石的物理模型代替这些固定导航边界。
+
+## 可见外围：原版岩石
+
+外围使用 Dota 原版 `prop_static` 岩石，不再以 `materials/dev/primary_white.vmat` 几何墙作为外观。模型引用来源是本地原版地图 `C:/Temp/lanpang/content/test2/maps/dota.vmap`：
 
 ```text
-我方准备区：x -1200 ~ 0，y -450 ~ 450
-敌方准备区：x     0 ~ 1200，y -450 ~ 450
+models/props_rock/riveredge_rock_wall003a.vmdl
+models/props_rock/riveredge_rock_wall002a.vmdl
 ```
 
-若在 Hammer 中整体平移或旋转这些元素，必须同步改动 `ArenaController:BoundsForUnit()`、出生点和准备期订单钳制；不能只移动其中一个 marker。
+外围共 28 个原版岩石 prop：南北边各 11 个，东西边各 3 个，模型碰撞关闭，由不可见边界统一保护。仓库没有新增自定义模型文件。离线检查只能证明 VMAP 引用了来源中存在的路径；无法验证当前游戏版本 VPK 中的模型、实际包围盒、朝向或渲染效果。需在 Hammer 中预览，必要时仅调整装饰岩石位置/旋转，不改变 marker 和不可见边界契约。
 
-## 永久外墙与导航阻挡
+## 中间隔断：原生树木
 
-四个永久 `func_brush` 墙同时是可见边界与物理碰撞体，均为 `Solidity = 2`，使用 `materials/dev/primary_white.vmat`，其内侧面恰好落在 2400×900 矩形边缘：
+已移除 `rpg_mid_gate_visual` 可见刷子。只保留覆盖 `x=-24~24`、`y=-450~450`、`z=128~640` 的 `rpg_mid_gate_nav` 不可见碰撞门。
 
-| targetname | 中心 | 半尺寸 (X, Y, Z) | 内侧边缘 |
-| --- | --- | --- | --- |
-| `rpg_arena_wall_north` | `(0, 466, 384)` | `(1224, 16, 256)` | `y = 450` |
-| `rpg_arena_wall_south` | `(0, -466, 384)` | `(1224, 16, 256)` | `y = -450` |
-| `rpg_arena_wall_east` | `(1216, 0, 384)` | `(16, 466, 256)` | `x = 1200` |
-| `rpg_arena_wall_west` | `(-1216, 0, 384)` | `(16, 466, 256)` | `x = -1200` |
-
-四块独立的 `CMapMesh` 地面 slab 使用 `materials/tools/nonavclip.vmat`，在 `z = 96~160` 覆盖四条外边缘。这让地面单位的导航网格在物理墙处停止生成，而不是仅依靠 0.2 秒 Lua 拉回。不要删除或以普通可视模型替换这些 NONAV slab。
-
-## 可重复开关的中线门
-
-中线采用**视觉和物理/导航分离**的两个 `func_brush`，都覆盖 `x = -24~24`、`y = -450~450`、`z = 128~640`：
-
-| targetname | 材质 | Solidity | 职责 |
-| --- | --- | --- | --- |
-| `rpg_mid_gate_visual` | `materials/dev/primary_white.vmat` | `1`（Never Solid） | 蓝色可见中线门 |
-| `rpg_mid_gate_nav` | `materials/tools/toolsclip.vmat` | `2`（Always Solid） | 不可见的物理和导航阻挡 |
-
-`ArenaController` 对它们保留共同的 `Enable` / `Disable` 调用，并针对实际 `func_brush` 再发出以下输入，避免仅隐藏视觉或仅改变碰撞：
-
-| 阶段 | visual | nav |
+| 阶段 | 树木 | nav 输入 |
 | --- | --- | --- |
-| 准备/结算（关门） | `Enable`，`Alpha 255` | `Enable`，`SetSolid` |
-| 开战（开门） | `Alpha 0`，`Disable` | `SetNonsolid`，`Disable` |
+| 准备/结算 | 生成整条中线树木并补齐被砍的树 | `Enable`、`SetSolid` |
+| 战斗 | 逐个砍掉并移除本控制器创建的树 | `SetNonsolid`、`Disable` |
 
-树墙仍可作为额外装饰，开战时会被清除；它们不是可恢复的边界机制。
+`ArenaController:EnsureMiddleTrees()` 使用 `CreateTempTree`，默认在 `x=0`、`y=-426~426` 生成 10 棵树，相邻距离不超过 96。不会通过中心半径清树影响待命区或其他装饰；下一关重新生成，重复准备调用不叠加树木。
 
-## 静态验证记录
+Lua 每 0.2 秒的越界纠正仅针对场上战斗单位。小精灵和待命英雄不注册进战场边界控制。
 
-本次修改通过以下**未启动 Dota 客户端**的检查：
+## 验证入口与限制
 
-1. `dmxconvert`：VMAP KeyValues2 → binary → KeyValues2 往返成功；
-2. `pwsh -NoProfile -ExecutionPolicy Bypass -File tests/compile-vmap.ps1`：临时副本成功构建 world、physics 和 gridnav，`19 compiled, 0 failed`；脚本会清理测试 VPK 和临时资源，构建日志确认生成四面墙和两个中线门实体；
-3. `tests/verify-addon.ps1`：验证三 marker、四面永久 `func_brush`、两个门及四块 `nonavclip` slab 的 targetname、材质、位置、缩放和 Solidity 契约。
+```text
+python tests/vmap.test.py
+python dota2_rpg_issue_fixes/tests/run_checks.py
+pwsh -NoProfile -File tests/verify-addon.ps1
+pwsh -NoProfile -File tests/compile-vmap.ps1
+```
 
-这些是结构/编译验证，不等价于引擎内行为验证。
+前两项是可在无 Dota 安装环境中执行的结构/模拟回归。`verify-addon.ps1` 也可运行离线部分，并明确报告跳过引擎转换；地图编译仍需要 Workshop Tools。本轮环境没有 `dmxconvert.exe` 和 `resourcecompiler.exe`，未完成重新编译，也没有部署或启动 Dota。
 
-## 仍需在 Workshop Tools 验收
-
-在允许启动 Dota 2/Workshop Tools 时，按 `TEST_CHECKLIST.md` 验收：准备阶段不能跨中线、开战 visual/nav 同步打开、双方能直接接敌、外圈不可穿越、位移越界会被 Lua 兜底拉回，以及下一关中线门恢复。本次工作按要求**没有启动 Dota 2 进行实机测试**。
+旧文档中 `19 compiled, 0 failed` 属于原几何墙地图的历史结果，不适用于本轮岩石地图。必须在 Workshop Tools 确认原生岩石无错误模型、准备阶段不能跨线、开战整条中线开放且双方能接敌、下一关树木/碰撞恢复、外围不能逃出，以及位移异常会被纠正。实机验收由 Beads `dota2_rpg-4rk` 跟踪。

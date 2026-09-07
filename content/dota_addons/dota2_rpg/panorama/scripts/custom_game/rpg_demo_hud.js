@@ -123,7 +123,7 @@
         ability_1: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: false },
         ability_2: { condition: "always", value: 50, target_attr: "hp_pct", target_side: "enemy_lowest", forced: false },
         ability_3: { condition: "self_hp_pct_lte", value: 50, target_attr: "hp", target_side: "self", forced: false },
-        attack: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: true }
+        attack: { condition: "always", value: 50, target_attr: "distance", target_side: "nearest", forced: false }
     };
     // 主动装备和技能共用同一套规则编辑器；服务端动作列表中的 item_1..item_6
     // 不能因为没有静态模板而被客户端过滤掉。
@@ -133,7 +133,7 @@
         };
     }
 
-    var MAX_RULE_ROWS = 10;  // 固定 10 条规则槽 + 系统兜底
+    var MAX_RULE_ROWS = 10;  // Editing limit, not a default row count.
     var heroSlots = {};
     var FALLBACK_SLOT_ACTIONS = ["ability_1", "ability_2", "ability_3", "ultimate", "attack"];
 
@@ -175,22 +175,17 @@
     }
 
     function buildRulesForHero(side, heroIndex) {
-        var actions = getSlotActions(side, heroIndex);
-        var rules = [];
-        for (var index = 0; index < MAX_RULE_ROWS; index++) {
-            var action = actions[((index % actions.length) + actions.length) % actions.length];
-            var defaults = DEFAULT_RULE_BY_ACTION[action];
-            rules.push({
-                action: action,
-                condition: defaults.condition,
-                value: defaults.value,
-                target_attr: defaults.target_attr,
-                target_side: defaults.target_side,
-                target: composeTarget(defaults.target_attr, defaults.target_side),
-                forced: defaults.forced
-            });
-        }
-        return rules;
+        var defaults = DEFAULT_RULE_BY_ACTION.attack;
+        return [{
+            action: "attack",
+            condition: defaults.condition,
+            value: defaults.value,
+            target_attr: defaults.target_attr,
+            target_side: defaults.target_side,
+            target: composeTarget(defaults.target_attr, defaults.target_side),
+            forced: defaults.forced,
+            enabled: true
+        }];
     }
 
     function getRules(side, heroIndex) {
@@ -390,7 +385,7 @@
 
     function createRuleRows(side) {
         var container = $("#" + side + "Rules");
-        for (var index = 0; index < MAX_RULE_ROWS; index++) {
+        for (var index = rowPanels[side].length; index < getSelectedRules(side).length; index++) {
             var row = $.CreatePanel("Panel", container, side + "Rule" + index);
             row.AddClass("RuleRow");
             (function (idx) {
@@ -458,7 +453,6 @@
                 });
             }(index));
         }
-        renderSide(side);
     }
 
     function closeEditorMenus() {
@@ -560,12 +554,12 @@
         }
         // 动态填充：该英雄全部可用动作（可重复选择）
         menu.RemoveAndDeleteChildren();
-        var actions = getSlotActions(side, index);
+        var actions = getSlotActions(side, selectedHeroIndex[side]);
         for (var i = 0; i < actions.length; i++) {
             (function (actionKey) {
                 var option = $.CreatePanel("Button", menu, "ActionOpt_" + side + index + "_" + actionKey);
                 option.AddClass("ConditionOption");
-                var detail = getActionDetail(side, index, actionKey);
+                var detail = getActionDetail(side, selectedHeroIndex[side], actionKey);
                 var text = detail !== "" ? detail : $.Localize(ACTION_TOKENS[actionKey] || actionKey);
                 createLabel(option, "", text);
                 option.SetPanelEvent("onactivate", function () {
@@ -597,6 +591,7 @@
         if (rules.length <= 1) {
             return; // 至少保留一条规则（系统兜底始终存在）
         }
+        closeEditorMenus();
         rules.splice(index, 1);
         renderSide(side);
     }
@@ -610,7 +605,7 @@
         var last = rules[rules.length - 1];
         var source = last || { action: "attack", condition: "always", value: 50,
             target_attr: "distance", target_side: "nearest",
-            target: "enemy_distance_nearest", forced: true };
+            target: "enemy_distance_nearest", forced: false };
         rules.push({
             action: source.action,
             condition: source.condition,
@@ -818,9 +813,10 @@
         var locked = phase !== "setup";
         var hidePanels = phase !== "setup";
         var rules = getSelectedRules(side);
-        for (var index = 0; index < MAX_RULE_ROWS; index++) {
+        createRuleRows(side);
+        for (var index = 0; index < rowPanels[side].length; index++) {
             var panels = rowPanels[side][index];
-            // 规则槽数量随英雄可用动作动态变化，多余行隐藏
+            // Only authored rules occupy the list; unused pooled panels stay hidden.
             panels.row.SetHasClass("Hidden", index >= rules.length);
             if (index >= rules.length) {
                 continue;
@@ -859,6 +855,7 @@
         $("#" + side + "Editor").SetHasClass("Hidden", hidePanels);
         $("#" + side + "Editor").SetHasClass("Locked", locked);
         updateHeroSelection(side);
+        applyRuleScroll(side);
     }
 
     function sendRuleToServer(side, heroIndex, ruleIndex) {
@@ -885,6 +882,7 @@
             heroIndex: entry.hero_index,
             heroName: entry.name,
             slot: ruleIndex + 1,
+            ruleCount: rules.length,
             rule: rule,
             actionId: rule.action,
             actionName: rule.action === "attack" ? "" : getActionDetail(side, heroIndex, rule.action)
@@ -902,7 +900,7 @@
         for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
             var side = sides[sideIndex];
             for (var heroIndex = 0; heroIndex < (HEROES[side] || []).length; heroIndex++) {
-                for (var ruleIndex = 0; ruleIndex < MAX_RULE_ROWS; ruleIndex++) {
+                for (var ruleIndex = 0; ruleIndex < getRules(side, heroIndex).length; ruleIndex++) {
                     sendRuleToServer(side, heroIndex, ruleIndex);
                 }
             }
@@ -1132,22 +1130,16 @@
         bench.SetPanelEvent("onactivate", function () {
             GameEvents.SendCustomGameEventToServer("rpg_bench_buy", {});
         });
-        $("#RadiantCollapseButton").SetPanelEvent("onactivate", function () {
-            var editor = $("#RadiantEditor");
-            var editorBody = $("#RadiantEditorBody");
-            editor.ToggleClass("Collapsed");
-            var collapsed = editor.BHasClass("Collapsed");
-            editorBody.SetHasClass("Hidden", collapsed);
-            $("#RadiantCollapseLabel").text = collapsed ? "v" : "^";
+        var fixUi = GameUI.CustomUIConfig().RpgIssueFixUI;
+        ["Radiant", "Dire"].forEach(function (side) {
+            fixUi.bindActionPanel({
+                panel: $("#" + side + "Editor"),
+                button: $("#" + side + "CollapseButton"),
+                label: $("#" + side + "CollapseLabel"),
+                onToggle: closeEditorMenus
+            });
         });
-        $("#DireCollapseButton").SetPanelEvent("onactivate", function () {
-            var editor = $("#DireEditor");
-            var editorBody = $("#DireEditorBody");
-            editor.ToggleClass("Collapsed");
-            var collapsed = editor.BHasClass("Collapsed");
-            editorBody.SetHasClass("Hidden", collapsed);
-            $("#DireCollapseLabel").text = collapsed ? "v" : "^";
-        });
+        fixUi.makeHeroShopTransparent($("#ShopPanel"));
     }
 
     // ---------------- 装备购买与转移：固定目标 + 直接装备 ----------------
@@ -1442,12 +1434,11 @@
 
     // ---------------- 自绘规则列表滚动（按钮/滚轮/滑块） ----------------
     var RULE_VIEW_HEIGHT = 380;
-    var RULE_CONTENT_HEIGHT = 1300; // 10 行 × 130px
     var RULE_SCROLL_STEP = 130;
     var ruleScroll = { Radiant: 0, Dire: 0 };
 
     function ruleScrollMax(side) {
-        return Math.max(0, RULE_CONTENT_HEIGHT - RULE_VIEW_HEIGHT);
+        return Math.max(0, getSelectedRules(side).length * ROW_HEIGHT - RULE_VIEW_HEIGHT);
     }
 
     function applyRuleScroll(side) {
@@ -1456,13 +1447,15 @@
         var container = $("#" + side + "Rules");
         if (container) {
             container.style.marginTop = -pos + "px;";
+            container.style.height = Math.max(RULE_VIEW_HEIGHT, getSelectedRules(side).length * ROW_HEIGHT) + "px;";
         }
         var thumb = $("#" + side + "RulesScrollThumb");
         var track = $("#" + side + "RulesScrollTrack");
         if (thumb && track) {
             var maxScroll = ruleScrollMax(side);
             var trackH = 380 - 52 - 4; // 上下按钮占位后的轨道高度
-            var thumbH = Math.max(48, Math.floor(trackH * RULE_VIEW_HEIGHT / Math.max(1, RULE_CONTENT_HEIGHT)));
+            var thumbH = Math.max(48, Math.floor(trackH * RULE_VIEW_HEIGHT
+                / Math.max(RULE_VIEW_HEIGHT, getSelectedRules(side).length * ROW_HEIGHT)));
             thumb.style.height = thumbH + "px;";
             var thumbTop = maxScroll > 0 ? Math.floor((pos / maxScroll) * (trackH - thumbH)) : 0;
             thumb.style.marginTop = thumbTop + "px;";
@@ -1675,8 +1668,8 @@
         updateTeamLevelLabels();
     }
 
-    createRuleRows("Radiant");
-    createRuleRows("Dire");
+    renderSide("Radiant");
+    renderSide("Dire");
     setupRuleScroll("Radiant");
     setupRuleScroll("Dire");
     wireHeroPortraits("Radiant");

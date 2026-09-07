@@ -1,9 +1,11 @@
 <root>
 	<styles>
 		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
+		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
 	</styles>
 	<scripts>
 		<include src="file://{resources}/scripts/custom_game/panorama_rule_sync.js" />
+		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
 		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 	</scripts>
 	<snippets>
@@ -91,7 +93,7 @@
 				</Panel>
 				<Panel id="RadiantHeroStrip" class="HeroStrip" />
 				<Button id="RadiantCollapseButton" class="CollapseButton">
-					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="^" />
+					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="&lt;" />
 				</Button>
 			</Panel>
 			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
@@ -102,7 +104,7 @@
 				</Panel>
 				<Panel id="RadiantRulesViewport" class="RulesViewport">
 					<Panel id="RadiantRules" class="RulesContainer" hittest="true" hittestchildren="true" />
-					<Panel class="RulesScrollRail" hittest="true">
+					<Panel id="RadiantRulesScrollRail" class="RulesScrollRail" hittest="true">
 						<Button id="RadiantRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
 						<Panel id="RadiantRulesScrollTrack" class="RulesScrollTrack">
 							<Panel id="RadiantRulesScrollThumb" class="RulesScrollThumb" />
@@ -165,7 +167,7 @@
 					<DOTAHeroImage id="DireHero3" class="HeroPortrait" heroname="npc_dota_hero_crystal_maiden" heroimagestyle="portrait" hittest="true" />
 				</Panel>
 				<Button id="DireCollapseButton" class="CollapseButton">
-					<Label id="DireCollapseLabel" class="CollapseGlyph" text="^" />
+					<Label id="DireCollapseLabel" class="CollapseGlyph" text="&lt;" />
 				</Button>
 			</Panel>
 			<Panel id="DireEditorBody" class="EditorBody" flow-children="down">
@@ -176,7 +178,7 @@
 			</Panel>
 			<Panel id="DireRulesViewport" class="RulesViewport">
 				<Panel id="DireRules" class="RulesContainer" hittest="true" hittestchildren="true" />
-				<Panel class="RulesScrollRail" hittest="true">
+				<Panel id="DireRulesScrollRail" class="RulesScrollRail" hittest="true">
 					<Button id="DireRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
 					<Panel id="DireRulesScrollTrack" class="RulesScrollTrack">
 						<Panel id="DireRulesScrollThumb" class="RulesScrollThumb" />

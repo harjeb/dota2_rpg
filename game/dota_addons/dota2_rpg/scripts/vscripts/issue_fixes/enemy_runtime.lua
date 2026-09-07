@@ -106,6 +106,7 @@ local function match_entry(entries, used, unit)
                 return entry
             end
         end
+        return {}
     end
 
     for index, entry in ipairs(entries) do
@@ -141,6 +142,9 @@ function EnemyRuntime.new(options)
             "modifier_rpg_prepare_bench",
             "modifier_invulnerable",
             "modifier_stunned",
+            "modifier_rooted",
+            "modifier_disarmed",
+            "modifier_silence",
         },
         stage_entries = {},
         enemy_units = {},
@@ -156,10 +160,11 @@ function EnemyRuntime:RegisterStage(stage_entries, spawned_enemy_units)
 
     local used_entries = {}
     for _, unit in ipairs(self.enemy_units) do
-        local entry = match_entry(self.stage_entries, used_entries, unit)
         if is_valid(unit) then
+            local entry = match_entry(self.stage_entries, used_entries, unit)
+            if type(entry) == "string" then entry = { unit = entry } end
             unit.rpg_stage_enemy_entry = entry
-            unit.rpg_ai_profile = entry.ai_profile or "attack_nearest"
+            unit.rpg_ai_profile = entry.ai_profile or entry.ai or "attack_nearest"
 
             if self.bind_tactic_profile ~= nil then
                 local ok, err = pcall(
@@ -224,6 +229,7 @@ end
 function EnemyRuntime:CanFallbackOrder(unit)
     if not is_alive(unit) then return false end
     if safe_call(unit, "IsChanneling", false) then return false end
+    if safe_call(unit, "IsInAbilityPhase", false) then return false end
     if safe_call(unit, "IsStunned", false) then return false end
     if safe_call(unit, "IsCommandRestricted", false) then return false end
     if safe_call(unit, "GetCurrentActiveAbility", nil) ~= nil then return false end
@@ -266,6 +272,7 @@ function EnemyRuntime:Think()
 end
 
 function EnemyRuntime:Start(player_units, fight_center)
+    if self.get_phase() ~= "FIGHT" then return false end
     self.player_units = player_units or {}
     self.fight_center = fight_center
     self.running = true

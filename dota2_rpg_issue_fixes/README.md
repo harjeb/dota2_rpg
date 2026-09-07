@@ -13,7 +13,7 @@
 - 静态检查和模拟单元测试；
 - 可直接用于 PR 的标题、正文和提交信息。
 
-代码接口按当前仓库已验证的基础提交 `cab44ff6f252163351b8268d91cc82417a9df8eb` 组织。自动安装器不依赖固定行号，并会在当前 checkout 中创建备份。
+初版代码接口基于 `cab44ff6f252163351b8268d91cc82417a9df8eb`。本轮核查发现仅安装 helper 不足以修好实际接线，因此主仓库还修改了主 HUD、技能等级/技能点快照、原生订单回调、RuleService 行数裁剪及战术桥缓存。overlay 不会覆盖目标的整份主 HUD/addon；移植到旧 checkout 时必须合并这些主文件修改，参见 `../docs/ISSUE_FIX_IMPLEMENTATION.md` 和 integration 说明。自动安装器完成不代表十项实机验收通过。
 
 ## 一键应用
 
@@ -56,7 +56,7 @@ python tools/apply_issue_fixes.py /path/to/dota2_rpg --dry-run
 
 ## 不能只靠源码完成的部分
 
-第 9 项的实际地图几何已包含在 overlay：三枚边界 marker、四面永久 `func_brush` 外墙、四块 `nonavclip` slab，以及分离的 `rpg_mid_gate_visual` / `rpg_mid_gate_nav`。安装器会备份后覆盖目标 `dota2_rpg_demo.vmap`；若目标有自定义地图，应按 `integration/HAMMER_ARENA_SETUP.md` 手工合并而不是盲目覆盖。Lua 只保留中线开关、树木清理、移动订单限制和越界纠正作为逻辑/异常兜底。
+第 9 项现为原版岩石可见外围、四面不可见碰撞边界、四块 `nonavclip` slab 和 `rpg_mid_gate_nav`。已移除可见中线几何；Lua 使用原生临时树木在准备阶段形成整条隔断，开战移除、下一关恢复。安装器会备份后覆盖 VMAP；自定义地图请按 `integration/HAMMER_ARENA_SETUP.md` 合并。当前环境没有 Dota 编译器，岩石模型的实机显示、尺寸和导航尚待验收，不能沿用旧几何墙的历史编译成功记录。
 
 ## 验证
 
@@ -64,7 +64,10 @@ python tools/apply_issue_fixes.py /path/to/dota2_rpg --dry-run
 
 ```bash
 python tests/run_checks.py
+python ../tests/vmap.test.py
 ```
+
+统一回归入口会同时测试同一 checkout 的 live 源码与 overlay；不适用于脱离主仓库的旧独立 ZIP。
 
 还可在已安装 Dota 2 工具链但不启动客户端的环境中执行：
 

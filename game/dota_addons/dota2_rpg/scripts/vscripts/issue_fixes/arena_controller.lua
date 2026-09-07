@@ -67,9 +67,9 @@ function ArenaController.new(options)
         min_marker = options.min_marker or "rpg_arena_min",
         max_marker = options.max_marker or "rpg_arena_max",
         center_marker = options.center_marker or "rpg_arena_center",
-        gate_visual_name = options.gate_visual_name or "rpg_mid_gate_visual",
         gate_nav_name = options.gate_nav_name or "rpg_mid_gate_nav",
-        gate_tree_clear_radius = tonumber(options.gate_tree_clear_radius) or 220,
+        gate_tree_spacing = math.max(32, math.min(96, tonumber(options.gate_tree_spacing) or 96)),
+        gate_trees = {},
         half_width = half_width,
         half_height = half_height,
         correction_interval = tonumber(options.correction_interval) or 0.20,
@@ -184,6 +184,7 @@ function ArenaController:ClampPosition(position, unit, margin)
 end
 
 function ArenaController:ValidateOrder(filter_table)
+    if self.center == nil then self:LoadBounds() end
     local order_type = filter_table.order_type
     if MOVEMENT_ORDERS[order_type] ~= true then return true end
 
@@ -209,38 +210,46 @@ function ArenaController:ValidateOrder(filter_table)
     return true
 end
 
+function ArenaController:EnsureMiddleTrees()
+    if CreateTempTree == nil then return end
+    if self.center == nil then self:LoadBounds() end
+    local length = math.max(0, self.max.y - self.min.y - 48)
+    local intervals = math.max(1, math.ceil(length / self.gate_tree_spacing))
+    for index = 0, intervals do
+        local tree = self.gate_trees[index + 1]
+        if not is_valid(tree) or not safe_call(tree, "IsStanding", true) then
+            if is_valid(tree) and UTIL_Remove ~= nil then UTIL_Remove(tree) end
+            local position = make_vector(self.center.x, self.min.y + 24 + length * index / intervals, self.center.z)
+            if GetGroundPosition ~= nil then position = GetGroundPosition(position, nil) end
+            self.gate_trees[index + 1] = CreateTempTree(position, 86400)
+        end
+    end
+end
+
 function ArenaController:OpenMiddleGate()
     if self.center == nil then self:LoadBounds() end
-
     if DoEntFire ~= nil then
-        -- The authored visual and physical gate are separate func_brush
-        -- entities. Send the common Hammer Enable/Disable pair plus the
-        -- class-specific inputs so rendering and collision change together.
-        DoEntFire(self.gate_visual_name, "Alpha", "0", 0, nil, nil)
-        DoEntFire(self.gate_visual_name, "Disable", "", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "SetNonsolid", "", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "Disable", "", 0, nil, nil)
     end
-
-    -- Optional visual trees can be cleared at battle start. The repeatable blocker
-    -- must be the Hammer gate entity, not the trees, because destroyed trees are
-    -- not a reliable per-stage divider.
-    if GridNav ~= nil and GridNav.DestroyTreesAroundPoint ~= nil then
-        GridNav:DestroyTreesAroundPoint(
-            self.center,
-            self.gate_tree_clear_radius,
-            false
-        )
+    -- Cut only our temporary divider trees, including both ends of the row.
+    -- Cutting updates native tree navigation; removing the handle avoids stumps.
+    for _, tree in pairs(self.gate_trees) do
+        if is_valid(tree) then
+            safe_call(tree, "CutDown", nil, rawget(_G, "DOTA_TEAM_GOODGUYS") or 2)
+            if UTIL_Remove ~= nil then UTIL_Remove(tree)
+            else safe_call(tree, "RemoveSelf", nil) end
+        end
     end
+    self.gate_trees = {}
 end
 
 function ArenaController:CloseMiddleGate()
     if DoEntFire ~= nil then
-        DoEntFire(self.gate_visual_name, "Enable", "", 0, nil, nil)
-        DoEntFire(self.gate_visual_name, "Alpha", "255", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "Enable", "", 0, nil, nil)
         DoEntFire(self.gate_nav_name, "SetSolid", "", 0, nil, nil)
     end
+    self:EnsureMiddleTrees()
 end
 
 function ArenaController:StartPrepare(units)
@@ -256,6 +265,7 @@ function ArenaController:StartFight(units)
 end
 
 function ArenaController:EnforceBounds()
+    if self.phase == "PREPARE" then self:EnsureMiddleTrees() end
     for _, unit in ipairs(self.units) do
         if is_valid(unit) and safe_call(unit, "IsAlive", true) then
             local position = safe_call(unit, "GetAbsOrigin", nil)

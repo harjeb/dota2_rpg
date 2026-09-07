@@ -37,6 +37,8 @@ function IssueFixes.new(options)
     instance.inventory = InventoryTransfer.new({
         get_phase = instance.get_phase,
         is_roster_hero = options.is_roster_hero,
+        is_inventory_source = options.is_inventory_source,
+        on_success = options.on_transfer_success,
         event_name = options.transfer_event_name,
         on_error = options.on_transfer_error,
     })
@@ -89,10 +91,7 @@ end
 function IssueFixes:PrepareRoster(player_id, active_heroes, bench_heroes)
     RosterAccess.PrepareRoster(player_id, active_heroes, bench_heroes)
 
-    local all_units = {}
-    append_all(all_units, active_heroes)
-    append_all(all_units, bench_heroes)
-    self.arena:StartPrepare(all_units)
+    self.arena:StartPrepare(active_heroes or {})
 end
 
 function IssueFixes:RegisterCurrentStage(stage_entries, spawned_enemy_units)

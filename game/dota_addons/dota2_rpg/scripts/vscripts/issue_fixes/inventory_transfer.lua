@@ -56,7 +56,7 @@ local function contains_exact_item(unit, wanted, last_slot)
     for slot = DEFAULT_FIRST_SLOT, last_slot do
         local current = safe_call(unit, "GetItemInSlot", nil, slot)
         if is_valid(current) then
-            if current == wanted or item_entindex(current) == wanted_index then
+            if current == wanted or (wanted_index >= 0 and item_entindex(current) == wanted_index) then
                 return true, slot
             end
         end
@@ -125,6 +125,8 @@ function InventoryTransfer.new(options)
     return setmetatable({
         get_phase = options.get_phase or function() return "PREPARE" end,
         is_roster_hero = options.is_roster_hero,
+        is_inventory_source = options.is_inventory_source,
+        on_success = options.on_success,
         hero_last_slot = options.hero_last_slot or DEFAULT_LAST_HERO_SLOT,
         source_last_slot = options.source_last_slot or DEFAULT_LAST_SOURCE_SLOT,
         event_name = options.event_name or "rpg_transfer_warehouse_item",
@@ -148,6 +150,7 @@ function InventoryTransfer:Fail(player_id, code, message)
 end
 
 function InventoryTransfer:Succeed(player_id, item, hero, original_name, original_index)
+    if self.on_success ~= nil then pcall(self.on_success, player_id, item, hero) end
     send_result(player_id, {
         ok = 1,
         item_entindex = is_valid(item) and item_entindex(item) or original_index,
@@ -162,6 +165,13 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         return self:Fail(player_id, "not_prepare", "只能在准备阶段转交装备。")
     end
 
+    if tonumber(player_id) == nil or tonumber(player_id) < 0 then
+        return self:Fail(player_id, "invalid_player", "Invalid player.")
+    end
+    if self.is_inventory_source ~= nil
+        and self.is_inventory_source(player_id, source_unit) ~= true then
+        return self:Fail(player_id, "not_owned_source", "Source is not a player inventory carrier.")
+    end
     if not is_valid(source_unit) then
         return self:Fail(player_id, "invalid_source", "仓库小精灵不存在。")
     end
@@ -199,12 +209,9 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
 
     -- Move the original handle. Do not CreateItem + delete the source: that was the
     -- loss-prone path which caused the reported disappearing equipment.
-    local removed_ok = pcall(function()
+    pcall(function()
         source_unit:RemoveItem(source_item)
     end)
-    if not removed_ok then
-        return self:Fail(player_id, "detach_failed", "无法从仓库取下装备。")
-    end
 
     local still_in_source = contains_exact_item(
         source_unit,
@@ -215,7 +222,7 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         return self:Fail(player_id, "detach_failed", "装备仍在仓库中，未执行转交。")
     end
 
-    local add_ok = pcall(function()
+    pcall(function()
         target_hero:AddItem(source_item)
     end)
 
@@ -228,10 +235,7 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
 
     -- target_after may change while the original handle is consumed by stacking or
     -- recipe combination. Both cases count as a successful transfer.
-    if add_ok and (target_has_item or target_after ~= target_before) then
-        if is_valid(source_item) and source_item.SetPurchaser ~= nil then
-            pcall(source_item.SetPurchaser, source_item, target_hero)
-        end
+    if target_has_item or (not is_valid(source_item) and target_after ~= target_before) then
         return self:Succeed(
             player_id,
             source_item,
@@ -245,10 +249,10 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
     -- handle back into the warehouse. Never destroy it.
     remove_dropped_container(source_item)
     if is_valid(source_item) then
-        if target_has_item then
+        if contains_exact_item(target_hero, source_item, self.source_last_slot) then
             pcall(target_hero.RemoveItem, target_hero, source_item)
         end
-        local restored = pcall(function()
+        pcall(function()
             source_unit:AddItem(source_item)
         end)
         local source_restored = contains_exact_item(
@@ -256,7 +260,7 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
             source_item,
             self.source_last_slot
         )
-        if restored and source_restored then
+        if source_restored then
             return self:Fail(player_id, "target_rejected", "目标英雄未接收装备，装备已退回仓库。")
         end
     end

@@ -163,23 +163,12 @@ local DEFAULT_RULES = {
 	{ action = "attack", condition = "always", value = 50, target = "enemy_distance_nearest", forced = true },
 }
 
-local RULE_COUNT = 10  -- 固定 10 条规则槽 + 系统兜底（修订版设计）
-
--- 按英雄动作列表生成 10 条默认规则：动作循环分配，普攻强制追击
-local function BuildDefaultRulesForSlots(actions)
-	local rules = {}
-	for index = 1, RULE_COUNT do
-		local action = actions[((index - 1) % #actions) + 1]
-		table.insert(rules, {
-			action = action,
-			condition = action == "attack" and "always" or "always",
-			value = 50,
-			target = action == "attack" and "enemy_distance_nearest" or "enemy_hp_pct_lowest",
-			forced = (action == "attack"),
-			enabled = true,
-		})
-	end
-	return rules
+-- Legacy bridge fallback uses the same single range-only rule as the editor.
+local function BuildDefaultRulesForSlots()
+	return {
+		{ action = "attack", condition = "always", value = 50,
+			target = "enemy_distance_nearest", forced = false, enabled = true },
+	}
 end
 
 local function CloneDefaultRules()
@@ -1010,6 +999,10 @@ function CDota2RpgDemo:BindEquipmentCarrierToPlayer(unit)
 			unit.GetUnitName ~= nil and unit:GetUnitName() or "unit", self.playerId, tostring(err)))
 		return false
 	end
+	if unit.SetPlayerID ~= nil then
+		local assigned = pcall(unit.SetPlayerID, unit, self.playerId)
+		if not assigned then return false end
+	end
 	local ownerId = self:GetCarrierPlayerOwnerId(unit)
 	if ownerId == nil or ownerId ~= self.playerId then
 		print(string.format("[Dota2Rpg] WARNING: %s native owner could not be verified for player %d.",
@@ -1104,7 +1097,7 @@ function CDota2RpgDemo:TryAttachItem(unit, item)
 		return true, item
 	end
 	-- 原版 AddItem 可能把可堆叠物品合并后使传入实体失效；返回合并后的真实实体。
-	if (not ok or not self:IsLiveItem(item)) and itemName ~= "" and unit.GetItemInSlot ~= nil then
+	if not self:IsLiveItem(item) and itemName ~= "" and unit.GetItemInSlot ~= nil then
 		for slot = 0, NATIVE_STASH_LAST_SLOT do
 			local existing = unit:GetItemInSlot(slot)
 			if self:IsLiveItem(existing) and existing:GetAbilityName() == itemName then
@@ -1764,15 +1757,21 @@ end
 
 function CDota2RpgDemo:MoveStashItemToHero(heroName, itemName, itemId)
 	local hero = self:FindOwnedHeroUnit(heroName)
-	if hero == nil or self.heroData[heroName] == nil or self:FindEmptyActiveItemSlot(hero) == nil then
+	if hero == nil or self.heroData[heroName] == nil or self:FindEmptyCarrierSlot(hero) == nil then
 		return false
+	end
+	if self.issueFixes ~= nil then
+		local source = self:GetStashUnit()
+		local item = EntIndexToHScript(tonumber(itemId) or -1)
+		if not self:IsLiveItem(item) or item:GetAbilityName() ~= itemName then return false end
+		return self.issueFixes:TransferWarehouseItem(self.playerId, source, item, hero)
 	end
 	local item = self:TakeStashItem(itemName, itemId)
 	if item == nil then
 		return false
 	end
 	local attached = self:TryAttachItem(hero, item)
-	if attached and (self:IsItemHeldBy(hero, item, 0, 5) or not self:IsLiveItem(item)) then
+	if attached and (self:IsItemHeldBy(hero, item, 0, CARRIER_INVENTORY_LAST_SLOT) or not self:IsLiveItem(item)) then
 		self:SyncHeroInventoryFromUnit(hero)
 		return true
 	end
@@ -1800,6 +1799,8 @@ function CDota2RpgDemo:MoveHeroItemToStash(hero, item)
 end
 
 function CDota2RpgDemo:OnItemEquip(_, payload)
+	if payload ~= nil and payload.PlayerID ~= nil
+		and tonumber(payload.PlayerID) ~= self.playerId then return end
 	if self.phase ~= "setup" then
 		return
 	end
@@ -1816,6 +1817,8 @@ function CDota2RpgDemo:OnItemEquip(_, payload)
 end
 
 function CDota2RpgDemo:OnItemUnequip(_, payload)
+	if payload ~= nil and payload.PlayerID ~= nil
+		and tonumber(payload.PlayerID) ~= self.playerId then return end
 	if self.phase ~= "setup" then
 		return
 	end
@@ -2040,6 +2043,7 @@ function CDota2RpgDemo:SpawnBenchEnclosure()
 end
 
 function CDota2RpgDemo:CaptureHeroInventoryForRespawn(hero)
+	self:CaptureHeroAbilities(hero)
 	if not TacticEngine.IsValidUnit(hero) or hero.GetItemInSlot == nil then
 		return
 	end
@@ -2169,9 +2173,9 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 				FindClearSpaceForUnit(unit, pos, true)
 				local data = self.heroData[heroName]
 				self.autoAbilityHeroes = self.autoAbilityHeroes or {}
-				self.autoAbilityHeroes[unit:GetEntityIndex()] = true
-				self:PrepareBattleHero(unit, data ~= nil and data.level or 1)
+				self.autoAbilityHeroes[unit:GetEntityIndex()] = nil
 				unit.benchHeroName = heroName
+				self:PrepareBattleHero(unit, data ~= nil and data.level or 1)
 				if not self:BindEquipmentCarrierToPlayer(unit) then
 					self.autoAbilityHeroes[unit:GetEntityIndex()] = nil
 					unit:RemoveSelf()
@@ -2233,8 +2237,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 				hero:RemoveSelf()
 				print(string.format("[Dota2Rpg] Refused unbound lineup hero %s.", heroName))
 			else
-				local points = heroData ~= nil and math.max(0, heroData.skill_points or heroData.level) or 1
-				hero:SetAbilityPoints(points)
+				local points = hero:GetAbilityPoints()
 				print(string.format("[Dota2Rpg] %s fielded: level=%d skill_points=%d (player picks abilities)",
 					heroName, heroData ~= nil and heroData.level or 1, points))
 				-- 重新佩戴个人装备；上阵/待命转换继续使用同一物品实体。
@@ -2246,7 +2249,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 					end
 				end
 				battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
-				-- 固定 10 槽：按英雄动作列表生成默认规则（玩家可改）
+				-- Only a missing rule list receives the single default attack rule.
 				self.heroRulesByName[heroName] = self.heroRulesByName[heroName]
 					or BuildDefaultRulesForSlots(BuildHeroActionSlots(hero))
 				battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRulesByName[heroName]
@@ -2360,7 +2363,16 @@ function CDota2RpgDemo:BuildEnemyRules(aiId)
 		preset = self.dataLoader:GetEnemyAI("demo_default")
 	end
 	local rules = {}
-	for _, presetRule in ipairs(preset.rules or {}) do
+	local ordered = {}
+	for key, rule in pairs(preset and preset.rules or {}) do
+		ordered[#ordered + 1] = { key = tostring(key), order = tonumber(key) or math.huge, rule = rule }
+	end
+	table.sort(ordered, function(a, b)
+		if a.order == b.order then return a.key < b.key end
+		return a.order < b.order
+	end)
+	for _, row in ipairs(ordered) do
+		local presetRule = row.rule
 		local cond = presetRule.cond or {}
 		table.insert(rules, {
 			action = (presetRule.action and presetRule.action.type) or "attack",
@@ -2377,14 +2389,31 @@ function CDota2RpgDemo:BuildEnemyRules(aiId)
 	return rules
 end
 
+function CDota2RpgDemo:CaptureHeroAbilities(hero)
+	if hero == nil or not hero.rpgAbilitiesRestored or hero.GetAbilityPoints == nil then return end
+	local name = hero.lineupHeroName or hero.benchHeroName
+	local data = name ~= nil and self.heroData[name] or nil
+	if data == nil then return end
+	data.ability_levels = {}
+	for slot = 0, hero:GetAbilityCount() - 1 do
+		local ability = hero:GetAbilityByIndex(slot)
+		if ability ~= nil and not ability:IsNull() then
+			data.ability_levels[ability:GetAbilityName()] = ability:GetLevel()
+		end
+	end
+	-- Progression can award levels before the old entity is rebuilt.
+	local earned = math.max(0, (tonumber(data.level) or hero:GetLevel()) - hero:GetLevel())
+	data.skill_points = math.max(0, hero:GetAbilityPoints() + earned)
+end
+
 function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
+	self:CaptureHeroAbilities(hero)
 	local wantedLevel = tonumber(targetLevel) or HERO_LEVEL
 	while hero:GetLevel() < wantedLevel do
 		hero:HeroLevelUp(false)
 	end
 
-	-- 技能加点：敌方/待命区英雄自动加点（普通技能 ceil(lv/2)，大招 6/12/18 级）；
-	-- 玩家上阵英雄保留技能点（level-1 点），由玩家在准备阶段自己决定学什么
+	-- Only enemies auto-train; both player roster locations retain manual builds.
 	local autoAbilities = self.autoAbilityHeroes == nil or self.autoAbilityHeroes[hero:GetEntityIndex()] ~= nil
 	if autoAbilities then
 		local basicLevel = math.max(1, math.min(4, math.ceil(wantedLevel / 2)))
@@ -2412,7 +2441,16 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 		end
 		hero:SetAbilityPoints(0)
 	else
-		hero:SetAbilityPoints(math.max(0, wantedLevel))
+		local heroName = hero.lineupHeroName or hero.benchHeroName
+		local data = heroName ~= nil and self.heroData[heroName] or nil
+		for slot = 0, hero:GetAbilityCount() - 1 do
+			local ability = hero:GetAbilityByIndex(slot)
+			local saved = ability ~= nil and data ~= nil and data.ability_levels
+				and data.ability_levels[ability:GetAbilityName()] or nil
+			if saved ~= nil and not ability:IsNull() then ability:SetLevel(saved) end
+		end
+		hero:SetAbilityPoints(math.max(0, data and (data.skill_points or data.level) or wantedLevel))
+		hero.rpgAbilitiesRestored = true
 	end
 	hero:SetRespawnsDisabled(true)
 	hero:SetHealth(hero:GetMaxHealth())
@@ -2423,7 +2461,11 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	-- 上阵英雄不挂禁足：准备阶段玩家需要自由移动它们排位
 	-- （移动指令由订单过滤器放行并限制在己方半场）
 	local isFielded = self.autoAbilityHeroes ~= nil
-		and self.autoAbilityHeroes[hero:GetEntityIndex()] == nil
+		and self.autoAbilityHeroes[hero:GetEntityIndex()] == nil and hero.benchHeroName == nil
+	if hero.benchHeroName ~= nil then
+		hero:AddNewModifier(hero, nil, "modifier_rpg_prepare_bench", {})
+		return
+	end
 	for _, modifierName in ipairs(PRE_BATTLE_MODIFIERS) do
 		if isFielded and modifierName == "modifier_rooted" then
 			-- 上阵英雄保持可移动
@@ -2542,6 +2584,25 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 
 	if self.phase ~= "setup" then
 		return false
+	end
+
+	if orderType == DOTA_UNIT_ORDER_TRAIN_ABILITY then
+		if source == nil or not (self:IsLineupUnit(source) or self:IsBenchUnit(source)) then return false end
+		local abilityIndex = tonumber(filterTable.entindex_ability) or -1
+		for slot = 0, source:GetAbilityCount() - 1 do
+			local ability = source:GetAbilityByIndex(slot)
+			if ability ~= nil and not ability:IsNull() and ability:entindex() == abilityIndex then return true end
+		end
+		return false
+	end
+
+	if orderType == DOTA_UNIT_ORDER_EJECT_ITEM_FROM_STASH
+		or orderType == DOTA_UNIT_ORDER_SET_ITEM_COMBINE_LOCK
+		or orderType == DOTA_UNIT_ORDER_SET_ITEM_MARK_FOR_SELL
+		or orderType == DOTA_UNIT_ORDER_CONSUME_ITEM then
+		local item = EntIndexToHScript(tonumber(filterTable.entindex_ability) or -1)
+		return source ~= nil and self:IsLiveItem(item)
+			and self:IsItemHeldBy(source, item, 0, NATIVE_STASH_LAST_SLOT)
 	end
 
 	if isPurchase then
@@ -2992,10 +3053,6 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 				for _, action in ipairs(slots) do
 					local _, detail = DescribeAction(hero, action)
 					table.insert(descriptions, detail ~= "" and detail or action)
-				end
-				-- 10 槽：动作循环补齐图标映射
-				for i = #slots + 1, RULE_COUNT do
-					table.insert(descriptions, descriptions[((i - 1) % #slots) + 1])
 				end
 				CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
 					slot_key = side.key .. "_" .. index,

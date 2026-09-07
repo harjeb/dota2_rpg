@@ -155,6 +155,9 @@ var RpgRuleSync = (function () {
             approach: rule.forced ? "allow_approach" : "range_only"
         };
 
+        if (args.ruleCount !== undefined) {
+            payload.rule_count = Math.max(1, Math.min(10, Math.floor(numberValue(args.ruleCount, 1))));
+        }
         var condition = useCondition(rule);
         putCondition(payload, "use_condition_1", condition);
 

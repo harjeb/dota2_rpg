@@ -5,5 +5,5 @@
     <scripts>
         <include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
     </scripts>
-    <Panel id="RpgIssueFixUiRoot" hittest="false" />
+    <Panel hittest="false" />
 </root>

@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    var boundButtons = {};
+    var boundButtons = [];
     var attempts = 0;
     var maxAttempts = 30;
 
@@ -27,12 +27,12 @@
         return null;
     }
 
-    function setArrow(button, collapsed) {
+    function setArrow(button, collapsed, explicitLabel) {
         if (!button) {
             return;
         }
 
-        var label = button.FindChildTraverse("ActionPanelCollapseArrow")
+        var label = explicitLabel || button.FindChildTraverse("ActionPanelCollapseArrow")
             || button.FindChildTraverse("CollapseArrow")
             || button.FindChildTraverse("MinimizeLabel")
             || button.FindChildTraverse("ButtonLabel");
@@ -67,22 +67,24 @@
             return false;
         }
 
-        var key = button.id || "anonymous_button";
-        if (boundButtons[key]) {
+        if (boundButtons.indexOf(button) >= 0) {
             return true;
         }
-        boundButtons[key] = true;
+        boundButtons.push(button);
 
         panel.AddClass("RpgFixedActionPanel");
         button.AddClass("RpgActionPanelArrowButton");
 
         var collapsed = panel.BHasClass("RpgActionPanelCollapsed");
-        setArrow(button, collapsed);
+        setArrow(button, collapsed, options.label);
 
         button.SetPanelEvent("onactivate", function () {
-            collapsed = !collapsed;
+            collapsed = !panel.BHasClass("RpgActionPanelCollapsed");
+            if (options.onToggle) {
+                options.onToggle(collapsed);
+            }
             panel.SetHasClass("RpgActionPanelCollapsed", collapsed);
-            setArrow(button, collapsed);
+            setArrow(button, collapsed, options.label);
         });
 
         return true;

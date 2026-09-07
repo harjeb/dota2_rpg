@@ -605,8 +605,8 @@ equipmentGame:OnItemUnequip(nil, {
 assert(fieldedHero:GetItemInSlot(0) == originalSlotZero,
 	"slot fallback must reject an entity ID that does not match the item in that slot")
 
--- 英雄满格时一键转交必须拒绝且不损失小精灵里的原物品。
-for slot = 2, 5 do
+-- All nine inventory/backpack slots must be occupied before rejecting a transfer.
+for slot = 2, 8 do
 	fieldedHero.slots[slot] = makeItem("item_dummy_" .. slot)
 end
 local secondWand = makeItem("item_magic_wand")
@@ -616,7 +616,7 @@ equipmentGame:OnItemEquip(nil, {
 	item_index = tostring(secondWand:GetEntityIndex())
 })
 assert(wisp:GetItemInSlot(0) == secondWand, "full hero inventory rejects transfer without losing the native item")
-for slot = 2, 5 do
+for slot = 2, 8 do
 	fieldedHero.slots[slot] = nil
 end
 

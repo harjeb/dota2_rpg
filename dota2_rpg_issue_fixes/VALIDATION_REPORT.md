@@ -1,62 +1,33 @@
-# 验证报告
+# 本轮核查验证报告
 
-验证日期：2026-09-06
+权威实现说明：`../docs/ISSUE_FIX_IMPLEMENTATION.md`。本轮不是重复确认初版 helper 测试，而是增加实际 addon、主 HUD、战术桥和地图的接线验证。
 
-## 紧凑战场增量验证
+## 已通过
 
-- 默认回退边界已从 3200×1600 收紧为 **2400×900**；显式传入旧 `square_size = 1600` 的调用仍保持 3200×1600 兼容行为。
-- 通过 Lupa 执行 `tests/test_runtime.lua`：验证紧凑边界钳制、旧尺寸兼容，以及 bootstrap 只把 `battleManager.teamHeroes` 的场上/敌方单位注册到战场，不会拖入待命英雄或小精灵。
-- 通过 Lupa 执行根目录 `tests/precache-battlefield.test.lua`：验证五个双方出生点和准备期持久化排位均落在紧凑边界内。
-- `node --check`、Panorama UI 模拟、Python 语法检查及安装器幂等测试均通过；没有 `texlua` 时已由 Lupa 执行 Lua 检查。
-- 根目录的 `tests/shop-state.test.lua`、`tests/panorama-save.test.js` 与 `pwsh tests/verify-addon.ps1` 均通过；后者现会静态验证实际 VMAP 的三枚 marker、四面永久墙、两枚中线 `func_brush` 和四块 `nonavclip` slab。
-- 实际 VMAP 已通过 `dmxconvert` KeyValues2 → binary → KeyValues2 往返，以及 `pwsh -NoProfile -ExecutionPolicy Bypass -File tests/compile-vmap.ps1` 的临时副本 `resourcecompiler` world/physics/gridnav 构建（`19 compiled, 0 failed`）；脚本会清理测试 VPK，构建日志确认生成四面墙与 visual/nav 中线门。
-- 按用户要求，本次没有启动 Dota 2 或 Workshop Tools 客户端进行实机回归。
+`python dota2_rpg_issue_fixes/tests/run_checks.py`：
 
-## 已执行检查
+- 48 个 live/overlay Lua 文件语法检查。
+- overlay 与 live 两轮运行时回归，包括真实 addon 方法和战术桥初始化。
+- 转交同一物品实体、满载/拒绝/异常回滚、来源归属、背包空位、原版购买归属与物品订单校验。
+- 待命英雄手动技能点、技能等级及未用点数恢复、升级增量。
+- 单条普攻默认、规则数量裁剪、开战重置不清空玩家规则。
+- 当前关 `dataLoader/currentLevelId`、实际 `battleManager.teamHeroes`、entry AI 绑定、战术订单优先级、拒绝开战不误启动 AI。
+- 中线整条原生树木、准备期补树、开战全部清理、下一关恢复、不清理其他场景树木。
+- 主 HUD 实际行数、动作菜单、收起接线、透明商店、JS 语法、XML 解析及根 Panel 不得有 id 的 Panorama 约束。
+- 安装器备份、幂等性及地图 overlay 一致性。
 
-```text
-Python 语法检查：通过
-Lua loadfile 语法检查：11 个文件通过
-Lua 模拟运行测试：通过
-Panorama JavaScript node --check：通过
-Panorama UI 行为模拟测试：通过
-Panorama XML 解析：通过
-自动安装器测试：通过
-自动安装器重复执行幂等测试：通过
-```
+`python tests/vmap.test.py` 使用附带的 MIT DMX 解析器离线检查二进制地图：原生岩石引用、无可见中线刷子、不可见碰撞墙、NONAV、marker、变换、序列化往返和 overlay 一致性。带 `--native-map C:/Temp/lanpang/content/test2/maps/dota.vmap` 的来源复核为 10/10 通过；无外部原版地图时仅跳过来源复核一项。
 
-执行命令：
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/verify-addon.ps1` 的源码/离线结构检查通过，并明确报告引擎转换不可用。
 
-```bash
-python tests/run_checks.py
-```
+## 未完成的引擎验证
 
-## 模拟测试覆盖
+本轮机器没有 Dota 2 安装或 `resourcecompiler.exe` / `dmxconvert.exe`。地图编译检查已尝试但因工具缺失无法完成。没有部署、启动客户端、Panorama 截图或真实导航/物品测试。
 
-- 小精灵把同一个 item handle 转给英雄；来源不再保留该物品，目标获得同一句柄。
-- 英雄物品栏和背包已满时拒绝转交，装备仍留在小精灵。
-- 没有玩家规则时只建立一条默认普攻规则；有效玩家规则不被补满或删除。
-- 第 1/2 关阵容重复时只替换第 2 关敌人，并保留奖励等其他字段。
-- 当前关生成 4 个敌人时，4 个单位全部绑定 profile 并收到开战订单，不固定为 3 个。
-- PREPARE 阶段技能升级和购买订单放行。
-- PREPARE 阶段敌方/引擎空闲 AI 订单被阻止。
-- FIGHT 阶段玩家控制订单被阻止，issuer=-1 的 AI 订单放行。
-- FIGHT 阶段即使购买订单没有 unit 列表，也会被阻止。
-- 默认紧凑矩形边界为 2400×900；准备阶段场上英雄移动被限制在左侧 1200×900 区域，且不会拉动小精灵或待命英雄。旧的显式 `square_size = 1600` 调用保持兼容。
-- 中线门模拟覆盖 `Enable`/`Disable` 与 `func_brush` 的 `Alpha`、`SetSolid`/`SetNonsolid` 成对调用；这样 visual 和物理/导航门不会只切换其中一面。
-- UI 展开/收起箭头、固定按钮尺寸、透明商店类和单条默认规则归一化通过模拟。
-- 安装器会备份覆盖文件、加载 UI manifest、在顶层 return 之前安装 bootstrap、修正准备类 modifier，并可安全重复执行。
+旧报告的 `19 compiled, 0 failed` 是旧版几何墙地图的历史结果，不适用于本轮原生岩石地图，也不证明历史 `particles.dll` 崩溃已解决。
 
-## 尚未执行的验证
+需要在 Workshop Tools 验证岩石实际尺寸/朝向/资源显示、完整中线树木与碰撞门的重复开关、双方寻路接敌、外围/位移碰撞、原版商店/合成/堆叠、技能按钮及实际 Panorama 尺寸。后续任务为 Beads `dota2_rpg-4rk`。
 
-本次没有启动 Dota 2/Workshop Tools 进入游戏实测；因此尚未执行：
+## 修复包边界
 
-- 真正的 `CDOTA_Item` 转交、堆叠、自动合成和购买者归属测试；
-- 原版技能升级按钮、先天技能、命石及英雄重建后的技能点测试；
-- 原版商店在本地 Tools 和已上传专用服务器上的购买测试；
-- 当前项目 TacticBridge 的实际 profile 注册函数和指令优先级测试；
-- 当前 HUD 的真实 Panel ID、分辨率和 UI 缩放测试；
-- `.vmap` 在真实比赛中的外墙碰撞、中线门开关后的路径更新、导航连通性及位移交互测试；静态结构/编译检查已完成。
-- 30 关完整回归。
-
-因此本包的状态是：**源码修复层和安装流程已通过静态/模拟验证；合并前必须按 `integration/TEST_CHECKLIST.md` 做引擎内回归。**
+主 checkout 已包含主 HUD、技能快照、RuleService 和 tactic bridge 接线修改。独立 overlay 只复制自有 helper、modifier、order filter 和 VMAP，不整份覆盖目标主 HUD/addon。移植时必须同时合并 integration 文档列出的主源码改动；不能把 overlay 安装成功等同于本轮全部功能已合并。
