@@ -28,6 +28,7 @@ DOTA_UNIT_ORDER_ATTACK_TARGET = 4
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
 	local localModules = {
+		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
 		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
 		["patches.progression_patch"] = moduleRoot .. "patches/progression_patch.lua",

@@ -28,6 +28,27 @@ path; native unit stats and explicit multipliers determine their strength.
 Rewards, armor/resistance progression, timers, stages ch05 onward, player
 progression, and all map geometry remain unchanged.
 
+## Stage Multi
+
+Each runtime stage has `multi = 1 + 0.05 * (stage_number - 1)` (linear,
+not compounded). This authored field can be tuned per stage in `levels.kv`;
+keep `levels_v07.json` in sync and update the curve contract when tuning.
+Missing, nonpositive or nonfinite values fall back to 1.
+
+Only newly spawned non-hero enemies are scaled. Native maximum HP and base
+attack are multiplied by `multi` before existing per-entry HP/attack
+multipliers. HP is rounded to whole points. Base armor is multiplied by
+`multi`, then `bonus_armor` is added. Zero base armor stays zero before the
+bonus; negative base armor remains negative. Magic/status resistance, attack
+speed, abilities, rewards and enemy heroes are not scaled.
+
+For example, stage 4 combines `multi=1.15` with HP `1.35` and attack `1.2`:
+about 1.5525x native HP and 1.38x base attack (subject to rounding), with
+`native_armor * 1.15 + 3` armor. Scaling happens once on spawn, not each tick.
+
+Run the runtime helper regression with Lua from the repository root:
+`lua tests/enemy-scaling.test.lua`.
+
 ## Verification
 
 Run `python tests/opening-balance.test.py` or `tests/verify-addon.ps1`.

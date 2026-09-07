@@ -19,6 +19,9 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
 require = function(moduleName)
+	if moduleName == "battle.enemy_scaling" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/enemy_scaling.lua")
+	end
 	-- The production entry point installs the issue-fix bootstrap at EOF.  This
 	-- focused test exercises precache/spawn geometry, so only stub that module.
 	if moduleName == "issue_fixes.bootstrap" then

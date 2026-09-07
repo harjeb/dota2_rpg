@@ -8,6 +8,7 @@ if not okHelpers then
 	}
 end
 local TacticEngine = UnitHelpers
+local EnemyScaling = require("battle.enemy_scaling")
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
 local okProgression, ProgressionData = pcall(require, "data.progression_data")
 local okRecruitmentPatch, RecruitmentPatch = pcall(require, "patches.recruitment_patch")
@@ -2296,6 +2297,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 					self:PrepareEnemyHero(unit, tonumber(entry.level) or 1)
 				else
 					self:PrepareEnemyCreep(unit)
+					EnemyScaling.Apply(unit, level.multi)
 					-- 野怪模板成长：生命/攻击倍率、额外护甲、魔抗、状态抗性
 					if entry.hp_multiplier ~= nil then
 						local maxHealth = unit:GetMaxHealth()

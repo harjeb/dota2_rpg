@@ -59,6 +59,14 @@ class OpeningBalanceTests(unittest.TestCase):
             self.assertEqual(int(runtime[key]['reward']['xp_per_active_hero']), [120, 160, 200, 250][index - 1])
             self.assertEqual(runtime[key]['time_limit'], '120')
 
+    def test_stage_multi_curve(self):
+        runtime = read_kv((DATA / 'levels.kv').read_text(encoding='utf-8'))['levels']
+        source = json.loads((DATA / 'levels_v07.json').read_text(encoding='utf-8'))
+        for key, stage in runtime.items():
+            expected = round(1 + .05 * (int(key[2:]) - 1), 2)
+            self.assertAlmostEqual(float(stage['multi']), expected)
+            self.assertAlmostEqual(source[key]['multi'], expected)
+
     def test_kv_roundtrip(self):
         parsed = read_kv((DATA / 'levels.kv').read_text(encoding='utf-8'))
         self.assertEqual(read_kv(render_kv(parsed)), parsed)
