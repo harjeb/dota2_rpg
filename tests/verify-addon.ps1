@@ -5,6 +5,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$installScriptText = Get-Content -LiteralPath (Join-Path $repoRoot "scripts\install-addon.ps1") -Raw
+$compileScriptText = Get-Content -LiteralPath (Join-Path $repoRoot "tests\compile-vmap.ps1") -Raw
+if (($installScriptText -notmatch 'Wrote .*dota2_rpg_demo') -or ($compileScriptText -notmatch 'did not confirm a successful VPK write')) {
+    throw "Deployment scripts must verify a successful non-empty VPK write"
+}
 $requiredFiles = @(
     "content\dota_addons\dota2_rpg\maps\dota2_rpg_demo.vmap",
     "content\dota_addons\dota2_rpg\materials\overviews\dota2_rpg_demo.png",
@@ -313,7 +318,7 @@ $scrollItemText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addon
 if ($scrollItemText -match '"ItemPurchasable"\s+"1"') {
     throw "project scrolls must not be natively purchasable; panel stock limits are server-authoritative"
 }
-foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'MAX_STASH_SLOTS', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target')) {
+foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'MAX_STASH_SLOTS', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target')) {
     if (($javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
         throw "Native shop / scroll-only wiring is missing: $nativeShopPattern"
     }

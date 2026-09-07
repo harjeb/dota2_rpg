@@ -218,6 +218,11 @@ local nativeWalletUnreliable = { [0] = 0 }
 local function nativeWalletGold(playerId)
 	return (nativeWalletReliable[playerId] or 0) + (nativeWalletUnreliable[playerId] or 0)
 end
+function GetItemCost(itemName)
+	if itemName == nil or itemName == "" or itemName == "item_unknown" then return nil end
+	return 250
+end
+
 PlayerResource = {
 	GetGold = function(_, playerId) return nativeWalletGold(playerId) end,
 	SetGold = function(_, playerId, amount, reliable)
@@ -330,7 +335,52 @@ local equipmentGame = newGame({
 equipmentGame:SetGoldBalance(3000)
 assertEqual(equipmentGame:GetGoldBalance(), 3000, "PlayerResource is the shared item/shop wallet")
 
--- Native shop engines differ: some debit PlayerResource before emitting
+-- The order filter must reserve accepted native purchases and reject unknown or
+-- unaffordable prices before the engine can create a free item.
+equipmentGame.nativePurchaseOrderContexts = {}
+nativeWalletReliable[0] = 100
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, itemname = "item_affordability_check",
+}), "native purchase must fail closed when the current wallet is insufficient")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, itemname = "item_unknown",
+}), "native purchase must fail closed when its cost is unknown")
+nativeWalletReliable[0] = 3000
+equipmentGame.nativePurchaseOrderContexts = {}
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, itemname = "item_reserved_a",
+}), "affordable native purchase must pass its authoritative preflight")
+assert(not equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
+	units = {}, itemname = "item_reserved_b", item_cost = 3000,
+}), "pending native reservation must reduce the available balance")
+equipmentGame.nativePurchaseOrderContexts = {}
+assertEqual(equipmentGame:SyncGoldToPlayer(), 3000, "legacy wallet sync must never restore stale self.gold")
+
+-- Refresh is a project-side debit but must survive the next think/broadcast
+-- cycle exactly like a native-shop debit.
+local refreshFlow = newGame({
+	phase = "setup", playerId = 0, gold = 500, refreshCount = 0,
+	shopOffers = {}, pendingNativePurchases = {}, nativePurchaseOrderContexts = {},
+	BroadcastShopState = function(self) self.refreshBroadcasts = (self.refreshBroadcasts or 0) + 1 end,
+	RollShop = function(self) self.rolls = (self.rolls or 0) + 1; self:BroadcastShopState() end,
+	teamsSpawned = true,
+	SyncLiveEquipmentState = function() end,
+	SyncRosterAbilities = function() return false end,
+})
+refreshFlow:SetGoldBalance(500)
+refreshFlow:OnShopRefresh(nil, {})
+assertEqual(refreshFlow:GetGoldBalance(), 480, "refresh must debit the authoritative wallet")
+refreshFlow.gold = 999
+refreshFlow:OnThink()
+assertEqual(refreshFlow:GetGoldBalance(), 480, "refresh charge must persist through the next think")
+assertEqual(refreshFlow.refreshCount, 1, "refresh count must advance exactly once")
+assertEqual(refreshFlow.refreshBroadcasts, 1, "refresh must broadcast the refreshed shop once")
+
+-- Native shop engines differ:  some debit PlayerResource before emitting
 -- dota_item_purchased, while others only create the item. Both paths must
 -- charge exactly once, and retries must not charge again.
 equipmentGame.pendingNativePurchases = {
@@ -355,14 +405,44 @@ assertEqual(equipmentGame:GetGoldBalance(), 750, "engine-free native purchase mu
 
 equipmentGame.pendingNativePurchases = {
 	{ recipient_key = "__wisp", item_name = "item_engine_free_a",
-		gold_before = 1000, item_cost = 250 },
+		gold_before = 1000, item_cost = 200 },
 	{ recipient_key = "__wisp", item_name = "item_engine_free_b",
-		gold_before = 1000, item_cost = 250 },
+		gold_before = 1000, item_cost = 500 },
 }
 nativeWalletReliable[0] = 1000
 nativeWalletUnreliable[0] = 0
 equipmentGame:RoutePendingNativePurchases()
-assertEqual(equipmentGame:GetGoldBalance(), 500, "rapid engine-free purchases must each be charged")
+assertEqual(equipmentGame:GetGoldBalance(), 300,
+	"mixed-cost engine-free purchases must charge the exact aggregate cost")
+
+equipmentGame.pendingNativePurchases = {
+	{ recipient_key = "__wisp", item_name = "item_engine_mixed_a",
+		gold_before = 1000, item_cost = 200 },
+	{ recipient_key = "__wisp", item_name = "item_engine_mixed_b",
+		gold_before = 1000, item_cost = 500 },
+}
+nativeWalletReliable[0] = 500
+nativeWalletUnreliable[0] = 0
+equipmentGame:RoutePendingNativePurchases()
+assertEqual(equipmentGame:GetGoldBalance(), 300,
+	"mixed native/project debit must charge only the unobserved aggregate cost")
+
+-- A race or a malformed event must not mark a failed debit as paid or leave
+-- the newly created native item available for free.
+equipmentGame:SetGoldBalance(100)
+equipmentGame.pendingNativePurchases = {}
+local unpaidBefore = equipmentGame:CollectManagedItemIds()
+local unpaidItem = wisp:AddItem(makeItem("item_unpaid"))
+local unpaidPurchase = { recipient_key = "__wisp", item_name = "item_unpaid", gold_before = 100,
+	item_cost = 250, before_ids = unpaidBefore }
+equipmentGame.pendingNativePurchases = { unpaidPurchase }
+equipmentGame:RoutePendingNativePurchases()
+assert(unpaidItem.holder == nil and unpaidItem.removed == true,
+	"failed native debit must remove the unpaid item")
+assert(unpaidPurchase.gold_checked ~= true,
+	"failed native debit must not mark the purchase as paid")
+equipmentGame.pendingNativePurchases = {}
+equipmentGame:SetGoldBalance(3000)
 
 -- 模拟原版商店直接给英雄购买；服务端只吸收真实余额与库存，不重建物品。
 local nativeBlink = fieldedHero:AddItemByName("item_blink")
@@ -706,19 +786,39 @@ EntIndexToHScript = function(index) return entities[index] end
 equipmentGame.placedPositions = {}
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
-}), "prepare order filter must allow an empty-units native purchase during setup")
+	itemname = "item_prepare_empty_units",
+}), "prepare order filter must allow an affordable empty-units native purchase during setup")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
-	units = { ["0"] = 503 },
-}), "prepare order filter must allow a player-owned bench hero to issue native purchases")
+	units = { ["0"] = 503 }, itemname = "item_prepare_bench",
+}), "prepare order filter must allow an affordable player-owned bench purchase")
 
 -- Skill-up clicks can submit either the ability entity index or its slot.
 local skillAbility = {
+	level = 0,
 	IsNull = function() return false end,
 	entindex = function() return 8801 end,
+	GetAbilityName = function() return "test_skill" end,
+	GetLevel = function(self) return self.level end,
+	SetLevel = function(self, value) self.level = value end,
 }
+function fieldedHero:GetLevel() return self.level or 1 end
 function fieldedHero:GetAbilityCount() return 1 end
 function fieldedHero:GetAbilityByIndex(index) return index == 0 and skillAbility or nil end
+function fieldedHero:GetAbilityPoints() return self.abilityPoints or 0 end
+function fieldedHero:SetAbilityPoints(value) self.abilityPoints = value end
+fieldedHero.level, fieldedHero.abilityPoints, fieldedHero.rpgAbilitiesRestored = 1, 2, true
+equipmentGame.heroData.npc_dota_hero_axe.level = 1
+equipmentGame.heroData.npc_dota_hero_axe.skill_points = 2
+equipmentGame.heroData.npc_dota_hero_axe.ability_levels = { test_skill = 0 }
+assert(not equipmentGame:SyncRosterAbilities(), "initial skill snapshot must be quiet")
+skillAbility.level = 1
+fieldedHero.abilityPoints = 1
+assert(equipmentGame:SyncRosterAbilities(), "deferred skill sync must detect native training")
+assertEqual(equipmentGame.heroData.npc_dota_hero_axe.ability_levels.test_skill, 1,
+	"deferred skill sync must persist native ability level")
+assertEqual(equipmentGame.heroData.npc_dota_hero_axe.skill_points, 1,
+	"deferred skill sync must persist remaining skill points")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_TRAIN_ABILITY,
 	units = { ["0"] = 501 }, entindex_ability = 8801,
@@ -793,7 +893,8 @@ assert(nativeFilter:Filter({
 }), "OrderFilter must allow a wisp to drop its own item during prepare")
 assert(nativeFilter:Filter({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
-}), "OrderFilter must admit a native purchase with no units during prepare")
+	itemname = "item_filter_prepare",
+}), "OrderFilter must admit an affordable native purchase with no units during prepare")
 activePhase = "FIGHT"
 assert(not nativeFilter:Filter({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_DROP_ITEM,
@@ -801,6 +902,7 @@ assert(not nativeFilter:Filter({
 }), "OrderFilter must block wisp inventory orders during battle")
 assert(not nativeFilter:Filter({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
+	itemname = "item_filter_fight",
 }), "OrderFilter must block empty-units native purchases during battle")
 
 -- 实体被同名物品替换时，签名也必须变化，才能把新 item_index 推给 Panorama。

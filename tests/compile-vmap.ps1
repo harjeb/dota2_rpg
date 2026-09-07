@@ -36,10 +36,17 @@ try {
     if ($compilerOutput -notmatch 'OK:\s+\d+ compiled,\s+0 failed') {
         throw "resourcecompiler did not report a clean compilation`n$compilerOutput"
     }
+    if (($compilerOutput -match ('Write .*' + [regex]::Escape($name) + '\.vpk Failed!')) -or ($compilerOutput -notmatch ('Wrote .*' + [regex]::Escape($name) + '\.vpk'))) {
+        throw "resourcecompiler did not confirm a successful VPK write`n$compilerOutput"
+    }
     if (-not (Test-Path -LiteralPath $temporaryVpk)) {
         throw "resourcecompiler returned success but did not write $temporaryVpk"
     }
-    Write-Host "PASS: static VMAP resourcecompiler build succeeded (no Dota client launched)."
+    $vpkInfo = Get-Item -LiteralPath $temporaryVpk
+    if ($vpkInfo.Length -le 0) {
+        throw "resourcecompiler wrote an empty VPK: $temporaryVpk"
+    }
+    Write-Host ("PASS: static VMAP resourcecompiler build succeeded and wrote VPK ({0} bytes; no Dota client launched)." -f $vpkInfo.Length)
 }
 finally {
     Remove-Item -LiteralPath $temporarySource -Force -ErrorAction SilentlyContinue

@@ -309,6 +309,7 @@ function CDota2RpgDemo:InitGameMode()
 
 	-- 经济/商店/阵容：项目消费与 Valve 原版商店共用同一个玩家钱包。
 	self.gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 500
+	self.goldWalletInitialized = false
 	self.nativeGoldSnapshot = nil
 	self.nativeOrderSignatures = {}
 	self.ownedHeroes = {}   -- 名字列表，招募顺序
@@ -505,17 +506,48 @@ function CDota2RpgDemo:HasNativeGoldWallet()
 		and self.playerId ~= nil and self.playerId >= 0
 end
 
+function CDota2RpgDemo:ReadNativeGold()
+	if not self:HasNativeGoldWallet() then
+		return nil
+	end
+	local reliable = tonumber(PlayerResource:GetGold(self.playerId))
+	if reliable == nil then
+		return nil
+	end
+	-- GetGold reports the reliable bucket; include unreliable gold if the API exposes it.
+	local unreliable = 0
+	if PlayerResource.GetUnreliableGold ~= nil then
+		unreliable = tonumber(PlayerResource:GetUnreliableGold(self.playerId)) or 0
+	end
+	return math.max(0, math.floor(reliable + unreliable))
+end
+
 function CDota2RpgDemo:GetGoldBalance()
-	if self:HasNativeGoldWallet() then
-		local nativeGold = tonumber(PlayerResource:GetGold(self.playerId))
-		if nativeGold ~= nil then
-			-- PlayerResource 是唯一真源。项目自己的消费会同步调用 SetGold，
-			-- 因而这里直接镜像不会把原版商店扣款或出售返款反写掉。
-			self.gold = math.max(0, math.floor(nativeGold))
-			self.nativeGoldSnapshot = self.gold
-		end
+	local nativeGold = self:ReadNativeGold()
+	if nativeGold ~= nil then
+		-- PlayerResource 是唯一真源。项目自己的消费会同步调用 SetGold，
+		-- 因而这里直接镜像不会把原版商店扣款或出售返款反写掉。
+		self.gold = nativeGold
+		self.nativeGoldSnapshot = nativeGold
 	end
 	return math.max(0, math.floor(tonumber(self.gold) or 0))
+end
+
+function CDota2RpgDemo:EnsureGoldWalletInitialized()
+	if self.goldWalletInitialized then
+		return self:GetGoldBalance()
+	end
+	local nativeGold = self:ReadNativeGold()
+	if nativeGold ~= nil and nativeGold > 0 then
+		-- 连接/生成事件可能晚于原版 starting gold；保留原版已存在的余额，
+		-- 不把尚未刷新的 self.gold 当成权威值写回去。
+		self.gold = nativeGold
+		self.nativeGoldSnapshot = nativeGold
+	else
+		self:SetGoldBalance(self.gold)
+	end
+	self.goldWalletInitialized = true
+	return self:GetGoldBalance()
 end
 
 function CDota2RpgDemo:SetGoldBalance(amount)
@@ -526,6 +558,7 @@ function CDota2RpgDemo:SetGoldBalance(amount)
 		PlayerResource:SetGold(self.playerId, self.gold, true)
 		PlayerResource:SetGold(self.playerId, 0, false)
 		self.nativeGoldSnapshot = self.gold
+		self.goldWalletInitialized = true
 	end
 	return self.gold
 end
@@ -553,11 +586,7 @@ function CDota2RpgDemo:OnPlayerConnectFull(event)
 	local playerId = self:ResolvePlayerId(event)
 	self.playerId = playerId
 	PlayerResource:SetCustomTeamAssignment(playerId, DOTA_TEAM_GOODGUYS)
-	if self.nativeGoldSnapshot == nil then
-		self:SetGoldBalance(self.gold)
-	else
-		self:SyncGoldFromPlayer()
-	end
+	self:EnsureGoldWalletInitialized()
 	self:ScheduleStateBroadcast(0.5)
 end
 
@@ -605,9 +634,8 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 		end
 	end
 	self.playerId = math.max(self.playerId, ownerId)
-	if self.nativeGoldSnapshot == nil then
-		self:SetGoldBalance(self.gold)
-	end
+	-- npc_spawned may precede PlayerResource's starting-gold initialization;
+	-- wallet initialization belongs to player_connect_full, never this callback.
 	unit:SetRespawnsDisabled(true)
 	-- 玩家小精灵 = 可自由移动的"指挥官"：禁攻/禁技能；准备阶段可自由拖拽装备，
 	-- 开战后自动进入无敌（敌人无法选中/伤害它）
@@ -1273,6 +1301,50 @@ function CDota2RpgDemo:SyncLineupInventories()
 	end
 end
 
+-- 原版 TRAIN_ABILITY 订单直接修改实体，不会触发项目自定义事件；把实际
+-- ability level/points 延迟镜像回 heroData，确保刷新或重铸不会恢复旧技能。
+function CDota2RpgDemo:BuildRosterAbilitySnapshot()
+	local parts = {}
+	local seen = {}
+	local function append(hero)
+		if hero == nil or not TacticEngine.IsValidUnit(hero) or hero.GetAbilityCount == nil
+			or hero.GetAbilityByIndex == nil or seen[hero] then return end
+		seen[hero] = true
+		local heroName = hero.lineupHeroName or hero.benchHeroName
+		if heroName == nil then return end
+		local entityId = hero.GetEntityIndex ~= nil and hero:GetEntityIndex()
+			or (hero.entindex ~= nil and hero:entindex() or 0)
+		local values = { tostring(heroName), tostring(entityId),
+			tostring(hero.GetAbilityPoints ~= nil and hero:GetAbilityPoints() or -1) }
+		for slot = 0, hero:GetAbilityCount() - 1 do
+			local ability = hero:GetAbilityByIndex(slot)
+			if ability ~= nil and (ability.IsNull == nil or not ability:IsNull()) then
+				local name = ability.GetAbilityName ~= nil and ability:GetAbilityName() or ""
+				local level = ability.GetLevel ~= nil and ability:GetLevel() or -1
+				table.insert(values, tostring(slot) .. "=" .. tostring(name) .. ":" .. tostring(level))
+			end
+		end
+		table.insert(parts, table.concat(values, "|"))
+	end
+	for _, heroName in ipairs(self.lineup or {}) do append(self:FindLineupUnit(heroName)) end
+	for _, hero in ipairs(self.benchUnits or {}) do append(hero) end
+	table.sort(parts)
+	return table.concat(parts, ";")
+end
+
+function CDota2RpgDemo:SyncRosterAbilities()
+	local before = self:BuildRosterAbilitySnapshot()
+	local seen = {}
+	local function capture(hero)
+		if hero == nil or seen[hero] or not TacticEngine.IsValidUnit(hero) then return end
+		seen[hero] = true
+		self:CaptureHeroAbilities(hero)
+	end
+	for _, heroName in ipairs(self.lineup or {}) do capture(self:FindLineupUnit(heroName)) end
+	for _, hero in ipairs(self.benchUnits or {}) do capture(hero) end
+	return before ~= self:BuildRosterAbilitySnapshot()
+end
+
 -- 原版 HUD 可以把物品拖到地上、给小精灵或让英雄拾取；这些操作没有 CustomGameEvent。
 -- 用很小的库存签名轮询，变化时才向 Panorama 推送，避免陈旧按钮/库存状态。
 function CDota2RpgDemo:BuildEquipmentSnapshot()
@@ -1677,46 +1749,117 @@ function CDota2RpgDemo:SplitMergedPurchaseStack(purchase, claimed, recipient)
 	return true, added
 end
 
-function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
-	if purchase == nil or purchase.gold_checked then
-		return
+function CDota2RpgDemo:GetPendingNativePurchaseReservation()
+	self:PruneNativePurchaseOrderContexts()
+	local total = 0
+	local earliestBefore = nil
+	local function include(purchase)
+		local cost = tonumber(purchase.item_cost or purchase.itemcost or purchase.cost)
+		if cost ~= nil and cost > 0 and not purchase.gold_checked and not purchase.gold_failed then
+			total = total + math.floor(cost)
+		end
+		local before = tonumber(purchase.gold_before)
+		if before ~= nil and not purchase.gold_checked and not purchase.gold_failed
+			and (earliestBefore == nil or before < earliestBefore) then
+			earliestBefore = before
+		end
 	end
-	purchase.gold_checked = true
+	for _, purchase in ipairs(self.nativePurchaseOrderContexts or {}) do include(purchase) end
+	for _, purchase in ipairs(self.pendingNativePurchases or {}) do include(purchase) end
+
+	local observed = 0
+	if earliestBefore ~= nil then
+		observed = math.max(0, earliestBefore - self:GetGoldBalance())
+	end
+	-- A price check reserves only the part not already debited by the native shop.
+	-- This permits a second order after an immediate first native debit without
+	-- allowing multiple engine-free orders to consume the same balance.
+	return total, math.min(total, observed)
+end
+
+function CDota2RpgDemo:CanAffordNativePurchase(itemName, payload)
+	local cost = self:GetNativePurchaseCost(itemName, payload)
+	if cost == nil or cost <= 0 then
+		return false, nil
+	end
+	local reserved, observed = self:GetPendingNativePurchaseReservation()
+	local available = self:GetGoldBalance() - math.max(0, reserved - observed)
+	return available >= cost, cost
+end
+
+function CDota2RpgDemo:RevertUnpaidNativePurchase(purchase)
+	local found = self:FindNewPurchasedItem(purchase)
+	if found == nil or found.holder == nil or found.item == nil then
+		return false
+	end
+	local before = purchase.before_ids ~= nil and purchase.before_ids[found.item_id] or nil
+	if found.changed and type(before) == "table" and before.charges ~= nil
+		and found.item.SetCurrentCharges ~= nil then
+		local ok = pcall(function() found.item:SetCurrentCharges(before.charges) end)
+		return ok
+	end
+	if found.holder.RemoveItem ~= nil then
+		pcall(function() found.holder:RemoveItem(found.item) end)
+	end
+	if self:IsLiveItem(found.item) and UTIL_Remove ~= nil then
+		pcall(function() UTIL_Remove(found.item) end)
+	end
+	return true
+end
+
+function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
+	if purchase == nil then
+		return false
+	end
+	if purchase.gold_checked then
+		return purchase.gold_debit_ok == true
+	end
+	if purchase.gold_failed then
+		return false
+	end
 
 	local cost = tonumber(purchase.item_cost or purchase.itemcost or purchase.cost)
 	if cost == nil or cost <= 0 then
 		cost = self:GetNativePurchaseCost(purchase.item_name, purchase.event)
 	end
 	if cost == nil or cost <= 0 then
-		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no readable cost; leaving engine wallet unchanged.",
+		purchase.gold_failed = true
+		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no readable cost; rejecting unpaid result.",
 			tostring(purchase.item_name)))
-		return
+		return false
 	end
 	cost = math.floor(cost)
 	local before = tonumber(purchase.gold_before)
 	if before == nil or walletState == nil then
-		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no wallet snapshot; leaving engine wallet unchanged.",
+		purchase.gold_failed = true
+		print(string.format("[Dota2Rpg] WARNING: native purchase %s had no wallet snapshot; rejecting unpaid result.",
 			tostring(purchase.item_name)))
-		return
+		return false
 	end
 
 	-- A single Think can receive several purchase events. Compare the wallet
 	-- decrease once for the batch, then consume that observed decrease in order;
-	-- otherwise the second engine-free purchase could be mistaken for an already
-	-- charged order because both orders share the same gold_before snapshot.
+	-- the total native coverage is min(observed decrease, total ordered cost), so
+	-- mixed-cost batches cannot be overcharged or undercharged.
 	local nativeCovered = math.min(walletState.observed_decrease, cost)
 	walletState.observed_decrease = walletState.observed_decrease - nativeCovered
 	local missing = cost - nativeCovered
-	if missing > 0 then
-		if self:SpendGold(missing) then
-			purchase.gold_source = nativeCovered > 0 and "mixed" or "rpg"
-			print(string.format("[Dota2Rpg] Native purchase charged %d gold for %s.", missing, tostring(purchase.item_name)))
-		else
-			print(string.format("[Dota2Rpg] WARNING: native purchase %s charge failed.", tostring(purchase.item_name)))
-		end
-	else
-		purchase.gold_source = "native"
+	if missing > 0 and not self:SpendGold(missing) then
+		purchase.gold_failed = true
+		print(string.format("[Dota2Rpg] WARNING: native purchase %s charge failed; rejecting unpaid result.",
+			tostring(purchase.item_name)))
+		return false
 	end
+
+	purchase.gold_checked = true
+	purchase.gold_debit_ok = true
+	purchase.gold_source = missing > 0
+		and (nativeCovered > 0 and "mixed" or "rpg")
+		or "native"
+	if missing > 0 then
+		print(string.format("[Dota2Rpg] Native purchase charged %d gold for %s.", missing, tostring(purchase.item_name)))
+	end
+	return true
 end
 
 function CDota2RpgDemo:RoutePendingNativePurchases()
@@ -1724,7 +1867,7 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 	local walletState = nil
 	for _, purchase in ipairs(pending) do
 		local before = tonumber(purchase.gold_before)
-		if before ~= nil then
+		if before ~= nil and not purchase.gold_checked and not purchase.gold_failed then
 			local current = self:GetGoldBalance()
 			walletState = {
 				observed_decrease = math.max(0, before - current),
@@ -1735,10 +1878,18 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 	local remaining = {}
 	for _, purchase in ipairs(pending) do
 		purchase.attempts = (purchase.attempts or 0) + 1
-		self:DebitNativePurchase(purchase, walletState)
+		local paid = self:DebitNativePurchase(purchase, walletState)
 		local recipient = self:ResolveNativePurchaseRecipient(purchase.recipient_key)
 		local routed = false
-		if recipient == nil or not self:IsEquipmentCarrier(recipient) then
+		if not paid then
+			-- Never route an item whose charge was rejected or whose price/snapshot
+			-- was unknowable. Remove only the newly created/changed result; an
+			-- existing stack is restored to its pre-order charges.
+			if purchase.gold_failed and (self:RevertUnpaidNativePurchase(purchase)
+				or purchase.attempts >= 10) then
+				routed = true
+			end
+		elseif recipient == nil or not self:IsEquipmentCarrier(recipient) then
 			routed = true -- 阵容已变化；保留原版购买结果，不向失效实体搬运。
 		elseif recipient == self:GetStashUnit() then
 			routed = true -- 小精灵就是原版购买的默认接收者。
@@ -2729,6 +2880,12 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		self:PruneNativePurchaseOrderContexts()
 		self.nativePurchaseOrderContexts = self.nativePurchaseOrderContexts or {}
 		local itemName = tostring(filterTable.itemname or filterTable.item_name or filterTable.item or "")
+		local affordable, itemCost = self:CanAffordNativePurchase(itemName, filterTable)
+		if not affordable then
+			print(string.format("[Dota2Rpg] Native purchase rejected: item=%s cost=%s balance=%d.",
+				itemName, tostring(itemCost), self:GetGoldBalance()))
+			return false
+		end
 		local context = {
 			recipient_key = recipientKey or "__wisp",
 			before_ids = self:CollectManagedItemIds(),
@@ -2737,7 +2894,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 			-- Keep the pre-order wallet so a native shop implementation that does not
 			-- debit PlayerResource can still be charged exactly once below.
 			gold_before = self:GetGoldBalance(),
-			item_cost = self:GetNativePurchaseCost(itemName, filterTable),
+			item_cost = itemCost,
 			created_at = self:GetNativePurchaseClock(),
 			created_tick = self.nativePurchaseTick or 0,
 		}
@@ -2978,8 +3135,14 @@ function CDota2RpgDemo:OnThink()
 		self:SyncGoldFromPlayer()
 		-- 额外上阵/待命英雄并非 PlayerResource 的 assigned hero；必要时把本次新购实体从小精灵补转到选中目标。
 		self:RoutePendingNativePurchases()
+		-- 原版 TRAIN_ABILITY 也绕过自定义事件；在实体更新后的 think 中捕获
+		-- 实际等级/未分配点，避免下一次刷新把技能回滚到旧 heroData。
+		local abilitiesChanged = self:SyncRosterAbilities()
 		-- 原版 HUD 的购买、出售、拖放/拾取绕过自定义按钮，也要立即同步到库存与装备面板。
 		self:SyncLiveEquipmentState(self.nativeShopTransactionPending)
+		if abilitiesChanged then
+			self:BroadcastShopState()
+		end
 		self.nativeShopTransactionPending = nil
 	end
 
@@ -3179,9 +3342,9 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 	end
 end
 
--- 金币写入玩家钱包，Dota 原版 HUD 经济面板即可正常显示。
+-- 兼容旧调用名：同步只能从 PlayerResource 读取，不能把旧 self.gold 写回钱包。
 function CDota2RpgDemo:SyncGoldToPlayer()
-	self:SetGoldBalance(self.gold)
+	return self:SyncGoldFromPlayer()
 end
 
 function CDota2RpgDemo:BroadcastShopState()

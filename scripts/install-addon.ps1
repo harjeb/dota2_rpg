@@ -44,9 +44,24 @@ if ($Compile) {
 
     foreach ($resource in $resources) {
         Write-Host "Compiling $resource"
-        & $compiler -game $gameInfoDirectory -f -i $resource
+        $compilerOutput = (& $compiler -game $gameInfoDirectory -f -i $resource 2>&1 | Out-String)
+        Write-Host $compilerOutput
         if ($LASTEXITCODE -ne 0) {
             throw "Resource compilation failed for $resource with exit code $LASTEXITCODE"
+        }
+        if ($resource -like "*maps\dota2_rpg_demo.vmap") {
+            $vpk = Join-Path $targetGame "maps\dota2_rpg_demo.vpk"
+            if (($compilerOutput -match 'Write .*dota2_rpg_demo\.vpk Failed!') -or ($compilerOutput -notmatch 'Wrote .*dota2_rpg_demo\.vpk')) {
+                throw "Map compiler did not confirm a successful VPK write: $vpk"
+            }
+            if (-not (Test-Path -LiteralPath $vpk)) {
+                throw "Map compiler reported a VPK write but the file is missing: $vpk"
+            }
+            $vpkInfo = Get-Item -LiteralPath $vpk
+            if ($vpkInfo.Length -le 0) {
+                throw "Map compiler reported a VPK write but the file is empty: $vpk"
+            }
+            Write-Host ("PASS: deployed VPK exists ({0} bytes, {1})." -f $vpkInfo.Length, $vpkInfo.LastWriteTime.ToString("o"))
         }
     }
 }
