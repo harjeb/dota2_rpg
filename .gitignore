@@ -39,3 +39,7 @@ dota2_rpg_revised_package/
 *.jpeg
 *.gif
 !content/dota_addons/dota2_rpg/materials/overviews/dota2_rpg_demo.png
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
