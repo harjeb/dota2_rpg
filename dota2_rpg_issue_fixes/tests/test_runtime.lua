@@ -606,6 +606,101 @@ do
     assert_equal(caster.force_target, nil, "wait releases forced attack")
 end
 
+-- Native tactic attacks retain ownership across fallback ticks, but casts/waits release it.
+do
+    local caster, target = Unit.new(3), Unit.new(2)
+    caster.unit_name = "npc_dota_neutral_centaur_khan"
+    local orders = {}
+    local adapter = require("tactics/action_adapter").new({ Execute = function(_, order)
+        orders[#orders + 1] = order
+    end })
+    local runtime = require("issue_fixes.enemy_runtime").new({
+        has_tactic_order = function() return true end,
+        execute_order = function() error("fallback must not replace tactic target") end,
+    })
+    runtime.enemy_units, runtime.player_units, runtime.running = { caster }, { target }, true
+    adapter:Issue(caster, { kind = "attack", logical_id = "attack" }, target, {})
+    assert_equal(caster.rpg_tactic_force_target, target, "tactic attack owns neutral target")
+    runtime:Think()
+    assert_equal(caster.force_target, target, "fallback tick retains tactic ownership")
+    adapter:IssueApproach(caster, { kind = "attack" }, target)
+    assert_equal(orders[#orders].OrderType, DOTA_UNIT_ORDER_ATTACK_TARGET, "attack chase stays an attack order")
+    adapter:IssueApproach(caster, { kind = "ability" }, target)
+    assert_equal(caster.force_target, nil, "skill approach releases forced attack")
+    adapter:Issue(caster, { kind = "attack", logical_id = "attack" }, target, {})
+    adapter:Issue(caster, { kind = "wait", logical_id = "wait" }, nil, {})
+    assert_equal(caster.force_target, nil, "explicit wait releases forced attack")
+    adapter:Issue(caster, { kind = "attack", logical_id = "attack" }, target, {})
+    target.alive = false
+    runtime:Think()
+    assert_equal(caster.force_target, nil, "dead tactic target is released")
+    target.alive = true
+    adapter:Issue(caster, { kind = "attack", logical_id = "attack" }, target, {})
+    runtime:Stop()
+    assert_equal(caster.force_target, nil, "battle stop releases tactic target")
+end
+
+-- Basic attack rows fill downtime instead of starving later skills or skill chases.
+do
+    local Engine = require("tactics/tactic_engine")
+    local oldClock = GameRules.GetGameTime
+    GameRules.GetGameTime = function() return 0 end
+    local unit, target = Unit.new(2), Unit.new(3)
+    setmetatable(unit.position, { __sub = function(a, b)
+        return { Length2D = function() return math.sqrt((a.x - b.x)^2 + (a.y - b.y)^2) end }
+    end })
+    local attack = { kind = "attack", logical_id = "attack", target_mode = "unit" }
+    local skill = { kind = "ability", logical_id = "skill", target_mode = "unit" }
+    local wait = { kind = "wait", logical_id = "wait", wait_duration = 1 }
+    local function rule(action) return { action = action, approach = "allow_approach" } end
+    local rules, issued, moves = { rule(attack), rule(skill) }, {}, {}
+    local engine = Engine.new({
+        order_gate = {}, get_phase = function() return "FIGHT" end,
+        get_battle_units = function() return { unit } end, get_rules = function() return rules end,
+        build_context = function() return {} end, selector = {},
+        conditions = { EvaluateUseConditions = function() return true end },
+        actions = {
+            Resolve = function(_, _, action) return action end,
+            CanExecute = function(_, _, spec) return spec.ready ~= false, "cooldown" end,
+            IsInRange = function(_, _, spec) return spec.in_range ~= false end,
+            Issue = function(_, _, spec) issued[#issued + 1] = spec.logical_id; return true end,
+            IssueApproach = function(_, _, spec) moves[#moves + 1] = spec.logical_id; return true end,
+        },
+    })
+    engine.ResolveRuleTarget = function() return target, target end
+    local state = engine:GetState(unit)
+    engine:EvaluateUnit(unit, state, 1)
+    assert_equal(issued[#issued], "skill", "skill after attack executes first")
+    skill.ready = false
+    engine:EvaluateUnit(unit, state, 2)
+    assert_equal(issued[#issued], "attack", "cooldown falls back to authored attack")
+    skill.ready, skill.in_range = true, false
+    engine:EvaluateUnit(unit, state, 3)
+    assert_equal(state.chase.rule_index, 2, "available skill starts chase after attack row")
+    engine:EvaluateUnit(unit, state, 3.2)
+    assert_equal(state.chase.rule_index, 2, "earlier attack cannot interrupt skill chase")
+    skill.in_range = true
+    engine:EvaluateUnit(unit, state, 3.4)
+    assert_equal(issued[#issued], "skill", "skill casts after reaching range")
+    skill.ready, attack.in_range = false, false
+    engine:EvaluateUnit(unit, state, 4)
+    assert_equal(state.chase.rule_index, 1, "attack chases during cooldown")
+    skill.ready, skill.in_range = true, false
+    engine:EvaluateUnit(unit, state, 4.2)
+    assert_equal(state.chase.rule_index, 2, "later ready skill replaces attack chase without losing its new chase")
+    state.chase = nil
+    rules = { rule(wait), rule(attack), rule(skill) }
+    engine:EvaluateUnit(unit, state, 5)
+    assert_equal(issued[#issued], "wait", "explicit wait keeps authored non-attack priority")
+    local count = #issued
+    engine:EvaluateUnit(unit, state, 5.2)
+    assert_equal(#issued, count, "explicit wait duration remains respected")
+    unit.IsChanneling = function() return true end
+    engine:EvaluateUnit(unit, state, 7)
+    assert_equal(#issued, count, "channeling is not interrupted by priority scanning")
+    GameRules.GetGameTime = oldClock
+end
+
 -- Rejected and repeated start events must not activate/reset enemy AI.
 do
     local Bootstrap = require("issue_fixes.bootstrap")

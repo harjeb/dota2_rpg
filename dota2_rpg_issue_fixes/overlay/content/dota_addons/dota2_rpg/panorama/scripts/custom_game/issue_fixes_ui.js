@@ -42,6 +42,7 @@
         }
 
         if (label && label.text !== undefined) {
+            label.hittest = false;
             label.text = collapsed ? ">" : "<";
         }
     }
@@ -76,17 +77,34 @@
         button.AddClass("RpgActionPanelArrowButton");
         button.hittest = true;
 
-        var collapsed = panel.BHasClass("RpgActionPanelCollapsed");
-        setArrow(button, collapsed, options.label);
+        function applyCollapsed(nextCollapsed) {
+            panel.SetHasClass("RpgActionPanelCollapsed", nextCollapsed);
+            setArrow(button, nextCollapsed, options.label);
+            if (options.restoreButton) {
+                panel.visible = !nextCollapsed;
+                options.restoreButton.visible = nextCollapsed;
+            }
+        }
 
-        button.SetPanelEvent("onactivate", function () {
+        var collapsed = panel.BHasClass("RpgActionPanelCollapsed");
+        applyCollapsed(collapsed);
+
+        function toggle() {
             collapsed = !panel.BHasClass("RpgActionPanelCollapsed");
             if (options.onToggle) {
                 options.onToggle(collapsed);
             }
-            panel.SetHasClass("RpgActionPanelCollapsed", collapsed);
-            setArrow(button, collapsed, options.label);
-        });
+            applyCollapsed(collapsed);
+            if ($.Msg) {
+                $.Msg("[RPG][UI] editor=" + panel.id + " collapsed=" + collapsed
+                    + " external_restore=" + !!options.restoreButton);
+            }
+        }
+        button.SetPanelEvent("onactivate", toggle);
+        if (options.restoreButton) {
+            options.restoreButton.hittest = true;
+            options.restoreButton.SetPanelEvent("onactivate", toggle);
+        }
 
         return true;
     }

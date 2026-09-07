@@ -81,6 +81,41 @@
     flow-children: none;
 }
 
+/* Restore controls are root siblings, outside the hidden editor's clip bounds. */
+.EditorRestoreButton
+{
+    width: 48px;
+    height: 48px;
+    vertical-align: center;
+    margin-top: 18px;
+    background-color: #202a2eee;
+    border: 2px solid #c5d2d8;
+    z-index: 1001;
+}
+.EditorRestoreButton:hover
+{
+    brightness: 1.4;
+}
+.EditorRestoreButton Label
+{
+    horizontal-align: center;
+    vertical-align: center;
+    font-size: 30px;
+    color: white;
+}
+.RadiantRestore
+{
+    horizontal-align: left;
+    margin-left: 18px;
+    border-color: #4bb99f;
+}
+.DireRestore
+{
+    horizontal-align: right;
+    margin-right: 18px;
+    border-color: #d65e56;
+}
+
 /* Hero shop: remove the large opaque frame while preserving readable controls. */
 .RpgTransparentHeroShop,
 .RpgTransparentHeroShop .ShopFrame,

@@ -189,6 +189,13 @@
 				</Panel>
 		</Panel>
 
+		<Button id="RadiantRestoreButton" class="EditorRestoreButton RadiantRestore" visible="false" hittest="true">
+			<Label text="&gt;" hittest="false" />
+		</Button>
+		<Button id="DireRestoreButton" class="EditorRestoreButton DireRestore" visible="false" hittest="true">
+			<Label text="&lt;" hittest="false" />
+		</Button>
+
 		<Panel id="BattleResult" class="BattleResult Hidden">
 			<Label id="BattleResultLabel" />
 			<Label id="RewardLabel" />

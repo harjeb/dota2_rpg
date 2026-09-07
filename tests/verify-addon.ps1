@@ -35,6 +35,8 @@ $requiredFiles = @(
     "scripts\generate-minimap.ps1",
     "tests\panorama-save.test.js",
     "tests\shop-state.test.lua",
+    "tests\shop-transition.test.lua",
+    "tests\runtime-log.test.lua",
     "tests\precache-battlefield.test.lua",
     "tests\compile-vmap.ps1",
     "tests\vmap.test.py",

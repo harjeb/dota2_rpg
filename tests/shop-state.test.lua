@@ -433,6 +433,135 @@ assertEqual(refreshFlow:GetGoldBalance(), 480, "refresh charge must persist thro
 assertEqual(refreshFlow.refreshCount, 1, "refresh count must advance exactly once")
 assertEqual(refreshFlow.refreshBroadcasts, 1, "refresh must broadcast the refreshed shop once")
 
+-- Missing purchase events on managed heroes reconcile from actual item evidence.
+do
+	local function resetTracePurchase()
+		equipmentGame.nativePurchaseOrderContexts = {}
+		equipmentGame.pendingNativePurchases = {}
+		equipmentGame.nativePurchaseObservedStates = {}
+		equipmentGame.nativePurchaseClaimedIds = {}
+		equipmentGame.nativePurchaseTick = 0
+		equipmentGame:SetGoldBalance(1000)
+	end
+	local function order(name, recipient)
+		assert(equipmentGame:SetNativePurchaseSelection(recipient))
+		assert(equipmentGame:ValidatePrepareOrder({ issuer_player_id_const = 0,
+			order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = name }))
+	end
+	resetTracePurchase()
+	order("item_trace_bench", benchHero)
+	local benchItem = benchHero:AddItem(makeItem("item_trace_bench"))
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "bench item without event must be charged")
+	equipmentGame:ReconcileNativePurchaseOrders()
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_trace_bench" })
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_trace_bench" })
+	equipmentGame:RoutePendingNativePurchases()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "retries, late events and duplicate events must not debit twice")
+	benchHero:RemoveItem(benchItem)
+
+	resetTracePurchase()
+	order("item_trace_active", fieldedHero)
+	local activeItem = fieldedHero:AddItem(makeItem("item_trace_active"))
+	nativeWalletReliable[0] = 750
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "already charged active item must not be charged again")
+	fieldedHero:RemoveItem(activeItem)
+
+	resetTracePurchase()
+	order("item_trace_a", benchHero)
+	order("item_trace_b", fieldedHero)
+	local firstItem = wisp:AddItem(makeItem("item_trace_a"))
+	nativeWalletReliable[0] = 750
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_trace_a" })
+	equipmentGame:RoutePendingNativePurchases()
+	local secondItem = wisp:AddItem(makeItem("item_trace_b"))
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 500, "separate event and silent batches cannot reuse native wallet coverage")
+	benchHero:RemoveItem(firstItem)
+	fieldedHero:RemoveItem(secondItem)
+
+	resetTracePurchase()
+	order("item_trace_same", benchHero)
+	order("item_trace_same", benchHero)
+	local sameA = wisp:AddItem(makeItem("item_trace_same"))
+	local sameB = wisp:AddItem(makeItem("item_trace_same"))
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 500, "two silent purchases charge two costs")
+	assert(equipmentGame:IsItemHeldBy(benchHero, sameA, 0, 14)
+		and equipmentGame:IsItemHeldBy(benchHero, sameB, 0, 14), "same-recipient purchases must claim distinct entities")
+	benchHero:RemoveItem(sameA)
+	benchHero:RemoveItem(sameB)
+
+	resetTracePurchase()
+	order("item_trace_event_first", benchHero)
+	order("item_trace_event_first", benchHero)
+	local confirmed = wisp:AddItem(makeItem("item_trace_event_first"))
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_trace_event_first" })
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "silent order cannot reuse an event-confirmed item")
+	assert(not equipmentGame.nativePurchaseOrderContexts[1].reconciled,
+		"second order must await its own result")
+	benchHero:RemoveItem(confirmed)
+
+	resetTracePurchase()
+	local stack = benchHero:AddItem(makeItem("item_trace_stack"))
+	stack.charges = 2
+	order("item_trace_stack", benchHero)
+	stack.charges = 1
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 1000, "consuming charges is not purchase evidence")
+	stack.charges = 3
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "increased stack without event is charged once")
+	benchHero:RemoveItem(stack)
+
+	resetTracePurchase()
+	local mixedStack = benchHero:AddItem(makeItem("item_trace_mixed_stack"))
+	mixedStack.charges = 1
+	mixedStack.GetInitialCharges = function() return 1 end
+	order("item_trace_mixed_stack", benchHero)
+	order("item_trace_mixed_stack", benchHero)
+	mixedStack.charges = 3
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_trace_mixed_stack" })
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 500, "event purchase must leave the second charge increment for silent reconciliation")
+	benchHero:RemoveItem(mixedStack)
+
+	resetTracePurchase()
+	local merged = benchHero:AddItem(makeItem("item_trace_merged"))
+	merged.charges = 1
+	merged.GetInitialCharges = function() return 1 end
+	order("item_trace_merged", benchHero)
+	order("item_trace_merged", benchHero)
+	merged.charges = 3
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 500, "two charge increments on one entity prove two silent purchases")
+	benchHero:RemoveItem(merged)
+
+	resetTracePurchase()
+	order("item_trace_bundle", benchHero)
+	order("item_trace_bundle", benchHero)
+	local bundle = benchHero:AddItem(makeItem("item_trace_bundle"))
+	bundle.charges = 3
+	bundle.GetInitialCharges = function() return 3 end
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 750, "one three-charge bundle is one purchase, not three")
+	benchHero:RemoveItem(bundle)
+
+	resetTracePurchase()
+	order("item_trace_missing", benchHero)
+	local unrelated = wisp:AddItem(makeItem("item_trace_unrelated"))
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(equipmentGame:GetGoldBalance(), 1000, "unrelated new items cannot prove a purchase")
+	equipmentGame.nativePurchaseTick = 10
+	equipmentGame:ReconcileNativePurchaseOrders()
+	assertEqual(#equipmentGame.nativePurchaseOrderContexts, 0, "failed orders expire")
+	assertEqual(equipmentGame:GetGoldBalance(), 1000, "expired orders must not charge")
+	wisp:RemoveItem(unrelated)
+	resetTracePurchase()
+end
+
 -- Native shop engines differ:  some debit PlayerResource before emitting
 -- dota_item_purchased, while others only create the item. Both paths must
 -- charge exactly once, and retries must not charge again.

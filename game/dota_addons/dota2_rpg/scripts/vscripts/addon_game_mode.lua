@@ -9,6 +9,8 @@ if not okHelpers then
 end
 local TacticEngine = UnitHelpers
 local EnemyScaling = require("battle.enemy_scaling")
+local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
+if not okRuntimeLog then RuntimeLog = { Write = print } end
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
 local okProgression, ProgressionData = pcall(require, "data.progression_data")
 local okRecruitmentPatch, RecruitmentPatch = pcall(require, "patches.recruitment_patch")
@@ -444,7 +446,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	print("[Dota2Rpg] BUILD rpg-runtime-followup-20260907 loaded. Setup disabled, shop enabled.")
+	RuntimeLog.Write("BUILD rpg-runtime-trace-20260907 loaded; log=dota2_rpg_runtime.log")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -1532,6 +1534,62 @@ function CDota2RpgDemo:GetNativePurchaseCost(itemName, payload)
 	return nil
 end
 
+function CDota2RpgDemo:LogNativePurchase(purchase, stage, decision)
+	-- Bound diagnostics for long sessions, and never log routing retries per tick.
+	self.nativePurchaseLogCount = (self.nativePurchaseLogCount or 0) + 1
+	if self.nativePurchaseLogCount > 200 then return end
+	RuntimeLog.Write(string.format("[Dota2Rpg] ShopTxn id=%s stage=%s issuer=%s item=%s target=%s location=%s before=%s after=%d decision=%s",
+		tostring(purchase.transaction_id or "unmatched"), stage, tostring(purchase.issuer or self.playerId),
+		tostring(purchase.item_name), tostring(purchase.recipient_key), tostring(purchase.target_location or "stash"),
+		tostring(purchase.gold_before), self:GetGoldBalance(), tostring(decision)))
+end
+
+function CDota2RpgDemo:ObserveNativePurchaseItem(item, purchase)
+	self.nativePurchaseObservedStates = self.nativePurchaseObservedStates or {}
+	local id = self:GetItemEntityId(item)
+	local state = self:GetItemPersistentState(item)
+	if purchase ~= nil and item.GetInitialCharges ~= nil then
+		local ok, initial = pcall(item.GetInitialCharges, item)
+		initial = ok and tonumber(initial) or nil
+		if initial ~= nil and initial > 0 then
+			local before = purchase.before_ids and purchase.before_ids[id]
+			local previous = self.nativePurchaseObservedStates[id]
+			local base = type(before) == "table" and tonumber(before.charges) or 0
+			if previous ~= nil and previous.entity == item then
+				base = math.max(base or 0, tonumber(previous.charges) or 0)
+			end
+			state.charges = math.min(tonumber(state.charges) or 0, (base or 0) + initial)
+		end
+	end
+	state.entity = item
+	self.nativePurchaseObservedStates[id] = state
+end
+
+function CDota2RpgDemo:ReconcileNativePurchaseOrders()
+	-- Extra heroes may receive an item without dota_item_purchased. An accepted
+	-- order alone is not proof of success: require a new entity or changed stack.
+	self:PruneNativePurchaseOrderContexts()
+	-- Event-confirmed results claim their evidence before silent orders inspect it.
+	self:RoutePendingNativePurchases()
+	self.pendingNativePurchases = self.pendingNativePurchases or {}
+	self.nativePurchaseObservedStates = self.nativePurchaseObservedStates or {}
+	local observed = self.nativePurchaseObservedStates
+	for _, context in ipairs(self.nativePurchaseOrderContexts or {}) do
+		local found = not context.reconciled and self:FindNewPurchasedItem(context, observed) or nil
+		if found ~= nil then
+			self:ObserveNativePurchaseItem(found.item, context)
+			context.observed_item_id = found.item_id
+			context.reconciled = true
+			context.attempts = 0
+			table.insert(self.pendingNativePurchases, context)
+			self.nativeShopTransactionPending = true
+			self:LogNativePurchase(context, "reconcile", "item-observed-without-event")
+		end
+	end
+	-- Consume native wallet coverage once for the whole observed batch.
+	self:RoutePendingNativePurchases()
+end
+
 function CDota2RpgDemo:PruneNativePurchaseOrderContexts()
 	local contexts = self.nativePurchaseOrderContexts or {}
 	local now = self:GetNativePurchaseClock()
@@ -1543,6 +1601,8 @@ function CDota2RpgDemo:PruneNativePurchaseOrderContexts()
 		local freshByTick = context.created_tick == nil or tick - context.created_tick <= 3
 		if freshByTime and freshByTick then
 			table.insert(fresh, context)
+		elseif not context.reconciled then
+			self:LogNativePurchase(context, "expire", "no-purchase-result")
 		end
 	end
 	self.nativePurchaseOrderContexts = fresh
@@ -1579,10 +1639,12 @@ function CDota2RpgDemo:ItemPurchaseStateChanged(before, item)
 		return false
 	end
 	local current = self:GetItemPersistentState(item)
-	return before.name ~= current.name or before.charges ~= current.charges
+	return before.name == current.name
+		and tonumber(current.charges) ~= nil and tonumber(before.charges) ~= nil
+		and tonumber(current.charges) > tonumber(before.charges)
 end
 
-function CDota2RpgDemo:FindNewPurchasedItem(purchase)
+function CDota2RpgDemo:FindNewPurchasedItem(purchase, observed, forRouting)
 	local exact = {}
 	local changedExact = {}
 	local anyNew = {}
@@ -1602,8 +1664,10 @@ function CDota2RpgDemo:FindNewPurchasedItem(purchase)
 				and item:GetAbilityName() == purchase.item_name
 				and self:ItemPurchaseStateChanged(before, item)
 			local claim = itemId ~= "" and claimed[itemId] or nil
-			local availableForRecipient = claim == nil or claim == purchase.recipient_key
-			if itemId ~= "" and availableForRecipient and (isNew or isChanged) then
+			local availableForRecipient = (observed ~= nil and not forRouting) or claim == nil or claim == purchase.recipient_key
+			local unusedEvidence = purchase.observed_item_id == itemId or observed == nil or observed[itemId] == nil
+				or observed[itemId].entity ~= item or self:ItemPurchaseStateChanged(observed[itemId], item)
+			if itemId ~= "" and availableForRecipient and unusedEvidence and (isNew or isChanged) then
 				local candidate = { holder = unit, item = item, item_id = itemId, changed = isChanged }
 				if isNew then
 					table.insert(anyNew, candidate)
@@ -1652,7 +1716,8 @@ function CDota2RpgDemo:FindClaimedPurchaseItem(purchase, recipient)
 			local itemId = self:GetItemEntityId(item)
 			if itemId ~= "" and claimed[itemId] ~= nil
 				and (recipient == nil or claimed[itemId] == purchase.recipient_key)
-				and self:IsLiveItem(item) and item:GetAbilityName() == purchase.item_name then
+				and self:IsLiveItem(item) and item:GetAbilityName() == purchase.item_name
+				and self:ItemPurchaseStateChanged(purchase.before_ids and purchase.before_ids[itemId], item) then
 				return { holder = unit, item = item, item_id = itemId,
 					claimed_recipient = claimed[itemId] }
 			end
@@ -1792,7 +1857,10 @@ function CDota2RpgDemo:GetPendingNativePurchaseReservation()
 	self:PruneNativePurchaseOrderContexts()
 	local total = 0
 	local earliestBefore = nil
+	local seen = {}
 	local function include(purchase)
+		if seen[purchase] then return end
+		seen[purchase] = true
 		local cost = tonumber(purchase.item_cost or purchase.itemcost or purchase.cost)
 		if cost ~= nil and cost > 0 and not purchase.gold_checked and not purchase.gold_failed then
 			total = total + math.floor(cost)
@@ -1895,14 +1963,14 @@ function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
 	purchase.gold_source = missing > 0
 		and (nativeCovered > 0 and "mixed" or "rpg")
 		or "native"
-	if missing > 0 then
-		print(string.format("[Dota2Rpg] Native purchase charged %d gold for %s.", missing, tostring(purchase.item_name)))
-	end
+	self:LogNativePurchase(purchase, "debit", purchase.gold_source .. ":" .. tostring(missing))
 	return true
 end
 
 function CDota2RpgDemo:RoutePendingNativePurchases()
 	local pending = self.pendingNativePurchases or {}
+	self.nativePurchaseObservedStates = self.nativePurchaseObservedStates or {}
+	local observed = self.nativePurchaseObservedStates
 	local walletState = nil
 	for _, purchase in ipairs(pending) do
 		local before = tonumber(purchase.gold_before)
@@ -1931,13 +1999,20 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 		elseif recipient == nil or not self:IsEquipmentCarrier(recipient) then
 			routed = true -- 阵容已变化；保留原版购买结果，不向失效实体搬运。
 		elseif recipient == self:GetStashUnit() then
+			local found = self:FindNewPurchasedItem(purchase, observed, true)
+			if found ~= nil then self:ObserveNativePurchaseItem(found.item, purchase) end
 			routed = true -- 小精灵就是原版购买的默认接收者。
 		else
-			local found = self:FindNewPurchasedItem(purchase)
+			local found = self:FindNewPurchasedItem(purchase, observed, true)
+			if found ~= nil then
+				purchase.observed_item_id = found.item_id
+				self:ObserveNativePurchaseItem(found.item, purchase)
+			end
 			if found == nil then
 				-- 同一目标的后续购买可能继续合并到已路由实体；无需再次搬运。
 				found = self:FindClaimedPurchaseItem(purchase, recipient)
 				if found ~= nil then
+					self:ObserveNativePurchaseItem(found.item, purchase)
 					print(string.format("[Dota2Rpg] Native purchase merged into the already routed %s stack.",
 						purchase.item_name))
 					routed = true
@@ -1947,6 +2022,8 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 					if claimed ~= nil and claimed.holder ~= recipient then
 						local split, splitItem = self:SplitMergedPurchaseStack(purchase, claimed, recipient)
 						if split then
+							self:ObserveNativePurchaseItem(claimed.item)
+							self:ObserveNativePurchaseItem(splitItem)
 							self.nativePurchaseClaimedIds = self.nativePurchaseClaimedIds or {}
 							local splitId = self:GetItemEntityId(splitItem)
 							if splitId ~= "" then
@@ -1981,6 +2058,9 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 				end
 			end
 		end
+		if routed or purchase.attempts >= 10 then
+			self:LogNativePurchase(purchase, "transfer", purchase.gold_failed and "unpaid-reverted" or (routed and "resolved" or "item-not-found"))
+		end
 		if not routed and purchase.attempts < 10 then
 			table.insert(remaining, purchase)
 		elseif not routed then
@@ -1989,6 +2069,14 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 		end
 	end
 	self.pendingNativePurchases = remaining
+	if walletState ~= nil then
+		local unspentBaseline = self:GetGoldBalance() + walletState.observed_decrease
+		for _, context in ipairs(self.nativePurchaseOrderContexts or {}) do
+			if not context.gold_checked and not context.gold_failed and context.gold_before ~= nil then
+				context.gold_before = math.min(context.gold_before, unspentBaseline)
+			end
+		end
+	end
 end
 
 function CDota2RpgDemo:OnNativeItemPurchased(event)
@@ -2010,20 +2098,22 @@ function CDota2RpgDemo:OnNativeItemPurchased(event)
 			end
 		end
 		local context = contextIndex ~= nil and table.remove(self.nativePurchaseOrderContexts, contextIndex) or nil
+		if context ~= nil and context.reconciled then
+			self:LogNativePurchase(context, "event", "already-reconciled")
+			return
+		end
 		if context == nil then
-			-- 缺少可关联的购买前快照时固定留在原版默认载体，不使用当前选择。
-			-- nativeGoldSnapshot is the last pre-event wallet observed by OnThink;
-			-- using it avoids making an unmatched engine-free event free either.
-			context = {
-				recipient_key = "__wisp",
-				before_ids = self.nativePurchaseBaseline or self:CollectManagedItemIds(),
-				gold_before = self.nativeGoldSnapshot,
-			}
+			-- Events have no transaction identifier. Without a live preflight they
+			-- cannot distinguish a duplicate/late notification from a new purchase.
+			self:LogNativePurchase({ item_name = itemName }, "event", "unmatched-ignored")
+			self.nativeShopTransactionPending = true
+			return
 		end
 		context.item_name = itemName
 		context.event = event
 		context.item_cost = context.item_cost or self:GetNativePurchaseCost(itemName, event)
 		context.attempts = 0
+		self:LogNativePurchase(context, "event", "queued")
 		table.insert(self.pendingNativePurchases, context)
 		-- 事件可能在引擎真正扣款/入栏的同一帧触发；下一轮 Think 再定位新实体并同步钱包。
 		self.nativeShopTransactionPending = true
@@ -2938,7 +3028,13 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 				itemName, tostring(itemCost), self:GetGoldBalance()))
 			return false
 		end
+		self.nativePurchaseTransactionId = (self.nativePurchaseTransactionId or 0) + 1
+		local recipient = self:ResolveNativePurchaseRecipient(recipientKey or "__wisp")
 		local context = {
+			transaction_id = self.nativePurchaseTransactionId,
+			issuer = tonumber(filterTable.issuer_player_id_const),
+			target_location = recipient ~= nil and (self:IsBenchUnit(recipient) and "bench"
+				or (self:IsLineupUnit(recipient) and "active" or "stash")) or "missing",
 			recipient_key = recipientKey or "__wisp",
 			before_ids = self:CollectManagedItemIds(),
 			item_name = itemName,
@@ -2952,6 +3048,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		}
 		-- 原版购买事件按提交顺序到达；每个订单都保留独立快照，不能用单一可覆盖字段。
 		table.insert(self.nativePurchaseOrderContexts, context)
+		self:LogNativePurchase(context, "preflight", "accepted")
 		return true
 	end
 
@@ -3182,12 +3279,11 @@ function CDota2RpgDemo:OnThink()
 	end
 
 	if self.phase == "setup" then
-		self:PruneNativePurchaseOrderContexts()
 		-- 原版商店的购买/出售会直接改变 PlayerResource；先吸收余额再推送 UI，
 		-- 避免旧 self.gold 把已经扣掉/返还的原版金币覆盖回去。
 		self:SyncGoldFromPlayer()
-		-- 额外上阵/待命英雄并非 PlayerResource 的 assigned hero；必要时把本次新购实体从小精灵补转到选中目标。
-		self:RoutePendingNativePurchases()
+		-- Reconcile both event-confirmed and silent results before publishing inventory.
+		self:ReconcileNativePurchaseOrders()
 		-- 原版 TRAIN_ABILITY 也绕过自定义事件；在实体更新后的 think 中捕获
 		-- 实际等级/未分配点，避免下一次刷新把技能回滚到旧 heroData。
 		local abilitiesChanged = self:SyncRosterAbilities()
@@ -3310,7 +3406,12 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 
 	-- 单人闯关：结算展示 3 秒后回到准备阶段（不结束整局游戏）
+	local setupPending = true
 	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
+		if not setupPending or self.phase ~= "result" or self.runComplete then
+			return nil
+		end
+		setupPending = false
 		self.phase = "setup"
 		self.winner = ""
 		if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
@@ -3319,7 +3420,11 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		self:SpawnLevelEnemies(self.currentLevelId)
 		self:RespawnPlayerRoster()
 		self:SpawnBattleBarrier()
-		self:BroadcastShopState()
+		-- RollShop broadcasts the new offers; automatic rolls never charge gold.
+		self:RollShop()
+		RuntimeLog.Write(string.format("[Dota2Rpg] ShopTransition result=%s from=%s to=%s free=1 offers=%d refresh_count=%d",
+			tostring(winner), tostring(settlement.level), tostring(self.currentLevelId),
+			#self.shopOffers, self.refreshCount))
 		self:BroadcastLevelInfo()
 		self:BroadcastBattleState()
 		print("[Dota2Rpg] Back to setup. Next level: " .. self.currentLevelId)

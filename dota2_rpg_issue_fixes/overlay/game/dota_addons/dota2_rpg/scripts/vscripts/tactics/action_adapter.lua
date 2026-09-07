@@ -8,9 +8,22 @@ local function is_valid(entity)
 end
 
 local function release_fallback_target(caster)
-    if caster.rpg_fallback_force_target ~= nil then
+    if caster.rpg_fallback_force_target ~= nil or caster.rpg_tactic_force_target ~= nil then
         if caster.SetForceAttackTarget ~= nil then caster:SetForceAttackTarget(nil) end
         caster.rpg_fallback_force_target = nil
+        caster.rpg_tactic_force_target = nil
+    end
+end
+
+local function own_attack_target(caster, spec, target)
+    if spec.kind == "attack" and caster.GetUnitName ~= nil
+        and caster:GetUnitName():match("^npc_dota_neutral_")
+        and is_valid(target) and caster.SetForceAttackTarget ~= nil then
+        caster:SetForceAttackTarget(target)
+        caster.rpg_fallback_force_target = nil
+        caster.rpg_tactic_force_target = target
+    else
+        release_fallback_target(caster)
     end
 end
 
@@ -253,7 +266,7 @@ function ActionAdapter:IsInRange(caster, spec, target_or_point)
 end
 
 function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
-    release_fallback_target(caster)
+    own_attack_target(caster, spec, target_or_point)
     local custom = self.custom[spec.logical_id]
     if custom ~= nil and custom.Issue ~= nil then
         return custom:Issue(caster, spec, target_or_point, ctx, self.order_gate)
@@ -302,14 +315,14 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
 end
 
 function ActionAdapter:IssueApproach(caster, spec, target_or_point)
-    release_fallback_target(caster)
+    own_attack_target(caster, spec, target_or_point)
     local order = {
         UnitIndex = caster:entindex(),
         Queue = false,
     }
 
     if target_or_point ~= nil and target_or_point.GetAbsOrigin ~= nil then
-        order.OrderType = DOTA_UNIT_ORDER_MOVE_TO_TARGET
+        order.OrderType = spec.kind == "attack" and DOTA_UNIT_ORDER_ATTACK_TARGET or DOTA_UNIT_ORDER_MOVE_TO_TARGET
         order.TargetIndex = target_or_point:entindex()
     else
         order.OrderType = DOTA_UNIT_ORDER_MOVE_TO_POSITION

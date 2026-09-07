@@ -14,10 +14,12 @@ var ruleSyncSource = fs.readFileSync(ruleSyncPath, "utf8");
 var cssSource = fs.readFileSync(cssPath, "utf8");
 var layoutSource = fs.readFileSync(layoutPath, "utf8");
 var fixesCssSource = fs.readFileSync(path.join(path.dirname(cssPath), "issue_fixes_ui.css"), "utf8");
-var snippetTree = JSON.parse(require("child_process").execFileSync("python", ["-c",
+var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c",
     "import json,sys,xml.etree.ElementTree as E; " +
     "encode=lambda e:dict(type=e.tag,attrs=e.attrib,children=[encode(c) for c in e]); " +
-    "print(json.dumps(encode(E.parse(sys.argv[1]).find('.//snippet'))))", layoutPath], { encoding: "utf8" }));
+    "print(json.dumps(encode(E.parse(sys.argv[1]).getroot())))", layoutPath], { encoding: "utf8" }));
+var snippetTree = layoutTree.children.filter(function (node) { return node.type === "snippets"; })[0].children[0];
+var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 
 function instantiateSnippet(node, parent) {
     var panel = createPanel(node.attrs.id || "");
@@ -258,7 +260,13 @@ function chooseAction(hud, side, row, action) {
     hud.panels["#" + side + "CollapseButton"].events.onactivate();
     assert(hud.panels["#" + side + "Editor"].BHasClass("RpgActionPanelCollapsed"), "live editor must collapse");
     assert(hud.panels["#" + side + "CollapseLabel"].text === ">", "collapsed arrow must be >");
-    hud.panels["#" + side + "CollapseButton"].events.onactivate();
+    assert(hud.panels["#" + side + "Editor"].visible === false, "collapsed editor is hidden as a whole");
+    assert(hud.panels["#" + side + "RestoreButton"].visible === true, "external restore control remains visible");
+    assert(rootLayout.children.some(function (node) { return node.attrs.id === side + "RestoreButton"; }),
+        "restore button must be a root sibling, not a descendant of the hidden editor");
+    hud.panels["#" + side + "RestoreButton"].events.onactivate();
+    assert(hud.panels["#" + side + "Editor"].visible === true, "external control restores editor");
+    assert(hud.panels["#" + side + "RestoreButton"].visible === false, "restore control hides after expanding");
     assert(!hud.panels["#" + side + "Editor"].BHasClass("RpgActionPanelCollapsed"), "live editor must re-expand");
     assert(hud.panels["#" + side + "CollapseLabel"].text === "<", "re-expanded arrow must be <");
 });

@@ -1,6 +1,8 @@
 -- Enemy runtime driven by the current stage's actual entries and spawned units.
 -- No hero names and no fixed "three enemy heroes" list are stored here.
 
+local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
+if not okLog then RuntimeLog = { Write = print } end
 local EnemyRuntime = {}
 EnemyRuntime.__index = EnemyRuntime
 
@@ -201,6 +203,8 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
     safe_call(unit, "SetIdleAcquire", nil, not is_native_neutral(unit))
     safe_call(unit, "SetAcquisitionRange", nil, self.acquisition_range)
     safe_call(unit, "SetForceAttackTarget", nil, nil)
+    unit.rpg_fallback_force_target = nil
+    unit.rpg_tactic_force_target = nil
 end
 
 function EnemyRuntime:IssueAttack(unit, target)
@@ -249,6 +253,27 @@ function EnemyRuntime:CanFallbackOrder(unit)
     return true
 end
 
+function EnemyRuntime:TraceMotion(unit)
+    local time = GameRules and GameRules.GetGameTime and GameRules:GetGameTime() or 0
+    if time < (unit.rpg_motion_trace_at or -1) then return end
+    unit.rpg_motion_trace_at = time + 2
+    local target = unit.rpg_tactic_force_target or unit.rpg_fallback_force_target
+        or safe_call(unit, "GetAttackTarget", nil)
+    if not is_alive(target) then target = nearest_alive_enemy(unit, self.player_units) end
+    if target == nil then return end
+    local distance = distance_2d(unit, target)
+    local position = safe_call(unit, "GetAbsOrigin", {})
+    local delta = unit.rpg_motion_target == target and distance - (unit.rpg_motion_distance or distance) or 0
+    RuntimeLog.Write(string.format("EnemyMotion unit=%d name=%s x=%.0f y=%.0f target=%d distance=%.0f delta=%.0f attack_target=%d owner=%s idle=%s stunned=%s silenced=%s casting=%s",
+        unit_index(unit), tostring(safe_call(unit, "GetUnitName", "")), position.x or 0, position.y or 0,
+        unit_index(target), distance, delta, unit_index(safe_call(unit, "GetAttackTarget", nil)),
+        unit.rpg_tactic_force_target and "tactic" or (unit.rpg_fallback_force_target and "fallback" or "none"),
+        tostring(safe_call(unit, "IsIdle", false)), tostring(safe_call(unit, "IsStunned", false)),
+        tostring(safe_call(unit, "IsSilenced", false)), tostring(safe_call(unit, "IsChanneling", false)
+            or safe_call(unit, "IsInAbilityPhase", false))))
+    unit.rpg_motion_target, unit.rpg_motion_distance = target, distance
+end
+
 function EnemyRuntime:Think()
     if not self.running then return nil end
     if self.get_phase() ~= "FIGHT" then return self.think_interval end
@@ -261,6 +286,19 @@ function EnemyRuntime:Think()
     end
 
     for _, unit in ipairs(self.enemy_units) do
+        if is_alive(unit) then
+            self:TraceMotion(unit)
+            -- Tactic attacks own the same persistent target as fallback attacks.
+            -- Reassert it without replacing the tactic with a nearest-target order.
+            if unit.rpg_tactic_force_target ~= nil and not is_alive(unit.rpg_tactic_force_target) then
+                safe_call(unit, "SetForceAttackTarget", nil, nil)
+                unit.rpg_tactic_force_target = nil
+            elseif is_alive(unit.rpg_tactic_force_target)
+                and not safe_call(unit, "IsChanneling", false)
+                and not safe_call(unit, "IsInAbilityPhase", false) then
+                safe_call(unit, "SetForceAttackTarget", nil, unit.rpg_tactic_force_target)
+            end
+        end
         if self:CanFallbackOrder(unit) then
             local current_target = safe_call(unit, "GetAttackTarget", nil)
             if not is_alive(current_target) then
@@ -310,9 +348,10 @@ end
 
 function EnemyRuntime:Stop()
     for _, unit in ipairs(self.enemy_units) do
-        if is_valid(unit) and unit.rpg_fallback_force_target ~= nil then
+        if is_valid(unit) and (unit.rpg_fallback_force_target ~= nil or unit.rpg_tactic_force_target ~= nil) then
             safe_call(unit, "SetForceAttackTarget", nil, nil)
             unit.rpg_fallback_force_target = nil
+            unit.rpg_tactic_force_target = nil
         end
     end
     self.running = false

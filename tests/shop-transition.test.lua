@@ -1,0 +1,103 @@
+local root = TEST_REPO_ROOT or "."
+local moduleRoot = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
+function class()
+    local result = {}
+    result.__index = result
+    return result
+end
+function Vector(x, y, z) return { x = x, y = y, z = z } end
+DOTA_TEAM_GOODGUYS = 2
+DOTA_TEAM_BADGUYS = 3
+TacticEngine = { IsValidUnit = function() return false end }
+require = function(name)
+    if name == "issue_fixes.bootstrap" then return { Install = function() end } end
+    local modules = {
+        ["battle.enemy_scaling"] = true,
+        ["data.progression_data"] = true,
+        ["patches.recruitment_patch"] = true,
+        ["patches.progression_patch"] = true,
+        ["patches.enemy_items_patch"] = true,
+    }
+    if modules[name] then return dofile(moduleRoot .. name:gsub("%.", "/") .. ".lua") end
+    error("unused engine module: " .. name)
+end
+dofile(moduleRoot .. "addon_game_mode.lua")
+local function equal(actual, expected, label)
+    assert(actual == expected, label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual))
+end
+local function scenario(winner, final)
+    local callback, scheduled, settlements = nil, 0, 0
+    GameRules = { GetGameModeEntity = function()
+        return { SetContextThink = function(_, name, fn, delay)
+            equal(name, "Dota2RpgBackToSetup", "transition timer")
+            equal(delay, 3, "settlement delay")
+            callback = fn
+            scheduled = scheduled + 1
+        end }
+    end }
+    CustomGameEventManager = { Send_ServerToAllClients = function(_, event)
+        equal(event, "rpg_settlement", "settlement event")
+        settlements = settlements + 1
+    end }
+    local game = setmetatable({
+        phase = "fight", currentLevelId = final and "ch02" or "ch01",
+        orderedLevels = { "ch01", "ch02" }, lineup = {}, ownedHeroes = {},
+        refreshCount = 3, scrollPurchases = { low = 2, high = 1 }, gold = 500,
+        shopCosts = { lineup_max = 5 },
+        heroPool = { strength = { "axe", "sven" }, agility = { "sniper" },
+            intelligence = { "lina" }, universal = { "marci" } },
+        shopOffers = { { hero = "old" } }, shopOfferText = "old", broadcasts = 0,
+        dataLoader = { GetLevel = function() return { time_limit = 120, reward = { gold = 100, xp_per_active_hero = 0 } } end },
+        battleManager = { GetBattleTime = function() return 120 end,
+            teamHeroes = { [2] = {} }, StopBattle = function() end },
+        AddGold = function(self, value) self.gold = self.gold + value end,
+        AwardStageXp = function() end,
+        SpendGold = function() error("automatic refresh must not spend gold") end,
+        BroadcastBattleState = function() end, BroadcastLevelInfo = function() end,
+        BroadcastShopState = function(self) self.broadcasts = self.broadcasts + 1 end,
+        SpawnLevelEnemies = function(self, level) equal(level, self.currentLevelId, "spawn level") end,
+        RespawnPlayerRoster = function() end, SpawnBattleBarrier = function() end,
+        RollRecruitLevel = function() return 1 end,
+        RollQuality = function(self, stage) self.qualityStage = stage; return "common" end,
+        PriceFor = function() return 100 end,
+    }, CDota2RpgDemo)
+    game:EndBattle(winner, winner == "radiant" and 2 or 3)
+    game:EndBattle(winner, 2)
+    equal(settlements, 1, "duplicate battle end rejected")
+    equal(game.shopOfferText, "old", "offers remain during settlement")
+    game:OnShopRefresh(nil, {})
+    equal(game.shopOfferText, "old", "manual refresh rejected during settlement")
+    if final then
+        equal(scheduled, 0, "final victory has no preparation")
+        equal(game.runComplete, true, "final run complete")
+        equal(game.phase, "result", "final phase")
+        return
+    end
+    equal(scheduled, 1, "single transition")
+    local gold = game.gold
+    callback()
+    equal(game.phase, "setup", "preparation phase")
+    equal(game.currentLevelId, winner == "radiant" and "ch02" or "ch01", "next or retry level")
+    equal(game.qualityStage, winner == "radiant" and 2 or 1, "quality uses destination stage")
+    equal(game.gold, gold, "automatic roll free")
+    equal(game.refreshCount, winner == "radiant" and 0 or 3, "paid refresh count")
+    equal(game.scrollPurchases.low, winner == "radiant" and 0 or 2, "scroll limits")
+    equal(#game.shopOffers, 5, "all recruitment offers replaced")
+    assert(game.shopOfferText ~= "old", "serialized offers refreshed")
+    equal(game.broadcasts, 1, "single shop broadcast from automatic roll")
+    local offers = game.shopOffers
+    callback()
+    game:BroadcastShopState()
+    game:EndBattle(winner, 2)
+    equal(game.shopOffers, offers, "callback replay and rebroadcast do not reroll")
+    equal(settlements, 1, "setup rejects settlement")
+    game.phase = "result"
+    callback()
+    equal(game.shopOffers, offers, "old callback cannot reroll a later settlement")
+end
+scenario("radiant", false)
+scenario("dire", false)
+scenario("timeout", false)
+scenario("draw", false)
+scenario("radiant", true)
+print("shop-transition tests passed")

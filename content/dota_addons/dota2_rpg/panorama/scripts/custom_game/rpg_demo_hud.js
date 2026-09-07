@@ -1180,6 +1180,7 @@
                 panel: $("#" + side + "Editor"),
                 button: $("#" + side + "CollapseButton"),
                 label: $("#" + side + "CollapseLabel"),
+                restoreButton: $("#" + side + "RestoreButton"),
                 onToggle: closeEditorMenus
             });
         });

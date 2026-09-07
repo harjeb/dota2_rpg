@@ -34,7 +34,7 @@ def run_lua_checks(lua_files: list[Path]) -> None:
             checker.unlink(missing_ok=True)
         run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT)])
         run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT), "live"])
-        for name in ("arena-trees.test.lua", "shop-state.test.lua", "precache-battlefield.test.lua"):
+        for name in ("arena-trees.test.lua", "shop-state.test.lua", "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua"):
             run([texlua, str(ROOT.parent / "tests" / name)], cwd=ROOT.parent)
         return
 
@@ -59,7 +59,7 @@ def run_lua_checks(lua_files: list[Path]) -> None:
         runtime = LuaRuntime(unpack_returned_tuples=True)
         runtime.globals().arg = runtime.table_from({1: ROOT.as_posix(), 2: mode})
         runtime.globals().dofile((ROOT / "tests/test_runtime.lua").as_posix())
-    for name in ("arena-trees.test.lua", "shop-state.test.lua", "precache-battlefield.test.lua"):
+    for name in ("arena-trees.test.lua", "shop-state.test.lua", "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua"):
         runtime = LuaRuntime(unpack_returned_tuples=True)
         runtime.globals().TEST_REPO_ROOT = ROOT.parent.as_posix()
         runtime.globals().dofile((ROOT.parent / "tests" / name).as_posix())
