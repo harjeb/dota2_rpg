@@ -101,3 +101,41 @@ assert(not attempt() and #orders==0,"isolated unit AoE waits for its configured 
 far.x=550;near.x=200;spell.behavior=16;spell.radius=0;rule.min_aoe_hits=1;engine:Reset()
 assert(attempt() and orders[1].Position.x==550,"point spell ties honour lowest HP priority")
 print("condition-execution tests passed")
+
+-- Reproduce the Time Walk report through DecodeFlat -> engine -> native point order.
+spell.GetAbilityName=function() return "faceless_void_time_walk" end
+spell.GetBehaviorInt=function() return 525328 end
+spell.GetEffectiveCastRange=function() return 0 end
+spell.GetCastRange=function() return 0 end
+spell.GetSpecialValueFor=function(_,key) return key=="range" and 650 or 0 end
+spell.CastFilterResultLocation=function() return 0 end
+caster.hp=60; caster.x=0; near.x=200; far.x=250
+local targetContext=engine.build_context
+engine.build_context=function(...)
+    local ctx=targetContext(...)
+    ctx.get_candidates=function(unit,_,target)
+        return target.team=="self" and {unit} or {far,near}
+    end
+    return ctx
+end
+local timeWalkPayload={action_kind="ability",action_id="faceless_void_time_walk",action_name="faceless_void_time_walk",
+    target_team="enemy",target_types="hero,monster,summon",approach="range_only",
+    use_condition_1_type="self_hp_pct_lte",use_condition_1_value=0.6,
+    target_filter_1_type="distance_gte",target_filter_1_value=350,
+    target_filter_2_type="distance_lte",target_filter_2_value=900,target_priority_1_type="nearest"}
+rule=service:DecodeFlat(timeWalkPayload); engine:Reset()
+assert(not attempt() and #orders==0,"old gapclose filters block nearby enemies even after HP passes")
+timeWalkPayload.target_team="self"
+timeWalkPayload.target_filter_1_type=nil; timeWalkPayload.target_filter_2_type=nil
+rule=service:DecodeFlat(timeWalkPayload); engine:Reset()
+assert(service:ValidateRule(0,caster,rule))
+assert(attempt() and #orders==1 and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_POSITION
+    and orders[1].Position.x==caster.x,"recovery sends a point order at the caster with nearby enemies")
+caster.hp=61; engine:Reset()
+assert(not attempt() and #orders==0,"recovery preserves the user's HP threshold")
+caster.hp=60; timeWalkPayload.target_team="enemy"; near.x=600; far.x=900
+rule=service:DecodeFlat(timeWalkPayload); engine:Reset()
+assert(attempt() and orders[1].Position.x==600,"native Time Walk range fallback enables an enemy anchor in range")
+near.x=700; engine:Reset()
+assert(not attempt() and #orders==0,"native Time Walk range still rejects distant enemy anchors")
+print("PASS: Time Walk old-filter reproduction, self recovery, HP boundary and native point range through engine")

@@ -30,7 +30,7 @@ UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、�
 | aoe | 85 |
 | dispel_control | 2 |
 | execute | 3 |
-| gapclose | 13 |
+| gapclose | 12 |
 | healing_ally | 7 |
 | healing_area | 2 |
 | healing_self | 3 |
@@ -46,6 +46,7 @@ UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、�
 | protection_self | 25 |
 | self_combat_buff | 50 |
 | summon | 18 |
+| time_walk_recovery | 1 |
 | toggle_combat_on | 4 |
 | toggle_on | 1 |
 

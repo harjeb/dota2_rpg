@@ -71,6 +71,45 @@ assert(adapter:GetRequiredRange(caster, spec, point) == 750, "effective native r
 source.GetEffectiveCastRange = function() return 0 end
 source.GetCastRange = function() return 625 end
 assert(adapter:GetRequiredRange(caster, spec, point) == 625, "zero effective accessor falls back to positive native range")
+-- Time Walk's native cast-range APIs return zero; its travel range is level-dependent.
+local abilityName, abilityLevel, rangeBonus = "faceless_void_time_walk", 1, 0
+source.GetAbilityName = function() return abilityName end
+source.GetLevel = function() return abilityLevel end
+source.GetCastRange = function() return 0 end
+local rangeReads = 0
+source.GetSpecialValueFor = function(_, key)
+    if key == "AbilityCastRange" then return 0 end
+    assert(key == "range", "unexpected native special")
+    rangeReads = rangeReads + 1
+    return ({650, 700, 750, 800})[abilityLevel]
+end
+caster.GetCastRangeBonus = function() return rangeBonus end
+local timeWalk = assert(adapter:Resolve(caster, {kind="ability", name=abilityName}, {}))
+assert(timeWalk.cast_type == "point" and timeWalk.cast_range == 650, "learned Time Walk resolves native range")
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 650, "zero APIs use Time Walk range special")
+assert(adapter:IsInRange(caster, timeWalk, {x=650}), "Time Walk reaches native range")
+assert(not adapter:IsInRange(caster, timeWalk, {x=675}), "Time Walk rejects points beyond range and existing tolerance")
+abilityLevel = 2
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 700, "existing action reads upgraded Time Walk range dynamically")
+assert(adapter:IsInRange(caster, timeWalk, {x=700}), "upgraded Time Walk reaches new range")
+assert(not adapter:IsInRange(caster, timeWalk, {x=725}), "upgraded Time Walk remains range restricted")
+rangeBonus = 125
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 825, "native special fallback adds caster range bonus")
+timeWalk.cast_range_override = 300
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 300, "explicit override still wins for Time Walk")
+assert(not adapter:IsInRange(caster, timeWalk, point), "Time Walk respects explicit range restriction")
+timeWalk.cast_range_override = nil
+source.GetCastRange = function() return 900 end
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 900, "positive normal API wins without adding bonus twice")
+source.GetEffectiveCastRange = function() return 1000 end
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 1000, "positive effective API wins over normal API and special")
+source.GetCastRange = function() return 0 end
+source.GetEffectiveCastRange = function() return 0 end
+abilityName = "unreviewed_ability_with_range"
+local previousRangeReads = rangeReads
+assert(adapter:GetRequiredRange(caster, timeWalk, point) == 0, "other abilities do not infer cast range from range specials")
+assert(rangeReads == previousRangeReads, "other abilities never query the Time Walk range fallback")
+rangeBonus = 0
 -- Live Dota: learned Hammer of Purity includes an upper behavior flag. Its
 -- 32-bit accessor overflows, but the full mask still includes UNIT_TARGET (8).
 DOTA_ABILITY_BEHAVIOR_UNIT_TARGET = 8

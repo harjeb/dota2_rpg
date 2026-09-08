@@ -640,6 +640,29 @@
         ]
       }
     },
+    "charged_time_walk_recovery": {
+      "rationale": "Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "self",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "self",
+        "use_conditions": [
+          {
+            "type": "self_hp_pct_lte",
+            "value": 60
+          },
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
     "dispel_control": {
       "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable.",
       "rule": {
@@ -1006,6 +1029,25 @@
             "radius": 800,
             "type": "nearby_enemies_gte",
             "value": 1
+          }
+        ]
+      }
+    },
+    "time_walk_recovery": {
+      "rationale": "Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat.",
+      "rule": {
+        "target": "self",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "self",
+        "use_conditions": [
+          {
+            "type": "self_hp_pct_lte",
+            "value": 60
           }
         ]
       }
@@ -36201,7 +36243,7 @@
         "Thresholds do not predict trajectories, lethal damage, safe landing or channel completion."
       ],
       "expression_covered": true,
-      "family": "gapclose",
+      "family": "time_walk_recovery",
       "hero": "npc_dota_hero_faceless_void",
       "id": "faceless_void_time_walk",
       "implementation_gaps": [],
@@ -36269,11 +36311,12 @@
         ]
       },
       "preset_variants": [
+        "time_walk_recovery",
         "gapclose"
       ],
-      "rationale": "Reviewed offensive movement mode: close a meaningful gap (350–900 units) only with at least 60% self HP. This is not safe-landing/path/terrain prediction.",
+      "rationale": "Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat.",
       "review_note": "Ordinary generic partial mode only.",
-      "reviewed_family": "gapclose",
+      "reviewed_family": "time_walk_recovery",
       "unique_mechanism": {
         "basic_native_mode": null,
         "basic_native_note": null,

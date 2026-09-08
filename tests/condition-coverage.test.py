@@ -91,6 +91,17 @@ assert.strictEqual(api.get('omniknight_purification').target_filters[0].value, 8
 assert.strictEqual(api.get('antimage_blink').use_conditions[0].value, 60);
 assert.strictEqual(api.get('antimage_blink').target_filters[0].value, 350);
 assert.strictEqual(api.get('faceless_void_time_walk_reverse'), null);
+const timeWalk = api.get('faceless_void_time_walk');
+assert.strictEqual(timeWalk.target_team, 'self');
+assert.strictEqual(timeWalk.target, 'self');
+assert.strictEqual(timeWalk.use_conditions[0].type, 'self_hp_pct_lte');
+assert.strictEqual(timeWalk.use_conditions[0].value, 60);
+assert.strictEqual(timeWalk.target_filters.length, 0, 'recovery must work with enemies inside 350 units');
+assert.strictEqual(api.get('faceless_void_time_walk', 'gapclose').target_filters[0].value, 350);
+const recoveryWire = sync.serialize({ rule: timeWalk, actionId: 'faceless_void_time_walk',
+    actionName: 'faceless_void_time_walk', heroIndex: 7, slot: 1, ruleCount: 1 });
+assert.strictEqual(recoveryWire.target_team, 'self');
+assert.strictEqual(recoveryWire.use_condition_1_value, 0.6);
 assert.strictEqual(api.get('leshrac_pulse_nova').desired_toggle_state, '1');
 assert.strictEqual(api.get('leshrac_pulse_nova', 'toggle_off').desired_toggle_state, '0');
 process.stdout.write(JSON.stringify(payloads));

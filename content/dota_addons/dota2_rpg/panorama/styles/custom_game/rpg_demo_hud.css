@@ -1817,14 +1817,16 @@
 .V2Hint { color: #b3c3cc; font-size: 15px; margin-bottom: 10px; white-space: normal; }
 .RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 16px; }
 .V2SectionTitle { color: #e9d6a0; font-size: 20px; margin-top: 12px; margin-bottom: 6px; }
-.V2Condition { width: 100%; min-height: 58px; flow-children: right; padding: 5px; border-bottom: 1px solid #354550; }
+.V2Preview { width: 100%; height: fit-children; white-space: normal; font-size: 15px; color: #d0dde4; margin-bottom: 12px; }
+.V2Condition { width: 100%; height: fit-children; min-height: 58px; flow-children: right; padding: 5px; border-bottom: 1px solid #354550; }
 .V2SlotNumber { width: 25px; color: #a9bbc5; font-size: 18px; margin-top: 8px; }
-.V2Selector { width: 345px; flow-children: down; }
+.V2Selector { width: 345px; height: fit-children; flow-children: down; }
 .V2Button { min-height: 32px; padding: 5px 10px; background-color: #293e4b; border: 1px solid #546f80; margin-bottom: 3px; }
 .V2Button Label { font-size: 16px; color: #e1e9ed; vertical-align: center; }
 .V2Button:hover { background-color: #416177; }
-.V2Choices { width: 340px; max-height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
-.V2Choices .V2Button { width: 100%; }
+.V2Choices { width: 340px; height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
+.V2Choices .V2Button { width: 100%; height: fit-children; }
+.V2Choices .V2Button Label, .V2Selector > .V2Button Label { width: 100%; white-space: normal; }
 .V2Category { color: #dabd77; font-size: 14px; margin-top: 8px; margin-bottom: 5px; }
 .V2Parameters { flow-children: right; }
 .V2Field { flow-children: down; margin-left: 10px; margin-bottom: 6px; }

@@ -36,7 +36,39 @@ var RpgConditionCatalog = (function () {
     });
     ["nearest", "farthest", "lowest_hp_pct", "highest_hp_pct", "lowest_health", "highest_health", "most_missing_health", "lowest_armor", "highest_armor", "lowest_attack_damage", "highest_attack_damage", "lowest_magic_resistance", "highest_magic_resistance"].forEach(function (id) { add("priority", id, "priority", ""); });
 
+    // Stable documentation IDs retain the gaps left by retired conditions.
+    var codes = {
+        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32],
+        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38],
+        priority: [1,2,3,4,5,6,7,8,9,10,11,12,13]
+    };
+    Object.keys(groups).forEach(function (group) {
+        groups[group].forEach(function (entry, index) {
+            entry.code = {use: "U", target: "F", priority: "P"}[group] + ("0" + codes[group][index]).slice(-2);
+        });
+    });
     function text(id) { return $.Localize("#dota2_rpg_v2_" + id); }
+    function entryLabel(entry) { return (entry.code ? entry.code + " " : "") + text(entry.id || "none"); }
+    // Takes editor settings (percentages 0..100), never mutates or truncates them.
+    function summary(initialSettingsObject) {
+        var settings = initialSettingsObject || {}, parts = [];
+        [["use", "use_conditions", "use_title"], ["target", "target_filters", "target_title"], ["priority", "target_priorities", "priority_title"]].forEach(function (spec) {
+            var items = (settings[spec[1]] || []).filter(function (condition) { return condition && condition.type; }).map(function (condition) {
+                var def = definitions[spec[0] + ":" + condition.type];
+                var values = Object.keys(condition).filter(function (key) { return key !== "type" && condition[key] !== undefined && condition[key] !== ""; }).map(function (key) {
+                    return text(key === "value" && condition.type.indexOf("_pct_") >= 0 ? "percent" : key) + "=" + String(condition[key]);
+                });
+                return (def ? entryLabel(def) : condition.type) + (values.length ? " (" + values.join(", ") + ")" : "");
+            });
+            parts.push(text(spec[2]) + ": " + (items.join("; ") || text("none")));
+        });
+        if (settings.target_team || settings.target) { parts.push(text("target_team") + ": " + text("team_" + (settings.target_team || String(settings.target).split("_")[0]))); }
+        parts.push(text("min_aoe_hits") + "=" + (settings.min_aoe_hits || 0));
+        var desired = settings.desired_toggle_state;
+        parts.push(text("toggle_title") + ": " + text(desired === false || desired === "0" || desired === 0 ? "toggle_off" : desired === true || desired === "1" || desired === 1 ? "toggle_on" : "toggle_auto"));
+        parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
+        return parts.join("\n");
+    }
     function number(value, fallback, min, max) {
         var n = typeof value === "number" || typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
         return isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
@@ -89,11 +121,13 @@ var RpgConditionCatalog = (function () {
         var root = $("#RuleSettings");
         var body = $("#RuleSettingsBody");
         body.RemoveAndDeleteChildren();
-        var draft = clone(initial), readers = [];
+        var draft = clone(initial || {}), readers = [];
+        ["use_conditions", "target_filters", "target_priorities"].forEach(function (key) { draft[key] = draft[key] || []; });
         $("#RuleSettingsError").text = "";
         var activeMenu = null;
         function choose(parent, id, options, selected, changed) {
-            var trigger = button(parent, id, text(selected || "none"), function () {
+            var selectedEntry = options.filter(function (option) { return option.id === selected; })[0] || {id: selected};
+            var trigger = button(parent, id, entryLabel(selectedEntry), function () {
                 if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
                 menu.SetHasClass("Hidden", false); activeMenu = menu;
             });
@@ -101,8 +135,8 @@ var RpgConditionCatalog = (function () {
             var category = "";
             options.forEach(function (option) {
                 if (option.category && category !== option.category) { category = option.category; label(menu, "", text("category_" + category)).AddClass("V2Category"); }
-                button(menu, "", text(option.id || "none"), function () {
-                    trigger.GetChild(0).text = text(option.id || "none"); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id);
+                button(menu, id + "Option_" + (option.id || "none"), entryLabel(option), function () {
+                    trigger.GetChild(0).text = entryLabel(option); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id);
                 });
             });
         }
@@ -119,7 +153,8 @@ var RpgConditionCatalog = (function () {
                     var readFields = function () {};
                     function renderFields() {
                         params.RemoveAndDeleteChildren();
-                        var fields = (definitions[group + ":" + current.type] || { fields: [] }).fields;
+                        var def = definitions[group + ":" + current.type] || { fields: [] };
+                        var fields = def.fields;
                         var entries = [];
                         fields.forEach(function (field) {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
@@ -145,24 +180,39 @@ var RpgConditionCatalog = (function () {
                 label(body, "", text("preset_hint")).AddClass("V2Hint");
                 variants.forEach(function(variant,index) {
                     var preset = RpgSkillPresets.get(options.abilityName,variant);
-                    var gate = (preset.use_conditions || [])[0] || (preset.target_filters || [])[0];
                     var title = text(preset.desired_toggle_state === "0" ? "preset_off" : "preset") + " " + (index+1);
-                    if (gate) { title += ": " + text(gate.type); }
                     button(body,"V2Preset"+index,title,function() {
                         preset = RpgSkillPresets.get(options.abilityName,variant);
                         preset.min_aoe_hits = preset.min_aoe_hits || 0;
                         if (preset.desired_toggle_state === undefined) { preset.desired_toggle_state = null; }
                         open(rule,preset,onApply,options);
                     });
+                    label(body, "V2PresetPreview" + index, summary(preset)).AddClass("V2Preview");
                 });
             } else {
                 label(body,"",text("preset_unavailable")).AddClass("V2Hint");
             }
         }
+        if (!options.readOnly) {
+            button(body, "V2ClearConditions", text("clear_conditions"), function () {
+                readers.forEach(function (read) { read(); });
+                draft.use_conditions = []; draft.target_filters = []; draft.target_priorities = [];
+                draft.min_aoe_hits = 0; draft.desired_toggle_state = null;
+                open(rule, draft, onApply, options);
+            });
+        }
         slots("use", "use_conditions", 4, "use_title");
         slots("target", "target_filters", 4, "target_title");
         slots("priority", "target_priorities", 2, "priority_title");
         label(body, "", text("action_title")).AddClass("V2SectionTitle");
+        label(body, "", text("target_team"));
+        var team = $.CreatePanel("Panel", body, ""); team.AddClass("V2Selector");
+        var targetTeam = draft.target_team || String(draft.target || rule.target || "enemy").split("_")[0];
+        choose(team, "V2TeamSelect", [{id:"team_enemy"}, {id:"team_ally"}, {id:"team_self"}], "team_" + targetTeam, function (id) {
+            targetTeam = id.substring(5);
+            draft.target = targetTeam === "self" ? "self" : targetTeam + "_distance_nearest";
+        });
+        readers.push(function () { draft.target_team = targetTeam; });
         var casting = $.CreatePanel("Panel",body,""); casting.AddClass("V2Selector");
         label(casting,"",text("cast_preference"));
         var castPreference = draft.cast_preference || "auto";
@@ -201,5 +251,5 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
         root.SetHasClass("Hidden", false);
     }
-    return { groups: groups, normalize: normalize, wire: wire, open: open, number: number };
+    return { groups: groups, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
 }());

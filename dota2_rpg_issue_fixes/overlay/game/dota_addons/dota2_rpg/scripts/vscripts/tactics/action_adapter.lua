@@ -89,6 +89,13 @@ local function ability_cast_range(caster, ability, target)
     -- native range accessor gives zero; never invent a fixed range.
     if ability.GetSpecialValueFor ~= nil then
         local ok, special = pcall(ability.GetSpecialValueFor, ability, "AbilityCastRange")
+        -- Time Walk declares its native travel distance in AbilityValues.range.
+        -- Other abilities may use "range" for unrelated effects; keep this explicit.
+        if (not ok or tonumber(special) == nil or tonumber(special) <= 0)
+            and ability.GetAbilityName ~= nil
+            and ability:GetAbilityName() == "faceless_void_time_walk" then
+            ok, special = pcall(ability.GetSpecialValueFor, ability, "range")
+        end
         if ok and tonumber(special) ~= nil and tonumber(special) > 0 then
             local bonus = caster.GetCastRangeBonus ~= nil and caster:GetCastRangeBonus() or 0
             return tonumber(special) + (tonumber(bonus) or 0)

@@ -162,7 +162,7 @@ function choice(hud, id, value) {
     var menu = panel(hud, id + "SelectMenu");
     assert(!menu.BHasClass("Hidden"), "click opens " + id);
     var token = "#dota2_rpg_v2_" + (value || "none");
-    var item = menu.children.filter(function (p) { return p.children[0] && p.children[0].text === token; })[0];
+    var item = menu.children.filter(function (p) { return p.children[0] && p.children[0].text.replace(/^[UFP]\d{2} /, "") === token; })[0];
     assert(item, "localized choice exists: " + value); item.events.onactivate();
     assert(menu.BHasClass("Hidden"), "select closes menu");
 }
@@ -303,6 +303,46 @@ assert(!panel(fresh,"RuleSyncNotice").visible,"matching successful update clears
 fresh.subscriptions.rpg_rule_update_result({request_id:restored.request_id,ok:0,reason:"wrong_phase"});
 assert(!panel(fresh,"RuleSyncNotice").visible,"stale responses cannot replace current acceptance");
 
+// Preset editing survives the actual HUD Apply -> wire -> reopen path.
+var restoredEditor = panel(fresh,"RadiantConditionEditor0");
+assert(restoredEditor.FindChildTraverse("TargetAttrValue").text === "#dota2_rpg_v2_lowest_hp_pct"
+    && restoredEditor.FindChildTraverse("TargetSideValue").text === "#dota2_rpg_v2_team_ally", "compact preset display matches active priority and team");
+click(fresh,"RadiantRuleSettings0"); click(fresh,"V2Preset0");
+input(fresh,"V2_target0_value",72.5);
+choice(fresh,"V2_use0","elapsed_lte"); input(fresh,"V2_use0_seconds",17.25);
+choice(fresh,"V2_use1","nearby_enemies_gte"); input(fresh,"V2_use1_value",2); input(fresh,"V2_use1_radius",875);
+choice(fresh,"V2_target1","has_modifier"); input(fresh,"V2_target1_modifier","modifier_test");
+choice(fresh,"V2Toggle","toggle_off"); input(fresh,"V2_min_aoe_hits",3);
+click(fresh,"RuleSettingsApply");
+var editedPreset = latest(fresh,omni);
+assert(editedPreset.target_filter_1_value === 0.725 && editedPreset.use_condition_1_type === "elapsed_lte"
+    && editedPreset.use_condition_1_seconds === 17.25 && editedPreset.use_condition_1_value === 17.25
+    && editedPreset.use_condition_2_radius === 875 && editedPreset.use_condition_2_value === 2
+    && editedPreset.target_filter_2_modifier === "modifier_test" && editedPreset.desired_toggle_state === "0"
+    && editedPreset.min_aoe_hits === 3, "edited preset parameters reach flat server payload");
+click(fresh,"RadiantRuleSettings0");
+assert(panel(fresh,"V2_target0_value").text === "72.5" && panel(fresh,"V2_use0_seconds").text === "17.25"
+    && panel(fresh,"V2_use1_radius").text === "875" && panel(fresh,"V2_target1_modifier").text === "modifier_test"
+    && panel(fresh,"V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_off", "edited preset and U14 reopen without loss");
+["enemy","self","ally"].forEach(function(team) {
+    choice(fresh,"V2Team","team_"+team); click(fresh,"RuleSettingsApply");
+    assert(latest(fresh,omni).target_team === team && latest(fresh,omni).target_priority_1_type === "lowest_hp_pct", "team change preserves explicit ranking on wire");
+    assert(restoredEditor.FindChildTraverse("TargetSideValue").text === "#dota2_rpg_v2_team_"+team, "compact team matches wire");
+    click(fresh,"RadiantRuleSettings0");
+    assert(panel(fresh,"V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_"+team, "team survives reopen");
+});
+click(fresh,"V2ClearConditions"); click(fresh,"RuleSettingsApply");
+var cleared = latest(fresh,omni);
+assert(!cleared.min_aoe_hits && cleared.desired_toggle_state === undefined, "clear removes hit and toggle gates on wire");
+["use_condition","target_filter","target_priority"].forEach(function(prefix) {
+    for (var i=1;i<=(prefix==="target_priority"?2:4);i++) { assert(cleared[prefix+"_"+i+"_type"] === "", "clear removes every wire slot"); }
+});
+click(fresh,"RadiantRuleSettings0");
+assert(panel(fresh,"V2_use0Select").GetChild(0).text === "#dota2_rpg_v2_none"
+    && panel(fresh,"V2_target0Select").GetChild(0).text === "#dota2_rpg_v2_none"
+    && panel(fresh,"V2_min_aoe_hits").text === "0", "cleared editor reopens empty");
+click(fresh,"RuleSettingsClose");
+
 fresh.subscriptions.rpg_enemy_roster({units:[{id:702,name:lion}]});
 fresh.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:702,hero_name:lion,can_edit:0,rules_ready:1,
     actions_text:"lion_impale;attack",rules:[{action:"lion_impale",enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",value:12,seconds:12}]}]});
@@ -340,4 +380,109 @@ Object.keys(hud.context.RpgConditionCatalog.groups).forEach(function (group) {
         });
     });
 });
+// Exercise the catalog against a live parent/child tree, including deleted fields.
+var catalogPanels = {};
+["RuleSettings", "RuleSettingsBody", "RuleSettingsError", "RuleSettingsApply", "RuleSettingsClose"].forEach(function (id) { catalogPanels[id] = createPanel(id); });
+function catalogUI(selector) { return catalogPanels[selector.substring(1)] || catalogPanels.RuleSettingsBody.FindChildTraverse(selector.substring(1)); }
+catalogUI.Localize = function (token) { return token; };
+catalogUI.CreatePanel = function (type, parent, id) {
+    var p = createPanel(id); p.type = type; p.SetParent(parent); return p;
+};
+var catalogContext = {$:catalogUI};
+var catalogPath = path.join(path.dirname(hudPath), "condition_catalog.js");
+var presetSource = fs.readFileSync(path.join(path.dirname(hudPath), "skill_condition_presets.js"), "utf8");
+vm.runInNewContext(fs.readFileSync(catalogPath, "utf8"), catalogContext);
+vm.runInNewContext(presetSource, catalogContext);
+vm.runInNewContext(ruleSyncSource, catalogContext);
+var catalog = catalogContext.RpgConditionCatalog;
+var docs = fs.readFileSync(path.join(repoRoot, "docs/CONDITION_LIST_ZH.md"), "utf8");
+Object.keys(catalog.groups).forEach(function (group) {
+    catalog.groups[group].forEach(function (def) {
+        assert(docs.split("\n").some(function (line) { return line.indexOf("| " + def.code + " |") === 0 && line.indexOf("`" + def.id + "`") >= 0; }), "stable documented ID " + def.code);
+    });
+});
+function catalogClick(id) { var p = catalogUI("#" + id); assert(p && p.events.onactivate, "catalog button " + id); p.events.onactivate(); }
+function verifyMenus() {
+    Object.keys(catalog.groups).forEach(function (group) {
+        catalogClick("V2_" + group + "0Select");
+        var menu = catalogUI("#V2_" + group + "0SelectMenu");
+        assert(menu.BHasClass("V2Choices") && !menu.BHasClass("Hidden"), "real scroll menu opens " + group);
+        catalog.groups[group].forEach(function (def) {
+            var item = menu.FindChildTraverse("V2_" + group + "0SelectOption_" + def.id);
+            assert(item && item.GetChild(0).text.indexOf(def.code + " ") === 0 && item.events.onactivate, "reachable coded choice " + def.code);
+        });
+        catalogClick("V2_" + group + "0Select");
+    });
+    ["elapsed_gte", "elapsed_lte"].forEach(function (id, index) {
+        catalogClick("V2_use0Select"); catalogClick("V2_use0SelectOption_" + id);
+        assert(catalogUI("#V2_use0_seconds"), "U" + (13 + index) + " exposes seconds field");
+    });
+}
+var mapping = JSON.parse(presetSource.match(/var mapping = (\{[^\n]+\});/)[1]);
+var presetCount = 0, applied;
+Object.keys(mapping).forEach(function (ability) {
+    catalogContext.RpgSkillPresets.variants(ability).forEach(function (variant, index) {
+        var preset = catalogContext.RpgSkillPresets.get(ability, variant);
+        catalog.open({}, {use_conditions:[{type:"self_has_modifier",modifier:"stale"}],target_filters:[{type:"distance_gte",value:1234}],target_priorities:[]}, function (draft) { applied = draft; }, {abilityName:ability});
+        var before = JSON.stringify(preset), full = catalog.summary(preset);
+        assert(before === JSON.stringify(preset), "summary does not mutate " + ability);
+        assert(catalogUI("#V2PresetPreview" + index).text === full, "full preview " + ability + "/" + variant);
+        catalogClick("V2Preset" + index);
+        [["use", "use_conditions", 4], ["target", "target_filters", 4], ["priority", "target_priorities", 2]].forEach(function (spec) {
+            for (var slot = 0; slot < spec[2]; slot++) {
+                var condition = (preset[spec[1]] || [])[slot] || {type:""};
+                var select = catalogUI("#V2_" + spec[0] + slot + "Select");
+                assert(select && select.GetChild(0).text.indexOf("#dota2_rpg_v2_" + (condition.type || "none")) >= 0, "template slot rendered " + ability + " " + spec[0] + slot);
+                Object.keys(condition).filter(function (key) { return key !== "type"; }).forEach(function (key) {
+                    var field = catalogUI("#V2_" + spec[0] + slot + "_" + key);
+                    assert(field && field.text === String(condition[key]), "template parameter rendered " + ability + " " + key);
+                    assert(full.indexOf(String(condition[key])) >= 0, "summary retains parameter " + key);
+                });
+            }
+        });
+        assert(!catalogUI("#V2_use0_modifier"), "template switch deletes stale modifier input");
+        assert(catalogUI("#V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_" + preset.target_team, "template team rendered");
+        assert(catalogUI("#V2_min_aoe_hits").text === String(preset.min_aoe_hits || 0), "template hit gate rendered");
+        assert(catalogUI("#V2CastSelect").GetChild(0).text === "#dota2_rpg_v2_cast_" + (preset.cast_preference || "auto"), "template cast preference rendered");
+        assert(catalogUI("#V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_" + (preset.desired_toggle_state === "0" ? "off" : preset.desired_toggle_state === "1" ? "on" : "auto"), "template toggle rendered");
+        catalogClick("RuleSettingsApply");
+        assert(applied.target_filters.every(function (condition) { return condition.value !== 1234; }), "template switch discards prior distance");
+        var wire = catalogContext.RpgRuleSync.serialize({rule:applied,actionId:ability,actionName:ability});
+        var server = {action:ability,enabled:1,target_team:wire.target_team,min_aoe_hits:wire.min_aoe_hits,
+            desired_toggle_state:wire.desired_toggle_state,cast_preference:wire.cast_preference};
+        [["use_conditions","use_condition",4],["target_filters","target_filter",4],["target_priorities","target_priority",2]].forEach(function(spec) {
+            server[spec[0]] = {};
+            for (var i=1;i<=spec[2];i++) {
+                var item = {};
+                ["type","value","seconds","radius","modifier","action_id"].forEach(function(key) {
+                    if (wire[spec[1]+"_"+i+"_"+key] !== undefined) { item[key] = wire[spec[1]+"_"+i+"_"+key]; }
+                });
+                if (item.type) { server[spec[0]][i] = item; }
+            }
+        });
+        var hydrated = catalogContext.RpgRuleSync.fromServer(server);
+        catalog.open(hydrated,catalogContext.RpgRuleSync.initialSettings(hydrated),function(draft) {
+            applied = draft;
+            Object.keys(draft).forEach(function(key) { hydrated[key]=draft[key]; });
+        },{abilityName:ability});
+        catalogClick("RuleSettingsApply");
+        var reopenedWire = catalogContext.RpgRuleSync.serialize({rule:hydrated,actionId:ability,actionName:ability});
+        Object.keys(wire).filter(function(key) { return /^(use_condition_|target_filter_|target_priority_|target_team$|min_aoe_hits$|desired_toggle_state$|cast_preference$)/.test(key); }).forEach(function(key) {
+            assert(wire[key] === reopenedWire[key], "server hydration and reopened template preserve " + ability + "/" + variant + " " + key);
+        });
+        if (!presetCount) { verifyMenus(); }
+        presetCount++;
+    });
+});
+catalogClick("V2ClearConditions"); catalogClick("RuleSettingsApply");
+assert(applied.use_conditions.concat(applied.target_filters, applied.target_priorities).every(function (condition) { return !condition.type; }) && applied.min_aoe_hits === 0 && applied.desired_toggle_state === null, "clear removes all conditions and gates");
+assert(/\.V2Condition\s*\{[^}]*height: fit-children/.test(cssSource) && /\.V2Selector\s*\{[^}]*height: fit-children/.test(cssSource), "rows and selectors expand around menus");
+assert(/\.V2Choices\s*\{[^}]*height: 280px;[^}]*overflow: squish scroll/.test(cssSource), "bounded menu is vertically scrollable");
+assert(/\.RuleSettingsBody\s*\{[^}]*overflow: squish scroll/.test(cssSource), "all condition rows reachable by body scroll");
+["clear_conditions", "target_team", "team_enemy", "team_ally", "team_self"].forEach(function (token) {
+    translations.forEach(function (source) { assert(source.indexOf('"dota2_rpg_v2_' + token + '"') >= 0, "new localized editor token " + token); });
+});
+catalogClick("V2TeamSelect"); catalogClick("V2TeamSelectOption_team_ally"); catalogClick("RuleSettingsApply");
+assert(applied.target_team === "ally" && applied.target === "ally_distance_nearest", "team selector updates both editor and legacy serialization target");
+console.log("PASS: " + presetCount + " complete template variants, 72 stable documented menu IDs, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");

@@ -788,6 +788,12 @@
         var tSide = rule.target_side || "enemy_lowest";
         panels.targetAttrValue.text = $.Localize(TARGET_ATTR_TOKENS[attr] || TARGET_ATTR_TOKENS.hp);
         panels.targetSideValue.text = $.Localize(TARGET_SIDE_TOKENS[tSide] || TARGET_SIDE_TOKENS.enemy_lowest);
+        if (Array.isArray(rule.target_priorities)) {
+            var priority = (rule.target_priorities[0] || {}).type || "none";
+            panels.targetAttrValue.text = $.Localize("#dota2_rpg_v2_" + priority);
+            var team = rule.target === "self" ? "self" : String(rule.target).indexOf("ally_") === 0 ? "ally" : "enemy";
+            panels.targetSideValue.text = $.Localize("#dota2_rpg_v2_team_" + team);
+        }
         if (EFFECT_TOKENS[rule.effect]) {
             panels.effectValue.text = $.Localize(EFFECT_TOKENS[rule.effect]);
         }
