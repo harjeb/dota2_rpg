@@ -232,11 +232,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_drow_ranger",
 				"level": 30,
 				"items": [
 					"item_boots",
-					"item_null_talisman"
+					"item_wraith_band"
 				],
 				"tags": [
 					"hero"
@@ -385,7 +385,7 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_clinkz",
 				"level": 30,
 				"items": [
 					"item_boots",
@@ -436,11 +436,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_phantom_assassin",
 				"level": 30,
 				"items": [
 					"item_boots",
-					"item_null_talisman"
+					"item_wraith_band"
 				],
 				"tags": [
 					"hero"
@@ -448,7 +448,7 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_dazzle",
 				"level": 30,
 				"items": [
 					"item_boots",
@@ -475,10 +475,10 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_axe",
+				"unit": "npc_dota_hero_centaur",
 				"level": 30,
 				"items": [
-					"item_phase_boots",
+					"item_power_treads",
 					"item_bracer",
 					"item_magic_wand"
 				],
@@ -488,7 +488,7 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_clinkz",
+				"unit": "npc_dota_hero_riki",
 				"level": 30,
 				"items": [
 					"item_power_treads",
@@ -501,11 +501,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
+				"unit": "npc_dota_hero_juggernaut",
 				"level": 30,
 				"items": [
-					"item_power_treads",
-					"item_echo_sabre"
+					"item_phase_boots",
+					"item_wraith_band"
 				],
 				"tags": [
 					"hero"
@@ -513,12 +513,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_witch_doctor",
+				"unit": "npc_dota_hero_lich",
 				"level": 30,
 				"items": [
-					"item_boots",
-					"item_force_staff",
-					"item_magic_wand"
+					"item_arcane_boots",
+					"item_magic_wand",
+					"item_wind_lace"
 				],
 				"tags": [
 					"hero"
@@ -604,7 +604,7 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_dragon_knight",
+				"unit": "npc_dota_hero_tidehunter",
 				"level": 30,
 				"items": [
 					"item_power_treads",
@@ -617,11 +617,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_sven",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_wraith_band",
+					"item_bracer",
 					"item_magic_wand"
 				],
 				"tags": [
@@ -630,11 +630,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_phantom_assassin",
+				"unit": "npc_dota_hero_lina",
 				"level": 30,
 				"items": [
-					"item_power_treads",
-					"item_orb_of_corrosion"
+					"item_arcane_boots",
+					"item_null_talisman"
 				],
 				"tags": [
 					"hero"
@@ -642,12 +642,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_lion",
 				"level": 30,
 				"items": [
-					"item_boots",
-					"item_force_staff",
-					"item_magic_wand"
+					"item_arcane_boots",
+					"item_magic_wand",
+					"item_wind_lace"
 				],
 				"tags": [
 					"hero"
@@ -670,7 +670,7 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_huskar",
+				"unit": "npc_dota_hero_bristleback",
 				"level": 30,
 				"items": [
 					"item_power_treads",
@@ -683,24 +683,12 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_null_talisman",
-					"item_magic_wand"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_riki",
+				"unit": "npc_dota_hero_razor",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_orb_of_corrosion"
+					"item_wraith_band",
+					"item_magic_wand"
 				],
 				"tags": [
 					"hero"
@@ -708,12 +696,24 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_dazzle",
+				"unit": "npc_dota_hero_viper",
 				"level": 30,
 				"items": [
-					"item_boots",
-					"item_force_staff",
-					"item_magic_wand"
+					"item_power_treads",
+					"item_wraith_band"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_shadow_shaman",
+				"level": 30,
+				"items": [
+					"item_arcane_boots",
+					"item_magic_wand",
+					"item_wind_lace"
 				],
 				"tags": [
 					"hero"
@@ -736,10 +736,10 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_sand_king",
+				"unit": "npc_dota_hero_slardar",
 				"level": 30,
 				"items": [
-					"item_arcane_boots",
+					"item_power_treads",
 					"item_bracer",
 					"item_magic_wand"
 				],
@@ -749,7 +749,7 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_clinkz",
+				"unit": "npc_dota_hero_luna",
 				"level": 30,
 				"items": [
 					"item_power_treads",
@@ -762,11 +762,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
+				"unit": "npc_dota_hero_gyrocopter",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_echo_sabre"
+					"item_wraith_band"
 				],
 				"tags": [
 					"hero"
@@ -774,12 +774,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_witch_doctor",
+				"unit": "npc_dota_hero_warlock",
 				"level": 30,
 				"items": [
-					"item_boots",
-					"item_force_staff",
-					"item_magic_wand"
+					"item_arcane_boots",
+					"item_magic_wand",
+					"item_wind_lace"
 				],
 				"tags": [
 					"hero"
@@ -802,12 +802,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_axe",
+				"unit": "npc_dota_hero_skeleton_king",
 				"level": 30,
 				"items": [
 					"item_phase_boots",
-					"item_blink",
-					"item_vanguard"
+					"item_armlet",
+					"item_desolator"
 				],
 				"tags": [
 					"elite"
@@ -815,12 +815,12 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_bloodseeker",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_dragon_lance",
-					"item_maelstrom"
+					"item_maelstrom",
+					"item_basher"
 				],
 				"tags": [
 					"hero"
@@ -828,11 +828,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_juggernaut",
+				"unit": "npc_dota_hero_slark",
 				"level": 30,
 				"items": [
-					"item_phase_boots",
-					"item_manta"
+					"item_power_treads",
+					"item_diffusal_blade"
 				],
 				"tags": [
 					"hero"
@@ -840,12 +840,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_troll_warlord",
 				"level": 30,
 				"items": [
-					"item_arcane_boots",
-					"item_force_staff",
-					"item_kaya"
+					"item_power_treads",
+					"item_bfury",
+					"item_yasha"
 				],
 				"tags": [
 					"hero"
@@ -853,7 +853,7 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_jakiro",
 				"level": 30,
 				"items": [
 					"item_arcane_boots",
@@ -932,12 +932,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_dragon_knight",
+				"unit": "npc_dota_hero_life_stealer",
 				"level": 30,
 				"items": [
-					"item_power_treads",
-					"item_blink",
-					"item_armlet"
+					"item_phase_boots",
+					"item_armlet",
+					"item_basher"
 				],
 				"tags": [
 					"hero"
@@ -945,12 +945,12 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_ursa",
 				"level": 30,
 				"items": [
-					"item_arcane_boots",
-					"item_force_staff",
-					"item_kaya"
+					"item_phase_boots",
+					"item_bfury",
+					"item_blink"
 				],
 				"tags": [
 					"hero"
@@ -958,24 +958,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_riki",
-				"level": 30,
-				"items": [
-					"item_diffusal_blade",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_antimage",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_dragon_lance",
-					"item_maelstrom"
+					"item_bfury"
 				],
 				"tags": [
 					"hero"
@@ -983,12 +970,25 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_witch_doctor",
+				"unit": "npc_dota_hero_phantom_lancer",
+				"level": 30,
+				"items": [
+					"item_power_treads",
+					"item_diffusal_blade",
+					"item_yasha"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_disruptor",
 				"level": 30,
 				"items": [
 					"item_arcane_boots",
-					"item_force_staff",
-					"item_glimmer_cape"
+					"item_glimmer_cape",
+					"item_force_staff"
 				],
 				"tags": [
 					"hero"
@@ -1011,12 +1011,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_huskar",
+				"unit": "npc_dota_hero_chaos_knight",
 				"level": 30,
 				"items": [
 					"item_power_treads",
 					"item_armlet",
-					"item_halberd"
+					"item_manta"
 				],
 				"tags": [
 					"hero"
@@ -1024,12 +1024,12 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_clinkz",
+				"unit": "npc_dota_hero_templar_assassin",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_dragon_lance",
-					"item_phylactery"
+					"item_desolator",
+					"item_blink"
 				],
 				"tags": [
 					"hero"
@@ -1037,24 +1037,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
-				"level": 30,
-				"items": [
-					"item_echo_sabre",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_nevermore",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_dragon_lance",
-					"item_yasha"
+					"item_dragon_lance"
 				],
 				"tags": [
 					"hero"
@@ -1062,7 +1049,20 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_oracle",
+				"unit": "npc_dota_hero_death_prophet",
+				"level": 30,
+				"items": [
+					"item_arcane_boots",
+					"item_cyclone",
+					"item_kaya_and_sange"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_vengefulspirit",
 				"level": 30,
 				"items": [
 					"item_arcane_boots",
@@ -1090,12 +1090,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_sand_king",
+				"unit": "npc_dota_hero_night_stalker",
 				"level": 30,
 				"items": [
-					"item_arcane_boots",
-					"item_blink",
-					"item_veil_of_discord"
+					"item_phase_boots",
+					"item_echo_sabre",
+					"item_blink"
 				],
 				"tags": [
 					"hero"
@@ -1103,12 +1103,24 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_necrolyte",
+				"level": 30,
+				"items": [
+					"item_arcane_boots",
+					"item_kaya_and_sange",
+					"item_eternal_shroud"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_queenofpain",
 				"level": 30,
 				"items": [
 					"item_power_treads",
-					"item_dragon_lance",
-					"item_maelstrom"
+					"item_orchid"
 				],
 				"tags": [
 					"hero"
@@ -1116,24 +1128,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_juggernaut",
-				"level": 30,
-				"items": [
-					"item_phase_boots",
-					"item_manta"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_leshrac",
 				"level": 30,
 				"items": [
 					"item_arcane_boots",
-					"item_force_staff",
-					"item_kaya"
+					"item_bloodstone",
+					"item_kaya_and_sange"
 				],
 				"tags": [
 					"hero"
@@ -1141,11 +1141,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_venomancer",
 				"level": 30,
 				"items": [
 					"item_arcane_boots",
-					"item_force_staff",
+					"item_spirit_vessel",
 					"item_glimmer_cape"
 				],
 				"tags": [
@@ -1169,17 +1169,43 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_axe",
+				"unit": "npc_dota_hero_spirit_breaker",
 				"level": 30,
 				"items": [
-					"item_blink",
-					"item_blade_mail",
+					"item_invis_sword",
+					"item_ultimate_scepter",
 					"item_black_king_bar"
 				],
 				"tags": [
 					"boss"
 				],
 				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_zuus",
+				"level": 30,
+				"items": [
+					"item_phylactery",
+					"item_ultimate_scepter",
+					"item_kaya_and_sange"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_pugna",
+				"level": 30,
+				"items": [
+					"item_aether_lens",
+					"item_glimmer_cape",
+					"item_ultimate_scepter"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
 			},
 			{
 				"unit": "npc_dota_hero_drow_ranger",
@@ -1195,38 +1221,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_phantom_assassin",
+				"unit": "npc_dota_hero_skywrath_mage",
 				"level": 30,
 				"items": [
-					"item_desolator",
-					"item_basher",
+					"item_rod_of_atos",
+					"item_aether_lens",
 					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_clinkz",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_dragon_lance",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_dazzle",
-				"level": 30,
-				"items": [
-					"item_guardian_greaves",
-					"item_force_staff",
-					"item_glimmer_cape"
 				],
 				"tags": [
 					"hero"
@@ -1234,12 +1234,12 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_witch_doctor",
+				"unit": "npc_dota_hero_ancient_apparition",
 				"level": 30,
 				"items": [
 					"item_glimmer_cape",
-					"item_ultimate_scepter",
-					"item_black_king_bar"
+					"item_force_staff",
+					"item_aether_lens"
 				],
 				"tags": [
 					"hero"
@@ -1325,17 +1325,30 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_dragon_knight",
+				"unit": "npc_dota_hero_abaddon",
 				"level": 30,
 				"items": [
-					"item_blink",
-					"item_armlet",
-					"item_black_king_bar"
+					"item_echo_sabre",
+					"item_manta",
+					"item_basher"
 				],
 				"tags": [
 					"hero"
 				],
 				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_sniper",
+				"level": 30,
+				"items": [
+					"item_hurricane_pike",
+					"item_maelstrom",
+					"item_black_king_bar"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
 			},
 			{
 				"unit": "npc_dota_hero_clinkz",
@@ -1351,11 +1364,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
+				"unit": "npc_dota_hero_phantom_assassin",
 				"level": 30,
 				"items": [
-					"item_echo_sabre",
-					"item_blink",
+					"item_desolator",
+					"item_basher",
 					"item_black_king_bar"
 				],
 				"tags": [
@@ -1364,25 +1377,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_grimstroke",
 				"level": 30,
 				"items": [
-					"item_hurricane_pike",
-					"item_yasha",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_oracle",
-				"level": 30,
-				"items": [
+					"item_aether_lens",
 					"item_glimmer_cape",
-					"item_force_staff",
-					"item_lotus_orb"
+					"item_ultimate_scepter"
 				],
 				"tags": [
 					"hero"
@@ -1390,12 +1390,12 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_shadow_demon",
 				"level": 30,
 				"items": [
+					"item_aether_lens",
 					"item_glimmer_cape",
-					"item_force_staff",
-					"item_black_king_bar"
+					"item_aeon_disk"
 				],
 				"tags": [
 					"hero"
@@ -1418,12 +1418,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_huskar",
+				"unit": "npc_dota_hero_omniknight",
 				"level": 30,
 				"items": [
-					"item_armlet",
-					"item_halberd",
-					"item_black_king_bar"
+					"item_mekansm",
+					"item_lotus_orb",
+					"item_pipe"
 				],
 				"tags": [
 					"hero"
@@ -1431,11 +1431,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_riki",
 				"level": 30,
 				"items": [
-					"item_hurricane_pike",
-					"item_maelstrom",
+					"item_diffusal_blade",
+					"item_manta",
 					"item_black_king_bar"
 				],
 				"tags": [
@@ -1457,10 +1457,10 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_sven",
 				"level": 30,
 				"items": [
-					"item_kaya_and_sange",
+					"item_echo_sabre",
 					"item_blink",
 					"item_black_king_bar"
 				],
@@ -1470,11 +1470,11 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_bane",
 				"level": 30,
 				"items": [
+					"item_aether_lens",
 					"item_glimmer_cape",
-					"item_force_staff",
 					"item_black_king_bar"
 				],
 				"tags": [
@@ -1483,12 +1483,12 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_dazzle",
+				"unit": "npc_dota_hero_silencer",
 				"level": 30,
 				"items": [
-					"item_guardian_greaves",
 					"item_force_staff",
-					"item_glimmer_cape"
+					"item_glimmer_cape",
+					"item_aeon_disk"
 				],
 				"tags": [
 					"hero"
@@ -1511,12 +1511,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_sand_king",
+				"unit": "npc_dota_hero_undying",
 				"level": 30,
 				"items": [
-					"item_blink",
-					"item_shivas_guard",
-					"item_black_king_bar"
+					"item_mekansm",
+					"item_glimmer_cape",
+					"item_pipe"
 				],
 				"tags": [
 					"hero"
@@ -1524,10 +1524,36 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_lina",
 				"level": 30,
 				"items": [
-					"item_hurricane_pike",
+					"item_kaya_and_sange",
+					"item_blink",
+					"item_black_king_bar"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_razor",
+				"level": 30,
+				"items": [
+					"item_yasha",
+					"item_maelstrom",
+					"item_black_king_bar"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_viper",
+				"level": 30,
+				"items": [
+					"item_dragon_lance",
 					"item_yasha",
 					"item_black_king_bar"
 				],
@@ -1537,38 +1563,12 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_phantom_assassin",
+				"unit": "npc_dota_hero_treant",
 				"level": 30,
 				"items": [
-					"item_desolator",
-					"item_basher",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_clinkz",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_dragon_lance",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_dazzle",
-				"level": 30,
-				"items": [
-					"item_guardian_greaves",
-					"item_force_staff",
-					"item_glimmer_cape"
+					"item_blink",
+					"item_meteor_hammer",
+					"item_lotus_orb"
 				],
 				"tags": [
 					"hero"
@@ -1576,12 +1576,12 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_witch_doctor",
+				"unit": "npc_dota_hero_enchantress",
 				"level": 30,
 				"items": [
+					"item_dragon_lance",
 					"item_glimmer_cape",
-					"item_ultimate_scepter",
-					"item_black_king_bar"
+					"item_lotus_orb"
 				],
 				"tags": [
 					"hero"
@@ -1618,67 +1618,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
+				"unit": "npc_dota_hero_luna",
 				"level": 30,
 				"items": [
-					"item_kaya_and_sange",
-					"item_ultimate_scepter",
-					"item_black_king_bar",
-					"item_sheepstick"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_riki",
-				"level": 30,
-				"items": [
-					"item_diffusal_blade",
 					"item_manta",
-					"item_abyssal_blade",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_sniper",
-				"level": 30,
-				"items": [
-					"item_hurricane_pike",
-					"item_mjollnir",
-					"item_greater_crit",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_witch_doctor",
-				"level": 30,
-				"items": [
-					"item_glimmer_cape",
-					"item_ultimate_scepter",
-					"item_black_king_bar",
-					"item_octarine_core"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
-			},
-			{
-				"unit": "npc_dota_hero_phantom_assassin",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_abyssal_blade",
+					"item_butterfly",
 					"item_black_king_bar",
 					"item_satanic"
 				],
@@ -1688,12 +1632,68 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_gyrocopter",
 				"level": 30,
 				"items": [
+					"item_mjollnir",
+					"item_ultimate_scepter",
+					"item_black_king_bar",
+					"item_satanic"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_bloodseeker",
+				"level": 30,
+				"items": [
+					"item_mjollnir",
+					"item_abyssal_blade",
+					"item_black_king_bar",
+					"item_butterfly"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_ogre_magi",
+				"level": 30,
+				"items": [
+					"item_force_staff",
+					"item_aether_lens",
+					"item_glimmer_cape",
+					"item_sheepstick"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_dragon_knight",
+				"level": 30,
+				"items": [
+					"item_blink",
+					"item_assault",
+					"item_black_king_bar",
+					"item_power_treads"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_dark_willow",
+				"level": 30,
+				"items": [
+					"item_wind_waker",
 					"item_glimmer_cape",
 					"item_blink",
-					"item_black_king_bar",
 					"item_ultimate_scepter"
 				],
 				"tags": [
@@ -1792,13 +1792,13 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_dragon_knight",
+				"unit": "npc_dota_hero_huskar",
 				"level": 30,
 				"items": [
-					"item_blink",
-					"item_assault",
+					"item_armlet",
+					"item_halberd",
 					"item_black_king_bar",
-					"item_power_treads"
+					"item_satanic"
 				],
 				"tags": [
 					"hero"
@@ -1806,41 +1806,41 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_slark",
 				"level": 30,
 				"items": [
-					"item_hurricane_pike",
-					"item_mjollnir",
-					"item_greater_crit",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_juggernaut",
-				"level": 30,
-				"items": [
-					"item_mjollnir",
-					"item_manta",
-					"item_abyssal_blade",
-					"item_butterfly"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_lina",
-				"level": 30,
-				"items": [
-					"item_kaya_and_sange",
+					"item_disperser",
 					"item_ultimate_scepter",
 					"item_black_king_bar",
-					"item_sheepstick"
+					"item_skadi"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_troll_warlord",
+				"level": 30,
+				"items": [
+					"item_bfury",
+					"item_manta",
+					"item_black_king_bar",
+					"item_satanic"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_ursa",
+				"level": 30,
+				"items": [
+					"item_bfury",
+					"item_blink",
+					"item_black_king_bar",
+					"item_abyssal_blade"
 				],
 				"tags": [
 					"hero"
@@ -1862,18 +1862,18 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
+				"unit": "npc_dota_hero_sand_king",
 				"level": 30,
 				"items": [
 					"item_blink",
-					"item_greater_crit",
+					"item_shivas_guard",
 					"item_black_king_bar",
-					"item_satanic"
+					"item_ultimate_scepter"
 				],
 				"tags": [
 					"hero"
 				],
-				"ai": "focus_lowest_hp"
+				"ai": "aggro_front"
 			},
 			{
 				"unit": "npc_dota_hero_witch_doctor",
@@ -1905,13 +1905,13 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_huskar",
+				"unit": "npc_dota_hero_centaur",
 				"level": 30,
 				"items": [
-					"item_armlet",
-					"item_halberd",
-					"item_black_king_bar",
-					"item_satanic"
+					"item_blink",
+					"item_blade_mail",
+					"item_pipe",
+					"item_heart"
 				],
 				"tags": [
 					"hero"
@@ -1919,69 +1919,41 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_drow_ranger",
+				"unit": "npc_dota_hero_antimage",
 				"level": 30,
 				"items": [
-					"item_hurricane_pike",
-					"item_manta",
-					"item_butterfly",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_phantom_assassin",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_abyssal_blade",
-					"item_black_king_bar",
-					"item_satanic"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_clinkz",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_hurricane_pike",
-					"item_greater_crit",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_dazzle",
-				"level": 30,
-				"items": [
-					"item_guardian_greaves",
-					"item_lotus_orb",
-					"item_glimmer_cape",
-					"item_sheepstick"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
-			},
-			{
-				"unit": "npc_dota_hero_juggernaut",
-				"level": 30,
-				"items": [
-					"item_mjollnir",
+					"item_bfury",
 					"item_manta",
 					"item_abyssal_blade",
+					"item_skadi"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_phantom_lancer",
+				"level": 30,
+				"items": [
+					"item_disperser",
+					"item_manta",
+					"item_heart",
 					"item_butterfly"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_templar_assassin",
+				"level": 30,
+				"items": [
+					"item_desolator",
+					"item_blink",
+					"item_black_king_bar",
+					"item_greater_crit"
 				],
 				"tags": [
 					"hero"
@@ -1996,6 +1968,34 @@
 					"item_lotus_orb",
 					"item_guardian_greaves",
 					"item_aeon_disk"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_tidehunter",
+				"level": 30,
+				"items": [
+					"item_blink",
+					"item_pipe",
+					"item_guardian_greaves",
+					"item_refresher"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_dazzle",
+				"level": 30,
+				"items": [
+					"item_guardian_greaves",
+					"item_lotus_orb",
+					"item_glimmer_cape",
+					"item_sheepstick"
 				],
 				"tags": [
 					"hero"
@@ -2018,12 +2018,12 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_sand_king",
+				"unit": "npc_dota_hero_bristleback",
 				"level": 30,
 				"items": [
-					"item_blink",
+					"item_bloodstone",
+					"item_eternal_shroud",
 					"item_shivas_guard",
-					"item_black_king_bar",
 					"item_ultimate_scepter"
 				],
 				"tags": [
@@ -2032,67 +2032,11 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_lina",
-				"level": 30,
-				"items": [
-					"item_kaya_and_sange",
-					"item_ultimate_scepter",
-					"item_black_king_bar",
-					"item_sheepstick"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_riki",
-				"level": 30,
-				"items": [
-					"item_diffusal_blade",
-					"item_manta",
-					"item_abyssal_blade",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_sniper",
+				"unit": "npc_dota_hero_nevermore",
 				"level": 30,
 				"items": [
 					"item_hurricane_pike",
-					"item_mjollnir",
 					"item_greater_crit",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_witch_doctor",
-				"level": 30,
-				"items": [
-					"item_glimmer_cape",
-					"item_ultimate_scepter",
-					"item_black_king_bar",
-					"item_octarine_core"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
-			},
-			{
-				"unit": "npc_dota_hero_phantom_assassin",
-				"level": 30,
-				"items": [
-					"item_desolator",
-					"item_abyssal_blade",
 					"item_black_king_bar",
 					"item_satanic"
 				],
@@ -2102,12 +2046,68 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_crystal_maiden",
+				"unit": "npc_dota_hero_death_prophet",
+				"level": 30,
+				"items": [
+					"item_wind_waker",
+					"item_kaya_and_sange",
+					"item_black_king_bar",
+					"item_shivas_guard"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_necrolyte",
+				"level": 30,
+				"items": [
+					"item_kaya_and_sange",
+					"item_eternal_shroud",
+					"item_shivas_guard",
+					"item_heart"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_lich",
 				"level": 30,
 				"items": [
 					"item_glimmer_cape",
+					"item_force_staff",
+					"item_aeon_disk",
+					"item_ultimate_scepter"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_slardar",
+				"level": 30,
+				"items": [
 					"item_blink",
+					"item_harpoon",
 					"item_black_king_bar",
+					"item_assault"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_lion",
+				"level": 30,
+				"items": [
+					"item_blink",
+					"item_force_staff",
+					"item_aeon_disk",
 					"item_ultimate_scepter"
 				],
 				"tags": [
@@ -2131,14 +2131,14 @@
 		"type": "hero",
 		"enemies": [
 			{
-				"unit": "npc_dota_hero_axe",
+				"unit": "npc_dota_hero_skeleton_king",
 				"level": 30,
 				"items": [
-					"item_blink",
-					"item_crimson_guard",
-					"item_heart",
+					"item_phase_boots",
+					"item_armlet",
+					"item_desolator",
 					"item_black_king_bar",
-					"item_shivas_guard"
+					"item_assault"
 				],
 				"tags": [
 					"boss"
@@ -2146,14 +2146,14 @@
 				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_clinkz",
+				"unit": "npc_dota_hero_queenofpain",
 				"level": 30,
 				"items": [
-					"item_desolator",
-					"item_hurricane_pike",
-					"item_greater_crit",
+					"item_power_treads",
+					"item_bloodthorn",
+					"item_kaya_and_sange",
 					"item_black_king_bar",
-					"item_bloodthorn"
+					"item_shivas_guard"
 				],
 				"tags": [
 					"hero"
@@ -2161,44 +2161,44 @@
 				"ai": "focus_lowest_hp"
 			},
 			{
-				"unit": "npc_dota_hero_sven",
+				"unit": "npc_dota_hero_leshrac",
 				"level": 30,
 				"items": [
+					"item_arcane_boots",
+					"item_bloodstone",
+					"item_kaya_and_sange",
+					"item_black_king_bar",
+					"item_shivas_guard"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_zuus",
+				"level": 30,
+				"items": [
+					"item_arcane_boots",
+					"item_phylactery",
+					"item_ultimate_scepter",
+					"item_kaya_and_sange",
+					"item_refresher"
+				],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_shadow_shaman",
+				"level": 30,
+				"items": [
+					"item_arcane_boots",
 					"item_blink",
-					"item_greater_crit",
+					"item_aether_lens",
 					"item_black_king_bar",
-					"item_satanic",
-					"item_assault"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_drow_ranger",
-				"level": 30,
-				"items": [
-					"item_hurricane_pike",
-					"item_manta",
-					"item_butterfly",
-					"item_black_king_bar",
-					"item_satanic"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_oracle",
-				"level": 30,
-				"items": [
-					"item_glimmer_cape",
-					"item_lotus_orb",
-					"item_guardian_greaves",
-					"item_aeon_disk",
-					"item_sheepstick"
+					"item_ultimate_scepter"
 				],
 				"tags": [
 					"hero"
@@ -2206,29 +2206,29 @@
 				"ai": "ai_healer_protect"
 			},
 			{
-				"unit": "npc_dota_hero_riki",
+				"unit": "npc_dota_hero_life_stealer",
 				"level": 30,
 				"items": [
-					"item_diffusal_blade",
-					"item_manta",
+					"item_phase_boots",
+					"item_armlet",
 					"item_abyssal_blade",
-					"item_black_king_bar",
-					"item_butterfly"
+					"item_sange_and_yasha",
+					"item_assault"
 				],
 				"tags": [
 					"hero"
 				],
-				"ai": "focus_lowest_hp"
+				"ai": "aggro_front"
 			},
 			{
-				"unit": "npc_dota_hero_dazzle",
+				"unit": "npc_dota_hero_warlock",
 				"level": 30,
 				"items": [
-					"item_guardian_greaves",
-					"item_lotus_orb",
+					"item_arcane_boots",
 					"item_glimmer_cape",
-					"item_sheepstick",
-					"item_octarine_core"
+					"item_ultimate_scepter",
+					"item_aeon_disk",
+					"item_refresher"
 				],
 				"tags": [
 					"hero"

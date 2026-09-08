@@ -5,7 +5,7 @@
 	{
 		"dota2_rpg_level_progress"		"Level %s1 / %s2"
 		"dota2_rpg_battle_title"		"3v3 Automated Battle"
-		"dota2_rpg_build_tag"			"UI version 13"
+		"dota2_rpg_build_tag"			"UI version 14"
 		"dota2_rpg_versus"				"Versus"
 		"dota2_rpg_radiant_logic"		"Radiant Action Logic"
 		"dota2_rpg_dire_logic"			"Dire Action Logic"

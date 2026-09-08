@@ -5,7 +5,7 @@
 	{
 		"dota2_rpg_level_progress"		"第 %s1 / %s2 关"
 		"dota2_rpg_battle_title"		"3 对 3 自动战斗"
-		"dota2_rpg_build_tag"			"界面版本 13"
+		"dota2_rpg_build_tag"			"界面版本 14"
 		"dota2_rpg_versus"				"对战"
 		"dota2_rpg_radiant_logic"		"我方行动逻辑"
 		"dota2_rpg_dire_logic"			"敌方行动逻辑"

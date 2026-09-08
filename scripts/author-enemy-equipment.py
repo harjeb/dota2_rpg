@@ -96,27 +96,144 @@ BUILDS = {
         'guardian_greaves lotus_orb glimmer_cape sheepstick octarine_core'],
 }
 
-# These stages intentionally give the third enemy only two slots. Authored
-# alternatives retain a carry core instead of truncating a three-item build.
+# Shared openings reduce repetition; midgame cores and late upgrades are
+# chosen for each hero. Tuple: role, boots, core, utility, protection, luxury.
+ROLE_OPENINGS = {
+    'strength': ('boots bracer', 'power_treads bracer magic_wand'),
+    'agility': ('boots wraith_band', 'power_treads wraith_band magic_wand'),
+    'caster': ('boots null_talisman', 'arcane_boots null_talisman magic_wand'),
+    'support': ('boots magic_wand', 'arcane_boots magic_wand wind_lace'),
+}
+HERO_PROFILES = {
+    'centaur': 'strength phase_boots blink blade_mail pipe heart',
+    'tidehunter': 'strength arcane_boots blink pipe guardian_greaves refresher',
+    'bristleback': 'strength phase_boots bloodstone eternal_shroud shivas_guard ultimate_scepter',
+    'slardar': 'strength power_treads blink echo_sabre black_king_bar assault',
+    'skeleton_king': 'strength phase_boots armlet desolator black_king_bar assault',
+    'life_stealer': 'strength phase_boots armlet basher sange_and_yasha assault',
+    'chaos_knight': 'strength power_treads armlet manta black_king_bar heart',
+    'night_stalker': 'strength phase_boots echo_sabre blink black_king_bar assault',
+    'spirit_breaker': 'strength phase_boots invis_sword ultimate_scepter black_king_bar octarine_core',
+    'abaddon': 'strength phase_boots echo_sabre manta basher assault',
+    'omniknight': 'support arcane_boots mekansm lotus_orb pipe ultimate_scepter',
+    'undying': 'support arcane_boots mekansm glimmer_cape pipe lotus_orb',
+    'razor': 'agility power_treads yasha maelstrom black_king_bar satanic',
+    'viper': 'agility power_treads dragon_lance yasha black_king_bar skadi',
+    'luna': 'agility power_treads yasha mask_of_madness black_king_bar satanic',
+    'gyrocopter': 'agility power_treads maelstrom ultimate_scepter black_king_bar satanic',
+    'bloodseeker': 'agility power_treads maelstrom basher black_king_bar butterfly',
+    'slark': 'agility power_treads diffusal_blade ultimate_scepter black_king_bar skadi',
+    'troll_warlord': 'agility power_treads bfury yasha black_king_bar satanic',
+    'ursa': 'agility phase_boots bfury blink black_king_bar basher',
+    'antimage': 'agility power_treads bfury yasha basher skadi',
+    'phantom_lancer': 'agility power_treads diffusal_blade yasha heart butterfly',
+    'templar_assassin': 'agility power_treads desolator blink black_king_bar greater_crit',
+    'nevermore': 'agility power_treads dragon_lance greater_crit black_king_bar satanic',
+    'lich': 'support arcane_boots glimmer_cape force_staff aeon_disk ultimate_scepter',
+    'lion': 'support arcane_boots blink force_staff aeon_disk ultimate_scepter',
+    'shadow_shaman': 'support arcane_boots blink aether_lens black_king_bar ultimate_scepter',
+    'warlock': 'support arcane_boots glimmer_cape ultimate_scepter aeon_disk refresher',
+    'jakiro': 'support arcane_boots force_staff glimmer_cape cyclone ultimate_scepter',
+    'disruptor': 'support arcane_boots glimmer_cape force_staff aeon_disk ultimate_scepter',
+    'death_prophet': 'caster arcane_boots cyclone kaya_and_sange black_king_bar shivas_guard',
+    'necrolyte': 'caster arcane_boots kaya_and_sange eternal_shroud shivas_guard heart',
+    'queenofpain': 'caster power_treads orchid kaya_and_sange black_king_bar shivas_guard',
+    'leshrac': 'caster arcane_boots bloodstone kaya_and_sange black_king_bar shivas_guard',
+    'zuus': 'caster arcane_boots phylactery ultimate_scepter kaya_and_sange refresher',
+    'pugna': 'caster arcane_boots aether_lens glimmer_cape ultimate_scepter octarine_core',
+    'vengefulspirit': 'support arcane_boots force_staff glimmer_cape lotus_orb ultimate_scepter',
+    'venomancer': 'support arcane_boots spirit_vessel glimmer_cape force_staff shivas_guard',
+    'skywrath_mage': 'caster arcane_boots rod_of_atos aether_lens black_king_bar ultimate_scepter',
+    'ancient_apparition': 'support arcane_boots glimmer_cape force_staff aether_lens ultimate_scepter',
+    'grimstroke': 'support arcane_boots aether_lens glimmer_cape ultimate_scepter sheepstick',
+    'shadow_demon': 'support arcane_boots aether_lens glimmer_cape aeon_disk ultimate_scepter',
+    'bane': 'support arcane_boots aether_lens glimmer_cape black_king_bar ultimate_scepter',
+    'silencer': 'support arcane_boots force_staff glimmer_cape aeon_disk refresher',
+    'treant': 'support arcane_boots blink meteor_hammer lotus_orb ultimate_scepter',
+    'enchantress': 'support power_treads dragon_lance glimmer_cape lotus_orb ultimate_scepter',
+    'ogre_magi': 'support arcane_boots force_staff aether_lens glimmer_cape sheepstick',
+    'dark_willow': 'support arcane_boots cyclone glimmer_cape blink ultimate_scepter',
+}
+UPGRADES = {
+    'basher': 'abyssal_blade', 'dragon_lance': 'hurricane_pike',
+    'yasha': 'manta', 'maelstrom': 'mjollnir', 'diffusal_blade': 'disperser',
+    'mekansm': 'guardian_greaves', 'invis_sword': 'silver_edge',
+    'echo_sabre': 'harpoon', 'orchid': 'bloodthorn', 'cyclone': 'wind_waker',
+}
+for hero, profile in HERO_PROFILES.items():
+    role, boots, core, utility, protection, luxury = profile.split()
+    late = [UPGRADES.get(item, item) for item in (core, utility, protection, luxury)]
+    final_slot = ('shivas_guard' if hero == 'tidehunter' else 'aeon_disk') \
+        if 'guardian_greaves' in late else boots
+    BUILDS[hero] = [
+        *ROLE_OPENINGS[role],
+        f'{boots} {core} {utility}',
+        f'{core} {utility} {protection}',
+        ' '.join(late),
+        ' '.join([*late, final_slot] if 'guardian_greaves' in late else [boots, *late]),
+    ]
+# Razor wants status resistance; Luna upgrades her early lifesteal into damage.
+BUILDS['razor'][4:] = [
+    'sange_and_yasha mjollnir black_king_bar satanic',
+    'power_treads sange_and_yasha mjollnir black_king_bar satanic',
+]
+BUILDS['luna'][4:] = [
+    'manta butterfly black_king_bar satanic',
+    'power_treads manta butterfly black_king_bar satanic',
+]
+
+# Every hero has an intentional boots/core pair for the two-slot stages.
+# Support pairs retain their defining utility; selection never uses roster slot.
 TWO_SLOT_BUILDS = {
+    (tier, hero): ' '.join(rows[tier - 1].split()[:2])
+    for hero, rows in BUILDS.items()
+    for tier in range(2, 7)
+}
+TWO_SLOT_BUILDS.update({
+    (3, hero): 'force_staff glimmer_cape'
+    for hero in ('crystal_maiden', 'witch_doctor', 'oracle', 'dazzle')
+})
+TWO_SLOT_BUILDS.update({
+    (3, 'sniper'): 'power_treads maelstrom',
+    (3, 'clinkz'): 'power_treads phylactery',
+    (3, 'lina'): 'arcane_boots kaya',
+    (4, 'dazzle'): 'guardian_greaves glimmer_cape',
+    (5, 'dazzle'): 'guardian_greaves glimmer_cape',
+    (6, 'dazzle'): 'guardian_greaves glimmer_cape',
+})
+# Preserve the original authored two-slot alternatives.
+TWO_SLOT_BUILDS.update({
     (2, 'sven'): 'power_treads echo_sabre',
     (2, 'phantom_assassin'): 'power_treads orb_of_corrosion',
     (2, 'riki'): 'power_treads orb_of_corrosion',
     (3, 'sven'): 'echo_sabre black_king_bar',
     (3, 'riki'): 'diffusal_blade black_king_bar',
     (3, 'juggernaut'): 'phase_boots manta',
-}
+})
+
+
+BOOT_ITEMS = {'boots', 'phase_boots', 'power_treads', 'arcane_boots', 'guardian_greaves'}
 
 
 def loadout(hero, chapter, count):
-    tier = min(chapter // 5, 6)
-    if not 1 <= tier <= 6:
+    if not 5 <= chapter <= 30:
         raise ValueError(f'No hero equipment tier for chapter {chapter}')
+    if count not in (2, 3, 4, 5):
+        raise ValueError(f'Unsupported inventory size: {count}')
+    tier = min(chapter // 5, 6)
     names = (TWO_SLOT_BUILDS[(tier, hero)] if count == 2 and tier > 1
              else BUILDS[hero][tier - 1]).split()
-    if len(names) != count:
-        raise ValueError(f'Unauthored inventory: {hero}, tier {tier}, count {count}')
-    return ['item_' + name for name in names]
+    # Unusual inventory sizes draw additional items from the same hero's
+    # progression. The standard 2/3/3/3/4/5 schedule preserves authored rows.
+    for row in BUILDS[hero][tier:] + list(reversed(BUILDS[hero][:tier - 1])):
+        if len(names) >= count:
+            break
+        for name in row.split():
+            if name in BOOT_ITEMS and set(names) & BOOT_ITEMS:
+                continue
+            if name not in names:
+                names.append(name)
+    return ['item_' + name for name in names[:count]]
 
 
 def main():
