@@ -127,4 +127,69 @@ local preference, preferenceReason = adapter:Resolve(caster, {
 }, {})
 assert(preference == nil and preferenceReason == "unsupported_cast_preference",
     "overflow fix must still reject cast modes absent from native behavior")
+-- Native control must be checked again when issuing, including custom adapters.
+local controlled = {}
+for _, method in ipairs({"IsStunned", "IsFrozen", "IsCommandRestricted", "IsOutOfGame",
+    "IsDisarmed", "IsRooted", "IsSilenced", "IsMuted"}) do
+    caster[method] = function() return controlled[method] == true end
+end
+source.GetBehavior = function() return 16 end
+cooldown = true
+local attack = {kind="attack", logical_id="attack"}
+local move = {kind="move", logical_id="move"}
+local item = {kind="item", logical_id="item", source=source, cast_type="none"}
+local target = {IsAlive=function() return true end, entindex=function() return 3 end}
+local customCalls = 0
+adapter:Register("custom", {
+    CanExecute=function() customCalls=customCalls+1; return true end,
+    Issue=function() customCalls=customCalls+1; return true end,
+})
+local custom = {kind="ability", logical_id="custom", source=source, cast_type="none"}
+for _, method in ipairs({"IsStunned", "IsFrozen", "IsCommandRestricted", "IsOutOfGame"}) do
+    controlled[method] = true
+    for _, action in ipairs({attack, move, spec, item, custom, vector}) do
+        order = nil
+        assert(not adapter:CanExecute(caster, action, {}), method .. " blocks eligibility")
+        assert(not adapter:Issue(caster, action, target, {}), method .. " blocks direct issue")
+        assert(not adapter:IssueApproach(caster, action, target), method .. " blocks approach")
+        assert(order == nil, "disabled unit must not emit orders")
+    end
+    assert(adapter:Issue(caster, {kind="wait"}, nil, {}), "wait does not issue an order")
+    controlled[method] = false
+end
+assert(customCalls == 0, "custom callbacks cannot bypass native control")
+controlled.IsRooted = true
+assert(adapter:CanExecute(caster, attack, {}), "root permits attacks in range")
+assert(adapter:Issue(caster, attack, target, {}), "root permits native attack orders")
+assert(not adapter:IssueApproach(caster, attack, target), "root prevents chasing targets")
+assert(not adapter:CanExecute(caster, move, {}), "root prevents movement")
+assert(adapter:CanExecute(caster, spec, {}), "root does not silence ordinary spells")
+DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES = 2048
+source.GetBehavior = function() return 16 + 2048 end
+assert(not adapter:CanExecute(caster, spec, {}), "native ROOT_DISABLES blocks mobility spells")
+assert(not adapter:Issue(caster, spec, point, {}), "direct issue honors ROOT_DISABLES")
+source.GetBehavior = function() return 16 end
+controlled.IsRooted = false
+controlled.IsDisarmed = true
+assert(not adapter:CanExecute(caster, attack, {}))
+assert(adapter:CanExecute(caster, spec, {}), "disarm permits spells")
+assert(adapter:CanExecute(caster, item, {}), "disarm permits items")
+controlled.IsDisarmed = false
+controlled.IsSilenced = true
+assert(not adapter:Issue(caster, spec, point, {}))
+assert(adapter:CanExecute(caster, item, {}), "silence permits items")
+assert(adapter:CanExecute(caster, attack, {}), "silence permits attacks")
+controlled.IsSilenced = false
+controlled.IsMuted = true
+assert(not adapter:Issue(caster, item, nil, {}))
+assert(adapter:CanExecute(caster, spec, {}), "mute permits spells")
+controlled.IsMuted = false
+for _, name in ipairs({"npc_dota_hero_faceless_void", "npc_dota_hero_axe"}) do
+    caster.GetUnitName = function() return name end
+    caster.HasModifier = function() return true end
+    assert(adapter:CanExecute(caster, spec, {}), "modifier presence alone never synthesizes a stun")
+    controlled.IsStunned = true
+    assert(not adapter:CanExecute(caster, spec, {}), "Void is not immune to unrelated native stuns")
+    controlled.IsStunned = false
+end
 print("action-adapter tests passed")

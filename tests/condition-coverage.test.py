@@ -217,7 +217,7 @@ class ConditionCoverage(unittest.TestCase):
         self.assertIn('length <= 0', vector)
         self.assertIn('require("tactics/vector_target")', adapter)
         self.assertIn('DOTA_UNIT_ORDER_VECTOR_TARGET_POSITION', adapter)
-        self.assertIn('caster:IsChanneling()', adapter)
+        self.assertIn('state("IsChanneling")', adapter)
         for text in (vector, adapter):
             self.assertNotIn('muerta_dead_shot', text)
             self.assertNotIn('marci_companion_run', text)

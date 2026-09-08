@@ -170,8 +170,43 @@ function input(hud, id, value) { var p = panel(hud, id); assert(p, "real input "
 function latest(hud, hero, slot) {
     return hud.sentEvents.filter(function (event) { return event.name === "rpg_update_rule" && event.payload.hero_name === hero && event.payload.slot === (slot || 1); }).slice(-1)[0].payload;
 }
-var hud = runHud();
+// Battlefield action references use icons and stable actor keys, including duplicate enemies.
 var lion = "npc_dota_hero_lion", axe = "npc_dota_hero_axe";
+var pickerHud = runHud();
+pickerHud.subscriptions.rpg_enemy_roster({units:[{id:801,name:lion},{id:802,name:lion}]});
+[801,802].forEach(function(entity,index) {
+    pickerHud.subscriptions.rpg_hero_slots({slot_key:"dire_"+(index+1),hero_index:entity,hero_name:lion,
+        rule_key:"enemy:"+lion+":"+index,actions_text:"lion_impale;attack",abilities_text:"lion_impale;lion_finger_of_death"});
+});
+click(pickerHud,"DireRuleSettings0");
+["action_elapsed_gte","action_elapsed_lte"].forEach(function(type,index) {
+    choice(pickerHud,"V2_use"+index,type); input(pickerHud,"V2_use"+index+"_seconds",2.75);
+    click(pickerHud,"V2_use"+index+"_action_id");
+    var iconOption=panel(pickerHud,"V2_use"+index+"_action_idOption_1_1");
+    assert(iconOption.GetChild(0).type === "DOTAAbilityImage" && iconOption.GetChild(0).abilityname === "lion_finger_of_death", "picker uses actual ability icons");
+    click(pickerHud,iconOption.id);
+});
+click(pickerHud,"RuleSettingsApply");
+var picked=latest(pickerHud,lion);
+assert(picked.use_condition_1_action_actor === "enemy:"+lion+":1" && picked.use_condition_2_action_actor === picked.use_condition_1_action_actor
+    && picked.use_condition_1_action_id === "lion_finger_of_death" && picked.use_condition_2_seconds === 2.75,"U21/U22 save selected actor, ability and seconds");
+click(pickerHud,"DireRuleSettings0");
+assert(panel(pickerHud,"V2_use0_action_id").GetChild(0).abilityname === "lion_finger_of_death", "selected icon survives reopen");
+click(pickerHud,"V2_use0_action_id"); click(pickerHud,"V2_use0_action_idCurrent"); click(pickerHud,"RuleSettingsApply");
+assert(!latest(pickerHud,lion).use_condition_1_action_actor && !latest(pickerHud,lion).use_condition_1_action_id,"current action clears both reference fields");
+// Remove both a rejected rule and an in-flight request when their unit leaves.
+var rejected=latest(pickerHud,lion);
+pickerHud.subscriptions.rpg_rule_update_result({request_id:rejected.request_id,ok:0,reason:"invalid_hero"});
+assert(panel(pickerHud,"RuleSyncNotice").visible,"current roster rejection is shown");
+click(pickerHud,"DireRuleSettings0"); click(pickerHud,"RuleSettingsApply");
+var delayed=latest(pickerHud,lion);
+pickerHud.subscriptions.rpg_enemy_roster({units:[]});
+assert(!panel(pickerHud,"RuleSyncNotice").visible,"departed roster clears stale failure notice");
+pickerHud.subscriptions.rpg_rule_update_result({request_id:delayed.request_id,ok:0,reason:"invalid_hero"});
+assert(!panel(pickerHud,"RuleSyncNotice").visible,"late rejection cannot resurrect absent-unit warning");
+assert(pickerHud.context.RpgConditionCatalog.abilityLabel("missing_native_token").indexOf("#DOTA") < 0,"missing native localization never leaks token");
+
+var hud = runHud();
 function slots(side, index, name, entity, actions, details) {
     hud.subscriptions.rpg_hero_slots({slot_key: side.toLowerCase() + "_" + index,
         hero_name: name, hero_index: entity, actions_text: actions || "lion_impale;lion_finger_of_death;attack", details_text: details || ""});
@@ -184,7 +219,7 @@ assert(panel(hud, "V2_use3Select") && panel(hud, "V2_target3Select") && panel(hu
 choice(hud, "V2_use0", "self_hp_pct_gte"); input(hud, "V2_use0_value", 67.5);
 choice(hud, "V2_use1", "nearby_enemies_gte"); input(hud, "V2_use1_value", 3); input(hud, "V2_use1_radius", 875);
 choice(hud, "V2_use2", "elapsed_gte"); input(hud, "V2_use2_seconds", 57.5);
-choice(hud, "V2_use3", "action_use_count_lt"); input(hud, "V2_use3_value", 2); input(hud, "V2_use3_action_id", "lion_finger_of_death");
+choice(hud, "V2_use3", "action_use_count_lt"); input(hud, "V2_use3_value", 2); click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idOption_0_1");
 choice(hud, "V2_target0", "hp_pct_lte"); input(hud, "V2_target0_value", 35);
 choice(hud, "V2_target1", "modifier_stacks_gte"); input(hud, "V2_target1_modifier", "modifier_test"); input(hud, "V2_target1_value", 4);
 choice(hud, "V2_target2", "modifier_remaining_lte"); input(hud, "V2_target2_modifier", "modifier_test"); input(hud, "V2_target2_seconds", 1.75);
@@ -235,7 +270,7 @@ assert(panel(hud, "DireActionAbility0").abilityname === "lion_impale" && latest(
 // Malformed fields cannot emit NaN/Infinity; blank action references mean current action.
 click(hud, "DireRuleSettings0");
 input(hud, "V2_use1_value", "NaN"); input(hud, "V2_use1_radius", "Infinity");
-input(hud, "V2_use3_action_id", ""); input(hud, "V2_min_aoe_hits", 100);
+click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idCurrent"); input(hud, "V2_min_aoe_hits", 100);
 choice(hud, "V2_target0", "mana_pct_gte"); input(hud, "V2_target0_value", 800);
 choice(hud, "V2Toggle", "toggle_on"); click(hud, "RuleSettingsApply");
 var malformed = latest(hud, lion);
@@ -454,7 +489,7 @@ Object.keys(mapping).forEach(function (ability) {
             server[spec[0]] = {};
             for (var i=1;i<=spec[2];i++) {
                 var item = {};
-                ["type","value","seconds","radius","modifier","action_id"].forEach(function(key) {
+                ["type","value","seconds","radius","modifier","action_id","action_actor"].forEach(function(key) {
                     if (wire[spec[1]+"_"+i+"_"+key] !== undefined) { item[key] = wire[spec[1]+"_"+i+"_"+key]; }
                 });
                 if (item.type) { server[spec[0]][i] = item; }

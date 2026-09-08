@@ -14,6 +14,12 @@ local function is_valid_entity(entity)
     return true
 end
 
+local function action_actor(ctx, condition)
+    if condition.action_actor == nil or condition.action_actor == "" then return ctx.caster end
+    if type(ctx.get_action_actor) ~= "function" then return nil end
+    return ctx.get_action_actor(condition.action_actor)
+end
+
 local function clamp(value, min_value, max_value)
     if value < min_value then
         return min_value
@@ -163,12 +169,10 @@ end)
 
 ConditionRegistry:RegisterUseCondition("action_use_count_lt", function(ctx, condition)
     local logical_id = tostring(condition.action_id or ctx.current_action_id or "")
-    if ctx.get_action_use_count == nil then return false end
-    local count = 0
-    if ctx.get_action_use_count ~= nil then
-        count = tonumber(ctx.get_action_use_count(ctx.caster, logical_id) or 0)
-    end
-    return count < tonumber(condition.value)
+    local actor = action_actor(ctx, condition)
+    if actor == nil or ctx.get_action_use_count == nil then return false end
+    local count = tonumber(ctx.get_action_use_count(actor, logical_id))
+    return count ~= nil and count < tonumber(condition.value)
 end)
 
 ConditionRegistry:RegisterUseCondition("self_recently_damaged", function(ctx, condition)
@@ -380,8 +384,9 @@ for id, method in pairs({ spell_immune = "IsMagicImmune" }) do
     end)
 end
 ConditionRegistry:RegisterUseCondition("ability_charges_gte", function(ctx, c)
-    if ctx.get_ability_charges == nil then return false end
-    local n = ctx.get_ability_charges(ctx.caster, c.action_id or ctx.current_action_id)
+    local actor = action_actor(ctx, c)
+    if actor == nil or ctx.get_ability_charges == nil then return false end
+    local n = ctx.get_ability_charges(actor, c.action_id or ctx.current_action_id)
     return n ~= nil and n >= tonumber(c.value)
 end)
 
@@ -399,7 +404,9 @@ local function measured_compare(actual, threshold, direction)
 end
 for _, direction in ipairs({ "gte", "lte" }) do
     ConditionRegistry:RegisterUseCondition("action_elapsed_" .. direction, function(ctx, c)
-        local elapsed = observe(ctx, "get_action_elapsed", ctx.caster, c.action_id or ctx.current_action_id)
+        local actor = action_actor(ctx, c)
+        if actor == nil then return false end
+        local elapsed = observe(ctx, "get_action_elapsed", actor, c.action_id or ctx.current_action_id)
         return elapsed ~= nil and elapsed >= 0 and measured_compare(elapsed, c.seconds or c.value, direction)
     end)
 end

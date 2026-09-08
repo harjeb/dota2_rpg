@@ -266,7 +266,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v12-20260908") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v13-20260908") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -431,7 +431,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v12-20260908 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v13-20260908 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2545,10 +2545,11 @@ function CDota2RpgDemo:RestoreHeroInventoryToUnit(heroName, hero)
 end
 
 function CDota2RpgDemo:ClearBenchHeroesForRespawn()
+	local lifecycle = require("issue_fixes.hero_lifecycle_log")
 	for _, unit in ipairs(self.benchUnits or {}) do
 		if TacticEngine.IsValidUnit(unit) then
 			self:CaptureHeroInventoryForRespawn(unit)
-			unit:RemoveSelf()
+			lifecycle.Remove(self, unit, "bench")
 		end
 	end
 	self.benchUnits = {}
@@ -2556,6 +2557,7 @@ end
 
 -- 生成场下英雄到待命区（无敌/禁足展示，不参与战斗与胜负判定，但可选中并直接购买/管理装备）
 function CDota2RpgDemo:SpawnBenchHeroes()
+	local lifecycle = require("issue_fixes.hero_lifecycle_log")
 	self.benchUnits = self.benchUnits or {}
 	for _, heroName in ipairs(self.ownedHeroes) do
 		local onLineup = false
@@ -2573,7 +2575,7 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 				BENCH_AREA_CENTER.x - BENCH_GRID_SPACING + col * BENCH_GRID_SPACING,
 				BENCH_AREA_CENTER.y - 120 + row * BENCH_GRID_SPACING, 128), nil)
 			-- 先以无玩家 owner 创建，避免 npc_spawned 把它误判为玩家主英雄并移到指挥官位置；随后绑定玩家控制权。
-			local unit = CreateUnitByName(heroName, pos, true, nil, nil, DOTA_TEAM_GOODGUYS)
+			local unit = lifecycle.Create(self, heroName, pos, DOTA_TEAM_GOODGUYS, "bench")
 			if TacticEngine.IsValidUnit(unit) then
 				FindClearSpaceForUnit(unit, pos, true)
 				local data = self.heroData[heroName]
@@ -2583,7 +2585,7 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 				self:PrepareBattleHero(unit, data ~= nil and data.level or 1)
 				if not self:BindEquipmentCarrierToPlayer(unit) then
 					self.autoAbilityHeroes[unit:GetEntityIndex()] = nil
-					unit:RemoveSelf()
+					lifecycle.Remove(self, unit, "bench_unbound")
 					print(string.format("[Dota2Rpg] Refused unbound bench hero %s.", heroName))
 				else
 					self:RestoreHeroInventoryToUnit(heroName, unit)
@@ -2593,6 +2595,7 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 						end
 					end
 					table.insert(self.benchUnits, unit)
+					lifecycle.Event(self, "ready", "role=bench " .. lifecycle.Snapshot(unit))
 				end
 			end
 		end
@@ -2600,6 +2603,7 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 end
 
 function CDota2RpgDemo:RespawnPlayerRoster()
+	local lifecycle = require("issue_fixes.hero_lifecycle_log")
 	if self.phase ~= "setup" then
 		return
 	end
@@ -2615,7 +2619,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		if TacticEngine.IsValidUnit(hero) then
 			-- 重铸前把身上的装备收回个人库存记录，避免随单位销毁。
 			self:CaptureHeroInventoryForRespawn(hero)
-			hero:RemoveSelf()
+			lifecycle.Remove(self, hero, "lineup")
 		end
 	end
 	battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
@@ -2631,7 +2635,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			and GetGroundPosition(Vector(placed.x, placed.y, 128), nil)
 			or GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
 		-- 先以无玩家 owner 创建，避免 npc_spawned 的玩家本体处理；生成后再绑定到小精灵玩家。
-		local hero = CreateUnitByName(heroName, spawnPosition, true, nil, nil, DOTA_TEAM_GOODGUYS)
+		local hero = lifecycle.Create(self, heroName, spawnPosition, DOTA_TEAM_GOODGUYS, "lineup")
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
 			local heroData = self:GetHeroData(heroName)
@@ -2642,7 +2646,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			-- 上阵英雄必须是小精灵的玩家所有单位，才能直接执行原版购买、移动、拾取和物品转移。
 			-- 战斗中的玩家订单仍会被 tactic_bridge 的 OrderFilter 拒绝。
 			if not self:BindEquipmentCarrierToPlayer(hero) then
-				hero:RemoveSelf()
+				lifecycle.Remove(self, hero, "lineup_unbound")
 				print(string.format("[Dota2Rpg] Refused unbound lineup hero %s.", heroName))
 			else
 				local points = hero:GetAbilityPoints()
@@ -2663,6 +2667,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 					self.heroRulesByName[heroName] = BuildDefaultRulesForSlots(BuildHeroActionSlots(hero), hero)
 				end
 				battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRulesByName[heroName]
+				lifecycle.Event(self, "ready", "role=lineup " .. lifecycle.Snapshot(hero))
 			end
 		else
 			print(string.format("[Dota2Rpg] Failed to spawn lineup hero %s.", heroName))
@@ -2677,10 +2682,11 @@ end
 
 -- 从 levels.kv 生成关卡敌方阵容（英雄/野怪混编，随关卡切换重建）
 function CDota2RpgDemo:SpawnLevelEnemies(levelId)
+	local lifecycle = require("issue_fixes.hero_lifecycle_log")
 	local battleManager = self.battleManager
 	for _, unit in ipairs(battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
 		if TacticEngine.IsValidUnit(unit) then
-			unit:RemoveSelf()
+			lifecycle.Remove(self, unit, "enemy")
 		end
 	end
 	battleManager.teamHeroes[DOTA_TEAM_BADGUYS] = {}
@@ -2702,7 +2708,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 			local slot = ((enemyIndex - 1) % spawnCount) + 1
 			local offset = Vector((copyIndex - 1) * ENEMY_SPAWN_SPACING - (count - 1) * ENEMY_SPAWN_SPACING / 2, 0, 0)
 			local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_BADGUYS][slot] + offset, nil)
-			local unit = CreateUnitByName(entry.unit, spawnPosition, true, nil, nil, DOTA_TEAM_BADGUYS)
+			local unit = lifecycle.Create(self, entry.unit, spawnPosition, DOTA_TEAM_BADGUYS, "enemy")
 			if TacticEngine.IsValidUnit(unit) then
 				FindClearSpaceForUnit(unit, spawnPosition, true)
 				if unit:IsRealHero() then
@@ -2755,6 +2761,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 				unit.enemyRuleIndex = enemyIndex
 				battleManager:RegisterEnemyTags(unit, entry.tags)
 				battleManager.teamRules[DOTA_TEAM_BADGUYS][enemyIndex] = self:BuildEnemyRules(entry.ai)
+				lifecycle.Event(self, "ready", "role=enemy " .. lifecycle.Snapshot(unit))
 			else
 				print(string.format("[Dota2Rpg] Failed to spawn enemy %s.", tostring(entry.unit)))
 			end
@@ -3503,6 +3510,8 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 			return nil
 		end
 		setupPending = false
+		local lifecycle = require("issue_fixes.hero_lifecycle_log")
+		lifecycle.Event(self, "reset_begin", "from=" .. tostring(settlement.level) .. " to=" .. tostring(self.currentLevelId))
 		self.phase = "setup"
 		self.winner = ""
 		if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
@@ -3519,6 +3528,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		self:BroadcastLevelInfo()
 		self:BroadcastBattleState()
 		print("[Dota2Rpg] Back to setup. Next level: " .. self.currentLevelId)
+		lifecycle.Event(self, "reset_complete", "from=" .. tostring(settlement.level))
 		return nil
 	end, 3.0)
 
@@ -3563,6 +3573,7 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 					hero_index = hero:entindex(),
 					hero_name = hero:GetUnitName(),
 					actions_text = table.concat(slots, ";"),
+					abilities_text = table.concat(AbilityCatalog.ListAbilities(hero), ";"),
 					details_text = table.concat(descriptions, ";"),
                     rule_key = RuleSnapshot.HeroKey(self.battleManager,hero),
                     can_edit = (side.team == DOTA_TEAM_GOODGUYS or RuleSnapshot.IsDeveloperMode()) and 1 or 0,

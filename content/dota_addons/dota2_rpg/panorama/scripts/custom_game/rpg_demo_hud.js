@@ -187,9 +187,25 @@
         return "";
     }
 
+    function actionHeroes(side, heroIndex) {
+        var selected = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)], result = [];
+        ["Radiant", "Dire"].forEach(function (team) {
+            (HEROES[team] || []).forEach(function (hero, index) {
+                var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
+                if (!entry || entry.name !== hero.name || entry.hero_index < 0) { return; }
+                var abilities = entry.abilities_text !== undefined ? splitList(entry.abilities_text)
+                    : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action.indexOf("item_") !== 0; })
+                        .map(function (action) { return getActionDetail(team, index, action); });
+                result.push({ actor: entry === selected ? "" : entry.rule_key,
+                    label: $.Localize("#dota2_rpg_v2_team_" + (team === side ? "ally" : "enemy")) + " " + localizeHeroName(entry.name) + " " + (index + 1),
+                    abilities: abilities.filter(function (name) { return !!name; }) });
+            });
+        });
+        return result;
+    }
+
     function buildRulesForHero(side, heroIndex) {
-        // The action picker also lists hidden/unlearned abilities. Wait for the
-        // authoritative rules snapshot before showing generated skill rules.
+        // Wait for the authoritative rules snapshot before showing generated skill rules.
         return [{
             action: "attack", condition: "always", value: 50,
             target_attr: "distance", target_side: "nearest",
@@ -449,7 +465,7 @@
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
                         renderSide(side);
                         sendRuleToServer(side,selectedHeroIndex[side],idx);
-                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
+                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),actionHeroes:actionHeroes(side,selectedHeroIndex[side]),readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
                 });
                 var conditionEditor = createConditionEditor(row, side, idx);
                 var forceToggle = createForceToggle(row, side, idx);
@@ -640,7 +656,7 @@
                     }
                 }
                 var text = actionKey !== "attack" && detail
-                    ? $.Localize("#DOTA_Tooltip_Ability_" + detail)
+                    ? RpgConditionCatalog.abilityLabel(detail)
                     : $.Localize(ACTION_TOKENS[actionKey] || actionKey);
                 var label = createLabel(option, "ActionOptionLabel", text);
                 label.hittest = false;
@@ -1529,6 +1545,11 @@
                 HEROES.Radiant.push({ panelId: portrait.id, name: heroName });
             }(index, shopState.lineup[index]));
         }
+        Object.keys(heroSlots).forEach(function (key) {
+            if (key.indexOf("radiant_") === 0 && shopState.lineup.indexOf(heroSlots[key].name) < 0) {
+                RpgRuleSync.forgetHero(heroSlots[key].rule_key);
+            }
+        });
         if (selectedHeroIndex.Radiant >= shopState.lineup.length) {
             selectedHeroIndex.Radiant = 0;
         }
@@ -1696,6 +1717,7 @@
             if (key.indexOf("dire_") !== 0) { return; }
             var unit = roster[Number(key.slice(5)) - 1];
             if (!unit || heroSlots[key].name !== unit.name || heroSlots[key].hero_index !== Number(unit.id)) {
+                RpgRuleSync.forgetHero(heroSlots[key].rule_key);
                 delete heroSlots[key];
             }
         });
@@ -1983,11 +2005,16 @@
             return;
         }
         var slotKey = String(data.slot_key);
+        var previousSlot = heroSlots[slotKey];
+        if (previousSlot && (previousSlot.hero_index !== Number(data.hero_index) || previousSlot.name !== String(data.hero_name || ""))) {
+            RpgRuleSync.forgetHero(previousSlot.rule_key);
+        }
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
             rule_key: String(data.rule_key || data.hero_name || "")+ (data.rule_key ? "" : ":"+slotKey),
             hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
             actions_text: String(data.actions_text || ""),
+            abilities_text: data.abilities_text === undefined ? undefined : String(data.abilities_text),
             details_text: String(data.details_text || ""),
             can_edit: data.can_edit === undefined || Number(data.can_edit) === 1,
             rules_ready: data.rules_ready === undefined || Number(data.rules_ready) === 1

@@ -74,4 +74,35 @@ local blocked={kind="ability",logical_id="test",cast_type="none",target_mode="no
 assert(not adapter:CanExecute(unit,blocked,{}))
 assert(not adapter:Issue(unit,blocked,nil,{}),"direct casts cannot interrupt channeling")
 assert(not adapter:IssueApproach(unit,blocked,unit),"direct chase orders cannot interrupt channeling")
+-- Exercise real native-control failures at the engine's chase boundary.
+unit.channel=false
+unit.GetCurrentActiveAbility=function() return nil end
+source.behavior=16
+local chaseRule={action={kind="ability",logical_id=source.name,name=source.name},
+    use_conditions={},approach="allow_approach"}
+local destination=Vector(2000,0,0)
+engine.ResolveRuleTarget=function() return destination,nil,nil end
+local debugEvents={}
+engine.Debug=function(_,_,event,data) debugEvents[#debugEvents+1]={event=event,data=data} end
+local chaseCtx={caster=unit,now=10}
+for _,case in ipairs({{"IsRooted","caster_rooted"},{"IsCommandRestricted","caster_command_restricted"}}) do
+    unit[case[1]]=function() return true end
+    state={};orders={};debugEvents={}
+    local ok,reason=engine:TryRule(unit,state,chaseCtx,chaseRule,1)
+    assert(not ok and reason==case[2] and state.chase==nil and #orders==0,"restricted initial approach cannot claim a chase")
+    assert(#debugEvents==0,"failed approach never emits chase_started")
+    unit[case[1]]=nil
+    assert(engine:TryRule(unit,state,chaseCtx,chaseRule,1) and state.chase~=nil and #orders==1,"unrestricted approach starts chase")
+    assert(debugEvents[1].event=="chase_started")
+    unit[case[1]]=function() return true end
+    assert(not engine:ContinueChase(unit,state,chaseCtx,10) and state.chase==nil and #orders==1,"restriction cancels existing chase without an order")
+    unit[case[1]]=nil
+end
+-- A downstream adapter rejection must also propagate even after CanExecute succeeds.
+state={};orders={};debugEvents={}
+assert(engine:TryRule(unit,state,chaseCtx,chaseRule,1))
+engine.actions.IssueApproach=function() return false,"order_rejected" end
+local continued,reason=engine:ContinueChase(unit,state,chaseCtx,10)
+assert(not continued and reason=="order_rejected" and state.chase==nil and #orders==1)
+assert(debugEvents[#debugEvents].event=="chase_cancelled" and debugEvents[#debugEvents].data.reason=="order_rejected")
 print("condition-phase tests passed")

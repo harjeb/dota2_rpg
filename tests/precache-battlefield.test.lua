@@ -23,6 +23,9 @@ require = function(moduleName)
 		or moduleName == "tactics/ability_behavior" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName .. ".lua")
 	end
+	if moduleName == "issue_fixes.hero_lifecycle_log" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/hero_lifecycle_log.lua")
+	end
 	if moduleName == "issue_fixes.default_rules" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/default_rules.lua")
 	end

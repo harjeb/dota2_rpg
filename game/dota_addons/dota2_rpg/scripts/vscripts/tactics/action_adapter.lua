@@ -263,12 +263,43 @@ function ActionAdapter:IsValidTarget(caster, spec, target)
     return true
 end
 
-function ActionAdapter:CanExecute(caster, spec, ctx)
-    if not is_valid(caster) or caster:IsAlive() == false then
+-- Read engine states instead of identifying control by modifier name or area.
+-- Chronosphere exceptions (including other Faceless Voids) remain native.
+local function native_control(caster, spec, approaching)
+    if not is_valid(caster) or (caster.IsAlive ~= nil and not caster:IsAlive()) then
         return false, "caster_invalid"
     end
+    local function state(method)
+        return caster[method] ~= nil and caster[method](caster)
+    end
+    if state("IsChanneling") then return false, "channeling" end
+    -- Waiting emits no order and does not attempt to break a disable.
+    if spec.kind == "wait" and not approaching then return true end
+    for _, entry in ipairs({
+        {"IsOutOfGame", "caster_out_of_game"},
+        {"IsCommandRestricted", "caster_command_restricted"},
+        {"IsStunned", "caster_stunned"},
+        {"IsFrozen", "caster_frozen"},
+    }) do
+        if state(entry[1]) then return false, entry[2] end
+    end
+    if (approaching or spec.kind == "move") and state("IsRooted") then
+        return false, "caster_rooted"
+    end
+    if spec.kind == "attack" and state("IsDisarmed") then return false, "cannot_attack" end
+    if not approaching then
+        if spec.kind == "ability" and state("IsSilenced") then return false, "caster_silenced" end
+        if spec.kind == "item" and state("IsMuted") then return false, "caster_muted" end
+        if (spec.kind == "ability" or spec.kind == "item") and spec.source ~= nil
+            and has_flag(get_behavior(spec.source), DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES)
+            and state("IsRooted") then return false, "caster_rooted" end
+    end
+    return true
+end
 
-    if caster.IsChanneling ~= nil and caster:IsChanneling() then return false, "channeling" end
+function ActionAdapter:CanExecute(caster, spec, ctx)
+    local allowed, reason = native_control(caster, spec, false)
+    if not allowed then return false, reason end
 
     local custom = self.custom[spec.logical_id]
     if custom ~= nil and custom.CanExecute ~= nil then
@@ -276,9 +307,6 @@ function ActionAdapter:CanExecute(caster, spec, ctx)
     end
 
     if spec.kind == "attack" then
-        if (caster.IsDisarmed ~= nil and caster:IsDisarmed()) or (caster.IsStunned ~= nil and caster:IsStunned()) then
-            return false, "cannot_attack"
-        end
         return true, nil
     end
     if spec.kind == "move" or spec.kind == "wait" then
@@ -317,15 +345,6 @@ function ActionAdapter:CanExecute(caster, spec, ctx)
     end
     if not turning_off and source.IsFullyCastable ~= nil and not source:IsFullyCastable() then
         return false, "not_fully_castable"
-    end
-    if caster.IsStunned ~= nil and caster:IsStunned() then
-        return false, "caster_stunned"
-    end
-    if spec.kind == "ability" and caster.IsSilenced ~= nil and caster:IsSilenced() then
-        return false, "caster_silenced"
-    end
-    if spec.kind == "item" and caster.IsMuted ~= nil and caster:IsMuted() then
-        return false, "caster_muted"
     end
 
     if spec.cast_type == "toggle" and spec.desired_toggle_state ~= nil
@@ -388,7 +407,8 @@ local function unsupported_geometry(spec)
 end
 
 function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
-    if caster.IsChanneling ~= nil and caster:IsChanneling() then return false, "channeling" end
+    local allowed, reason = native_control(caster, spec, false)
+    if not allowed then return false, reason end
     if unsupported_geometry(spec) then return false, "special_adapter_required" end
     if spec.cast_type == "vector" then
         if not is_valid(caster) or (caster.IsAlive ~= nil and not caster:IsAlive()) then return false, "caster_invalid" end
@@ -481,7 +501,8 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
 end
 
 function ActionAdapter:IssueApproach(caster, spec, target_or_point)
-    if caster.IsChanneling ~= nil and caster:IsChanneling() then return false, "channeling" end
+    local allowed, reason = native_control(caster, spec, true)
+    if not allowed then return false, reason end
     if unsupported_geometry(spec) then return false, "special_adapter_required" end
     if spec.cast_type == "vector" then
         if VectorTarget.NativeMode(spec.source) ~= spec.vector_mode or spec.vector_mode == nil

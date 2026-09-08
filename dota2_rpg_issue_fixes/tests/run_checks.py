@@ -14,6 +14,7 @@ LUA_SCENARIOS = (
     "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua", "default-rules.test.lua",
     "condition-v2.test.lua", "action-v2.test.lua", "condition-specials.test.lua",
     "condition-execution.test.lua", "condition-phase.test.lua", "condition-native-targets.test.lua", "condition-vector.test.lua",
+    "enemy-items.test.lua", "enemy-rules.test.lua", "hero-lifecycle-log.test.lua",
 )
 
 
@@ -96,6 +97,7 @@ def main() -> None:
     run([node, str(ROOT / "tests/test_ui.js")])
     run([node, str(ROOT.parent / "tests/condition-ui-v2.test.js")])
     run([sys.executable, str(ROOT.parent / "tests/condition-coverage.test.py")], cwd=ROOT.parent)
+    run([sys.executable, str(ROOT.parent / "tests/enemy-equipment-data.test.py")], cwd=ROOT.parent)
     run([node, str(ROOT.parent / "tests/panorama-save.test.js")])
     for script in (ROOT.parent / "content/dota_addons/dota2_rpg/panorama/scripts/custom_game").glob("*.js"):
         run([node, "--check", str(script)])

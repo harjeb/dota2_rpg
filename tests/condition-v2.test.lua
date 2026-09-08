@@ -197,7 +197,68 @@ local valid=bridge.ruleService:DecodeFlat({action_kind="ability",action_id="ulti
 check(bridge.ruleService:ValidateRule(0,caster,valid) and valid.action.logical_id=="native_active","server canonical identity")
 local forged=bridge.ruleService:DecodeFlat({action_kind="ability",action_id="native_active",action_name="hidden"})
 check(not bridge.ruleService:ValidateRule(0,caster,forged),"client action name cannot override identity")
+-- Actor selectors travel through the actual flat payload, server validator,
+-- snapshot and legacy rehydration before the real bridge evaluates them.
+local Snapshot=require("tactics/rule_snapshot")
+enemy.ruleSnapshotKey="enemy:hero:0";far.ruleSnapshotKey="enemy:hero:1"
+local actorKey=Snapshot.HeroKey(gm.battleManager,far)
+local actorArgs={action_kind="ability",action_id="native_active",
+    use_condition_1_type="action_elapsed_gte",use_condition_1_value=3,
+    use_condition_1_action_id="native_active",use_condition_1_action_actor=actorKey,
+    use_condition_2_type="action_use_count_lt",use_condition_2_value=2,
+    use_condition_2_action_id="native_active",use_condition_2_action_actor=actorKey}
+local actorRule=bridge.ruleService:DecodeFlat(actorArgs)
+check(bridge.ruleService:ValidateRule(0,caster,actorRule),"actor flat payload validates")
+gm.battleManager.getRules=function() return {actorRule} end
+local saved=Snapshot.ForHero(gm.battleManager,caster)[1]
+check(saved.use_conditions[1].action_actor==actorKey and saved.use_conditions[2].action_actor==actorKey,"snapshot retains both actor selectors")
+local restored=Bridge.ConvertLegacyRule(1,saved)
+check(bridge.ruleService:ValidateRule(0,caster,restored),"snapshot rehydrates to valid rule")
+check(restored.use_conditions[1].action_actor==actorKey,"rehydration preserves duplicate occurrence")
+check(bridge.ruleService:UpdateRule(0,1,1,actorArgs),"actor flat update accepted")
+check(payload.use_condition_1_action_actor==actorKey and payload.use_condition_2_action_actor==actorKey,"nettable sync preserves actor fields")
+check(real.get_action_actor(actorKey)==far and real.get_action_actor("enemy:hero:0")==enemy,"duplicate enemy occurrence resolves separately")
+check(real.get_action_actor(Snapshot.HeroKey(gm.battleManager,caster))==caster,"local roster actor resolves")
+for _,kind in ipairs({"action_elapsed_gte","action_elapsed_lte","action_use_count_lt","ability_charges_gte"}) do
+    check(bridge.ruleService:ValidateCondition({type=kind,value=1,action_id="native_active",action_actor=actorKey},C.use_conditions),"approved actor condition "..kind)
+    check(not C:EvaluateUseConditions({{type=kind,value=1,action_id="native_active",action_actor="enemy:missing:0"}},real),"unresolved actor fails closed "..kind)
+end
+for _,bad in ipairs({{},false,12,"enemy:hero:1!",string.rep("x",257)}) do
+    check(not bridge.ruleService:ValidateCondition({type="action_elapsed_gte",value=1,action_id="native_active",action_actor=bad},C.use_conditions),"malformed actor rejected")
+end
+check(not bridge.ruleService:ValidateCondition({type="action_elapsed_gte",value=1,action_actor=actorKey},C.use_conditions),"actor requires explicit action id")
+check(not bridge.ruleService:ValidateCondition({type="always",action_id="native_active",action_actor=actorKey},C.use_conditions),"unapproved actor condition rejected")
+local emptyActor={type="action_elapsed_gte",value=1,action_actor=""}
+check(bridge.ruleService:ValidateCondition(emptyActor,C.use_conditions) and emptyActor.action_actor==nil,"empty actor normalizes to caster")
+far.FindAbilityByName=caster.FindAbilityByName
+check(C:EvaluateUseConditions({{type="ability_charges_gte",value=2,action_id="native_active",action_actor=actorKey}},real),"charges observed on selected enemy")
+time=10;real.record_action_order(far,"native_active")
+time=13;real.record_action_order(caster,"native_active");real.record_action_order(enemy,"native_active")
+time=14
+check(C:EvaluateUseConditions(restored.use_conditions,real),"selected duplicate elapsed and count differ from local and first enemy")
+check(not C:EvaluateUseConditions({{type="action_elapsed_gte",value=3,action_id="native_active"}},real),"nil actor uses local elapsed history")
+check(not C:EvaluateUseConditions({{type="action_elapsed_gte",value=3,action_id="native_active",action_actor=""}},real),"empty actor uses local elapsed history")
+check(C:EvaluateUseConditions({{type="action_elapsed_lte",value=4,action_id="native_active",action_actor=actorKey}},real),"selected elapsed upper bound")
+check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=2,action_id="native_active"}},real),"local count independent of selected duplicate")
+real.current_action_id="native_active"
+check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=2}},real),"implicit current action retains local history")
+check(not C:EvaluateUseConditions({{type="action_elapsed_gte",value=3,action_id="native_active",action_actor=actorKey}},
+    {caster=caster,get_action_elapsed=function() return 100 end}),"explicit actor without resolver never falls back to caster")
+-- Respawning the same handle retains history and the key; replacing the handle
+-- keeps the roster selector but cannot inherit history through its entity index.
+far.IsAlive=function() return true end
+check(real.get_action_actor(actorKey)==far and real.get_action_elapsed(far,"native_active")==4,"same-handle revival retains actor history")
+local replacement=unit(4,3,1000);replacement.ruleSnapshotKey=actorKey
+replacement.FindAbilityByName=caster.FindAbilityByName
+gm.battleManager.teamHeroes[3]={replacement}
+check(Snapshot.HeroKey(gm.battleManager,replacement)==actorKey and real.get_action_actor(actorKey)==replacement,"replacement retains stable duplicate key after first disappears")
+check(real.get_action_actor("enemy:hero:0")==nil,"removed hero is no longer selectable")
+check(not C:EvaluateUseConditions(restored.use_conditions,real),"replacement cannot inherit old elapsed timer")
+check(real.get_action_use_count(replacement,"native_active")==0 and not real.action_used_within(replacement,"native_active",100),"reused index cannot inherit count or recent history")
+real.record_action_order(replacement,"native_active")
+check(real.get_action_use_count(replacement,"native_active")==1 and real.get_action_use_count(far,"native_active")==1,"new and removed handles keep separate counters")
 bridge:ResetState()
+check(real.get_action_elapsed(replacement,"native_active")==nil and real.get_action_use_count(replacement,"native_active")==0,"reset clears actor history")
 check(not real.action_used_within(caster,"native_active",10),"history reset")
 local merged=Bridge.ConvertLegacyRule(1,{action="native_active",condition="always",
     use_condition_4_type="self_hp_pct_lte",use_condition_4_value=.25,

@@ -279,6 +279,12 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         timeout = spec.kind == "attack" and DEFAULT_ATTACK_CHASE_TIMEOUT or DEFAULT_ABILITY_CHASE_TIMEOUT
     end
 
+    local approached, approach_reason = self.actions:IssueApproach(unit, spec, target_or_point)
+    if not approached then
+        state.chase = nil
+        return false, approach_reason
+    end
+
     state.chase = {
         rule = rule,
         rule_index = rule_index,
@@ -290,7 +296,6 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         max_distance = tonumber(rule.max_chase_distance or DEFAULT_MAX_CHASE_DISTANCE),
     }
 
-    self.actions:IssueApproach(unit, spec, target_or_point)
     self:Debug(unit, "chase_started", {
         rule_id = rule.id or rule_index,
         target_index = state.chase.target_index,
@@ -365,7 +370,12 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
         return self:IssueAction(unit, state, ctx, rule, chase.rule_index, spec, target_or_point, anchor)
     end
 
-    self.actions:IssueApproach(unit, spec, target_or_point)
+    local approached, approach_reason = self.actions:IssueApproach(unit, spec, target_or_point)
+    if not approached then
+        self:Debug(unit, "chase_cancelled", { reason = approach_reason, rule_index = chase.rule_index })
+        state.chase = nil
+        return false, approach_reason
+    end
     return true
 end
 

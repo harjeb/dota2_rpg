@@ -139,3 +139,28 @@ assert(attempt() and orders[1].Position.x==600,"native Time Walk range fallback 
 near.x=700; engine:Reset()
 assert(not attempt() and #orders==0,"native Time Walk range still rejects distant enemy anchors")
 print("PASS: Time Walk old-filter reproduction, self recovery, HP boundary and native point range through engine")
+
+-- Enemy healer profiles must not turn Crystal Nova into a spell at the caster's feet.
+DOTA_UNIT_TARGET_TEAM_FRIENDLY=1
+DOTA_UNIT_TARGET_TEAM_ENEMY=2
+spell.GetAbilityName=function() return "crystal_maiden_crystal_nova" end
+spell.GetBehaviorInt=function() return 16 end
+spell.GetEffectiveCastRange=nil
+spell.GetCastRange=function() return 600 end
+spell.GetAbilityTargetTeam=function() return DOTA_UNIT_TARGET_TEAM_ENEMY end
+caster.GetAbilityCount=function() return 1 end
+caster.GetAbilityByIndex=function() return spell end
+caster.hp=100;near.x=350;far.x=900
+local healerProfile={action={kind="ability",logical_id="ability_1"},target={team="ally"}}
+rule=require("issue_fixes.enemy_rules").CreateForUnit(caster,{healerProfile})[1]
+engine.build_context=function()
+    return {resolve_action_name=function(_,name) return name end,
+        get_candidates=function(unit,_,target)
+        return target.team=="enemy" and {far,near} or {unit}
+    end}
+end
+engine:Reset()
+assert(attempt() and #orders==1 and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_POSITION
+    and orders[1].Position.x==near.x and orders[1].Position.x~=caster.x,
+    "native enemy rule targets the opposing hero instead of the healer profile's allied caster")
+print("PASS: Crystal Nova profile correction reaches a native point order on an opposing hero")

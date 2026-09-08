@@ -98,6 +98,7 @@ var RpgConditionCatalog = (function () {
                 out[field] = number(input[field], fallback, 0, max);
             }
         });
+        if (def.fields.indexOf("action_id") >= 0 && input.action_actor) { out.action_actor = String(input.action_actor).slice(0, 128); }
         return out;
     }
     function wire(group, input) {
@@ -115,6 +116,11 @@ var RpgConditionCatalog = (function () {
     function button(parent, id, value, click) {
         var panel = $.CreatePanel("Button", parent, id || ""); panel.AddClass("V2Button");
         label(panel, "", value).hittest = false; panel.SetPanelEvent("onactivate", click); return panel;
+    }
+    function abilityLabel(name) {
+        var token = "#DOTA_Tooltip_Ability_" + name, localized = $.Localize(token);
+        return localized && localized.charAt(0) !== "#" && localized.toLowerCase() !== token.slice(1).toLowerCase()
+            ? localized : String(name || "").replace(/_/g, " ");
     }
     function open(rule, initial, onApply, options) {
         options = options || {};
@@ -140,6 +146,47 @@ var RpgConditionCatalog = (function () {
                 });
             });
         }
+        function actionPicker(parent, id, current) {
+            parent.AddClass("V2ActionField");
+            var trigger = button(parent, id, "", function () {
+                if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
+                menu.SetHasClass("Hidden", false); activeMenu = menu;
+            });
+            trigger.AddClass("V2ActionChoice");
+            var menu = $.CreatePanel("Panel", parent, id + "Menu");
+            menu.AddClass("V2AbilityChoices"); menu.AddClass("Hidden");
+            function draw(parentPanel, name, caption) {
+                parentPanel.RemoveAndDeleteChildren();
+                if (name && name !== "attack" && name !== "basic_attack") {
+                    var icon = $.CreatePanel(name.indexOf("item_") === 0 ? "DOTAItemImage" : "DOTAAbilityImage", parentPanel, "");
+                    icon.AddClass("V2AbilityIcon"); icon.hittest = false;
+                    if (name.indexOf("item_") === 0) { icon.itemname = name; } else { icon.abilityname = name; }
+                }
+                label(parentPanel, "", caption).hittest = false;
+            }
+            function refresh() {
+                var name = current.action_id, actorName = "";
+                (options.actionHeroes || []).forEach(function (hero) {
+                    if (hero.actor === (current.action_actor || "")) { actorName = hero.label + " / "; }
+                });
+                draw(trigger, name || options.abilityName, name ? actorName + abilityLabel(name) : text("current_action"));
+            }
+            button(menu, id + "Current", text("current_action"), function () {
+                delete current.action_id; delete current.action_actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
+            });
+            (options.actionHeroes || []).forEach(function (hero, heroIndex) {
+                label(menu, "", hero.label).AddClass("V2Category");
+                hero.abilities.forEach(function (name, abilityIndex) {
+                    var option = button(menu, id + "Option_" + heroIndex + "_" + abilityIndex, "", function () {
+                        current.action_id = name;
+                        if (hero.actor) { current.action_actor = hero.actor; } else { delete current.action_actor; }
+                        refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
+                    });
+                    option.AddClass("V2ActionChoice"); draw(option, name, abilityLabel(name));
+                });
+            });
+            refresh();
+        }
         function slots(group, key, count, title) {
             label(body, "", text(title)).AddClass("V2SectionTitle");
             for (var i = 0; i < count; i++) {
@@ -160,7 +207,13 @@ var RpgConditionCatalog = (function () {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
                             var wrap = $.CreatePanel("Panel", params, ""); wrap.AddClass("V2Field");
                             label(wrap, "", text(field === "value" && current.type.indexOf("_pct_") >= 0 ? "percent" : field));
+                            if (field === "action_id") {
+                                actionPicker(wrap, "V2_" + group + index + "_" + field, current);
+                                return;
+                            }
+                            if (field === "modifier" || field === "value_text") { wrap.AddClass("V2WideField"); }
                             var entry = $.CreatePanel("TextEntry", wrap, "V2_" + group + index + "_" + field);
+                            entry.AddClass("V2Input");
                             entry.text = String(current[keyName] === undefined ? "" : current[keyName]); entry.maxchars = 128;
                             if (field === "modifier" || field === "action_id" || field === "value_text") { entry.AddClass("V2TextInput"); }
                             entries.push({ panel: entry, key: keyName });
@@ -218,10 +271,10 @@ var RpgConditionCatalog = (function () {
         var castPreference = draft.cast_preference || "auto";
         choose(casting,"V2CastSelect",[{id:"cast_auto"},{id:"cast_unit"},{id:"cast_point"}],"cast_"+castPreference,function(id) { castPreference=id.substring(5); });
         readers.push(function() { draft.cast_preference=castPreference; });
-        var actionOptions = $.CreatePanel("Panel", body, ""); actionOptions.AddClass("V2Parameters");
+        var actionOptions = $.CreatePanel("Panel", body, ""); actionOptions.AddClass("V2Parameters"); actionOptions.AddClass("V2ActionOptions");
         ["min_aoe_hits"].forEach(function (key) {
             var wrap = $.CreatePanel("Panel", actionOptions, ""); wrap.AddClass("V2Field"); label(wrap, "", text(key));
-            var entry = $.CreatePanel("TextEntry", wrap, "V2_" + key); entry.text = String(draft[key] === undefined ? rule[key] || 0 : draft[key]);
+            var entry = $.CreatePanel("TextEntry", wrap, "V2_" + key); entry.AddClass("V2Input"); entry.text = String(draft[key] === undefined ? rule[key] || 0 : draft[key]);
             readers.push(function () { draft[key] = Math.floor(number(entry.text, rule[key] || 0, 0, 20)); });
         });
         var toggle = $.CreatePanel("Panel", body, ""); toggle.AddClass("V2Selector");
@@ -251,5 +304,5 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
         root.SetHasClass("Hidden", false);
     }
-    return { groups: groups, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
+    return { groups: groups, abilityLabel: abilityLabel, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
 }());
