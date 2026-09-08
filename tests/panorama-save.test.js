@@ -172,6 +172,9 @@ var firstHeroRule = ruleSyncContext.RpgRuleSync.serialize({
 assert(firstHeroRule.hero_index === 0, "rule sync must not drop the first hero entity index");
 
 var hud = runHud();
+// Editing starts after authoritative hero metadata arrives.
+hud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_name:"npc_dota_hero_lion",hero_index:502,
+    actions_text:"ability_1;attack",details_text:"lion_impale;attack",can_edit:1});
 var firstMenu = created(hud, "DireActionMenu0");
 assert(firstMenu.BHasClass("Hidden"), "fresh action menu starts hidden as a separate class");
 created(hud, "DireActionSelect0").events.onactivate();
@@ -206,6 +209,7 @@ assert(hud.sentEvents.every(function (e) { return e.name !== "rpg_save_sync"; })
     "no-save design must not send save sync events");
 
 // 服务端会先推送英雄动作详情，再推送购买后的阵容；图标必须能在阵容刷新后显示。
+hud.subscriptions.rpg_enemy_roster({units:[{id:502,name:"npc_dota_hero_lion"}]});
 hud.subscriptions.rpg_hero_slots({
     slot_key: "radiant_1",
     hero_name: "npc_dota_hero_axe",
@@ -246,6 +250,7 @@ function chooseAction(hud, side, row, action) {
     assert(visibleRules(hud, side).length === 1, side + " must have one default rule");
     assert(hud.createdPanels.filter(function (p) { return p.classes.RuleRow && p.id.indexOf(side) === 0; }).length === 1,
         side + " must not preallocate fixed rule rows");
+    chooseAction(hud, side, 0, "attack"); // Explicit edit sends; metadata/render must not overwrite server rules.
     var defaults = hud.sentEvents.filter(function (e) {
         return e.name === "rpg_update_rule" && e.payload.hero_index === (side === "Radiant" ? 501 : 502)
             && e.payload.enabled === 1;
@@ -591,10 +596,14 @@ slots("Radiant", 1, lionName, 502);
 slots("Radiant", 2, axeName, 501);
 persistenceHud.panels["#RadiantHeroDyn2"].events.onactivate();
 assert(healthCondition("Radiant"), "authored condition follows player hero name after reorder");
+assert(!persistenceHud.sentEvents.some(function(event){return event.name==="rpg_update_rule" && event.payload.hero_index===501;}),
+    "respawn and portrait selection do not overwrite authoritative rules");
+created(persistenceHud,"RadiantRuleSettings0").events.onactivate();
+persistenceHud.panels["#RuleSettingsApply"].events.onactivate();
 assert(persistenceHud.sentEvents.some(function (event) {
     return event.name === "rpg_update_rule" && event.payload.hero_index === 501
         && event.payload.use_condition_1_type === "self_hp_pct_lte";
-}), "retained player condition is synchronized to the replacement entity");
+}), "explicit update sends retained conditions to the replacement entity");
 console.log("PASS: stage rule persistence, duplicate enemy isolation, new enemy defaults and player reorder");
 
 var walletHud = runHud();

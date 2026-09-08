@@ -1706,3 +1706,35 @@
 #DireHeroStrip Button Label { font-size: 12px; color: #dde5ed; text-overflow: ellipsis; }
 
 #WalletBalance { color: #f4cf69; font-size: 20px; horizontal-align: center; }
+
+/* Explicit per-rule conditions; the compact row keeps its original geometry. */
+.RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: #402821ee; padding: 8px; white-space: normal; z-index: 50; }
+.RuleSettingsButton { ignore-parent-flow: true; margin-top: 102px; width: 82px; height: 24px; background-color: #253a49; border: 1px solid #667b86; }
+.RuleSettingsButton Label { font-size: 14px; color: #e7edf2; horizontal-align: center; vertical-align: center; }
+.RuleSettingsButton.HasAdvancedSettings { border-color: #d7b85a; }
+.RuleSettingsButton:hover { brightness: 1.4; }
+.RuleSettings { width: 100%; height: 100%; background-color: #000b; z-index: 100; }
+.RuleSettingsCard { width: 980px; height: 900px; max-height: 94%; horizontal-align: center; vertical-align: center; flow-children: down; padding: 20px; background-color: #15232dfc; border: 1px solid #71858f; box-shadow: #0009 0px 0px 20px 2px; }
+.V2Title { color: #e9d6a0; font-size: 25px; margin-bottom: 8px; }
+.V2Hint { color: #b3c3cc; font-size: 15px; margin-bottom: 10px; white-space: normal; }
+.RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 16px; }
+.V2SectionTitle { color: #e9d6a0; font-size: 20px; margin-top: 12px; margin-bottom: 6px; }
+.V2Condition { width: 100%; min-height: 58px; flow-children: right; padding: 5px; border-bottom: 1px solid #354550; }
+.V2SlotNumber { width: 25px; color: #a9bbc5; font-size: 18px; margin-top: 8px; }
+.V2Selector { width: 345px; flow-children: down; }
+.V2Button { min-height: 32px; padding: 5px 10px; background-color: #293e4b; border: 1px solid #546f80; margin-bottom: 3px; }
+.V2Button Label { font-size: 16px; color: #e1e9ed; vertical-align: center; }
+.V2Button:hover { background-color: #416177; }
+.V2Choices { width: 340px; max-height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
+.V2Choices .V2Button { width: 100%; }
+.V2Category { color: #dabd77; font-size: 14px; margin-top: 8px; margin-bottom: 5px; }
+.V2Parameters { flow-children: right; }
+.V2Field { flow-children: down; margin-left: 10px; margin-bottom: 6px; }
+.V2Field Label, .V2Selector > Label { color: #b3c3cc; font-size: 14px; }
+.V2Field TextEntry { width: 100px; height: 32px; font-size: 16px; color: white; background-color: #091720; border: 1px solid #617a88; }
+.V2Field TextEntry.V2TextInput { width: 240px; }
+.V2Footer { width: 100%; flow-children: right; margin-top: 12px; }
+.V2Footer .V2Button { width: 150px; margin-right: 12px; }
+
+.V2Error { color: #ffb293; font-size: 15px; margin-top: 5px; }
+.ActionIcon.UnavailableAction { saturation: 0; border-color: #9a6657; }

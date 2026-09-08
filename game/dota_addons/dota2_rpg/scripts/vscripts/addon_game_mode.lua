@@ -9,6 +9,8 @@ if not okHelpers then
 end
 local TacticEngine = UnitHelpers
 local DamageStats = require("battle.damage_stats")
+local AbilityCatalog = require("tactics/ability_catalog")
+local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -194,34 +196,7 @@ end
 -- 被动技能不生成规则槽；A 杖/魔晶解锁的新技能、新买入的主动装备会自动增加槽位；
 -- item_N 对应物品栏 N-1 的当前物品
 local function BuildHeroActionSlots(hero)
-	local actions = {}
-	for slot = 0, hero:GetAbilityCount() - 1 do
-		local ability = hero:GetAbilityByIndex(slot)
-		if ability ~= nil and not ability:IsNull() then
-			local abilityName = ability:GetAbilityName()
-			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
-			-- 未学技能（level 0）在 Dota 中 IsHidden 为 true，必须保留槽位以显示图标
-			if not isTalent and not ability:IsPassive() and ability:GetMaxLevel() > 0 then
-				if ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
-					table.insert(actions, "ultimate")
-				elseif slot <= 2 then
-					table.insert(actions, "ability_" .. (slot + 1))
-				end
-			end
-		end
-	end
-
-	if hero.GetItemInSlot ~= nil then
-		for slot = 0, 5 do
-			local item = hero:GetItemInSlot(slot)
-			if item ~= nil and not item:IsNull() and not item:IsHidden() and not item:IsPassive() then
-				table.insert(actions, "item_" .. (slot + 1))
-			end
-		end
-	end
-
-	table.insert(actions, "attack")
-	return actions
+	return AbilityCatalog.ListActions(hero)
 end
 
 function Precache(context)
@@ -447,7 +422,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-persist-wallet-burrow-20260907 loaded; log=dota2_rpg_runtime.log")
+	RuntimeLog.Write("BUILD rpg-conditions-v8-20260908 loaded; log=dota2_rpg_runtime.log")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -1321,7 +1296,9 @@ function CDota2RpgDemo:BuildRosterAbilitySnapshot()
 			if ability ~= nil and (ability.IsNull == nil or not ability:IsNull()) then
 				local name = ability.GetAbilityName ~= nil and ability:GetAbilityName() or ""
 				local level = ability.GetLevel ~= nil and ability:GetLevel() or -1
-				table.insert(values, tostring(slot) .. "=" .. tostring(name) .. ":" .. tostring(level))
+				table.insert(values, tostring(slot) .. "=" .. tostring(name) .. ":" .. tostring(level)
+					.. ":" .. tostring(ability.IsHidden ~= nil and ability:IsHidden() or false)
+					.. ":" .. tostring(ability.IsActivated == nil or ability:IsActivated()))
 			end
 		end
 		table.insert(parts, table.concat(values, "|"))
@@ -3492,35 +3469,7 @@ end
 -- 每个英雄的可用动作槽（含主动装备）同步给前端
 -- 把 action（ability_N / item_N / ultimate / attack）解析成可显示的名字
 local function DescribeAction(hero, action)
-	if action == "attack" then
-		return "attack", ""
-	end
-	if action == "ultimate" then
-		for slot = 0, hero:GetAbilityCount() - 1 do
-			local ability = hero:GetAbilityByIndex(slot)
-			if ability ~= nil and not ability:IsNull() and ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
-				return "ultimate", ability:GetAbilityName()
-			end
-		end
-		return "ultimate", ""
-	end
-	local abilitySlot = tonumber(string.match(action, "ability_(%d)"))
-	if abilitySlot ~= nil then
-		local ability = hero:GetAbilityByIndex(abilitySlot - 1)
-		if ability ~= nil and not ability:IsNull() then
-			return "ability", ability:GetAbilityName()
-		end
-		return "ability", ""
-	end
-	local itemSlot = tonumber(string.match(action, "item_(%d)"))
-	if itemSlot ~= nil and hero.GetItemInSlot ~= nil then
-		local item = hero:GetItemInSlot(itemSlot - 1)
-		if item ~= nil and not item:IsNull() then
-			return "item", item:GetAbilityName()
-		end
-		return "item", ""
-	end
-	return "attack", ""
+	return AbilityCatalog.DescribeAction(hero, action)
 end
 
 function CDota2RpgDemo:BroadcastHeroInfo()
@@ -3551,6 +3500,10 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 					hero_name = hero:GetUnitName(),
 					actions_text = table.concat(slots, ";"),
 					details_text = table.concat(descriptions, ";"),
+                    rule_key = RuleSnapshot.HeroKey(self.battleManager,hero),
+                    can_edit = (side.team == DOTA_TEAM_GOODGUYS or RuleSnapshot.IsDeveloperMode()) and 1 or 0,
+                    rules_ready = self.tacticBridge ~= nil and self.tacticBridge.getRules ~= nil and 1 or 0,
+                    rules = self.tacticBridge ~= nil and RuleSnapshot.ForHero(self.tacticBridge, hero) or {},
 				})
 			end
 		end

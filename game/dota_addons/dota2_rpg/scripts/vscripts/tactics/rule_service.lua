@@ -3,12 +3,20 @@ local Conditions = require("tactics/condition_registry")
 local RuleService = {}
 RuleService.__index = RuleService
 
-local MAX_RULES = 10
+local MAX_RULES = 32
+local Context = require("tactics/condition_context")
+local finite = Context.Number
 local VALID_TEAMS = { self = true, ally = true, enemy = true }
 local VALID_APPROACH = { range_only = true, allow_approach = true }
 local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = true, wait = true }
 
 local NUMERIC_LIMITS = {
+    self_strength_gte = { 0, 1000000 },
+    self_agility_gte = { 0, 1000000 },
+    owned_summons_gte = { 0, 1000 },
+    owned_summons_lte = { 0, 1000 },
+    action_elapsed_gte = { 0, 86400 },
+    action_elapsed_lte = { 0, 86400 },
     self_hp_pct_lte = { 0, 1 },
     self_hp_pct_gte = { 0, 1 },
     self_mana_pct_lte = { 0, 1 },
@@ -20,6 +28,11 @@ local NUMERIC_LIMITS = {
     health_lte = { 0, 1000000 },
     health_gte = { 0, 1000000 },
     distance_lte = { 0, 5000 },
+    distance_gte = { 0, 5000 },
+    missing_health_gte = { 0, 1000000 },
+    missing_health_lte = { 0, 1000000 },
+    alive_enemy_count_gte = { 0, 1000 },
+    ability_charges_gte = { 0, 1000 },
     alive_ally_count_gte = { 0, 20 },
     alive_enemy_count_lte = { 0, 20 },
     dead_ally_count_gte = { 0, 20 },
@@ -31,7 +44,16 @@ local NUMERIC_LIMITS = {
     nearby_enemies_gte = { 0, 20 },
 }
 
+for _, prefix in ipairs({ "", "self_" }) do
+    for _, suffix in ipairs({ "gte", "lte" }) do
+        NUMERIC_LIMITS[prefix .. "modifier_stacks_" .. suffix] = { 0, 1000000 }
+        NUMERIC_LIMITS[prefix .. "modifier_remaining_" .. suffix] = { 0, 86400 }
+    end
+end
+
 local PRIORITY_TYPES = {
+    lowest_attack_damage = true,
+    highest_magic_resistance = true,
     lowest_hp_pct = true,
     highest_hp_pct = true,
     lowest_health = true,
@@ -59,7 +81,8 @@ local function parse_scalar(raw)
     if raw == nil or raw == "" then
         return nil
     end
-    local number = tonumber(raw)
+    if type(raw) ~= "string" and type(raw) ~= "number" and type(raw) ~= "boolean" then return raw end
+    local number = finite(raw)
     if number ~= nil then
         return number
     end
@@ -69,21 +92,22 @@ local function parse_scalar(raw)
 end
 
 local function condition_from_flat(prefix, args)
-    local condition_type = tostring(args[prefix .. "_type"] or "")
+    local condition_type = args[prefix .. "_type"] or args[prefix] or ""
     if condition_type == "" then
         return nil
     end
     return {
         type = condition_type,
         value = parse_scalar(args[prefix .. "_value"]),
-        radius = tonumber(args[prefix .. "_radius"]),
-        seconds = tonumber(args[prefix .. "_seconds"]),
+        radius = args[prefix .. "_radius"],
+        seconds = args[prefix .. "_seconds"],
+        modifier = args[prefix .. "_modifier"],
         action_id = args[prefix .. "_action_id"],
     }
 end
 
 local function priority_from_flat(prefix, args)
-    local priority_type = tostring(args[prefix .. "_type"] or "")
+    local priority_type = args[prefix .. "_type"] or args[prefix] or ""
     if priority_type == "" then
         return nil
     end
@@ -119,9 +143,13 @@ function RuleService.new(options)
 end
 
 function RuleService:DecodeFlat(args)
+    local toggle = args.desired_toggle_state
+    if toggle == "0" or toggle == 0 or toggle == "false" then toggle = false
+    elseif toggle == "1" or toggle == 1 or toggle == "true" then toggle = true
+    elseif toggle == "" then toggle = nil end
     local rule = {
         id = tostring(args.rule_id or ""),
-        enabled = tonumber(args.enabled or 1) ~= 0,
+        enabled = args.enabled ~= false and args.enabled ~= 0 and args.enabled ~= "0",
         action = {
             kind = tostring(args.action_kind or ""),
             logical_id = tostring(args.action_id or ""),
@@ -129,9 +157,9 @@ function RuleService:DecodeFlat(args)
             cast_type = args.cast_type ~= "" and args.cast_type or nil,
             target_mode = args.target_mode ~= "" and args.target_mode or nil,
             target_team = args.target_team ~= "" and args.target_team or nil,
-            desired_toggle_state = args.desired_toggle_state == "1" and true
-                or (args.desired_toggle_state == "0" and false or nil),
-            aoe_radius = tonumber(args.aoe_radius),
+            desired_toggle_state = toggle,
+            cast_preference = args.cast_preference ~= "" and args.cast_preference or nil,
+            aoe_radius = args.aoe_radius,
         },
         target = {
             team = tostring(args.target_team or "enemy"),
@@ -141,9 +169,9 @@ function RuleService:DecodeFlat(args)
         target_priorities = {},
         use_conditions = {},
         approach = tostring(args.approach or "range_only"),
-        chase_timeout = tonumber(args.chase_timeout),
-        max_chase_distance = tonumber(args.max_chase_distance),
-        min_aoe_hits = tonumber(args.min_aoe_hits),
+        chase_timeout = args.chase_timeout,
+        max_chase_distance = args.max_chase_distance,
+        min_aoe_hits = args.min_aoe_hits,
         aoe_prefer_tag = args.aoe_prefer_tag ~= "" and args.aoe_prefer_tag or nil,
     }
 
@@ -151,48 +179,100 @@ function RuleService:DecodeFlat(args)
         table.insert(rule.target.types, unit_type)
     end
 
-    compact_insert(rule.target_filters, condition_from_flat("target_filter_1", args))
-    compact_insert(rule.target_filters, condition_from_flat("target_filter_2", args))
-    compact_insert(rule.target_priorities, priority_from_flat("target_priority_1", args))
-    compact_insert(rule.target_priorities, priority_from_flat("target_priority_2", args))
-    compact_insert(rule.use_conditions, condition_from_flat("use_condition_1", args))
-    compact_insert(rule.use_conditions, condition_from_flat("use_condition_2", args))
+    for index = 1, 4 do
+        compact_insert(rule.target_filters, condition_from_flat("target_filter_" .. index, args))
+        compact_insert(rule.use_conditions, condition_from_flat("use_condition_" .. index, args))
+    end
+    for index = 1, 2 do
+        compact_insert(rule.target_priorities, priority_from_flat("target_priority_" .. index, args))
+    end
 
     return rule
 end
 
 function RuleService:ValidateCondition(condition, registry)
-    if condition == nil then
-        return true, nil
+    if type(condition) ~= "table" or type(condition.type) ~= "string" then
+        return false, "invalid_condition"
     end
-    if registry[condition.type] == nil then
-        return false, "unknown_condition:" .. tostring(condition.type)
-    end
-
-    local limits = NUMERIC_LIMITS[condition.type]
-    if limits ~= nil then
-        local value = tonumber(condition.value or condition.radius)
-        if value == nil then
-            return false, "numeric_value_required:" .. condition.type
+    if registry[condition.type] == nil then return false, "unknown_condition:" .. condition.type end
+    for _, field in ipairs({ "modifier", "action_id" }) do
+        local value = condition[field]
+        if value == "" then condition[field] = nil
+        elseif value ~= nil and (type(value) ~= "string" or #value > 256) then
+            return false, "invalid_condition_" .. field
         end
-        condition.value = clamp(value, limits[1], limits[2])
     end
-
-    if condition.seconds ~= nil then
-        condition.seconds = clamp(tonumber(condition.seconds) or 0, 0, 30)
+    local limits = NUMERIC_LIMITS[condition.type]
+    if limits then
+        local isTimer = condition.type:find("action_elapsed_", 1, true)
+        local value = finite(condition.value or (isTimer and condition.seconds) or (condition.type == "no_enemy_within" and condition.radius))
+        if value == nil or value < limits[1] or value > limits[2] then
+            return false, "invalid_numeric_value:" .. condition.type
+        end
+        condition.value = value
+    elseif condition.value ~= nil and type(condition.value) ~= "string"
+        and finite(condition.value) == nil then
+        return false, "invalid_condition_value"
     end
-    if condition.radius ~= nil then
-        condition.radius = clamp(tonumber(condition.radius) or 0, 0, 3000)
+    if condition.type:find("modifier_stacks_", 1, true) or condition.type:find("modifier_remaining_", 1, true) then
+        if condition.modifier == nil then return false, "modifier_required" end
+    elseif condition.type:find("has_modifier", 1, true) or condition.type == "has_tag"
+        or condition.type == "not_has_tag" or condition.type == "has_affix" or condition.type == "phase_is" then
+        local name = condition.modifier or condition.value
+        if type(name) ~= "string" or name == "" or #name > 256 then return false, "string_value_required" end
+    end
+    for _, field in ipairs({ "seconds", "radius" }) do
+        if condition[field] == "" then condition[field] = nil end
+        if condition[field] ~= nil then
+            local n = finite(condition[field])
+            if n == nil or n < 0 or n > (field == "seconds" and 86400 or 30000) then
+                return false, "invalid_condition_" .. field
+            end
+            condition[field] = n
+        end
+    end
+    if condition.type:find("recently_damaged", 1, true) or condition.type:find("used_within", 1, true) then
+        local seconds = finite(condition.seconds or condition.value or 2)
+        if seconds == nil or seconds < 0 or seconds > 86400 then return false, "invalid_condition_seconds" end
+        condition.seconds = seconds
     end
     return true, nil
 end
 
 function RuleService:ValidateRule(player_id, hero, rule)
+    if type(rule) ~= "table" or type(rule.action) ~= "table" or type(rule.target) ~= "table"
+        or type(rule.target_filters) ~= "table" or type(rule.use_conditions) ~= "table"
+        or type(rule.target_priorities) ~= "table" then return false, "invalid_rule" end
+    if type(rule.action.logical_id) ~= "string" or #rule.action.logical_id > 256 then return false, "invalid_action_id" end
+    local preference = rule.action.cast_preference
+    if preference ~= nil and preference ~= "auto" and preference ~= "unit" and preference ~= "point" then
+        return false, "invalid_cast_preference"
+    end
+    if rule.action.desired_toggle_state ~= nil and type(rule.action.desired_toggle_state) ~= "boolean" then
+        return false, "invalid_toggle_state"
+    end
+    for _, key in ipairs({ "name", "cast_type", "target_mode", "target_team" }) do
+        if rule.action[key] ~= nil and type(rule.action[key]) ~= "string" then return false, "invalid_action_" .. key end
+    end
+    for _, pair in ipairs({ { rule, "chase_timeout" }, { rule, "max_chase_distance" },
+        { rule, "min_aoe_hits" }, { rule.action, "aoe_radius" } }) do
+        local object, key = pair[1], pair[2]
+        if object[key] == "" then object[key] = nil end
+        if object[key] ~= nil then
+            local n = finite(object[key])
+            if n == nil or n < 0 then return false, "invalid_" .. key end
+            object[key] = n
+        end
+    end
     if not VALID_ACTION_KINDS[rule.action.kind] then
         return false, "invalid_action_kind"
     end
     if rule.action.logical_id == "" then
         return false, "missing_action_id"
+    end
+    if type(rule.target.types) ~= "table" then return false, "invalid_target_types" end
+    for _, unitType in pairs(rule.target.types) do
+        if unitType ~= "hero" and unitType ~= "monster" and unitType ~= "summon" then return false, "invalid_target_type" end
     end
     if not VALID_TEAMS[rule.target.team] then
         return false, "invalid_target_team"
@@ -203,8 +283,16 @@ function RuleService:ValidateRule(player_id, hero, rule)
     if not self.is_action_allowed(player_id, hero, rule.action) then
         return false, "action_not_allowed_for_hero"
     end
-    if #rule.target_filters > 2 or #rule.target_priorities > 2 or #rule.use_conditions > 2 then
-        return false, "too_many_conditions"
+    for _, pair in ipairs({ { rule.target_filters, 4 }, { rule.use_conditions, 4 }, { rule.target_priorities, 2 } }) do
+        local count = 0
+        for index in pairs(pair[1]) do
+            if type(index) ~= "number" or finite(index) == nil or index < 1
+                or index ~= math.floor(index) or index > pair[2] then return false, "too_many_conditions" end
+            count = count + 1
+        end
+        for index = 1, count do
+            if pair[1][index] == nil then return false, "sparse_conditions" end
+        end
     end
 
     for _, condition in ipairs(rule.target_filters) do
@@ -216,6 +304,11 @@ function RuleService:ValidateRule(player_id, hero, rule)
         if not ok then return false, reason end
     end
     for _, priority in ipairs(rule.target_priorities) do
+        if type(priority) ~= "table" or type(priority.type) ~= "string" then return false, "invalid_priority" end
+        if (priority.type == "prefer_tag" or priority.type == "prefer_affix")
+            and (type(priority.value) ~= "string" or priority.value == "" or #priority.value > 256) then
+            return false, "priority_value_required"
+        end
         if not PRIORITY_TYPES[priority.type] then
             return false, "unknown_priority:" .. tostring(priority.type)
         end
@@ -243,20 +336,45 @@ function RuleService:GetHeroRules(hero)
 end
 
 function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
+    if type(flat_args) ~= "table" then return false, "invalid_payload" end
+    for key, value in pairs(flat_args) do
+        if type(key) ~= "string" or (type(value) ~= "string" and type(value) ~= "number" and type(value) ~= "boolean") then
+            return false, "invalid_payload_type"
+        end
+        if type(value) == "number" and finite(value) == nil then return false, "invalid_payload_number" end
+        local index = key:match("^use_condition_(%d+)") or key:match("^target_filter_(%d+)")
+        local priorityIndex = key:match("^target_priority_(%d+)")
+        if (index and (tonumber(index) < 1 or tonumber(index) > 4))
+            or (priorityIndex and (tonumber(priorityIndex) < 1 or tonumber(priorityIndex) > 2)) then
+            return false, "too_many_conditions"
+        end
+    end
     if self.get_phase() ~= "PREPARE" then
         return false, "wrong_phase"
     end
-    slot = tonumber(slot)
+    for _, key in ipairs({ "action_kind", "action_id", "action_name", "cast_type", "target_mode",
+        "target_team", "target_types", "approach", "hero_name", "aoe_prefer_tag" }) do
+        if flat_args[key] ~= nil and type(flat_args[key]) ~= "string" then return false, "invalid_" .. key end
+    end
+    local enabled = flat_args.enabled
+    if enabled ~= nil and enabled ~= true and enabled ~= false and enabled ~= 0 and enabled ~= 1
+        and enabled ~= "0" and enabled ~= "1" then return false, "invalid_enabled" end
+    slot = finite(slot)
     if slot == nil or slot < 1 or slot > MAX_RULES or slot ~= math.floor(slot) then
         return false, "invalid_rule_slot"
     end
-    local rule_count = flat_args.rule_count ~= nil and tonumber(flat_args.rule_count) or nil
+    local rule_count = flat_args.rule_count ~= nil and finite(flat_args.rule_count) or nil
     if flat_args.rule_count ~= nil and (rule_count == nil or rule_count < 1
         or rule_count > MAX_RULES or rule_count ~= math.floor(rule_count) or slot > rule_count) then
         return false, "invalid_rule_count"
     end
 
-    local hero = EntIndexToHScript(tonumber(hero_index or -1))
+    local index = finite(hero_index)
+    local hero
+    if index and index >= 0 and index == math.floor(index) then
+        local ok, entity = pcall(EntIndexToHScript, index)
+        if ok then hero = entity end
+    end
     if (hero == nil or hero:IsNull()) and self.find_roster_hero ~= nil then
         hero = self.find_roster_hero(player_id, flat_args.hero_name)
     end
@@ -293,7 +411,10 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
         return
     end
     local key = hero_key .. ":" .. tostring(slot)
-    CustomNetTables:SetTableValue("rpg_rules", key, {
+    local payload = {
+        desired_toggle_state = rule.action.desired_toggle_state == nil and "" or (rule.action.desired_toggle_state and "1" or "0"),
+        cast_preference = rule.action.cast_preference or "auto",
+        target_types = table.concat(rule.target.types or {}, ","),
         id = rule.id,
         enabled = rule.enabled and 1 or 0,
         action_kind = rule.action.kind,
@@ -306,7 +427,19 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
         target_priority_2 = rule.target_priorities[2] and rule.target_priorities[2].type or "",
         use_condition_1 = rule.use_conditions[1] and rule.use_conditions[1].type or "",
         use_condition_2 = rule.use_conditions[2] and rule.use_conditions[2].type or "",
-    })
+    }
+    for prefix, list in pairs({ use_condition = rule.use_conditions, target_filter = rule.target_filters,
+        target_priority = rule.target_priorities }) do
+        for index = 1, (prefix == "target_priority" and 2 or 4) do
+            local item = list[index] or {}
+            local keyPrefix = prefix .. "_" .. index
+            payload[keyPrefix] = item.type or ""
+            for _, field in ipairs({ "type", "value", "radius", "seconds", "action_id", "modifier" }) do
+                payload[keyPrefix .. "_" .. field] = item[field] ~= nil and item[field] or ""
+            end
+        end
+    end
+    CustomNetTables:SetTableValue("rpg_rules", key, payload)
 end
 
 function RuleService:SendResult(player_id, request_id, ok, reason)

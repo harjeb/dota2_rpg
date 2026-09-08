@@ -1,6 +1,7 @@
 local Conditions = require("tactics/condition_registry")
 local TargetSelector = require("tactics/target_selector")
 local ActionAdapter = require("tactics/action_adapter")
+local Context = require("tactics/condition_context")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -143,6 +144,9 @@ function TacticEngine:BuildContext(unit, current_time)
     ctx.caster = unit
     ctx.now = current_time
     ctx.current_time = current_time
+    ctx.is_in_range = function(spec, target)
+        return self.actions:IsInRange(unit, spec, target)
+    end
     return ctx
 end
 
@@ -150,7 +154,8 @@ function TacticEngine:IsBusy(unit)
     if unit.IsChanneling ~= nil and unit:IsChanneling() then
         return true, "channeling"
     end
-    if unit.IsInAbilityPhase ~= nil and unit:IsInAbilityPhase() then
+    local active = Context.Call(unit, "GetCurrentActiveAbility")
+    if Context.Call(unit, "IsInAbilityPhase") == true or Context.Call(active, "IsInAbilityPhase") == true then
         return true, "ability_phase"
     end
     return false, nil
@@ -165,11 +170,7 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         return
     end
 
-    local busy = self:IsBusy(unit)
-    if busy then
-        return
-    end
-
+    if self:IsBusy(unit) then return end
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
 
@@ -222,7 +223,9 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
 end
 
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
-    if spec.target_mode == "point" then
+    if spec.target_mode == "vector" then
+        return self.selector:SelectVector(rule, spec, ctx)
+    elseif spec.target_mode == "point" then
         local point, anchor, reason = self.selector:SelectPoint(rule, spec, ctx)
         return point, anchor, reason
     elseif spec.target_mode == "none" or spec.cast_type == "toggle" then
@@ -231,10 +234,11 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
             return nil, nil, reason
         end
         return ctx.caster, ctx.caster, nil
-    else
+    elseif spec.target_mode == "unit" or spec.target_mode == "self" then
         local target, reason = self.selector:SelectUnit(rule, spec, ctx)
         return target, target, reason
     end
+    return nil, nil, "unsupported_target_mode"
 end
 
 function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
@@ -244,6 +248,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     end
 
     ctx.current_action_id = spec.logical_id
+    ctx.current_action_spec = spec
     local can_execute, action_reason = self.actions:CanExecute(unit, spec, ctx)
     if not can_execute then
         return false, action_reason
@@ -318,8 +323,11 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
         return false
     end
 
+    ctx.current_action_id = spec.logical_id
+    ctx.current_action_spec = spec
     local can_execute = self.actions:CanExecute(unit, spec, ctx)
-    if not can_execute then
+    local use_ok = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx)
+    if not can_execute or not use_ok then
         state.chase = nil
         return false
     end
@@ -340,10 +348,16 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
         end
     end
 
+    -- Thresholds and native legality can change while walking (healing,
+    -- dispels, spell immunity, charge loss). Re-select with the same gates,
+    -- retaining the original chase deadline instead of casting stale intent.
+    target_or_point, anchor = self:ResolveRuleTarget(rule, spec, ctx)
     if target_or_point == nil then
         state.chase = nil
         return false
     end
+    chase.target_index = anchor ~= nil and entity_index(anchor) or -1
+    chase.point = spec.target_mode == "point" and target_or_point or nil
 
     if self.actions:IsInRange(unit, spec, target_or_point) then
         state.chase = nil
@@ -355,6 +369,10 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
 end
 
 function TacticEngine:OrderSignature(spec, target_or_point)
+    if spec.target_mode == "vector" then
+        return spec.logical_id .. ":vector:" .. tostring(entity_index(target_or_point.primary))
+            .. ":" .. round_position(target_or_point.start) .. ":" .. round_position(target_or_point.finish)
+    end
     if target_or_point ~= nil and target_or_point.entindex ~= nil then
         return spec.logical_id .. ":unit:" .. tostring(target_or_point:entindex())
     end

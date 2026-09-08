@@ -47,6 +47,8 @@
         ally_lowest: "#dota2_rpg_target_side_ally_lowest",
         nearest: "#dota2_rpg_target_side_nearest",
         farthest: "#dota2_rpg_target_side_farthest",
+        ally_nearest: "#dota2_rpg_v2_ally_nearest",
+        ally_farthest: "#dota2_rpg_v2_ally_farthest",
         self: "#dota2_rpg_target_self"
     };
 
@@ -61,9 +63,12 @@
             return "enemy_casting";
         }
         if (attr === "distance") {
-            return side === "farthest" ? "enemy_distance_farthest" : "enemy_distance_nearest";
+            var team = side.indexOf("ally_") === 0 ? "ally" : "enemy";
+            return team + "_distance_" + (side === "farthest" || side === "ally_farthest" || side === "ally_highest" || side === "enemy_highest" ? "farthest" : "nearest");
         }
         var parts = side.split("_"); // enemy|ally + highest|lowest
+        if (side === "nearest" || side === "farthest") { parts = ["enemy", side === "farthest" ? "highest" : "lowest"]; }
+        if (side === "ally_nearest" || side === "ally_farthest") { parts = ["ally", side === "ally_farthest" ? "highest" : "lowest"]; }
         return parts[0] + "_" + attr + "_" + parts[1];
     }
 
@@ -74,6 +79,9 @@
         }
         if (target === "enemy_casting") {
             return { attr: "casting", side: "enemy_highest" };
+        }
+        if (target === "ally_distance_nearest" || target === "ally_distance_farthest") {
+            return { attr: "distance", side: target === "ally_distance_nearest" ? "ally_nearest" : "ally_farthest" };
         }
         if (target === "enemy_distance_nearest") {
             return { attr: "distance", side: "nearest" };
@@ -129,10 +137,14 @@
         };
     }
 
-    var MAX_RULE_ROWS = 10;  // Editing limit, not a default row count.
+    var MAX_RULE_ROWS = 32;  // Editing limit, not a default row count.
     var heroSlots = {};
     var FALLBACK_SLOT_ACTIONS = ["ability_1", "ability_2", "ability_3", "ultimate", "attack"];
 
+    function canEditHeroRules(side,heroIndex) {
+        var entry = heroSlots[side.toLowerCase()+"_"+(heroIndex+1)];
+        return phase === "setup" && !!entry && entry.can_edit !== false && entry.rules_ready !== false;
+    }
     function getSlotActions(side, heroIndex) {
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots ? heroSlots[key] : null;
@@ -141,11 +153,12 @@
             var rawActions = splitList(entry.actions_text);
             for (var actionKey = 0; actionKey < rawActions.length; actionKey++) {
                 var action = String(rawActions[actionKey]);
-                if (DEFAULT_RULE_BY_ACTION[action]) {
+                if (/^[a-zA-Z][a-zA-Z0-9_]*$/.test(action) && actions.indexOf(action) < 0) {
                     actions.push(action);
                 }
             }
         }
+        if (!actions.length && entry && entry.actions_text !== undefined) { return ["attack"]; }
         if (!actions.length) {
             for (var fallbackIndex = 0; fallbackIndex < FALLBACK_SLOT_ACTIONS.length; fallbackIndex++) {
                 actions.push(FALLBACK_SLOT_ACTIONS[fallbackIndex]);
@@ -158,7 +171,7 @@
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots ? heroSlots[key] : null;
         if (!entry) {
-            return "";
+            return ACTION_TOKENS[action] ? "" : String(action || "");
         }
         var actions = splitList(entry.actions_text);
         var details = splitList(entry.details_text);
@@ -166,6 +179,14 @@
             if (actions[index] === action && details[index] && details[index] !== action) {
                 return details[index];
             }
+        }
+        // Native action IDs are already ability names. Resolve through the live entity when available.
+        if (!ACTION_TOKENS[action]) {
+            if (typeof Entities !== "undefined" && Entities.GetAbilityByName && typeof Abilities !== "undefined" && Abilities.GetAbilityName) {
+                var ability = Entities.GetAbilityByName(Number(entry.hero_index), action);
+                if (ability !== undefined && ability !== null && ability >= 0) { return Abilities.GetAbilityName(ability) || action; }
+            }
+            return String(action || "");
         }
         return "";
     }
@@ -412,9 +433,31 @@
                 var actionFallback = createLabel(actionIcon, "ActionName", "");
                 actionFallback.hittest = false;
                 actionIcon.SetPanelEvent("onactivate", function () {
-                    if (phase === "setup") {
+                    if (canEditHeroRules(side,selectedHeroIndex[side])) {
                         openActionMenu(side, idx);
                     }
+                });
+                var settingsButton = $.CreatePanel("Button", row, side + "RuleSettings" + idx);
+                settingsButton.AddClass("RuleSettingsButton");
+                createLabel(settingsButton, "", $.Localize("#dota2_rpg_v2_settings"));
+                settingsButton.SetPanelEvent("onactivate", function () {
+                    if (phase !== "setup") { return; }
+                    syncThreshold(side, idx, true);
+                    closeEditorMenus();
+                    var authored = getSelectedRules(side)[idx];
+                    RpgConditionCatalog.open(authored, RpgRuleSync.initialSettings(authored), function (draft) {
+                        if (!canEditHeroRules(side,selectedHeroIndex[side])) { return; }
+                        Object.keys(draft).forEach(function (key) { authored[key] = draft[key]; });
+                        if (draft.target !== undefined) {
+                            authored.target_attr = "distance";
+                            authored.target_side = draft.target === "self" ? "self" : draft.target.indexOf("ally_") === 0 ? "ally_nearest" : "nearest";
+                        }
+                        var first = draft.use_conditions[0] || {type:"always"};
+                        authored.condition = first.type || "always";
+                        authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
+                        renderSide(side);
+                        sendRuleToServer(side,selectedHeroIndex[side],idx);
+                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
                 });
                 var conditionEditor = createConditionEditor(row, side, idx);
                 var forceToggle = createForceToggle(row, side, idx);
@@ -442,6 +485,7 @@
                 actionMenu.AddClass("ActionMenu");
                 actionMenu.AddClass("Hidden");
                 rowPanels[side].push({
+                    settingsButton: settingsButton,
                     actionSelect: actionIcon,
                     actionMenu: actionMenu,
                     actionAbilityImage: abilityImage,
@@ -640,9 +684,10 @@
         closeEditorMenus();
         rules.splice(index, 1);
         renderSide(side);
+        syncHeroRules(side);
     }
 
-    // 新增规则：复制最后一个动作，追加到末尾（最多 10 条）
+    // New rows copy the complete authored rule, including advanced options (up to 32).
     function addRuleAtEnd(side) {
         var rules = getSelectedRules(side);
         if (rules.length >= MAX_RULE_ROWS) {
@@ -652,38 +697,50 @@
         var source = last || { action: "attack", condition: "always", value: 50,
             target_attr: "distance", target_side: "nearest",
             target: "enemy_distance_nearest", forced: false };
-        rules.push({
-            action: source.action,
-            condition: source.condition,
-            value: source.value,
-            target_attr: source.target_attr,
-            target_side: source.target_side,
-            target: source.target,
-            forced: source.forced,
-            enabled: true
-        });
+        var copied = JSON.parse(JSON.stringify(source));
+        copied.enabled = true;
+        rules.push(copied);
         renderSide(side);
+        syncHeroRules(side);
     }
 
     function chooseCondition(side, index, condition) {
         var rules = getSelectedRules(side);
         rules[index].condition = CONDITION_TOKENS[condition] ? condition : "always";
+        if (Array.isArray(rules[index].use_conditions)) {
+            rules[index].use_conditions[0] = RpgRuleSync.initialSettings({ condition: rules[index].condition, value: rules[index].value }).use_conditions[0];
+        }
         closeEditorMenus();
         updateConditionSelector(side, index, false);
         sendRuleToServer(side, selectedHeroIndex[side], index);
     }
 
+    function updateBasicTarget(rule,previousFilter) {
+        var basic = RpgRuleSync.initialSettings({ target: rule.target, target_attr: rule.target_attr });
+        if (Array.isArray(rule.target_priorities)) { rule.target_priorities[0] = basic.target_priorities[0]; }
+        if (Array.isArray(rule.target_filters)) {
+            var current = rule.target_filters[0] || {};
+            if (basic.target_filters[0].type || previousFilter && previousFilter.type && current.type === previousFilter.type && current.value === previousFilter.value) {
+                rule.target_filters[0] = basic.target_filters[0];
+            }
+        }
+    }
+
     function chooseTargetAttr(side, index, attr) {
         var rules = getSelectedRules(side);
         var rule = rules[index];
+        var previousFilter = RpgRuleSync.initialSettings({target:rule.target,target_attr:rule.target_attr}).target_filters[0];
         rule.target_attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
         if ((rule.target_attr === "casting" || rule.target_attr === "boss" || rule.target_attr === "healer" || rule.target_attr === "controlled") && rule.target_side !== "self") {
             rule.target_side = "enemy_highest";
         }
-        if (rule.target_attr === "distance" && rule.target_side !== "nearest" && rule.target_side !== "farthest" && rule.target_side !== "self") {
-            rule.target_side = "nearest";
+        if (rule.target_attr === "distance" && rule.target_side !== "self") {
+            var ally = rule.target_side.indexOf("ally_") === 0;
+            var far = rule.target_side.indexOf("highest") >= 0 || rule.target_side.indexOf("farthest") >= 0;
+            rule.target_side = ally ? (far ? "ally_farthest" : "ally_nearest") : (far ? "farthest" : "nearest");
         }
         rule.target = composeTarget(rule.target_attr, rule.target_side);
+        updateBasicTarget(rule,previousFilter);
         closeEditorMenus();
         updateConditionSelector(side, index, false);
         sendRuleToServer(side, selectedHeroIndex[side], index);
@@ -692,11 +749,13 @@
     function chooseTargetSide(side, index, targetSide) {
         var rules = getSelectedRules(side);
         var rule = rules[index];
+        var previousFilter = RpgRuleSync.initialSettings({target:rule.target,target_attr:rule.target_attr}).target_filters[0];
         rule.target_side = TARGET_SIDE_TOKENS[targetSide] ? targetSide : "enemy_lowest";
         if (rule.target_side === "self" && rule.target_attr === "casting") {
             rule.target_attr = "hp";
         }
         rule.target = composeTarget(rule.target_attr, rule.target_side);
+        updateBasicTarget(rule,previousFilter);
         closeEditorMenus();
         updateConditionSelector(side, index, false);
         sendRuleToServer(side, selectedHeroIndex[side], index);
@@ -731,7 +790,8 @@
     function updateConditionSelector(side, index, locked) {
         var panels = rowPanels[side][index];
         var rule = getSelectedRules(side)[index];
-        panels.conditionValue.text = $.Localize(CONDITION_TOKENS[rule.condition] || CONDITION_TOKENS.always);
+        var shownCondition = Array.isArray(rule.use_conditions) ? (rule.use_conditions[0] || {}).type || "always" : rule.condition;
+        panels.conditionValue.text = $.Localize(CONDITION_TOKENS[shownCondition] || "#dota2_rpg_v2_" + shownCondition);
         var attr = rule.target_attr || "hp";
         var tSide = rule.target_side || "enemy_lowest";
         panels.targetAttrValue.text = $.Localize(TARGET_ATTR_TOKENS[attr] || TARGET_ATTR_TOKENS.hp);
@@ -742,7 +802,7 @@
         panels.conditionSelect.enabled = !locked;
         panels.targetAttrSelect.enabled = !locked && tSide !== "self";
         panels.targetSideSelect.enabled = !locked && attr !== "casting";
-        var valueKind = VALUE_CONDITIONS[rule.condition];
+        var valueKind = shownCondition === rule.condition ? VALUE_CONDITIONS[rule.condition] : null;
         var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);
         panels.thresholdControls.SetHasClass("Hidden", !valueKind);
         panels.effectSelect.SetHasClass("Hidden", !usesEffect);
@@ -768,13 +828,22 @@
     }
 
     function syncThreshold(side, index, normalizeText) {
+        if (!canEditHeroRules(side,selectedHeroIndex[side])) { return; }
         var rule = getSelectedRules(side)[index];
+        var previous = rule.value;
         var entry = rowPanels[side][index].thresholdEntry;
-        rule.value = clampValue(entry.text, rule.value || 50, VALUE_CONDITIONS[rule.condition]);
+        if (VALUE_CONDITIONS[rule.condition] && (!Array.isArray(rule.use_conditions) || (rule.use_conditions[0] || {}).type === rule.condition)) {
+            if (String(entry.text) !== String(previous)) { rule.value = clampValue(entry.text, rule.value || 50, VALUE_CONDITIONS[rule.condition]); }
+            if (Array.isArray(rule.use_conditions) && previous !== rule.value) {
+                var condition = rule.use_conditions[0];
+                if (condition.seconds !== undefined) { condition.seconds = rule.value; }
+                else { condition.value = rule.value; }
+            }
+        }
         if (normalizeText) {
             entry.text = String(rule.value);
         }
-        sendRuleToServer(side, selectedHeroIndex[side], index);
+        if (previous !== rule.value) { sendRuleToServer(side, selectedHeroIndex[side], index); }
     }
 
     function syncAllRuleInputs(side) {
@@ -799,6 +868,7 @@
         rules[index] = rules[nextIndex];
         rules[nextIndex] = current;
         renderSide(side);
+        syncHeroRules(side);
     }
 
     function selectHero(side, index) {
@@ -859,7 +929,7 @@
     }
 
     function renderSide(side) {
-        var locked = phase !== "setup";
+        var locked = !canEditHeroRules(side,selectedHeroIndex[side]);
         var hidePanels = phase !== "setup";
         var rules = getSelectedRules(side);
         createRuleRows(side);
@@ -873,23 +943,27 @@
             var definition = rules[index];
             var heroIndex = selectedHeroIndex[side];
             var detailName = getActionDetail(side, heroIndex, definition.action);
+            var available = getSlotActions(side, heroIndex).indexOf(definition.action) >= 0;
+            panels.actionSelect.SetHasClass("UnavailableAction", !available);
             if (panels.actionAbilityImage) {
                 setAbilityImage(panels.actionAbilityImage,
                     definition.action !== "attack" ? detailName : "");
             }
-            if (definition.action === "attack") {
+            if (!available) {
+                panels.actionFallback.text = $.Localize("#dota2_rpg_v2_unavailable");
+            } else if (definition.action === "attack") {
                 panels.actionFallback.text = $.Localize("#dota2_rpg_action_attack");
             } else if (!detailName || detailName === "") {
                 panels.actionFallback.text = $.Localize(ACTION_TOKENS[definition.action] || definition.action);
             } else {
                 panels.actionFallback.text = "";
             }
+            panels.settingsButton.enabled = !hidePanels;
+            panels.actionSelect.enabled = !locked;
+            panels.settingsButton.SetHasClass("HasAdvancedSettings", Array.isArray(definition.use_conditions));
             panels.thresholdEntry.text = String(definition.value);
             updateConditionSelector(side, index, locked);
             updateForcedToggle(side, index, locked);
-            if (!locked) {
-                sendRuleToServer(side, heroIndex, index);
-            }
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
             if (panels.deleteButton) {
@@ -908,7 +982,7 @@
     }
 
     function sendRuleToServer(side, heroIndex, ruleIndex) {
-        if (typeof RpgRuleSync === "undefined") {
+        if (typeof RpgRuleSync === "undefined" || !canEditHeroRules(side,heroIndex)) {
             return;
         }
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
@@ -931,6 +1005,7 @@
         RpgRuleSync.sendRule({
             heroIndex: entry.hero_index,
             heroName: entry.name,
+            heroKey: entry.rule_key,
             slot: ruleIndex + 1,
             ruleCount: rules.length,
             rule: rule,
@@ -939,22 +1014,15 @@
         });
     }
 
-    function buildPayload() {
-        syncAllRuleInputs("Radiant");
-        syncAllRulesToServer();
-        return {};
+    function syncHeroRules(side) {
+        var heroIndex = selectedHeroIndex[side];
+        for (var index=0;index<getRules(side,heroIndex).length;index++) { sendRuleToServer(side,heroIndex,index); }
     }
 
-    function syncAllRulesToServer() {
-        var sides = ["Radiant", "Dire"];
-        for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
-            var side = sides[sideIndex];
-            for (var heroIndex = 0; heroIndex < (HEROES[side] || []).length; heroIndex++) {
-                for (var ruleIndex = 0; ruleIndex < getRules(side, heroIndex).length; ruleIndex++) {
-                    sendRuleToServer(side, heroIndex, ruleIndex);
-                }
-            }
-        }
+    function buildPayload() {
+        syncAllRuleInputs("Radiant");
+        syncAllRuleInputs("Dire");
+        return {};
     }
 
     function setStatus(token) {
@@ -1716,6 +1784,7 @@
     function onBattleState(data) {
         var previousPhase = phase;
         phase = data.phase || "setup";
+        if (phase !== "setup") { $("#RuleSettings").SetHasClass("Hidden", true); }
         var fighting = phase === "fight" || phase === "battle";
         if (fighting && previousPhase !== "fight" && previousPhase !== "battle") {
             ["Radiant", "Dire"].forEach(function (side) {
@@ -1874,6 +1943,7 @@
         syncNativePurchaseTarget(true);
     });
     // 服务端数据（商店/关卡/动作槽）通过 CEM 事件推送
+    GameEvents.Subscribe("rpg_rule_update_result", RpgRuleSync.onResult);
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {
@@ -1883,17 +1953,26 @@
         var slotKey = String(data.slot_key);
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
+            rule_key: String(data.rule_key || data.hero_name || "")+ (data.rule_key ? "" : ":"+slotKey),
             hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
             actions_text: String(data.actions_text || ""),
-            details_text: String(data.details_text || "")
+            details_text: String(data.details_text || ""),
+            can_edit: data.can_edit === undefined || Number(data.can_edit) === 1,
+            rules_ready: data.rules_ready === undefined || Number(data.rules_ready) === 1
         };
         var match = slotKey.match(/^(radiant|dire)_(\d+)$/);
         if (match) {
             var side = match[1] === "radiant" ? "Radiant" : "Dire";
             var heroIndex = Math.max(0, Number(match[2]) - 1);
-            getRules(side, heroIndex);
+            var current = getRules(side, heroIndex);
+            if (Number(data.rules_ready) === 1 && (!current._serverHydrated || heroSlots[slotKey].can_edit === false)) {
+                var restored = RpgRuleSync.list(data.rules).map(RpgRuleSync.fromServer);
+                if (!restored.length) { restored = buildRulesForHero(side,heroIndex); }
+                current.splice(0,current.length);
+                restored.forEach(function(rule) { current.push(rule); });
+                current._serverHydrated = true;
+            }
             renderSide(side);
-            syncAllRulesToServer();
         }
     });
     wireShopButtons();

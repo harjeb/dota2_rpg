@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$DotaPath = "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta"
 )
 
@@ -299,7 +299,7 @@ if ($targetAttrDifference.Count -gt 0) {
     throw "Target attribute dropdown values must exactly match the attributes supported by Panorama JavaScript"
 }
 
-$expectedTargetSideValues = @("enemy_highest", "enemy_lowest", "ally_highest", "ally_lowest", "nearest", "farthest", "self")
+$expectedTargetSideValues = @("enemy_highest", "enemy_lowest", "ally_highest", "ally_lowest", "nearest", "farthest", "ally_nearest", "ally_farthest", "self")
 $actualTargetSideValues = @(
     $hudXml.SelectNodes("//Panel[@id='TargetSideMenu']//Button") |
         ForEach-Object { $_.GetAttribute("value") }
@@ -333,6 +333,7 @@ $localizationFiles = @(
 $referencedTokens = @(
     [regex]::Matches($conditionSource, "#(dota2_rpg_[a-z0-9_]+)") |
         ForEach-Object { $_.Groups[1].Value } |
+        Where-Object { -not $_.EndsWith('_') } | # Dynamic prefixes are expanded and checked by condition-ui-v2.test.js.
         Sort-Object -Unique
 )
 foreach ($localizationFile in $localizationFiles) {

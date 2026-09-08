@@ -9,6 +9,12 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+LUA_SCENARIOS = (
+    "damage-stats.test.lua", "action-adapter.test.lua", "arena-trees.test.lua", "shop-state.test.lua",
+    "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua",
+    "condition-v2.test.lua", "action-v2.test.lua", "condition-specials.test.lua",
+    "condition-execution.test.lua", "condition-phase.test.lua", "condition-native-targets.test.lua", "condition-vector.test.lua",
+)
 
 
 def run(command: list[str], cwd: Path = ROOT) -> None:
@@ -34,12 +40,12 @@ def run_lua_checks(lua_files: list[Path]) -> None:
             checker.unlink(missing_ok=True)
         run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT)])
         run([texlua, str(ROOT / "tests/test_runtime.lua"), str(ROOT), "live"])
-        for name in ("damage-stats.test.lua", "action-adapter.test.lua", "arena-trees.test.lua", "shop-state.test.lua", "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua"):
+        for name in LUA_SCENARIOS:
             run([texlua, str(ROOT.parent / "tests" / name)], cwd=ROOT.parent)
         return
 
     try:
-        from lupa import LuaRuntime
+        from lupa.lua51 import LuaRuntime
     except ImportError as error:
         raise SystemExit(
             "Lua checks require texlua, or the Python package lupa as a fallback"
@@ -59,7 +65,7 @@ def run_lua_checks(lua_files: list[Path]) -> None:
         runtime = LuaRuntime(unpack_returned_tuples=True)
         runtime.globals().arg = runtime.table_from({1: ROOT.as_posix(), 2: mode})
         runtime.globals().dofile((ROOT / "tests/test_runtime.lua").as_posix())
-    for name in ("damage-stats.test.lua", "action-adapter.test.lua", "arena-trees.test.lua", "shop-state.test.lua", "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua"):
+    for name in LUA_SCENARIOS:
         runtime = LuaRuntime(unpack_returned_tuples=True)
         runtime.globals().TEST_REPO_ROOT = ROOT.parent.as_posix()
         runtime.globals().dofile((ROOT.parent / "tests" / name).as_posix())
@@ -88,6 +94,8 @@ def main() -> None:
         str(ROOT / "overlay/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/issue_fixes_ui.js"),
     ])
     run([node, str(ROOT / "tests/test_ui.js")])
+    run([node, str(ROOT.parent / "tests/condition-ui-v2.test.js")])
+    run([sys.executable, str(ROOT.parent / "tests/condition-coverage.test.py")], cwd=ROOT.parent)
     run([node, str(ROOT.parent / "tests/panorama-save.test.js")])
     for script in (ROOT.parent / "content/dota_addons/dota2_rpg/panorama/scripts/custom_game").glob("*.js"):
         run([node, "--check", str(script)])

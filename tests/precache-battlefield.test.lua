@@ -19,6 +19,9 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
 require = function(moduleName)
+	if moduleName == "tactics/ability_catalog" or moduleName == "tactics/rule_snapshot" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName .. ".lua")
+	end
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
