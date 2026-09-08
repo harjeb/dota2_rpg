@@ -26,8 +26,16 @@ DOTA_UNIT_ORDER_MOVE_TO_TARGET = 2
 DOTA_UNIT_ORDER_HOLD_POSITION = 10
 DOTA_UNIT_ORDER_ATTACK_TARGET = 4
 
+local walletLogs = {}
+local failWalletLog = false
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
+	if name == "issue_fixes.runtime_log" then
+		return { Write = function(message)
+			if failWalletLog then error("test logger unavailable") end
+			walletLogs[#walletLogs + 1] = message
+		end }
+	end
 	local localModules = {
 		["tactics/ability_catalog"] = moduleRoot .. "tactics/ability_catalog.lua",
 		["tactics/rule_snapshot"] = moduleRoot .. "tactics/rule_snapshot.lua",
@@ -100,6 +108,66 @@ local function assertEqual(actual, expected, message)
 	assert(actual == expected, string.format("%s: expected %s, got %s", message, tostring(expected), tostring(actual)))
 end
 
+-- Initialization must survive pre-connect reads and retry unavailable wallets.
+do
+	local previousResource = PlayerResource
+	local nativeGold, writes = 0, 0
+	local resource = {
+		GetGold = function() return nativeGold end,
+		SetGold = function(_, _, amount, reliable)
+			writes = writes + 1
+			if reliable then nativeGold = amount end
+		end,
+	}
+	PlayerResource = resource
+	local wallet = newGame({ playerId = 0, initialGold = 725, gold = 725, goldWalletInitialized = false })
+	assertEqual(wallet:GetGoldBalance(), 0, "pre-connect read sees native zero")
+	assertEqual(wallet.initialGold, 725, "read preserves configured startup entitlement")
+	assertEqual(wallet:EnsureGoldWalletInitialized(), 725, "initialization seeds immutable startup amount")
+	assertEqual(writes, 2, "startup writes reliable and clears unreliable once")
+	assertEqual(wallet.goldWalletInitialized, true, "successful seed initializes wallet")
+	nativeGold = 0
+	assertEqual(wallet:EnsureGoldWalletInitialized(), 0, "repeated initialization never refills spent wallet")
+	assertEqual(writes, 2, "spent wallet does not trigger writes")
+	for _, invalidId in ipairs({ -1, false }) do
+		local retry = newGame({ initialGold = 500, gold = 500, goldWalletInitialized = false })
+		if invalidId ~= false then retry.playerId = invalidId end
+		retry:EnsureGoldWalletInitialized()
+		assertEqual(retry.goldWalletInitialized, false, "invalid or missing pid remains pending")
+		retry.playerId = 0
+		nativeGold = 0
+		assertEqual(retry:EnsureGoldWalletInitialized(), 500, "valid pid retries startup seeding")
+	end
+	local preserve = newGame({ playerId = 0, initialGold = 500, gold = 500 })
+	nativeGold = 123
+	local writesBefore = writes
+	assertEqual(preserve:EnsureGoldWalletInitialized(), 123, "positive native balance is preserved")
+	assertEqual(writes, writesBefore, "preserving native balance never writes")
+	assertEqual(preserve.goldWalletInitialized, true, "positive native balance completes initialization")
+	local retry = newGame({ playerId = 0, initialGold = 500, gold = 500, goldWalletInitialized = false })
+	PlayerResource = nil
+	retry:EnsureGoldWalletInitialized()
+	assertEqual(retry.goldWalletInitialized, false, "missing native API remains pending")
+	PlayerResource = { GetGold = resource.GetGold }
+	nativeGold = 0
+	retry:EnsureGoldWalletInitialized()
+	assertEqual(retry.goldWalletInitialized, false, "missing setter remains pending")
+	PlayerResource = resource
+	failWalletLog = true
+	assertEqual(retry:EnsureGoldWalletInitialized(), 500, "logger failure cannot prevent initialization")
+	assertEqual(retry:SetGoldBalance(25), 25, "logger failure cannot prevent write")
+	nativeGold = 10
+	assertEqual(retry:GetGoldBalance(), 10, "logger failure cannot prevent native read")
+	failWalletLog = false
+	local logs = table.concat(walletLogs, "\n")
+	assert(logs:find("action=read-change pid=0 before=725 after=0 initialized=false", 1, true), "read trace exposes pid and balances")
+	assert(logs:find("action=write pid=0 before=0 after=725 initialized=true", 1, true), "write trace exposes initialized status")
+	assert(logs:find("detail=deferred", 1, true), "deferred initialization is traced")
+	assert(logs:find("detail=seed-startup", 1, true), "startup initialization is traced")
+	assert(logs:find("detail=preserve-native", 1, true), "preserved initialization is traced")
+	PlayerResource = previousResource
+end
+
 -- A native wallet change must publish even with no fielded heroes/inventory changes.
 do
 	local previousResource = PlayerResource
@@ -170,6 +238,38 @@ for _ in pairs(uniqueOffers) do
 end
 assertEqual(offerCount, 5, "serialized offer size")
 assertEqual(uniqueCount, 5, "serialized unique offer size")
+
+-- Native RNG must drive both hero selection and quality; a fresh Lua seed
+-- cannot force the opening shop when the engine supplies a different stream.
+local savedRandom = math.random
+local nativeCalls = 0
+math.random = function() error("shop must use the engine RNG when available") end
+local function rollWithNativeEndpoint(high)
+	RandomInt = function(minimum, maximum)
+		assert(minimum == 1 and maximum >= minimum, "native random bounds")
+		nativeCalls = nativeCalls + 1
+		return high and maximum or minimum
+	end
+	math.randomseed(12345)
+	game:RollShop()
+	local selected = {}
+	for _, offer in ipairs(game.shopOffers) do
+		assert(not selected[offer.hero], "native draws must be unique")
+		assert(offer.hero ~= "npc_dota_hero_axe", "owned heroes must be excluded")
+		assertEqual(offer.level, 1, "opening recruit level preserved")
+		assertEqual(offer.price, 500, "opening recruit price preserved")
+		selected[offer.hero] = true
+	end
+	assertEqual(#game.shopOffers, 5, "native shop fills all five offers")
+	return game.shopOfferText
+end
+game.ownedHeroes = { "npc_dota_hero_axe" }
+local firstNativeShop = rollWithNativeEndpoint(false)
+local secondNativeShop = rollWithNativeEndpoint(true)
+assert(firstNativeShop ~= secondNativeShop, "native entropy changes the opening shop despite identical Lua seeds")
+assert(nativeCalls >= 20, "both draws and five quality rolls use native RNG")
+math.random, RandomInt = savedRandom, nil
+game.ownedHeroes = {}
 
 -- 开局不是随机赠送：前两次从当前报价免费选择，第三次按 1 级固定 500 金币扣款。
 local recruitmentGame = newGame({
@@ -289,7 +389,7 @@ local function makeItem(name)
 	return {
 		name = name,
 		entityIndex = nextItemEntityIndex,
-		IsNull = function() return false end,
+		IsNull = function(self) return self.removed == true end,
 		GetAbilityName = function(self) return self.name end,
 		GetEntityIndex = function(self) return self.entityIndex end,
 		GetCurrentCharges = function(self) return self.charges end,
@@ -314,7 +414,7 @@ local function makeInventoryUnit(name, team, maxSlot)
 	function unit:GetPlayerOwnerID() return self.controllingPlayerId or -1 end
 	function unit:GetAbsOrigin() return { x = 0, y = 0, z = 0 } end
 	function unit:AddItem(item)
-		if self.rejectAdd then
+		if self.rejectAdd or item:IsNull() then
 			return nil
 		end
 		for slot = 0, self.maxSlot do
@@ -329,14 +429,19 @@ local function makeInventoryUnit(name, team, maxSlot)
 	function unit:AddItemByName(itemName)
 		return self:AddItem(makeItem(itemName))
 	end
-	function unit:RemoveItem(item)
+	function unit:TakeItem(item)
 		for slot = 0, self.maxSlot do
 			if self.slots[slot] == item then
 				self.slots[slot] = nil
 				item.holder = nil
-				return
+				return item
 			end
 		end
+	end
+	-- Native RemoveItem deletes the entity; only TakeItem supports transfers.
+	function unit:RemoveItem(item)
+		self:TakeItem(item)
+		item.removed = true
 	end
 	function unit:SwapItems(firstSlot, secondSlot)
 		self.slots[firstSlot], self.slots[secondSlot] = self.slots[secondSlot], self.slots[firstSlot]
@@ -485,6 +590,50 @@ do
 		assert(equipmentGame:ValidatePrepareOrder({ issuer_player_id_const = 0,
 			order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = name }))
 	end
+	-- Live report: three 140-gold purchases for a bench hero must retain all
+	-- three original entities, including when the hero is subsequently fielded.
+	resetTracePurchase()
+	equipmentGame:SetGoldBalance(500)
+	local purchased = {}
+	for index = 1, 3 do
+		assert(equipmentGame:SetNativePurchaseSelection(benchHero))
+		assert(equipmentGame:ValidatePrepareOrder({ issuer_player_id_const = 0,
+			order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
+			itemname = "item_gauntlets", item_cost = 140 }))
+		local item = wisp:AddItem(makeItem("item_gauntlets"))
+		purchased[index] = item
+		equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_gauntlets" })
+		equipmentGame:RoutePendingNativePurchases()
+		assertEqual(equipmentGame:GetGoldBalance(), 500 - index * 140, "each gauntlet costs exactly 140")
+		assert(not item:IsNull() and equipmentGame:IsItemHeldBy(benchHero, item, 0, 8),
+			"paid gauntlet must reach the bench hero as the original live entity")
+	end
+	equipmentGame:CaptureHeroInventoryForRespawn(benchHero)
+	local replacement = makeInventoryUnit(benchHero.name, DOTA_TEAM_GOODGUYS, 14)
+	equipmentGame:RestoreHeroInventoryToUnit(benchHero.name, replacement)
+	for _, item in ipairs(purchased) do
+		assert(not item:IsNull() and equipmentGame:IsItemHeldBy(replacement, item, 0, 8),
+			"fielding must preserve each purchased entity without recreating it")
+		replacement:RemoveItem(item)
+	end
+	equipmentGame:SyncHeroInventoryFromUnit(benchHero)
+
+	resetTracePurchase()
+	order("item_attachment_rejected", benchHero)
+	local rejectedItem = wisp:AddItem(makeItem("item_attachment_rejected"))
+	equipmentGame:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_attachment_rejected" })
+	local rejectedPurchase = equipmentGame.pendingNativePurchases[1]
+	benchHero.rejectAdd = true
+	equipmentGame:RoutePendingNativePurchases()
+	benchHero.rejectAdd = false
+	assert(not rejectedItem:IsNull() and equipmentGame:IsItemHeldBy(wisp, rejectedItem, 0, 14),
+		"rejected attachment must preserve the paid original item on the source")
+	assertEqual(rejectedPurchase.transfer_decision, "attachment-failed-preserved",
+		"rejected attachment must not report a resolved transfer")
+	assertEqual(equipmentGame.nativePurchaseClaimedIds[tostring(rejectedItem:GetEntityIndex())], nil,
+		"rejected attachment must not claim the item for the recipient")
+	wisp:RemoveItem(rejectedItem)
+
 	resetTracePurchase()
 	order("item_trace_bench", benchHero)
 	local benchItem = benchHero:AddItem(makeItem("item_trace_bench"))

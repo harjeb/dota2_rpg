@@ -1,26 +1,23 @@
 local root = TEST_REPO_ROOT or "."
 local original_print = print
-local lines, printed = {}, 0
-print = function() printed = printed + 1 end
+local lines = {}
+print = function(line) lines[#lines + 1] = line end
 GameRules = { GetGameTime = function() return 12.5 end }
-AppendToLogFile = function(path, line)
-    assert(path == "dota2_rpg_runtime.log")
-    assert(line:find("[RPGTrace t=12.50]", 1, true))
-    lines[#lines + 1] = line
-end
+-- Real Dota reports deprecation without throwing: neither this API nor the
+-- removed con_logfile command may be used as evidence of persistent logging.
+AppendToLogFile = function() error("deprecated API must not be called") end
+SendToServerConsole = function() error("removed con_logfile command must not be sent") end
 local path = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/runtime_log.lua"
 local log = dofile(path)
+log.StartSession("test-build")
+assert(lines[1]:find("BUILD test-build", 1, true))
+assert(lines[1]:find("console=console.log (launch with -condebug)", 1, true))
 for i = 1, 1510 do log.Write("test " .. i) end
-assert(#lines == 1500, "file logging must be bounded per session")
-assert(printed == 1500, "console diagnostics must be bounded too")
-local failures = 0
-AppendToLogFile = function() failures = failures + 1; error("read only") end
+assert(#lines == 1500, "console diagnostics must be bounded per session")
+for _, line in ipairs(lines) do assert(line:find("[RPGTrace t=12.50]", 1, true)) end
+GameRules, AppendToLogFile, SendToServerConsole = nil, nil, nil
 log = dofile(path)
-log.Write("failure")
-log.Write("after failure")
-assert(failures == 1, "logging errors must not break gameplay or retry every tick")
-AppendToLogFile = nil
-log = dofile(path)
-log.Write("no native API")
+log.Write("no native APIs")
+assert(lines[#lines]:find("[RPGTrace t=0.00] no native APIs", 1, true))
 print = original_print
-print("PASS: bounded persistent runtime trace and nonfatal logging fallback")
+print("PASS: bounded console trace and startup guidance without deprecated file APIs")

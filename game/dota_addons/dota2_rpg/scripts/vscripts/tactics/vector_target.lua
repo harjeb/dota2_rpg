@@ -1,4 +1,5 @@
 local Conditions = require("tactics/condition_registry")
+local Behavior = require("tactics/ability_behavior")
 local VectorTarget = {}
 
 local function valid_entity(entity)
@@ -19,11 +20,8 @@ end
 
 function VectorTarget.NativeMode(source)
     if not valid_entity(source) then return nil end
-    local ok, behavior = pcall(function()
-        return source.GetBehaviorInt ~= nil and source:GetBehaviorInt() or source:GetBehavior()
-    end)
-    if not ok or not finite(behavior) or bit == nil or DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING == nil then return nil end
-    local function has(flag) return flag ~= nil and bit.band(behavior, flag) == flag end
+    local behavior = Behavior.Read(source)
+    local function has(flag) return Behavior.HasFlag(behavior, flag) end
     if not has(DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING) then return nil end
     if has(DOTA_ABILITY_BEHAVIOR_POINT) then return "point" end
     if has(DOTA_ABILITY_BEHAVIOR_UNIT_TARGET) then

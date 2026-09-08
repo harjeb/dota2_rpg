@@ -9,6 +9,7 @@
 ]]
 
 local UnitHelpers = require("battle.unit_helpers")
+local Behavior = require("tactics/ability_behavior")
 local TacticEngine = UnitHelpers -- compatibility name for validity checks only
 
 if BattleManager == nil then
@@ -256,23 +257,23 @@ function BattleManager:IsAbilityReady(hero, ability)
 end
 
 function BattleManager:GetAbilityBehavior(ability)
-	return ability:GetBehaviorInt()
+	return Behavior.Read(ability)
 end
 
 function BattleManager:IsUnitTargetAbility(ability)
-	return bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_UNIT_TARGET) ~= 0
+	return Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_UNIT_TARGET)
 end
 
 function BattleManager:IsPointTargetAbility(ability)
-	return bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_POINT) ~= 0
+	return Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_POINT)
 end
 
 function BattleManager:IsNoTargetAbility(ability)
-	return bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_NO_TARGET) ~= 0
+	return Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_NO_TARGET)
 end
 
 function BattleManager:IsToggleAbility(ability)
-	return bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_TOGGLE) ~= 0
+	return Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_TOGGLE)
 end
 
 function BattleManager:GetToggleState(ability)
@@ -294,8 +295,8 @@ function BattleManager:GetAbilityTargetSide(ability)
 	if bit.band(targetTeam, DOTA_UNIT_TARGET_TEAM_FRIENDLY) ~= 0 then
 		return "ally"
 	end
-	if bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_NO_TARGET) ~= 0
-		or bit.band(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_TOGGLE) ~= 0 then
+	if Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_NO_TARGET)
+		or Behavior.HasFlag(self:GetAbilityBehavior(ability), DOTA_ABILITY_BEHAVIOR_TOGGLE) then
 		return "self"
 	end
 	return "enemy"

@@ -75,8 +75,8 @@ function TacticEngine:Debug(unit, event, detail)
     local previous = self.trace_times[key]
     if previous == nil or previous.signature ~= signature or time - previous.time >= 5 then
         self.trace_times[key] = { signature = signature, time = time }
-        RuntimeLog.Write(string.format("Tactic unit=%d event=%s rule=%s action=%s target=%s reason=%s",
-            entity_index(unit), event, tostring(detail.rule_index or detail.rule_id or ""),
+        RuntimeLog.Write(string.format("Tactic unit=%d hero=%s event=%s rule=%s action=%s target=%s reason=%s",
+            entity_index(unit), tostring(Context.Call(unit, "GetUnitName") or ""), event, tostring(detail.rule_index or detail.rule_id or ""),
             tostring(detail.action_id or ""), tostring(detail.target_index or ""), tostring(detail.reason or "")))
     end
     if self.on_debug ~= nil then
@@ -215,6 +215,7 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
             self:Debug(unit, "rule_skipped", {
                 rule_id = rule.id or index,
                 rule_index = index,
+                action_id = rule.action and (rule.action.name or rule.action.logical_id or rule.action.kind),
                 reason = reason,
             })
         end

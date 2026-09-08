@@ -118,7 +118,7 @@ $luaChecks = @(
            'rpg_item_unequip',
            'StashAddItem',
            'BATTLEFIELD_HALF_WIDTH = 1200',
-           'BATTLEFIELD_HALF_HEIGHT = 450',
+           'BATTLEFIELD_HALF_HEIGHT = 675',
            'Vector\(-720, -220, 128\)',
            'Vector\(720, 220, 128\)',
            'SetAcquisitionRange\(BATTLE_ACQUISITION_RANGE\)'
@@ -394,7 +394,8 @@ foreach ($shopStatePattern in @(
     'ProgressionData\.INITIAL_GOLD',
     'InitializeRecruitmentState',
     'freeRecruitChoices',
-    'local heroName = pool\[math\.random\(#pool\)\]',
+    'local heroName = pool\[ShopRandomInt\(1, #pool\)\]',
+    'return RandomInt\(minimum, maximum\)',
     'for _, owned in ipairs\(self\.ownedHeroes\) do',
     'ownedSet\[owned\] = true',
     'self:SpendGold\(chargedPrice\)',
@@ -570,8 +571,8 @@ try {
     $mapEntities = @(Get-VmapBlocks $mapText "CMapEntity")
     $mapMeshes = @(Get-VmapBlocks $mapText "CMapMesh")
     $markerOrigins = @{
-        rpg_arena_min = "-1200 -450 128"
-        rpg_arena_max = "1200 450 128"
+        rpg_arena_min = "-1200 -675 128"
+        rpg_arena_max = "1200 675 128"
         rpg_arena_center = "0 0 128"
     }
     foreach ($marker in $markerOrigins.GetEnumerator()) {
@@ -588,10 +589,10 @@ try {
     }
 
     $wallGeometry = @{
-        rpg_arena_wall_north = @("0 466 384", '1\.59375\s+0\.03125\s+2')
-        rpg_arena_wall_south = @("0 -466 384", '1\.59375\s+0\.03125\s+2')
-        rpg_arena_wall_east = @("1216 0 384", '0\.02083333[0-9]*\s+0\.91015625\s+2')
-        rpg_arena_wall_west = @("-1216 0 384", '0\.02083333[0-9]*\s+0\.91015625\s+2')
+        rpg_arena_wall_north = @("0 691 384", '1\.59375\s+0\.03125\s+2')
+        rpg_arena_wall_south = @("0 -691 384", '1\.59375\s+0\.03125\s+2')
+        rpg_arena_wall_east = @("1216 0 384", '0\.02083333[0-9]*\s+1\.349609375\s+2')
+        rpg_arena_wall_west = @("-1216 0 384", '0\.02083333[0-9]*\s+1\.349609375\s+2')
     }
     foreach ($wallName in $wallGeometry.Keys) {
         $targetPattern = '"targetname"\s+"string"\s+"' + $wallName + '"'
@@ -613,7 +614,7 @@ try {
         $geometry = $wallGeometry[$wallName]
         if ($wall -notmatch ('"origin"\s+"vector3"\s+"' + [regex]::Escape($geometry[0]) + '"') -or
             $wall -notmatch ('"scales"\s+"vector3"\s+"' + $geometry[1] + '"')) {
-            throw "$wallName does not retain its 2400x900 boundary transform"
+            throw "$wallName does not retain its 2400x1350 boundary transform"
         }
     }
 
@@ -645,10 +646,10 @@ try {
     # Four separately authored nonavclip slabs keep nav generation off each
     # outer edge; the fifth material occurrence is the map asset reference.
     $nonavGeometry = @{
-        "0 466 128" = '1\.59375\s+0\.0625\s+0\.25'
-        "0 -466 128" = '1\.59375\s+0\.0625\s+0\.25'
-        "1200 0 128" = '0\.04166666[0-9]*\s+0\.91015625\s+0\.25'
-        "-1200 0 128" = '0\.04166666[0-9]*\s+0\.91015625\s+0\.25'
+        "0 691 128" = '1\.59375\s+0\.0625\s+0\.25'
+        "0 -691 128" = '1\.59375\s+0\.0625\s+0\.25'
+        "1200 0 128" = '0\.04166666[0-9]*\s+1\.349609375\s+0\.25'
+        "-1200 0 128" = '0\.04166666[0-9]*\s+1\.349609375\s+0\.25'
     }
     foreach ($origin in $nonavGeometry.Keys) {
         $meshMatches = @($mapMeshes | Where-Object {

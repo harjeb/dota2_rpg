@@ -1,5 +1,6 @@
 -- Generate defaults from currently learned active abilities; preserve authored lists.
 
+local Behavior = require("tactics/ability_behavior")
 local DefaultRules = {}
 
 local function has_action(rule)
@@ -36,9 +37,7 @@ local function call(entity, method)
     if entity ~= nil and entity[method] ~= nil then return entity[method](entity) end
 end
 
-local function flag(value, mask)
-    return value ~= nil and mask ~= nil and mask > 0 and math.floor(value / mask) % 2 == 1
-end
+local flag = Behavior.HasFlag
 
 function DefaultRules.CreateForHero(hero)
     local result, seen = {}, {}
@@ -53,7 +52,7 @@ function DefaultRules.CreateForHero(hero)
             and call(ability, "IsActivated") ~= false and (call(ability, "GetLevel") or 0) > 0
             and not seen[name] then
             seen[name] = true
-            local behavior = call(ability, "GetBehaviorInt") or call(ability, "GetBehavior") or 0
+            local behavior = Behavior.Read(ability)
             local team = "enemy"
             local targeted = flag(behavior, DOTA_ABILITY_BEHAVIOR_UNIT_TARGET)
                 or flag(behavior, DOTA_ABILITY_BEHAVIOR_POINT)

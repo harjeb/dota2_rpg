@@ -140,19 +140,19 @@ class VmapTests(unittest.TestCase):
             self.assertFalse(any(terrain[key]), key)
 
     def test_arena_markers(self):
-        for name, origin in {'min': (-1200, -450, 128), 'max': (1200, 450, 128),
+        for name, origin in {'min': (-1200, -675, 128), 'max': (1200, 675, 128),
                              'center': (0, 0, 128)}.items():
             marker = self.named('rpg_arena_' + name)
             self.assertEqual(marker['entity_properties']['classname'], 'info_target')
             self.vector(marker['origin'], origin)
 
     def test_invisible_colliding_perimeter(self):
-        for side, y, low_y, high_y in [('north', 466, 450, 482), ('south', -466, -482, -450)]:
+        for side, y, low_y, high_y in [('north', 691, 675, 707), ('south', -691, -707, -675)]:
             self.brush('rpg_arena_wall_' + side, (0, y, 384), (1.59375, .03125, 2),
                        ((-1224, low_y, 128), (1224, high_y, 640)))
         for side, x, low_x, high_x in [('east', 1216, 1200, 1232), ('west', -1216, -1232, -1200)]:
-            self.brush('rpg_arena_wall_' + side, (x, 0, 384), (1 / 48, .91015625, 2),
-                       ((low_x, -466, 128), (high_x, 466, 640)))
+            self.brush('rpg_arena_wall_' + side, (x, 0, 384), (1 / 48, 691 / 512, 2),
+                       ((low_x, -691, 128), (high_x, 691, 640)))
 
     def test_no_static_middle_obstruction(self):
         for name in ('rpg_mid_gate_visual', 'rpg_mid_gate_nav'):
@@ -167,7 +167,7 @@ class VmapTests(unittest.TestCase):
             vertices = next(s['data'] for s in streams if s['semanticName'] == 'position')
             low = [min(v[i] * mesh['scales'][i] + mesh['origin'][i] for v in vertices) for i in range(2)]
             high = [max(v[i] * mesh['scales'][i] + mesh['origin'][i] for v in vertices) for i in range(2)]
-            self.assertFalse(low[0] < 96 and high[0] > -96 and low[1] < 400 and high[1] > -400)
+            self.assertFalse(low[0] < 96 and high[0] > -96 and low[1] < 625 and high[1] > -625)
 
     def test_map_update_removes_only_legacy_brush_and_is_idempotent(self):
         model = dmx.load(in_file=io.BytesIO(MAP.read_bytes()))
@@ -195,7 +195,7 @@ class VmapTests(unittest.TestCase):
     def test_four_nonav_slabs(self):
         slabs = [e for e in self.meshes if e['meshData']['materials'] == [NONAV]]
         self.assertEqual(len(slabs), 4)
-        for y in (466, -466):
+        for y in (691, -691):
             matches = [e for e in slabs if tuple(e['origin']) == (0, y, 128)]
             self.assertEqual(len(matches), 1)
             self.mesh_contract(matches[0], (0, y, 128), (1.59375, .0625, .25), NONAV,
@@ -203,17 +203,17 @@ class VmapTests(unittest.TestCase):
         for x in (1200, -1200):
             matches = [e for e in slabs if tuple(e['origin']) == (x, 0, 128)]
             self.assertEqual(len(matches), 1)
-            self.mesh_contract(matches[0], (x, 0, 128), (1 / 24, .91015625, .25), NONAV,
-                               ((x - 32, -466, 96), (x + 32, 466, 160)))
+            self.mesh_contract(matches[0], (x, 0, 128), (1 / 24, 691 / 512, .25), NONAV,
+                               ((x - 32, -691, 96), (x + 32, 691, 160)))
 
     def test_native_rock_perimeter(self):
         rocks = [e for e in self.entities if (e['entity_properties'].get('targetname') or '').startswith('rpg_arena_rock_')]
         self.assertEqual(len(rocks), 28)
         placements = []
-        for side, y, yaw in [('north', 600, 90), ('south', -600, 270)]:
+        for side, y, yaw in [('north', 825, 90), ('south', -825, 270)]:
             placements.extend((side, i, (x, y, 128), yaw) for i, x in enumerate(range(-1200, 1201, 240)))
         for side, x, yaw in [('east', 1350, 0), ('west', -1350, 180)]:
-            placements.extend((side, i, (x, y, 128), yaw) for i, y in enumerate(range(-360, 361, 360)))
+            placements.extend((side, i, (x, y, 128), yaw) for i, y in enumerate(range(-540, 541, 540)))
         for side, index, origin, yaw in placements:
             prop = self.named(f'rpg_arena_rock_{side}_{index:02}')
             self.assertIn(prop, self.model.root['world']['children'])
@@ -231,6 +231,34 @@ class VmapTests(unittest.TestCase):
         self.assertEqual(set(self.model.prefix_attributes['map_asset_references']), {CLIP, NONAV, *ROCK_MODELS})
         for mesh in self.meshes:
             self.assertTrue(set(mesh['meshData']['materials']) <= {CLIP, NONAV})
+
+    def test_height_migration_preserves_unrelated_data_and_is_idempotent(self):
+        model = dmx.load(in_file=io.BytesIO(MAP.read_bytes()))
+        expanded = signature(model)
+        self.assertFalse(updater.set_arena_height(model))
+        self.assertTrue(updater.set_arena_height(model, 450))
+        original = signature(model)
+        self.assertTrue(updater.set_arena_height(model))
+        self.assertEqual(signature(model), expanded)
+        # All changes are arena Y origins/scales. This also protects terrain,
+        # lights, player starts, asset references and every mesh's vertex data.
+        old_elements, new_elements = original[-1], expanded[-1]
+        self.assertEqual(set(old_elements), set(new_elements))
+        changes = 0
+        for element_id, (name, kind, fields) in old_elements.items():
+            new_name, new_kind, new_fields = new_elements[element_id]
+            self.assertEqual((name, kind), (new_name, new_kind))
+            before, after = dict(fields), dict(new_fields)
+            for key in before:
+                if before[key] != after[key]:
+                    changes += 1
+                    self.assertIn(key, ('origin', 'scales'))
+                    self.assertIn(kind, ('CMapEntity', 'CMapMesh'))
+                    self.assertEqual(before[key][1][0], after[key][1][0])
+                    self.assertEqual(before[key][1][2], after[key][1][2])
+        self.assertEqual(changes, 38)
+        self.assertFalse(updater.set_arena_height(model))
+        self.assertEqual(signature(dmx.load(in_file=io.BytesIO(model.echo('binary', 9)))), expanded)
 
     def test_binary_round_trip_preserves_all_typed_data(self):
         before = signature(self.model)

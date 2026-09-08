@@ -19,8 +19,12 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 
 require = function(moduleName)
-	if moduleName == "tactics/ability_catalog" or moduleName == "tactics/rule_snapshot" then
+	if moduleName == "tactics/ability_catalog" or moduleName == "tactics/rule_snapshot"
+		or moduleName == "tactics/ability_behavior" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName .. ".lua")
+	end
+	if moduleName == "issue_fixes.default_rules" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/default_rules.lua")
 	end
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
@@ -251,7 +255,7 @@ local teamCounts = { [DOTA_TEAM_GOODGUYS] = 0, [DOTA_TEAM_BADGUYS] = 0 }
 for _, unit in ipairs(spawned) do
 	teamCounts[unit.team] = teamCounts[unit.team] + 1
 	assert(math.abs(unit.position.x) <= 1200, "battlefield x spawn must stay inside compact boundary")
-	assert(math.abs(unit.position.y) <= 450, "battlefield y spawn must stay inside compact boundary")
+	assert(math.abs(unit.position.y) <= 675, "battlefield y spawn must stay inside expanded boundary")
 	if unit.team == DOTA_TEAM_GOODGUYS then
 		assert(unit.position.x <= -150, "friendly spawn must stay in the left preparation zone")
 	else
@@ -260,6 +264,33 @@ for _, unit in ipairs(spawned) do
 end
 assert(teamCounts[DOTA_TEAM_GOODGUYS] == 5, "five friendly spawn slots must be available")
 assert(teamCounts[DOTA_TEAM_BADGUYS] == 5, "five enemy spawn slots must be available")
+
+-- Dead neutral entities disappear while still present in the round's roster.
+-- Looking up any hero's rules must not call GetUnitName on those stale handles;
+-- surviving duplicates must retain the same per-instance rule identity.
+local Snapshot = require("tactics/rule_snapshot")
+local enemyKeys, duplicates = {}, {}
+for _, enemy in ipairs(spawnGame.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
+	local key = Snapshot.HeroKey(spawnGame.battleManager, enemy)
+	assert(enemy.ruleSnapshotKey == key and not enemyKeys[key], "spawn assigns unique stable enemy keys")
+	enemyKeys[key] = true
+	if enemy:GetUnitName() == "npc_dota_neutral_kobold" then duplicates[#duplicates+1] = enemy end
+end
+local removed, survivor = duplicates[1], duplicates[2]
+local survivorKey = Snapshot.HeroKey(spawnGame.battleManager, survivor)
+local originalName, originalNull = removed.GetUnitName, removed.IsNull
+removed.GetUnitName = function() error("Invalid object passed to GetUnitName") end
+removed.IsNull = function() return true end
+assert(Snapshot.HeroKey(spawnGame.battleManager, spawned[1]) == spawned[1].name,
+	"a removed enemy must not interrupt friendly rule evaluation")
+assert(Snapshot.HeroKey(spawnGame.battleManager, survivor) == survivorKey,
+	"a removed duplicate must not shift surviving enemy rules")
+assert(Snapshot.HeroKey(spawnGame.battleManager, removed) == nil)
+assert(#Snapshot.ForHero(spawnGame.battleManager, removed) == 0)
+local legacy = newUnit("npc_dota_hero_legacy", Vector(0, 0, 128), DOTA_TEAM_GOODGUYS)
+assert(Snapshot.HeroKey(spawnGame.battleManager, legacy) == "npc_dota_hero_legacy",
+	"legacy unkeyed heroes also ignore stale enemies")
+removed.GetUnitName, removed.IsNull = originalName, originalNull
 
 -- Player placement must be clamped to the compact left preparation zone before
 -- the position is persisted for roster respawns.
@@ -278,14 +309,14 @@ local placementOrder = {
 	position_y = 9999,
 }
 assert(spawnGame:ValidatePrepareOrder(placementOrder), "fielded placement order must be accepted")
-assert(placementOrder.position_x == -150 and placementOrder.position_y == 386,
+assert(placementOrder.position_x == -150 and placementOrder.position_y == 611,
 	"placement must clamp to the compact preparation boundary")
 assert(spawnGame.placedPositions[spawned[1]:GetUnitName()].x == -150,
 	"clamped placement must be persisted")
 placementOrder.position_x = -9999
 placementOrder.position_y = -9999
 assert(spawnGame:ValidatePrepareOrder(placementOrder), "far placement order must be accepted and clamped")
-assert(placementOrder.position_x == -1136 and placementOrder.position_y == -386,
+assert(placementOrder.position_x == -1136 and placementOrder.position_y == -611,
 	"placement must clamp to the compact outer boundary")
 
 local radiant = newUnit("npc_dota_hero_axe", Vector(-650, 0, 128), DOTA_TEAM_GOODGUYS)

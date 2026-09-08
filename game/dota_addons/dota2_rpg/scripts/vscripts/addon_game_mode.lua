@@ -46,10 +46,10 @@ local CARRIER_INVENTORY_LAST_SLOT = 8 -- 0..5 主物品栏，6..8 背包
 local NATIVE_STASH_FIRST_SLOT = 9
 local NATIVE_STASH_LAST_SLOT = 14
 
--- 紧凑战场：两个略大于原待命区（1040×760）的准备区拼成 2400×900。
+-- 战场宽度 2400，纵向高度由 900 增至 1350（+50%）。
 -- 准备期场上英雄只可在左侧区域排位；小精灵/待命区不受此场地钳制。
 local BATTLEFIELD_HALF_WIDTH = 1200
-local BATTLEFIELD_HALF_HEIGHT = 450
+local BATTLEFIELD_HALF_HEIGHT = 675
 local BATTLEFIELD_MOVE_MARGIN = 64
 local PREPARE_DIVIDER_MARGIN = 150
 
@@ -266,6 +266,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v11-20260908") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -293,7 +294,8 @@ function CDota2RpgDemo:InitGameMode()
 	self.orderedLevels = levelIds
 
 	-- 经济/商店/阵容：项目消费与 Valve 原版商店共用同一个玩家钱包。
-	self.gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 500
+	self.initialGold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 500
+	self.gold = self.initialGold
 	self.goldWalletInitialized = false
 	self.nativeGoldSnapshot = nil
 	self.nativeOrderSignatures = {}
@@ -356,7 +358,7 @@ function CDota2RpgDemo:InitGameMode()
 	GameRules:SetShowcaseTime(0)
 	GameRules:SetPreGameTime(0)
 	GameRules:SetPostGameTime(8)
-	GameRules:SetStartingGold(self.gold)
+	GameRules:SetStartingGold(self.initialGold)
 	GameRules:SetUseUniversalShopMode(true)
 	-- 自定义地图没有标准商店建筑；保留原版 Dota 商店的原价购买与出售体验。
 	if gameMode.SetCanSellAnywhere ~= nil then
@@ -429,7 +431,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-conditions-v9-20260908 loaded; log=dota2_rpg_runtime.log")
+	RuntimeLog.Write("BUILD rpg-runtime-v11-20260908 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -504,13 +506,26 @@ function CDota2RpgDemo:ReadNativeGold()
 	return math.max(0, math.floor(total))
 end
 
+local function LogGoldWallet(self, action, before, after, detail)
+	-- Logging must never interrupt wallet updates, including before engine APIs exist.
+	pcall(function()
+		RuntimeLog.Write(string.format("[Dota2Rpg] GoldWallet action=%s pid=%s before=%s after=%s initialized=%s detail=%s",
+			tostring(action), tostring(self.playerId), tostring(before), tostring(after),
+			tostring(self.goldWalletInitialized == true), tostring(detail)))
+	end)
+end
+
 function CDota2RpgDemo:GetGoldBalance()
+	local before = self.gold
 	local nativeGold = self:ReadNativeGold()
 	if nativeGold ~= nil then
 		-- PlayerResource 是唯一真源。项目自己的消费会同步调用 SetGold，
 		-- 因而这里直接镜像不会把原版商店扣款或出售返款反写掉。
 		self.gold = nativeGold
 		self.nativeGoldSnapshot = nativeGold
+		if before ~= nativeGold then
+			LogGoldWallet(self, "read-change", before, nativeGold, "native")
+		end
 	end
 	return math.max(0, math.floor(tonumber(self.gold) or 0))
 end
@@ -519,20 +534,33 @@ function CDota2RpgDemo:EnsureGoldWalletInitialized()
 	if self.goldWalletInitialized then
 		return self:GetGoldBalance()
 	end
+	local before = self.gold
 	local nativeGold = self:ReadNativeGold()
+	local decision
 	if nativeGold ~= nil and nativeGold > 0 then
-		-- 连接/生成事件可能晚于原版 starting gold；保留原版已存在的余额，
-		-- 不把尚未刷新的 self.gold 当成权威值写回去。
+		-- Preserve a native starting balance, including entirely unreliable gold.
 		self.gold = nativeGold
 		self.nativeGoldSnapshot = nativeGold
+		self.goldWalletInitialized = true
+		decision = "preserve-native"
+	elseif nativeGold ~= nil and PlayerResource.SetGold ~= nil then
+		-- The live mirror may already have read zero before player connection.
+		self:SetGoldBalance(self.initialGold or (ProgressionData and ProgressionData.INITIAL_GOLD)
+			or (self.shopCosts and self.shopCosts.initial_gold) or 500)
+		decision = "seed-startup"
 	else
-		self:SetGoldBalance(self.gold)
+		-- Retry when the player and native wallet APIs become available.
+		decision = "deferred"
 	end
-	self.goldWalletInitialized = true
-	return self:GetGoldBalance()
+	local balance = self:GetGoldBalance()
+	LogGoldWallet(self, "init", before, balance, decision)
+	return balance
 end
 
 function CDota2RpgDemo:SetGoldBalance(amount)
+	local before = self:ReadNativeGold()
+	if before == nil then before = self.gold end
+	local wroteNative = false
 	self.gold = math.max(0, math.floor(tonumber(amount) or 0))
 	if PlayerResource ~= nil and PlayerResource.SetGold ~= nil
 		and self.playerId ~= nil and self.playerId >= 0 then
@@ -541,7 +569,9 @@ function CDota2RpgDemo:SetGoldBalance(amount)
 		PlayerResource:SetGold(self.playerId, 0, false)
 		self.nativeGoldSnapshot = self.gold
 		self.goldWalletInitialized = true
+		wroteNative = true
 	end
+	LogGoldWallet(self, "write", before, self.gold, wroteNative and "native" or "mirror-only")
 	return self.gold
 end
 
@@ -691,6 +721,13 @@ end
 -- 商店与阵容
 ------------------------------------------------------------------
 
+-- The Lua VM starts math.random with a repeatable sequence. Gameplay uses
+-- Dota's native RNG; the fallback is only for standalone Lua test runners.
+local function ShopRandomInt(minimum, maximum)
+	if RandomInt ~= nil then return RandomInt(minimum, maximum) end
+	return math.random(minimum, maximum)
+end
+
 -- 品质概率：按关卡锚点线性插值
 function CDota2RpgDemo:QualityWeightsForStage(stage)
 	local lower, upper
@@ -722,7 +759,7 @@ function CDota2RpgDemo:RollQuality(stage)
 	for _, w in pairs(weights) do
 		total = total + w
 	end
-	local roll = math.random(1, math.max(1, total))
+	local roll = ShopRandomInt(1, math.max(1, total))
 	for _, quality in ipairs({ "legendary", "epic", "fine", "common" }) do
 		roll = roll - (weights[quality] or 0)
 		if roll <= 0 then
@@ -753,7 +790,7 @@ function CDota2RpgDemo:RollShop()
 			end
 		end
 		if #pool > 0 then
-			local heroName = pool[math.random(#pool)]
+			local heroName = pool[ShopRandomInt(1, #pool)]
 			table.insert(offer, heroName)
 		end
 	end
@@ -767,7 +804,7 @@ function CDota2RpgDemo:RollShop()
 	end
 	while #offer < self.shopCosts.lineup_max and #allHeroes > 0 do
 		-- 抽中过前四个属性保底英雄时继续抽，而不是提前 break 导致只显示 4 个报价。
-		local candidate = table.remove(allHeroes, math.random(#allHeroes))
+		local candidate = table.remove(allHeroes, ShopRandomInt(1, #allHeroes))
 		local duplicate = false
 		for _, existing in ipairs(offer) do
 			if existing == candidate then
@@ -801,6 +838,8 @@ function CDota2RpgDemo:RollShop()
 		table.insert(parts, o.hero .. "|" .. o.level .. "|" .. o.quality .. "|" .. o.price)
 	end
 	self.shopOfferText = table.concat(parts, ";")
+	RuntimeLog.Write(string.format("ShopRoll stage=%s rng=%s offers=%s", tostring(self.currentLevelId),
+		RandomInt ~= nil and "native" or "lua-fallback", self.shopOfferText))
 	self:BroadcastShopState()
 end
 
@@ -986,6 +1025,7 @@ function CDota2RpgDemo:BindEquipmentCarrierToPlayer(unit)
 	if unit == nil or self.playerId == nil or self.playerId < 0 then
 		return false
 	end
+	local beforeBinding = self:ReadNativeGold()
 	local owner = self:GetStashUnit()
 	if unit ~= owner then
 		if owner == nil or unit.SetOwner == nil then
@@ -1025,6 +1065,9 @@ function CDota2RpgDemo:BindEquipmentCarrierToPlayer(unit)
 			unit.GetUnitName ~= nil and unit:GetUnitName() or "unit", self.playerId))
 		return false
 	end
+	RuntimeLog.Write(string.format("Wallet carrier_bound player=%d hero=%s native_before=%s native_after=%s",
+		self.playerId, unit.GetUnitName ~= nil and unit:GetUnitName() or "unit",
+		tostring(beforeBinding), tostring(self:ReadNativeGold())))
 	return true
 end
 
@@ -1089,7 +1132,7 @@ function CDota2RpgDemo:TakeStashItem(itemName, expectedItemId)
 		local item = stash:GetItemInSlot(slot)
 		if self:IsLiveItem(item) and item:GetAbilityName() == itemName
 			and (expected == "" or self:GetItemEntityId(item) == expected) then
-			stash:RemoveItem(item)
+			stash:TakeItem(item)
 			return item
 		end
 	end
@@ -1182,10 +1225,10 @@ function CDota2RpgDemo:PromoteNativeStashItem(unit, item, sourceSlot)
 		end
 	end
 
-	-- 某些工具版本不允许 SwapItems 跨储藏栏边界；RemoveItem + AddItem 仍保留同一实体。
-	if unit.RemoveItem ~= nil and unit.AddItem ~= nil
+	-- TakeItem detaches without deleting; RemoveItem destroys the entity in Dota.
+	if unit.TakeItem ~= nil and unit.AddItem ~= nil
 		and self:IsItemHeldBy(unit, item, NATIVE_STASH_FIRST_SLOT, NATIVE_STASH_LAST_SLOT) then
-		unit:RemoveItem(item)
+		unit:TakeItem(item)
 		if self:TryAttachItem(unit, item) then
 			-- AddItem 若仍送回原生储藏栏，实体没有丢失；下一次可由面板直接转交。
 			return self:IsItemHeldBy(unit, item, 0, CARRIER_INVENTORY_LAST_SLOT)
@@ -2028,9 +2071,11 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 					routed = true
 				else
 					local itemNameForLog = found.item.GetAbilityName ~= nil and found.item:GetAbilityName() or purchase.item_name
-					found.holder:RemoveItem(found.item)
+					found.holder:TakeItem(found.item)
 					if not self:TryAttachItem(recipient, found.item) then
-						self:PreserveDetachedItem(found.item, found.holder, "direct purchase routing failed")
+						local preserved = self:PreserveDetachedItem(found.item, found.holder, "direct purchase routing failed")
+						purchase.transfer_decision = preserved and "attachment-failed-preserved" or "attachment-failed"
+						self.nativePurchaseClaimedIds[found.item_id] = nil
 					else
 						local heroName = self:GetEquipmentHeroName(recipient)
 						if heroName ~= nil then
@@ -2044,7 +2089,7 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 			end
 		end
 		if routed or purchase.attempts >= 10 then
-			self:LogNativePurchase(purchase, "transfer", purchase.gold_failed and "unpaid-reverted" or (routed and "resolved" or "item-not-found"))
+			self:LogNativePurchase(purchase, "transfer", purchase.gold_failed and "unpaid-reverted" or purchase.transfer_decision or (routed and "resolved" or "item-not-found"))
 		end
 		if not routed and purchase.attempts < 10 then
 			table.insert(remaining, purchase)
@@ -2127,7 +2172,7 @@ function CDota2RpgDemo:MoveStashItemToHero(heroName, itemName, itemId)
 	end
 	-- AddItem 失败时绝不吞物品：从英雄物品栏/背包/原生储藏栏移除后原样还给小精灵。
 	if self:IsItemHeldBy(hero, item, 0, NATIVE_STASH_LAST_SLOT) then
-		hero:RemoveItem(item)
+		hero:TakeItem(item)
 	end
 	self:PreserveDetachedItem(item, self:GetStashUnit(), "equip rollback failed")
 	return false
@@ -2137,7 +2182,7 @@ function CDota2RpgDemo:MoveHeroItemToStash(hero, item)
 	if hero == nil or not self:IsLiveItem(item) or not self:HasFreeStashSlot() then
 		return false
 	end
-	hero:RemoveItem(item)
+	hero:TakeItem(item)
 	if self:PutItemInStash(item) then
 		self:SyncHeroInventoryFromUnit(hero)
 		return true
@@ -2410,9 +2455,9 @@ function CDota2RpgDemo:CaptureHeroInventoryForRespawn(hero)
 	self:SyncHeroInventoryFromUnit(hero)
 	for slot = 0, NATIVE_STASH_LAST_SLOT do
 		local item = hero:GetItemInSlot(slot)
-		if self:IsLiveItem(item) and hero.RemoveItem ~= nil then
+		if self:IsLiveItem(item) and hero.TakeItem ~= nil then
 			-- 脱离旧单位但保留同一个实体，稍后交给新上阵或新待命实例。
-			hero:RemoveItem(item)
+			hero:TakeItem(item)
 		end
 	end
 end
@@ -2558,6 +2603,9 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 	if self.phase ~= "setup" then
 		return
 	end
+	RuntimeLog.Write(string.format("Wallet roster_before player=%s native=%s mirror=%s initialized=%s owned=%s lineup=%s",
+		tostring(self.playerId), tostring(self:ReadNativeGold()), tostring(self.gold), tostring(self.goldWalletInitialized),
+		table.concat(self.ownedHeroes or {}, ","), table.concat(self.lineup or {}, ",")))
 	self.heroData = self.heroData or {}
 	self:SpawnBenchEnclosure()
 	-- 先收回旧待命和旧上阵实体的物品，再按新阵容分别重建，避免同一物品同时绑定两个英雄实例。
@@ -2621,6 +2669,8 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		end
 	end
 	self:SpawnBenchHeroes()
+	RuntimeLog.Write(string.format("Wallet roster_after player=%s native=%s mirror=%s initialized=%s",
+		tostring(self.playerId), tostring(self:ReadNativeGold()), tostring(self.gold), tostring(self.goldWalletInitialized)))
 	self.equipmentSnapshot = nil
 	self:BroadcastHeroInfo()
 end
@@ -2643,6 +2693,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 	end
 
 	local enemyIndex = 0
+	local enemyOccurrences = {}
 	local spawnCount = #TEAM_SPAWNS[DOTA_TEAM_BADGUYS]
 	for _, entry in pairs(level.enemies or {}) do
 		local count = tonumber(entry.count) or 1
@@ -2696,6 +2747,10 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 						print(string.format("[Dota2Rpg] Enemy %s equipped %d items.", entry.unit, equipped))
 					end
 				end
+				local enemyName = unit:GetUnitName()
+				local occurrence = enemyOccurrences[enemyName] or 0
+				unit.ruleSnapshotKey = "enemy:" .. enemyName .. ":" .. occurrence
+				enemyOccurrences[enemyName] = occurrence + 1
 				battleManager:RegisterHero(DOTA_TEAM_BADGUYS, enemyIndex, unit)
 				unit.enemyRuleIndex = enemyIndex
 				battleManager:RegisterEnemyTags(unit, entry.tags)

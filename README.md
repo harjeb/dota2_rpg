@@ -11,8 +11,9 @@
 - 英雄商店报价由服务端生成，每次 5 个不重复报价。普通 Dota 装备完全交给 Valve 原版商店处理；准备阶段选中小精灵、上阵英雄或待命英雄均可购买和管理装备。额外英雄的购买若被原版引擎送到 assigned hero 小精灵，服务端会按本次新增实体自动补转到所选英雄；9~14 号原生储藏栏也会被扫描并保留。
 - 普通装备的购买、出售、合成、堆叠、充能和原版价格不由项目复制；项目只在 `setup` 阶段接收装备转移、丢弃、拾取、卷轴购买/使用等操作。
 - 战术规则结构为：动作 → 目标硬条件 → 目标优先级 → 使用条件（AND）→ 接近策略。不存在“目标存在”条件；同一技能/主动装备可以出现在多条规则中。Panorama 通过 `rpg_update_rule` 逐条同步，服务端按英雄名稳定键保存当前 Run 规则。
-- 新英雄的默认战术包含已学习、可见且可用的主动技能，使用无额外限制的释放条件，根据技能类型选择敌人、友军或自身，最后执行最近敌人的普通攻击。未编辑的默认配置会随技能学习更新；玩家编辑过的规则保留。
+- 新英雄的默认战术包含已学习、可见且可用的主动技能，使用无额外限制的释放条件，根据技能类型选择敌人、友军或自身，最后执行最近敌人的普通攻击。未编辑的默认配置会随技能学习更新；玩家编辑过的规则保留。配置战术不会自动学习技能，需要先在原版技能栏分配技能点。
 - 胜利实际掉入共享仓库的物品会以图标和名称弹出，带简单缩放淡入动画；点击“确定”或 3 秒后关闭，没有物品掉落时不弹窗。
+- 主战场尺寸为 **2400 × 1350**；准备阶段只能在己方半场排位，开战时中央树墙移除。
 - 敌方英雄的等级和原版装备由 `scripts/data/levels.kv` 配置并在生成时实际装备；敌我双方共用修订版战术执行引擎。
 
 ## 重要文件
@@ -51,4 +52,12 @@ node .\tests\panorama-save.test.js
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-addon.ps1 -Compile
 ```
 
-本次实现没有要求启动游戏；如果后续进行实机验收，应重点确认原版 `PURCHASE_ITEM`、`SELL_ITEM`、`DISASSEMBLE_ITEM` 的真实订单字段、无目标购买归属、出售范围以及原版物品转交行为，并据此再更新 `docs/native-dota-shop-integration.md` 的验收状态。
+启动地图并保存本局控制台日志：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\launch-addon.ps1
+```
+
+启动脚本使用 `-condebug`，日志写入 Dota 安装目录的 `game/dota/console.log`。当前引擎已废弃 `AppendToLogFile`，也不再支持 `con_logfile` 命令。日志中的 `BUILD` 标记可核对实际加载版本；`GoldWallet`、`ShopTxn`、`RuleUpdate` 和 `Tactic` 分别记录金币、装备购买、规则保存和执行原因。
+
+装备的原实体搬运使用 `TakeItem`；`RemoveItem` 会删除实体，只用于真正需要销毁物品的路径。实机排查记录及验证边界见 [`docs/RUNTIME_DIAGNOSIS_2026-09-08.md`](docs/RUNTIME_DIAGNOSIS_2026-09-08.md)。

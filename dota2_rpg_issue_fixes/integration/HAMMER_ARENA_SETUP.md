@@ -1,6 +1,6 @@
 # 原生岩石边界与树木隔断
 
-地图源码位于 `content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap`，修复包 overlay 保存同一份二进制 VMAP。场地仍为两个相邻 1200×900 准备区，总计 2400×900。
+地图源码位于 `content/dota_addons/dota2_rpg/maps/dota2_rpg_demo.vmap`，修复包 overlay 保存同一份二进制 VMAP。场地为两个相邻 1200×1350 准备区，总计 2400×1350（2026-09-08 将可玩区域 Y 高度增加 50%，X 宽度与地面 Z 不变）。
 
 安装器会备份并覆盖 VMAP；有自行编辑地图的 checkout 应先审查差异并在 Hammer 中合并，不能盲目覆盖。
 
@@ -8,18 +8,18 @@
 
 | targetname | 坐标 | 用途 |
 | --- | --- | --- |
-| `rpg_arena_min` | `(-1200, -450, 128)` | 左下角 |
-| `rpg_arena_max` | `(1200, 450, 128)` | 右上角 |
+| `rpg_arena_min` | `(-1200, -675, 128)` | 左下角 |
+| `rpg_arena_max` | `(1200, 675, 128)` | 右上角 |
 | `rpg_arena_center` | `(0, 0, 128)` | 中线中心 |
 
 四个永久 `func_brush` 使用不可见 `materials/tools/toolsclip.vmat`，只承担物理边界，`Solidity = 2`：
 
 | targetname | 中心 | 半尺寸 (X, Y, Z) |
 | --- | --- | --- |
-| `rpg_arena_wall_north` | `(0, 466, 384)` | `(1224, 16, 256)` |
-| `rpg_arena_wall_south` | `(0, -466, 384)` | `(1224, 16, 256)` |
-| `rpg_arena_wall_east` | `(1216, 0, 384)` | `(16, 466, 256)` |
-| `rpg_arena_wall_west` | `(-1216, 0, 384)` | `(16, 466, 256)` |
+| `rpg_arena_wall_north` | `(0, 691, 384)` | `(1224, 16, 256)` |
+| `rpg_arena_wall_south` | `(0, -691, 384)` | `(1224, 16, 256)` |
+| `rpg_arena_wall_east` | `(1216, 0, 384)` | `(16, 691, 256)` |
+| `rpg_arena_wall_west` | `(-1216, 0, 384)` | `(16, 691, 256)` |
 
 四块 `materials/tools/nonavclip.vmat` 地面 slab 继续覆盖外边缘，禁止该处生成地面导航。不要用可见岩石的物理模型代替这些固定导航边界。
 
@@ -32,7 +32,7 @@ models/props_rock/riveredge_rock_wall003a.vmdl
 models/props_rock/riveredge_rock_wall002a.vmdl
 ```
 
-外围共 28 个原版岩石 prop：南北边各 11 个，东西边各 3 个，模型碰撞关闭，由不可见边界统一保护。仓库没有新增自定义模型文件。离线检查只能证明 VMAP 引用了来源中存在的路径；无法验证当前游戏版本 VPK 中的模型、实际包围盒、朝向或渲染效果。需在 Hammer 中预览，必要时仅调整装饰岩石位置/旋转，不改变 marker 和不可见边界契约。
+外围共 28 个原版岩石 prop：南北边各 11 个（Y=±825），东西边各 3 个（X=±1350，Y=-540/0/540），模型碰撞关闭，由不可见边界统一保护。仓库没有新增自定义模型文件。离线检查只能证明 VMAP 引用了来源中存在的路径；无法验证当前游戏版本 VPK 中的模型、实际包围盒、朝向或渲染效果。需在 Hammer 中预览，必要时仅调整装饰岩石位置/旋转，不改变 marker 和不可见边界契约。
 
 ## 中间隔断：原生树木
 
@@ -43,9 +43,9 @@ Both `rpg_mid_gate_visual` and `rpg_mid_gate_nav` are absent from the current VM
 | Prepare/settle | Create the entire row and replace cut trees | `Disable`, then `SetNonsolid` |
 | Fight | Cut each owned tree, then remove its handle | `Disable`, then `SetNonsolid` |
 
-`ArenaController:EnsureMiddleTrees()` creates 10 temporary trees at `x=0`, `y=-426..426`, with gaps at most 96 units. Roots use the flat arena marker plane (`z=128`), not a ground query over the obsolete brush. Direct `OpenMiddleGate()` calls suspend repair even before the phase wrapper runs. Subsequent preparation recreates the row. Cleanup never clears unrelated trees by radius.
+`ArenaController:EnsureMiddleTrees()` creates 15 temporary trees at `x=0`, `y=-651..651`, with gaps at most 96 units. Roots use the flat arena marker plane (`z=128`), not a ground query over the obsolete brush. Direct `OpenMiddleGate()` calls suspend repair even before the phase wrapper runs. Subsequent preparation recreates the row. Cleanup never clears unrelated trees by radius.
 
-`python scripts/update-arena-map.py` removes only the obsolete brush and its private mesh graph, including when nested in a Hammer group, and syncs the binary source overlay. The operation is idempotent. Existing compiled VPKs must be rebuilt and the map reloaded; Lua-only deployment cannot repair baked grid navigation.
+`python scripts/update-arena-map.py` removes the obsolete brush and its private mesh graph, including when nested in a Hammer group, sets the arena markers, perimeter walls, NONAV slabs and rocks to the absolute 2400×1350 layout, and syncs the binary source overlay. Other authored map data is preserved. The operation is idempotent. Existing compiled VPKs must be rebuilt and the map reloaded; Lua-only deployment cannot repair baked grid navigation.
 
 Lua 每 0.2 秒的越界纠正仅针对场上战斗单位。小精灵和待命英雄不注册进战场边界控制。
 

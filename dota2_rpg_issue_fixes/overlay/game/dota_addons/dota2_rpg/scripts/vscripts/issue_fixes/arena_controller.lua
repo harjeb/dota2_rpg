@@ -61,7 +61,7 @@ function ArenaController.new(options)
         or 1200
     local half_height = tonumber(options.half_height)
         or (legacy_square_size and legacy_square_size * 0.5)
-        or 450
+        or 675
 
     return setmetatable({
         min_marker = options.min_marker or "rpg_arena_min",

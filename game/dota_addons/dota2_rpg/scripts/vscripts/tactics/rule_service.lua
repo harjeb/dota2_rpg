@@ -1,4 +1,6 @@
 local Conditions = require("tactics/condition_registry")
+local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
+if not okLog then RuntimeLog = { Write = print } end
 
 local RuleService = {}
 RuleService.__index = RuleService
@@ -494,6 +496,9 @@ function RuleService:InstallEventListener()
             player_id = tonumber(event_source_index) or 0
         end
         local ok, reason = self:UpdateRule(player_id, args.hero_index, args.slot, args)
+        RuntimeLog.Write(string.format("RuleUpdate player=%s hero=%s slot=%s action=%s ok=%s reason=%s",
+            tostring(player_id), tostring(args.hero_index), tostring(args.slot), tostring(args.action_id or ""),
+            tostring(ok), tostring(reason or "")))
         self:SendResult(player_id, args.request_id, ok, reason)
     end)
 end

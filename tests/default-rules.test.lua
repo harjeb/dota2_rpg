@@ -73,4 +73,11 @@ for _, rule in ipairs(migrated) do
     local ok, reason = service:ValidateRule(0, hero, rule)
     assert(ok, reason)
 end
+-- The full mask remains authoritative when the native int accessor overflows.
+local wide = spell("wide_no_target")
+wide.GetBehavior = function() return 137438953472 + 4 end
+wide.GetBehaviorInt = function() return -2147483648 end
+local wideHero = {GetAbilityCount=function() return 1 end, GetAbilityByIndex=function() return wide end}
+local wideRules = Defaults.CreateForHero(wideHero)
+assert(wideRules[1].target.team == "self", "high behavior flags must preserve no-target defaults")
 print("default rules tests passed")

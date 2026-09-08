@@ -71,4 +71,21 @@ assert(adapter:GetRequiredRange(caster, spec, point) == 750, "effective native r
 source.GetEffectiveCastRange = function() return 0 end
 source.GetCastRange = function() return 625 end
 assert(adapter:GetRequiredRange(caster, spec, point) == 625, "zero effective accessor falls back to positive native range")
+-- Live Dota: learned Hammer of Purity includes an upper behavior flag. Its
+-- 32-bit accessor overflows, but the full mask still includes UNIT_TARGET (8).
+DOTA_ABILITY_BEHAVIOR_UNIT_TARGET = 8
+DOTA_ABILITY_BEHAVIOR_VECTOR_TARGETING = 1073741824
+source.GetBehavior = function() return 137439088648 end
+source.GetBehaviorInt = function() return -2147483648 end
+local hammer = assert(adapter:Resolve(caster, {kind="ability", name="omniknight_hammer_of_purity"}, {}))
+assert(hammer.cast_type == "unit", "high behavior flags must not hide unit-target casting")
+source.GetBehavior = function() return 137438953472 + 1073741824 + 16 end
+local vector = assert(adapter:Resolve(caster, {kind="ability", name="native_vector"}, {}))
+assert(vector.cast_type == "vector", "vector flags survive the same 32-bit overflow")
+source.GetBehavior = function() return 137438953472 + 8 end
+local preference, preferenceReason = adapter:Resolve(caster, {
+    kind="ability", name="omniknight_hammer_of_purity", cast_preference="point",
+}, {})
+assert(preference == nil and preferenceReason == "unsupported_cast_preference",
+    "overflow fix must still reject cast modes absent from native behavior")
 print("action-adapter tests passed")

@@ -1,5 +1,6 @@
 local Conditions = require("tactics/condition_registry")
 local VectorTarget = require("tactics/vector_target")
+local Behavior = require("tactics/ability_behavior")
 local ActionAdapter = {}
 ActionAdapter.__index = ActionAdapter
 
@@ -40,22 +41,8 @@ local function find_item_by_name(unit, item_name)
     return nil
 end
 
-local function has_flag(value, flag)
-    if value == nil or flag == nil or bit == nil then
-        return false
-    end
-    return bit.band(value, flag) == flag
-end
-
-local function get_behavior(ability)
-    if ability.GetBehaviorInt ~= nil then
-        return ability:GetBehaviorInt()
-    end
-    if ability.GetBehavior ~= nil then
-        return ability:GetBehavior()
-    end
-    return 0
-end
+local has_flag = Behavior.HasFlag
+local get_behavior = Behavior.Read
 
 local function infer_cast_type(ability)
     local behavior = get_behavior(ability)
