@@ -5,7 +5,12 @@
 	{
 		"dota2_rpg_level_progress"		"Level %s1 / %s2"
 		"dota2_rpg_battle_title"		"3v3 Automated Battle"
-		"dota2_rpg_build_tag"			"UI version 15"
+		"dota2_rpg_build_tag"			"UI version 16"
+		"dota2_rpg_lives_title" "Lives remaining"
+		"dota2_rpg_lives_hint" "3 lives: 2000 gold | 1 life: transferable Aegis + Cheese"
+		"dota2_rpg_run_failed" "No lives remaining. Run ended."
+		"dota2_rpg_life_reward" "Life reward"
+		"dota2_rpg_life_reward_pending" "Reward pending; delivery retries automatically"
 		"DOTA_Tooltip_modifier_rpg_boss_power"		"Boss Empowerment"
 		"DOTA_Tooltip_modifier_rpg_boss_power_Description"		"Massively increased health, attack damage and spell damage. Reduced cooldowns."
 		"dota2_rpg_versus"				"Versus"

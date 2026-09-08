@@ -110,6 +110,63 @@ local previousRangeReads = rangeReads
 assert(adapter:GetRequiredRange(caster, timeWalk, point) == 0, "other abilities do not infer cast range from range specials")
 assert(rangeReads == previousRangeReads, "other abilities never query the Time Walk range fallback")
 rangeBonus = 0
+-- Values below come from the installed native hero definitions in the snapshot.
+local reviewed = {
+    {"dawnbreaker_fire_wreath", "swipe_radius", {300, 300}, false},
+    {"dawnbreaker_celestial_hammer", "range", {700, 900}, true},
+    {"puck_waning_rift", "max_distance", {350, 350}, true},
+    {"magnataur_skewer", "range", {800, 900}, true},
+    {"void_spirit_astral_step", "max_travel_distance", {800, 900}, true},
+    {"monkey_king_wukongs_command", "cast_range", {625, 625}, true},
+    {"mars_gods_rebuke", "radius", {500, 500}, false},
+    {"mars_spear", "spear_range", {900, 1000}, false},
+    {"clinkz_burning_barrage", "range", {850, 850}, false},
+    {"phoenix_icarus_dive", "dash_length", {1100, 1200}, false},
+}
+for _, entry in ipairs(reviewed) do
+    abilityName, abilityLevel, rangeBonus = entry[1], 1, 125
+    source.GetSpecialValueFor = function(_, key)
+        if key == entry[2] then return entry[3][abilityLevel] end
+        return 0
+    end
+    local action = assert(adapter:Resolve(caster, {kind="ability",name=abilityName}, {}))
+    for level=1,2 do
+        abilityLevel = level
+        local expected = entry[3][level] + (entry[4] and 125 or 0)
+        assert(adapter:GetRequiredRange(caster,action,point) == expected, abilityName .. " native dynamic reach")
+        assert(adapter:IsInRange(caster,action,{x=expected}), abilityName .. " legal edge")
+        assert(not adapter:IsInRange(caster,action,{x=expected+25}), abilityName .. " rejects beyond native reach")
+    end
+    source.GetEffectiveCastRange = function() return 125 end
+    assert(adapter:GetRequiredRange(caster,action,point) == entry[3][2] + (entry[4] and 125 or 0),
+        abilityName .. " bonus-only native effective range must not hide its special reach")
+    source.GetEffectiveCastRange = function() return 777 end
+    assert(adapter:GetRequiredRange(caster,action,point) == 777, "positive native API retains authority for " .. abilityName)
+    source.GetEffectiveCastRange = function() return 0 end
+end
+abilityName, rangeBonus = "drow_ranger_multishot", 125
+local attackRange = 625
+caster.Script_GetAttackRange = function() return attackRange end
+source.GetSpecialValueFor = function(_, key) return key == "arrow_range_base" and 475 or 0 end
+local multishot = assert(adapter:Resolve(caster,{kind="ability",name=abilityName},{}))
+assert(adapter:GetRequiredRange(caster,multishot,point)==1100, "Multishot follows native attack range + 475, not cast bonus")
+attackRange = 775
+assert(adapter:GetRequiredRange(caster,multishot,point)==1250, "attack range equipment updates existing Multishot action")
+abilityName = "monkey_king_wukongs_command"
+caster.HasScepter = function() return true end
+source.GetSpecialValueFor = function(_, key) return ({cast_range=625,cast_range_scepter=1550})[key] or 0 end
+assert(adapter:GetRequiredRange(caster,multishot,point)==1675, "Wukong's Command reads native Scepter cast range")
+caster.HasScepter, caster.Script_GetAttackRange = nil, nil
+source.GetSpecialValueFor = function() return 0 end
+source.GetEffectiveCastRange = function() return 125 end
+for _, name in ipairs({"rattletrap_rocket_flare","furion_wrath_of_nature","treant_living_armor","storm_spirit_ball_lightning"}) do
+    abilityName = name
+    assert(adapter:GetRequiredRange(caster,timeWalk,point)==math.huge, name .. " native global zero is not a 125-unit spell")
+    assert(adapter:IsInRange(caster,timeWalk,{x=5000}), name .. " reaches a distant battlefield target")
+end
+source.GetEffectiveCastRange = function() return 0 end
+abilityName, rangeBonus = "unreviewed_ability_with_range", 0
+assert(adapter:GetRequiredRange(caster,timeWalk,point)==0, "unreviewed zero-range spell is never global")
 -- Live Dota: learned Hammer of Purity includes an upper behavior flag. Its
 -- 32-bit accessor overflows, but the full mask still includes UNIT_TARGET (8).
 DOTA_ABILITY_BEHAVIOR_UNIT_TARGET = 8

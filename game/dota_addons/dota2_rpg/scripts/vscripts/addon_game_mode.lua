@@ -13,6 +13,7 @@ local AbilityCatalog = require("tactics/ability_catalog")
 local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
 local BossScaling = require("battle.boss_scaling")
+local RunLives = require("battle.run_lives")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
@@ -229,6 +230,8 @@ function Precache(context)
 	-- 经验卷轴（自定义物品）
 	PrecacheItem("item_rpg_scroll_low")
 	PrecacheItem("item_rpg_scroll_high")
+	PrecacheItem("item_aegis")
+	PrecacheItem("item_cheese")
 
 	-- 只预缓存可招募子集（全量 112 个同步预缓存会导致加载崩溃）
 	local heroData = UnwrapKeyValues(LoadKeyValues("scripts/data/heroes.kv"), "heroes")
@@ -267,7 +270,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v15-20260908") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v16-20260908") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -279,6 +282,9 @@ function CDota2RpgDemo:InitGameMode()
 	self.phase = "setup"
 	self.winner = ""
 	self.runComplete = false
+	self.runFailed = false
+	self.runLives = nil
+	RunLives.Ensure(self)
 	self.teamsSpawned = false
 	self.currentLevelId = "ch01"
 	self.dataLoader = DataLoader()
@@ -432,7 +438,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v15-20260908 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v16-20260908 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3361,6 +3367,12 @@ end
 
 function CDota2RpgDemo:OnThink()
 	self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
+	local lives = RunLives.Ensure(self)
+	if self.phase ~= "fight" and #lives.pendingItems > 0
+		and GameRules:GetGameTime() >= (self.nextLifeRewardAttempt or 0) then
+		self.nextLifeRewardAttempt = GameRules:GetGameTime() + 1
+		if RunLives.FlushItems(self) > 0 then self:BroadcastShopState() end
+	end
 	if not self.teamsSpawned then
 		local state = GameRules:State_Get()
 		if state >= DOTA_GAMERULES_STATE_PRE_GAME then
@@ -3405,6 +3417,16 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	if self.phase ~= "fight" then
 		return
 	end
+	-- Claim settlement before any wallet/item/event callback can re-enter.
+	self.phase = "result"
+	local lifeReward = { gold = 0, items = {} }
+	if winner ~= "radiant" then
+		lifeReward = RunLives.Lose(self)
+		RunLives.FlushItems(self)
+	end
+	local lives = RunLives.Ensure(self)
+	self.runFailed = lives.remaining <= 0
+	if self.runFailed then self.runComplete = true end
 
 	if self.damageStats ~= nil then
 		self.damageStats:Stop(GameRules:GetGameTime())
@@ -3469,6 +3491,12 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		stars = stars,
 		clear_time = math.floor(clearTime),
 		loot_text = table.concat(lootDrops, ";"),
+		lives_remaining = lives.remaining,
+		max_lives = RunLives.MAX_LIVES,
+		life_reward_gold = lifeReward.gold,
+		life_reward_items = table.concat(lifeReward.items, ";"),
+		life_reward_pending = #lives.pendingItems,
+		run_failed = self.runFailed and 1 or 0,
 	}
 	-- 唯一一次奖励：胜利即入账（金币），按上阵/待命逐英雄发经验。
 	if winner == "radiant" then
@@ -3488,10 +3516,11 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	-- 闯关推进：胜利指向下一关（进入下一关时重置刷新费用与卷轴限购）。
 	-- 第 30 关胜利后结束当前 Run，不能再次进入 setup 重复领取终局奖励。
-	if isFinalWin then
+	if isFinalWin or self.runFailed then
 		self.runComplete = true
 		self:BroadcastShopState()
-		print("[Dota2Rpg] Run complete: final level cleared.")
+		print(self.runFailed and "[Dota2Rpg] Run ended: all five lives lost."
+			or "[Dota2Rpg] Run complete: final level cleared.")
 		return
 	end
 	if winner == "radiant" then
@@ -3657,6 +3686,9 @@ function CDota2RpgDemo:BroadcastShopState()
 		lineup_max = self.shopCosts.lineup_max,
 		free_recruit_choices = self.freeRecruitChoices or 0,
 		initial_gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or 500,
+		lives_remaining = RunLives.Ensure(self).remaining,
+		max_lives = RunLives.MAX_LIVES,
+		run_failed = self.runFailed and 1 or 0,
 	})
 end
 
@@ -3682,6 +3714,9 @@ function CDota2RpgDemo:BuildBattleState()
 		phase = self.phase,
 		ready = (self.teamsSpawned and not self.runComplete) and 1 or 0,
 		run_complete = self.runComplete and 1 or 0,
+		run_failed = self.runFailed and 1 or 0,
+		lives_remaining = RunLives.Ensure(self).remaining,
+		max_lives = RunLives.MAX_LIVES,
 		radiant_alive = self.battleManager:GetAliveCount(DOTA_TEAM_GOODGUYS),
 		dire_alive = self.battleManager:GetAliveCount(DOTA_TEAM_BADGUYS),
 		winner = self.winner,

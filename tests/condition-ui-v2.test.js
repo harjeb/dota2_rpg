@@ -519,5 +519,32 @@ assert(/\.RuleSettingsBody\s*\{[^}]*overflow: squish scroll/.test(cssSource), "a
 });
 catalogClick("V2TeamSelect"); catalogClick("V2TeamSelectOption_team_ally"); catalogClick("RuleSettingsApply");
 assert(applied.target_team === "ally" && applied.target === "ally_distance_nearest", "team selector updates both editor and legacy serialization target");
+var livesHud = runHud();
+assert(panel(livesHud,"RunHearts").children.length === 5, "HUD opens with five hearts");
+function lifeSnapshot(left, phase) {
+    livesHud.subscriptions.rpg_battle_state({phase:phase || "setup", ready:left > 0 ? 1 : 0,
+        winner:"dire", lives_remaining:left, max_lives:5, run_failed:left === 0 ? 1 : 0, gold:2500});
+    var hearts = panel(livesHud,"RunHearts").children;
+    assert(hearts.length === 5 && hearts.filter(function(p) { return !p.BHasClass("RunHeartSpent"); }).length === left,
+        "authoritative remaining lives light the matching hearts");
+    assert(panel(livesHud,"RunLivesCount").text === left + " / 5", "life counter reflects server snapshot");
+}
+lifeSnapshot(3, "result");
+var relief = {winner:"dire",lives_remaining:3,max_lives:5,life_reward_gold:2000};
+livesHud.subscriptions.rpg_settlement(relief);
+livesHud.subscriptions.rpg_settlement(relief);
+assert(panel(livesHud,"RewardLabel").text.indexOf("2000") >= 0, "third-life gold shown in loss settlement");
+assert(panel(livesHud,"WalletBalance").text.indexOf("2500") >= 0, "replayed settlement cannot credit a client wallet twice");
+lifeSnapshot(1, "result");
+livesHud.subscriptions.rpg_settlement({winner:"timeout",lives_remaining:1,max_lives:5,
+    life_reward_items:"item_aegis;item_cheese",life_reward_gold:0});
+assert(panel(livesHud,"LootPopupItems").children.map(function(card) { return card.children[0].itemname; }).join(";")
+    === "item_aegis;item_cheese", "last-life loss displays both native reward icons");
+lifeSnapshot(1, "setup");
+assert(panel(livesHud,"StartBattleButton").enabled, "last life still permits a challenge");
+lifeSnapshot(0, "result");
+assert(!panel(livesHud,"StartBattleButton").enabled
+    && panel(livesHud,"BattleStatus").text === "#dota2_rpg_run_failed", "fifth loss displays run end and disables start");
+console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
 console.log("PASS: " + presetCount + " complete template variants, 72 stable documented menu IDs, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");

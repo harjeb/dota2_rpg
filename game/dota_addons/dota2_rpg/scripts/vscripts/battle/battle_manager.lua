@@ -145,10 +145,11 @@ function BattleManager:GetTimeRemaining()
 	return math.max(0, BATTLE_TIME_LIMIT - self:GetBattleTime())
 end
 
-function BattleManager:GetAliveCount(team)
+function BattleManager:GetAliveCount(team, includeReincarnating)
 	local count = 0
 	for _, hero in ipairs(self.teamHeroes[team] or {}) do
-		if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then
+		if TacticEngine.IsValidUnit(hero) and (hero:IsAlive()
+			or (includeReincarnating and hero.IsReincarnating ~= nil and hero:IsReincarnating())) then
 			count = count + 1
 		end
 	end
@@ -176,8 +177,10 @@ function BattleManager:GetEnemyTeam(team)
 end
 
 function BattleManager:CheckBattleEnd()
-	local radiantAlive = self:GetAliveCount(DOTA_TEAM_GOODGUYS)
-	local direAlive = self:GetAliveCount(DOTA_TEAM_BADGUYS)
+	-- Aegis/Wraith King's native death-to-rebirth delay is not a team wipe.
+	-- Target selection and the ordinary alive counter still require IsAlive.
+	local radiantAlive = self:GetAliveCount(DOTA_TEAM_GOODGUYS, true)
+	local direAlive = self:GetAliveCount(DOTA_TEAM_BADGUYS, true)
 	if radiantAlive > 0 and direAlive > 0 then
 		if self:GetTimeLeft() <= 0 then
 			-- 超时判负（DESIGN.md §2.3：防拖时间 loop 局）

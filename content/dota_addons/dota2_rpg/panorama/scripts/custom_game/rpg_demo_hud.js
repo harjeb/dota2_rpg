@@ -1088,11 +1088,30 @@
     function onShopState(data) {
         // Publish the authoritative wallet before optional inventory/menu rendering.
         if (data && data.gold !== undefined) { updateWalletLabel(data.gold); }
+        updateRunLives(data);
         try {
             onShopStateInner(data);
         } catch (e) {
             $("#ControlStatus").text = "ShopStateErr: " + e;
         }
+    }
+
+    function updateRunLives(data) {
+        if (!data || data.lives_remaining === undefined) { return; }
+        var maximum = Math.max(1, Math.min(5, Math.floor(Number(data.max_lives) || 5)));
+        var remaining = Math.max(0, Math.min(maximum, Math.floor(Number(data.lives_remaining) || 0)));
+        var hearts = $("#RunHearts");
+        hearts.RemoveAndDeleteChildren();
+        for (var i = 0; i < maximum; i++) {
+            var heart = $.CreatePanel("Label", hearts, "RunHeart" + i);
+            heart.AddClass("RunHeart");
+            heart.SetHasClass("RunHeartSpent", i >= remaining);
+            heart.text = "♥";
+            heart.hittest = false;
+        }
+        $("#RunLivesCount").text = remaining + " / " + maximum;
+        $("#RunLivesHint").text = $.Localize(remaining === 0
+            ? "#dota2_rpg_run_failed" : "#dota2_rpg_lives_hint");
     }
 
     function updateWalletLabel(gold) {
@@ -1803,6 +1822,7 @@
     function onDamageStats(data) { damageState = data || { elapsed: 0, units: [] }; renderDamage(); }
 
     function onBattleState(data) {
+        updateRunLives(data);
         var previousPhase = phase;
         phase = data.phase || "setup";
         if (phase !== "setup") { $("#RuleSettings").SetHasClass("Hidden", true); }
@@ -1843,7 +1863,7 @@
             startButton.enabled = false;
             startButton.SetHasClass("Hidden", true);
         } else {
-            setStatus("#dota2_rpg_status_finished");
+            setStatus(Number(data.run_failed || 0) === 1 ? "#dota2_rpg_run_failed" : "#dota2_rpg_status_finished");
             startButton.enabled = false;
             startButton.SetHasClass("Hidden", true);
             updateResult(data.winner || "draw");
@@ -1958,10 +1978,21 @@
             }
             rewardLabel.text = parts.join("   ");
         } else if (settlement) {
-            closeLootPopup();
-            rewardLabel.text = settlement.winner === "timeout"
-                ? $.Localize("#dota2_rpg_result_timeout")
-                : $.Localize("#dota2_rpg_result_dire");
+            updateRunLives(settlement);
+            var failureParts = [$.Localize(Number(settlement.run_failed || 0) === 1
+                ? "#dota2_rpg_run_failed" : settlement.winner === "timeout"
+                    ? "#dota2_rpg_result_timeout" : "#dota2_rpg_result_dire")];
+            var reliefGold = Math.max(0, Number(settlement.life_reward_gold || 0));
+            var reliefItems = splitList(settlement.life_reward_items).filter(function (name) { return !!name; });
+            if (reliefGold > 0) {
+                failureParts.push($.Localize("#dota2_rpg_life_reward") + " +" + reliefGold + " " + $.Localize("#dota2_rpg_reward_gold"));
+            }
+            reliefItems.forEach(function (name) { failureParts.push("+" + damageName(name)); });
+            if (Number(settlement.life_reward_pending || 0) > 0) {
+                failureParts.push($.Localize("#dota2_rpg_life_reward_pending"));
+            }
+            showLootPopup(reliefItems);
+            rewardLabel.text = failureParts.join("   ");
         }
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
@@ -1969,6 +2000,7 @@
         updateTeamLevelLabels();
     }
 
+    updateRunLives({ lives_remaining: 5, max_lives: 5 });
     renderSide("Radiant");
     renderSide("Dire");
     setupRuleScroll("Radiant");

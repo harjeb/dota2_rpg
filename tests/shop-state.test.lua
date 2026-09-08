@@ -41,6 +41,7 @@ require = function(name)
 		["tactics/rule_snapshot"] = moduleRoot .. "tactics/rule_snapshot.lua",
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
 		["battle.boss_scaling"] = moduleRoot .. "battle/boss_scaling.lua",
+		["battle.run_lives"] = moduleRoot .. "battle/run_lives.lua",
 		["battle.damage_stats"] = moduleRoot .. "battle/damage_stats.lua",
 		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
@@ -1361,4 +1362,78 @@ broadcastGame:BroadcastShopState()
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 603, "respawn refreshes native selection ID")
 CustomGameEventManager = priorEvents
 
-print("PASS: initial hero shop rolls five unique offers and broadcasts before setup UI; direct equipment, wisp transfer, native pickup sync, and prep item orders work")
+-- Life rewards use the real storage helpers and retain native item entities.
+do
+    local Lives = dofile(moduleRoot .. "battle/run_lives.lua")
+    local previousCreate, previousDrop = CreateItem, CreateItemOnPositionSync
+    ITEM_FULLY_SHAREABLE = 0
+    local function rewards(full)
+        local stash = makeInventoryUnit("npc_dota_hero_wisp", 2, 14)
+        local recipient = makeInventoryUnit("npc_dota_hero_dawnbreaker", 2, 14)
+        local created, dropped = {}, {}
+        local rejectDrop = full
+        if full then
+            for slot = 0, 14 do stash.slots[slot] = makeItem("item_branches") end
+        end
+        CreateItem = function(name)
+            local item = makeItem(name)
+            function item:SetDroppable(value) self.droppable = value end
+            function item:SetShareability(value) self.shareability = value end
+            function item:SetPurchaser(value) self.purchaser = value end
+            created[#created + 1] = item
+            return item
+        end
+        CreateItemOnPositionSync = function(_, item)
+            if rejectDrop then return nil end
+            dropped[#dropped + 1] = item
+            return { item = item }
+        end
+        local game = newGame({
+            gold = 0, GetStashUnit = function() return stash end,
+            AddGold = function(self, amount) self.gold = self.gold + amount end,
+        })
+        assertEqual(Lives.Ensure(game).remaining, 5, "new run has five lives")
+        for left = 4, 1, -1 do
+            Lives.Lose(game)
+            assertEqual(game.runLives.remaining, left, "one lost battle per life")
+            assertEqual(game.gold, left <= 3 and 2000 or 0, "third-life gold credited once")
+        end
+        assertEqual(#game.runLives.pendingItems, 2, "last life earns two native items")
+        local delivered = Lives.FlushItems(game)
+        assertEqual(#created, 2, "one entity created per reward")
+        if full then
+            assertEqual(delivered, 0, "failed inventory and ground delivery remains pending")
+            assertEqual(Lives.FlushItems(game), 0, "retry can remain blocked")
+            assertEqual(#created, 2, "blocked retries reuse both entities")
+            rejectDrop = false
+            assertEqual(Lives.FlushItems(game), 2, "full inventory falls back to ground")
+            assertEqual(#dropped, 2, "both ground rewards retained")
+            assertEqual(dropped[1], created[1], "ground Aegis is original entity")
+            for slot = 0, 14 do assertEqual(stash.slots[slot].name, "item_branches", "existing inventory preserved") end
+        else
+            assertEqual(delivered, 2, "both rewards placed in shared storage")
+            local aegis = game:TakeStashItem("item_aegis", game:GetItemEntityId(created[1]))
+            assertEqual(aegis, created[1], "transfer selects original Aegis")
+            assert(game:TryAttachItem(recipient, aegis), "native Aegis transferred to hero")
+            recipient:TakeItem(aegis)
+            assert(game:PutItemInStash(aegis), "same Aegis can be returned to shared storage")
+        end
+        assertEqual(created[1].name, "item_aegis", "native Aegis reward")
+        assertEqual(created[2].name, "item_cheese", "native Cheese reward")
+        for _, item in ipairs(created) do
+            assertEqual(item.droppable, true, "reward can be dropped")
+            assertEqual(item.shareability, ITEM_FULLY_SHAREABLE, "reward can be shared")
+            assertEqual(item.purchaser, nil, "reward is not purchaser-bound")
+        end
+        Lives.Lose(game); Lives.Lose(game)
+        assertEqual(game.runLives.remaining, 0, "lives cannot fall below zero")
+        assertEqual(game.gold, 2000, "no duplicate gold on exhausted run")
+        assertEqual(Lives.FlushItems(game), 0, "delivered rewards do not repeat")
+        assertEqual(#created, 2, "no duplicate native items")
+    end
+    rewards(false)
+    rewards(true)
+    CreateItem, CreateItemOnPositionSync = previousCreate, previousDrop
+end
+
+print("PASS: initial hero shop, native inventory transfers, five lives and exactly-once transferable life rewards")

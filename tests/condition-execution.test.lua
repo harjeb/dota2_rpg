@@ -164,3 +164,47 @@ assert(attempt() and #orders==1 and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_PO
     and orders[1].Position.x==near.x and orders[1].Position.x~=caster.x,
     "native enemy rule targets the opposing hero instead of the healer profile's allied caster")
 print("PASS: Crystal Nova profile correction reaches a native point order on an opposing hero")
+
+-- Q/W's special ranges must survive the full saved-rule -> selector -> order path.
+local nativeLevel, allowRange, stunned = 1, false, false
+spell.GetLevel=function() return nativeLevel end
+spell.GetCastRange=function() return 0 end
+spell.GetEffectiveCastRange=function() return 0 end
+caster.IsStunned=function() return stunned end
+for _, name in ipairs({"dawnbreaker_fire_wreath", "dawnbreaker_celestial_hammer"}) do
+    nativeLevel, allowRange = 1, false
+    spell.GetAbilityName=function() return name end
+    spell.GetSpecialValueFor=function(_, key)
+        if not allowRange then return 0 end
+        if name=="dawnbreaker_fire_wreath" and key=="swipe_radius" then return 300 end
+        if name=="dawnbreaker_celestial_hammer" and key=="range" then return ({700,900,1100,1300})[nativeLevel] end
+        return 0
+    end
+    near.x=name=="dawnbreaker_fire_wreath" and 250 or 600; far.x=1600
+    rule=service:DecodeFlat({action_kind="ability",action_id=name,action_name=name,
+        target_team="enemy",target_types="hero",approach="range_only",target_priority_1_type="nearest"})
+    assert(service:ValidateRule(0,caster,rule))
+    engine:Reset()
+    assert(not attempt() and #orders==0, name .. " reproduces no legal anchor when range collapses to zero")
+    allowRange=true; engine:Reset()
+    assert(attempt() and #orders==1 and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_POSITION
+        and orders[1].Position.x==near.x and orders[1].Position.x~=caster.x,
+        name .. " now emits a native point cast toward an in-range enemy")
+    caster.GetCastRangeBonus=function() return 125 end
+    spell.GetEffectiveCastRange=function() return 125 end
+    engine:Reset()
+    assert(attempt() and orders[1].Position.x==near.x, name .. " also casts when the effective accessor returns only a range bonus")
+    stunned=true; engine:Reset()
+    assert(not attempt() and #orders==0, name .. " still cannot cast while stunned")
+    stunned=false
+    spell.CastFilterResultLocation=function() return 1 end; engine:Reset()
+    assert(not attempt() and #orders==0, name .. " keeps native location filtering")
+    spell.CastFilterResultLocation=function() return 0 end
+    near.x=name=="dawnbreaker_fire_wreath" and 400 or 850; engine:Reset()
+    assert(not attempt() and #orders==0, name .. " rejects a target beyond level-one reach")
+    if name=="dawnbreaker_celestial_hammer" then
+        nativeLevel=2; engine:Reset()
+        assert(attempt() and orders[1].Position.x==850, "Hammer level two refreshes range to 900 without reauthoring a rule")
+    end
+end
+print("PASS: Dawnbreaker Q/W zero-range reproduction, native enemy point orders, range upgrades and legality/control gates")

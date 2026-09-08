@@ -18,6 +18,7 @@ require = function(name)
         ["battle.damage_stats"] = true,
         ["battle.enemy_scaling"] = true,
         ["battle.boss_scaling"] = true,
+        ["battle.run_lives"] = true,
         ["data.progression_data"] = true,
         ["patches.recruitment_patch"] = true,
         ["patches.progression_patch"] = true,
@@ -30,8 +31,9 @@ dofile(moduleRoot .. "addon_game_mode.lua")
 local function equal(actual, expected, label)
     assert(actual == expected, label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual))
 end
-local function scenario(winner, final)
-    local callback, scheduled, settlements = nil, 0, 0
+local function scenario(winner, final, initialLives)
+    initialLives = initialLives or 5
+    local callback, scheduled, settlements, lastSettlement = nil, 0, 0, nil
     GameRules = { GetGameModeEntity = function()
         return { SetContextThink = function(_, name, fn, delay)
             equal(name, "Dota2RpgBackToSetup", "transition timer")
@@ -40,12 +42,14 @@ local function scenario(winner, final)
             scheduled = scheduled + 1
         end }
     end }
-    CustomGameEventManager = { Send_ServerToAllClients = function(_, event)
+    CustomGameEventManager = { Send_ServerToAllClients = function(_, event, payload)
         equal(event, "rpg_settlement", "settlement event")
         settlements = settlements + 1
+        lastSettlement = payload
     end }
     local game = setmetatable({
         phase = "fight", currentLevelId = final and "ch02" or "ch01",
+        runLives = { remaining = initialLives, pendingItems = {} },
         orderedLevels = { "ch01", "ch02" }, lineup = {}, ownedHeroes = {},
         refreshCount = 3, scrollPurchases = { low = 2, high = 1 }, gold = 500,
         shopCosts = { lineup_max = 5 },
@@ -69,13 +73,22 @@ local function scenario(winner, final)
     game:EndBattle(winner, winner == "radiant" and 2 or 3)
     game:EndBattle(winner, 2)
     equal(settlements, 1, "duplicate battle end rejected")
+    equal(game.runLives.remaining, initialLives - (winner == "radiant" and 0 or 1), "one life per lost battle")
+    equal(lastSettlement.lives_remaining, game.runLives.remaining, "authoritative lives in settlement")
+    equal(lastSettlement.life_reward_gold, winner ~= "radiant" and initialLives == 4 and 2000 or 0, "gold threshold")
+    equal(game.gold, 500 + (winner == "radiant" and 100 or lastSettlement.life_reward_gold), "reward credited once")
+    equal(lastSettlement.life_reward_items, winner ~= "radiant" and initialLives == 2 and "item_aegis;item_cheese" or "", "last-life items")
     equal(game.shopOfferText, "old", "offers remain during settlement")
     game:OnShopRefresh(nil, {})
     equal(game.shopOfferText, "old", "manual refresh rejected during settlement")
-    if final then
-        equal(scheduled, 0, "final victory has no preparation")
+    if final or (winner ~= "radiant" and initialLives == 1) then
+        equal(scheduled, 0, "terminal run has no preparation")
         equal(game.runComplete, true, "final run complete")
+        equal(game.runFailed, winner ~= "radiant", "distinguish win from exhausted lives")
         equal(game.phase, "result", "final phase")
+        game.phase = "setup"; game.teamsSpawned = true; game.lineup = { "axe" }
+        game:OnStartBattle(nil, {})
+        equal(game.phase, "setup", "terminal run rejects another battle even if preparation is requested")
         return
     end
     equal(scheduled, 1, "single transition")
@@ -105,4 +118,8 @@ scenario("dire", false)
 scenario("timeout", false)
 scenario("draw", false)
 scenario("radiant", true)
+scenario("dire", false, 4)
+scenario("timeout", false, 2)
+scenario("dire", false, 1)
+scenario("timeout", false, 1)
 print("shop-transition tests passed")

@@ -36,7 +36,7 @@ require = function(moduleName)
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
-	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" then
+	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
 	-- The production entry point installs the issue-fix bootstrap at EOF.  This

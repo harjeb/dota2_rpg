@@ -79,6 +79,14 @@
 
 	<Panel class="RpgDemoHudRoot" hittest="false">
         <Label id="RuleSyncNotice" class="RuleSyncNotice" text="" visible="false" hittest="false" />
+		<Panel id="RunLivesPanel" hittest="false" hittestchildren="false">
+			<Label id="RunLivesTitle" text="#dota2_rpg_lives_title" />
+			<Panel id="RunLivesRow">
+				<Panel id="RunHearts" />
+				<Label id="RunLivesCount" text="5 / 5" />
+			</Panel>
+			<Label id="RunLivesHint" text="#dota2_rpg_lives_hint" />
+		</Panel>
 		<Panel id="BattleHeader">
 			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
 			<Label id="LevelProgress" text="1/20" />

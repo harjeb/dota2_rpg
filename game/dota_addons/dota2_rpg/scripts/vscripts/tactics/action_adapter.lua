@@ -67,6 +67,35 @@ local function infer_cast_type(ability)
     return nil
 end
 
+-- Native destination/travel ranges whose values are outside AbilityCastRange.
+local special_cast_ranges = {
+    faceless_void_time_walk = "range",
+    dawnbreaker_celestial_hammer = "range",
+    puck_waning_rift = "max_distance",
+    magnataur_skewer = "range",
+    void_spirit_astral_step = "max_travel_distance",
+    monkey_king_wukongs_command = "cast_range",
+}
+-- Directional orders can report zero cast range. Use their native effect reach
+-- to choose a nearby enemy direction; cast-range items do not enlarge a melee
+-- sweep, fixed arc, or arrow's attack-based reach.
+local special_effect_reaches = {
+    dawnbreaker_fire_wreath = "swipe_radius",
+    mars_gods_rebuke = "radius",
+    mars_spear = "spear_range",
+    clinkz_burning_barrage = "range",
+    phoenix_icarus_dive = "dash_length",
+    drow_ranger_multishot = "arrow_range_base",
+}
+-- Zero is also the native representation of these reviewed global casts.
+-- Never turn an arbitrary zero-range or self-centered ability into a global one.
+local global_casts = {
+    rattletrap_rocket_flare = true,
+    furion_wrath_of_nature = true,
+    treant_living_armor = true,
+    storm_spirit_ball_lightning = true,
+}
+
 local function ability_cast_range(caster, ability, target)
     if not is_valid(ability) then
         return 0
@@ -82,25 +111,56 @@ local function ability_cast_range(caster, ability, target)
         return ok and tonumber(value) or nil
     end
     local value = read_range("GetEffectiveCastRange")
-    if value == nil or value <= 0 then value = read_range("GetCastRange") end
+    local native_range = read_range("GetCastRange")
+    local name = ability.GetAbilityName ~= nil and ability:GetAbilityName() or ""
+    if global_casts[name] and native_range ~= nil and native_range <= 0 then
+        return math.huge
+    end
+    if native_range ~= nil and native_range <= 0
+        and (special_cast_ranges[name] or special_effect_reaches[name]) then
+        -- Some native effective accessors return only the caster's range bonus
+        -- when their ordinary range is zero. That is not the spell's full reach.
+        local bonus = caster.GetCastRangeBonus ~= nil and tonumber(caster:GetCastRangeBonus()) or 0
+        if value ~= nil and bonus ~= nil and bonus > 0 and value <= bonus then value = 0 end
+    end
+    if value == nil or value <= 0 then value = native_range end
     if value ~= nil and value > 0 then return value end
     -- Native data can store range in AbilityValues.AbilityCastRange,
     -- not the legacy top-level cast-range field. Resolve that value when the
     -- native range accessor gives zero; never invent a fixed range.
     if ability.GetSpecialValueFor ~= nil then
         local ok, special = pcall(ability.GetSpecialValueFor, ability, "AbilityCastRange")
-        -- Time Walk declares its native travel distance in AbilityValues.range.
-        -- Other abilities may use "range" for unrelated effects; keep this explicit.
+        -- Only reviewed native travel/reach specials are cast-range fallbacks.
+        local special_key = special_cast_ranges[name] or special_effect_reaches[name]
+        local effect_reach = false
         if (not ok or tonumber(special) == nil or tonumber(special) <= 0)
-            and ability.GetAbilityName ~= nil
-            and ability:GetAbilityName() == "faceless_void_time_walk" then
-            ok, special = pcall(ability.GetSpecialValueFor, ability, "range")
+            and special_key ~= nil then
+            ok, special = pcall(ability.GetSpecialValueFor, ability, special_key)
+            effect_reach = special_effect_reaches[name] ~= nil
+            if name == "monkey_king_wukongs_command" and caster.HasScepter ~= nil and caster:HasScepter() then
+                local scepter_ok, scepter_range = pcall(ability.GetSpecialValueFor, ability, "cast_range_scepter")
+                if scepter_ok and tonumber(scepter_range) and tonumber(scepter_range) > 0 then
+                    ok, special = true, scepter_range
+                end
+            end
+            if name == "drow_ranger_multishot" then
+                -- Native description: attack range + arrow_range_base. Read the
+                -- current attack range so equipment/talents are reflected live.
+                local attack_ok, attack_range = false, nil
+                if caster.Script_GetAttackRange ~= nil then
+                    attack_ok, attack_range = pcall(caster.Script_GetAttackRange, caster)
+                end
+                if ok and tonumber(special) and attack_ok and tonumber(attack_range) then
+                    special = tonumber(special) + math.max(0, tonumber(attack_range))
+                else ok = false end
+            end
         end
         if ok and tonumber(special) ~= nil and tonumber(special) > 0 then
-            local bonus = caster.GetCastRangeBonus ~= nil and caster:GetCastRangeBonus() or 0
+            local bonus = not effect_reach and caster.GetCastRangeBonus ~= nil and caster:GetCastRangeBonus() or 0
             return tonumber(special) + (tonumber(bonus) or 0)
         end
     end
+    if ability.GetAbilityName ~= nil and global_casts[ability:GetAbilityName()] then return math.huge end
     return math.max(0, value or 0)
 end
 

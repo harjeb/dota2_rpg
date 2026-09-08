@@ -4,6 +4,14 @@
 	height: 100%;
 }
 
+#RunLivesPanel { width: 330px; height: fit-children; horizontal-align: left; vertical-align: top; margin-left: 18px; margin-top: 14px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
+#RunLivesTitle { font-size: 16px; color: #e6d3d5; }
+#RunLivesRow, #RunHearts { width: fit-children; height: 34px; flow-children: right; }
+.RunHeart { width: 32px; height: 34px; font-family: Arial; font-size: 29px; color: #f46d82; text-align: center; }
+.RunHeartSpent { color: #48505a; }
+#RunLivesCount { width: 72px; vertical-align: center; margin-left: 12px; font-size: 18px; color: #e8dce0; }
+#RunLivesHint { width: 100%; height: fit-children; font-size: 14px; color: #d2bb98; white-space: normal; }
+
 #BattleHeader
 {
 	width: 560px;
@@ -1823,10 +1831,15 @@
 .V2Selector { width: 345px; height: fit-children; flow-children: down; }
 .V2Button { min-height: 32px; padding: 5px 10px; background-color: #293e4b; border: 1px solid #546f80; margin-bottom: 3px; }
 .V2Button Label { font-size: 16px; color: #e1e9ed; vertical-align: center; }
+/* A selected label has percentage width, so its button must not size itself
+   from that label: the circular fit-children dependency collapses to ~30px. */
+.V2Selector > .V2Button { width: 100%; height: 48px; min-height: 48px; }
+.V2Selector > .V2Button Label { width: 100%; max-height: 38px; white-space: normal; text-overflow: ellipsis; }
+.V2Field > .V2Button { width: 100%; min-height: 40px; }
 .V2Button:hover { background-color: #416177; }
 .V2Choices { width: 340px; height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
 .V2Choices .V2Button { width: 100%; height: fit-children; }
-.V2Choices .V2Button Label, .V2Selector > .V2Button Label { width: 100%; white-space: normal; }
+.V2Choices .V2Button Label { width: 100%; white-space: normal; }
 .V2Category { color: #dabd77; font-size: 14px; margin-top: 8px; margin-bottom: 5px; }
 .V2Parameters { width: fill-parent-flow(1); height: fit-children; flow-children: right; }
 .V2Parameters.V2ActionOptions { width: 100%; }
