@@ -5,7 +5,7 @@
 	{
 		"dota2_rpg_level_progress"		"第 %s1 / %s2 关"
 		"dota2_rpg_battle_title"		"3 对 3 自动战斗"
-		"dota2_rpg_build_tag"			"界面版本 16"
+		"dota2_rpg_build_tag"			"界面版本 17"
 		"dota2_rpg_lives_title" "剩余生命"
 		"dota2_rpg_lives_hint" "剩 3 命：2000 金　剩 1 命：可转交的不朽盾 + 奶酪"
 		"dota2_rpg_run_failed" "生命耗尽，本次挑战结束"

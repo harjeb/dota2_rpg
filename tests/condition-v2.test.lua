@@ -269,4 +269,29 @@ sparse.use_conditions[4]={type="always"}
 check(not service:ValidateRule(0,caster,sparse),"sparse arrays rejected")
 spec.ability.CastFilterResultTarget=function() error("native unavailable") end
 check(S.new():SelectUnit({target={},target_filters={},target_priorities={}},spec,ctx)==nil,"native filter errors fail closed")
+-- Hidden follow-ups are accepted by the real server and retain a distinct
+-- identity and cross-stage condition through authoritative snapshots.
+for _, pair in ipairs({
+    {"dawnbreaker_celestial_hammer", "dawnbreaker_converge"},
+    {"phoenix_fire_spirits", "phoenix_launch_fire_spirit"},
+}) do
+    abilities[#abilities+1] = ability(pair[1],false,false)
+    abilities[#abilities+1] = ability(pair[2],true,false)
+    local rules = {}
+    for index, name in ipairs(pair) do
+        local args = {action_kind="ability",action_id=name,target_team="self",
+            use_condition_1_type="action_elapsed_gte",use_condition_1_value=index,
+            use_condition_1_action_id=pair[1]}
+        rules[index] = bridge.ruleService:DecodeFlat(args)
+        check(bridge.ruleService:ValidateRule(0,caster,rules[index]), "owned phase validates before native reveal "..name)
+    end
+    gm.battleManager.getRules = function() return rules end
+    local snapshot = Snapshot.ForHero(gm.battleManager,caster)
+    for index, name in ipairs(pair) do
+        local rehydrated = Bridge.ConvertLegacyRule(index,snapshot[index])
+        check(bridge.ruleService:ValidateRule(0,caster,rehydrated), "phase snapshot revalidates "..name)
+        check(rehydrated.action.logical_id==name and rehydrated.use_conditions[1].action_id==pair[1]
+            and rehydrated.use_conditions[1].value==index, "phase identity and independent condition survive save "..name)
+    end
+end
 print("condition-v2: "..checks.." checks passed")

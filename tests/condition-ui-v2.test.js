@@ -519,6 +519,42 @@ assert(/\.RuleSettingsBody\s*\{[^}]*overflow: squish scroll/.test(cssSource), "a
 });
 catalogClick("V2TeamSelect"); catalogClick("V2TeamSelectOption_team_ally"); catalogClick("RuleSettingsApply");
 assert(applied.target_team === "ally" && applied.target === "ally_distance_nearest", "team selector updates both editor and legacy serialization target");
+// A user can add an independent follow-up rule before the first spell is cast.
+[
+    ["dawnbreaker", "dawnbreaker_celestial_hammer", "dawnbreaker_converge"],
+    ["phoenix", "phoenix_fire_spirits", "phoenix_launch_fire_spirit"]
+].forEach(function (pair) {
+    var phaseHud = runHud(), hero = "npc_dota_hero_" + pair[0];
+    phaseHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
+    var slotData = {slot_key:"radiant_1",hero_index:911,hero_name:hero,rule_key:hero,
+        can_edit:1,rules_ready:1,actions_text:pair[1]+";"+pair[2]+";attack",abilities_text:pair[1]+";"+pair[2],
+        rules:[{action:pair[1],enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",value:3,seconds:3}]}]};
+    phaseHud.subscriptions.rpg_hero_slots(slotData);
+    click(phaseHud,"RadiantAddRule0");
+    click(phaseHud,"RadiantActionSelect1");
+    [pair[1],pair[2]].forEach(function(name) {
+        var option = panel(phaseHud,"ActionOpt_Radiant1_"+name);
+        assert(option && option.GetChild(0).abilityname===name,"both native phase icons are selectable: "+name);
+    });
+    click(phaseHud,"ActionOpt_Radiant1_"+pair[2]);
+    click(phaseHud,"RadiantRuleSettings1");
+    choice(phaseHud,"V2_use0","action_elapsed_gte"); input(phaseHud,"V2_use0_seconds",1.25);
+    click(phaseHud,"V2_use0_action_id"); click(phaseHud,"V2_use0_action_idOption_0_0");
+    click(phaseHud,"RuleSettingsApply");
+    var follow = latest(phaseHud,hero,2);
+    assert(follow.action_id===pair[2] && follow.use_condition_1_action_id===pair[1]
+        && follow.use_condition_1_seconds===1.25 && follow.rule_count===2,"follow-up saves separately and can reference the initial cast");
+    slotData.actions_text = pair[2]+";"+pair[1]+";attack";
+    phaseHud.subscriptions.rpg_hero_slots(slotData);
+    assert(!panel(phaseHud,"RadiantActionSelect0").BHasClass("UnavailableAction")
+        && !panel(phaseHud,"RadiantActionSelect1").BHasClass("UnavailableAction"),"slot swap keeps both authored actions available");
+    click(phaseHud,"RadiantRuleSettings0");
+    assert(panel(phaseHud,"V2_use0_seconds").text==="3","first-stage condition is unchanged");
+    click(phaseHud,"RuleSettingsClose"); click(phaseHud,"RadiantRuleSettings1");
+    assert(panel(phaseHud,"V2_use0_seconds").text==="1.25"
+        && panel(phaseHud,"V2_use0_action_id").GetChild(0).abilityname===pair[1],"follow-up condition and reference survive refresh and reopen");
+});
+
 var livesHud = runHud();
 assert(panel(livesHud,"RunHearts").children.length === 5, "HUD opens with five hearts");
 function lifeSnapshot(left, phase) {
