@@ -142,7 +142,7 @@ do
     assert_equal(source.inventory[0], second, "rejected item remains in source")
 end
 
--- Issue 3: exactly one default rule, no forced padding.
+-- Without a hero's learned abilities, defaults still contain one fallback attack.
 do
     local DefaultRules = require("issue_fixes.default_rules")
     local rules = DefaultRules.Normalize(nil)
@@ -872,7 +872,21 @@ do
     }
     local bridge = TacticBridge.new({ game_mode = game })
     bridge:Install()
-    assert_equal(#bridge.getRules(field), 1, "live bridge supplies one default without client")
+    assert_equal(#bridge.getRules(field), 1, "unlearned hero has only attack default")
+    local learned = 0
+    local ability = {
+        IsNull = function() return false end, GetAbilityName = function() return "test_nuke" end,
+        GetLevel = function() return learned end, IsPassive = function() return false end,
+        IsHidden = function() return false end, IsActivated = function() return true end,
+    }
+    field.GetAbilityCount = function() return 1 end
+    field.GetAbilityByIndex = function() return ability end
+    learned = 1
+    assert_equal(#bridge.getRules(field), 2, "learning refreshes cached defaults without client")
+    assert_equal(bridge.getRules(field)[1].action.logical_id, "test_nuke", "native spell identity before attack")
+    assert_equal(bridge.getRules(field)[2].action.kind, "attack", "attack remains last")
+    learned = 0
+    assert_equal(#bridge.getRules(field), 1, "unavailable spells leave generated defaults")
     assert_equal(bridge.getRules(field)[1].approach, "range_only", "live bridge default is range-only")
     local authored = require("issue_fixes.default_rules").CreateAttackNearestRule()
     authored.enabled = false

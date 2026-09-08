@@ -212,6 +212,12 @@
 			<Label id="RewardLabel" />
 		</Panel>
 
+		<Panel id="LootPopup" class="LootPopup Hidden" hittest="true">
+			<Label class="LootPopupTitle" text="#dota2_rpg_loot_title" />
+			<Panel id="LootPopupItems" class="LootPopupItems" />
+			<Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
+			<Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
+		</Panel>
 		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
 		<Panel id="RuleSettings" class="RuleSettings Hidden">
 			<Panel class="RuleSettingsCard">

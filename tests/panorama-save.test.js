@@ -77,7 +77,9 @@ function createPanel(id) {
     };
 }
 
-function runHud() {
+function runHud(options) {
+    options = options || {};
+    var scheduled = [];
     var panels = {};
     var createdPanels = [];
     var sentEvents = [];
@@ -107,7 +109,10 @@ function runHud() {
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) { return token; };
-    panorama.Schedule = function (_, callback) { callback(); };
+    panorama.Schedule = function (delay, callback) {
+        if (options.deferTimers) { scheduled.push({ delay: delay, callback: callback }); }
+        else { callback(); }
+    };
     panorama.LocalStorage = {
         Get: function () { localStorageCalls++; return "null"; },
         Set: function () { localStorageCalls++; }
@@ -144,6 +149,7 @@ function runHud() {
         sentEvents: sentEvents,
         nativeSelections: nativeSelections,
         subscriptions: subscriptions,
+        scheduled: scheduled,
         getLocalStorageCalls: function () { return localStorageCalls; }
     };
 }
@@ -171,6 +177,11 @@ var firstHeroRule = ruleSyncContext.RpgRuleSync.serialize({
 });
 assert(firstHeroRule.hero_index === 0, "rule sync must not drop the first hero entity index");
 
+function serverRules(actions) {
+    return actions.map(function (action) {
+        return { action: action, enabled: 1, target_team: "enemy", target_priorities: [{type: "nearest"}], use_conditions: [] };
+    });
+}
 var hud = runHud();
 // Editing starts after authoritative hero metadata arrives.
 hud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_name:"npc_dota_hero_lion",hero_index:502,
@@ -215,14 +226,16 @@ hud.subscriptions.rpg_hero_slots({
     hero_name: "npc_dota_hero_axe",
     hero_index: 501,
     actions_text: "ability_1;ability_2;ultimate;attack",
-    details_text: "axe_berserkers_call;axe_battle_hunger;axe_culling_blade;attack"
+    details_text: "axe_berserkers_call;axe_battle_hunger;axe_culling_blade;attack",
+    rules_ready: 1, rules: serverRules(["ability_1", "ability_2", "ultimate", "attack"])
 });
 hud.subscriptions.rpg_hero_slots({
     slot_key: "dire_1",
     hero_name: "npc_dota_hero_lion",
     hero_index: 502,
     actions_text: "ability_1;attack",
-    details_text: "lion_impale;attack"
+    details_text: "lion_impale;attack",
+    rules_ready: 1, rules: serverRules(["ability_1", "attack"])
 });
 
 function created(hud, id) {
@@ -247,11 +260,18 @@ function chooseAction(hud, side, row, action) {
 }
 
 ["Radiant", "Dire"].forEach(function (side) {
-    assert(visibleRules(hud, side).length === 1, side + " must have one default rule");
-    assert(hud.createdPanels.filter(function (p) { return p.classes.RuleRow && p.id.indexOf(side) === 0; }).length === 1,
-        side + " must not preallocate fixed rule rows");
+    var expectedActions = side === "Radiant" ? ["axe_berserkers_call", "axe_battle_hunger", "axe_culling_blade"] : ["lion_impale"];
+    assert(visibleRules(hud, side).length === expectedActions.length + 1, side + " defaults include active skills plus attack");
+    expectedActions.forEach(function (name, index) {
+        assert(created(hud, side + "ActionAbility" + index).abilityname === name, "active skills precede attack");
+        assert(created(hud, side + "ConditionEditor" + index).FindChildTraverse("ConditionValue").text === "#dota2_rpg_condition_always",
+            "default skills use the simplest always condition");
+    });
+    // Reduce to one authored rule for the existing add/delete/scroll regression below.
+    for (var row = expectedActions.length; row > 0; row--) { created(hud, side + "DeleteRule" + row).events.onactivate(); }
+    var defaultEventStart = hud.sentEvents.length;
     chooseAction(hud, side, 0, "attack"); // Explicit edit sends; metadata/render must not overwrite server rules.
-    var defaults = hud.sentEvents.filter(function (e) {
+    var defaults = hud.sentEvents.slice(defaultEventStart).filter(function (e) {
         return e.name === "rpg_update_rule" && e.payload.hero_index === (side === "Radiant" ? 501 : 502)
             && e.payload.enabled === 1;
     });
@@ -503,7 +523,7 @@ assert(!/\.RpgTransparentHeroShop \.ShopOffer\s*\{/.test(fixesCssSource),
     assert(fs.readFileSync(entry[0]).equals(fs.readFileSync(overlayPath)), "overlay must match live UI: " + entry[1]);
 });
 
-console.log("PASS: live HUD single defaults, authored rows, collapse wiring, transparent shop, no-save, transfers, icons and overlay parity");
+console.log("PASS: live HUD active skill defaults, authored rows, collapse wiring, transparent shop, no-save, transfers, icons and overlay parity");
 
 // Real roster events replace fixed portraits and preserve identity/count across refreshes.
 var damageHud = runHud();
@@ -550,7 +570,8 @@ console.log("PASS: actual enemy roster, battle collapse, DPS teams, source color
 var persistenceHud = runHud();
 function slots(side, index, name, entity) {
     persistenceHud.subscriptions.rpg_hero_slots({slot_key: side.toLowerCase() + "_" + index,
-        hero_name: name, hero_index: entity, actions_text: "ability_1;attack", details_text: "lion_impale;attack"});
+        hero_name: name, hero_index: entity, actions_text: "ability_1;attack", details_text: "lion_impale;attack",
+        rules_ready: 1, rules: serverRules(["ability_1", "attack"])});
 }
 function setHealthCondition(side) {
     var editor = created(persistenceHud, side + "ConditionEditor0");
@@ -570,19 +591,19 @@ slots("Dire", 2, lionName, 102);
 setHealthCondition("Dire");
 created(persistenceHud, "DireAddRule0").events.onactivate();
 persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
-assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 1,
+assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
     "duplicate enemies have independent authored rules");
 persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 201, name: lionName}, {id: 202, name: lionName}]});
 slots("Dire", 1, lionName, 201);
 slots("Dire", 2, lionName, 202);
 persistenceHud.panels["#DireHeroDyn1"].events.onactivate();
-assert(healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
+assert(healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 3,
     "enemy respawn preserves condition and authored row count by occurrence");
 persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
 assert(!healthCondition("Dire"), "second duplicate stays independent after respawn");
 persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 301, name: axeName}]});
 slots("Dire", 1, axeName, 301);
-assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 1,
+assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
     "new enemy identity starts with default rules");
 slots("Radiant", 1, axeName, 401);
 slots("Radiant", 2, lionName, 402);
@@ -614,3 +635,68 @@ assert(walletHud.panels["#WalletBalance"].text === "#dota2_rpg_wallet_balance 40
 walletHud.subscriptions.rpg_shop_state({gold: 375, offer_text: {invalid: true}});
 assert(walletHud.panels["#WalletBalance"].text === "#dota2_rpg_wallet_balance 375", "wallet update survives optional shop renderer errors");
 console.log("PASS: visible authoritative wallet updates independently of lineup and inventory");
+
+var learnedHud = runHud();
+var learnedMetadata = {
+    slot_key: "radiant_1", hero_name: "npc_dota_hero_lion", hero_index: 501,
+    actions_text: "ability_1;ability_2;ultimate;attack", details_text: "lion_impale;lion_voodoo;lion_finger_of_death;attack",
+    rules_ready: 1, rules: serverRules(["ability_1", "attack"])
+};
+learnedHud.subscriptions.rpg_hero_slots(learnedMetadata);
+assert(visibleRules(learnedHud, "Radiant").length === 2, "unlearned actions in picker do not become default rules");
+learnedMetadata.rules = serverRules(["ability_1", "ability_2", "attack"]);
+learnedMetadata.rules[1].target_team = "ally";
+learnedHud.subscriptions.rpg_hero_slots(learnedMetadata);
+assert(visibleRules(learnedHud, "Radiant").length === 3, "newly learned skills refresh untouched defaults");
+chooseAction(learnedHud, "Radiant", 2, "attack");
+assert(learnedHud.sentEvents.some(function (event) {
+    return event.name === "rpg_update_rule" && event.payload.slot === 3 && event.payload.action_kind === "attack";
+}), "basic attack remains last after skill refresh");
+created(learnedHud, "RadiantRuleSettings1").events.onactivate();
+learnedHud.panels["#RuleSettingsApply"].events.onactivate();
+assert(learnedHud.sentEvents.some(function (event) {
+    return event.name === "rpg_update_rule" && event.payload.slot === 2 && event.payload.target_team === "ally";
+}), "server-selected friendly target survives UI hydration");
+learnedMetadata.rules = serverRules(["attack"]);
+learnedHud.subscriptions.rpg_hero_slots(learnedMetadata);
+assert(visibleRules(learnedHud, "Radiant").length === 3, "later snapshots cannot overwrite locally authored rules");
+console.log("PASS: learned skill refresh, authoritative target teams, attack priority and authored protection");
+
+var lootHud = runHud({ deferTimers: true });
+var lootPopup = lootHud.panels["#LootPopup"];
+function settleLoot(winner, items) {
+    lootHud.subscriptions.rpg_settlement({winner: winner, loot_text: items, gold: 100});
+}
+function latestLootTimer() {
+    return lootHud.scheduled.filter(function (timer) { return timer.delay === 3; }).slice(-1)[0];
+}
+settleLoot("radiant", "item_blink;item_magic_wand;");
+assert(!lootPopup.BHasClass("Hidden") && lootPopup.BHasClass("LootPopupShowing"), "victory loot starts popup animation");
+var lootCards = lootHud.panels["#LootPopupItems"].children;
+assert(lootCards.length === 2 && lootCards[0].children[0].itemname === "item_blink"
+    && lootCards[1].children[0].itemname === "item_magic_wand", "popup shows every received item with a native icon");
+assert(lootCards[0].children[1].text === "item_blink", "unlocalized item names have a readable fallback");
+var oldLootTimer = latestLootTimer();
+assert(oldLootTimer, "popup schedules closure at exactly three seconds");
+lootHud.panels["#LootPopupConfirm"].events.onactivate();
+assert(lootPopup.BHasClass("Hidden"), "confirm immediately dismisses loot");
+settleLoot("radiant", "item_branches");
+oldLootTimer.callback();
+assert(!lootPopup.BHasClass("Hidden"), "previous popup timer cannot dismiss a new reward");
+latestLootTimer().callback();
+assert(lootPopup.BHasClass("Hidden"), "three second timeout dismisses without confirmation");
+settleLoot("radiant", "item_blink");
+oldLootTimer = latestLootTimer();
+settleLoot("radiant", "item_branches");
+assert(lootHud.panels["#LootPopupItems"].children.length === 1, "new settlement replaces old reward cards");
+oldLootTimer.callback();
+assert(!lootPopup.BHasClass("Hidden"), "replacement settlement gets its own complete timeout");
+settleLoot("radiant", "");
+assert(lootPopup.BHasClass("Hidden"), "victory without drops does not show empty popup");
+settleLoot("dire", "item_blink");
+assert(lootPopup.BHasClass("Hidden"), "defeat cannot show loot popup");
+settleLoot("timeout", "item_blink");
+assert(lootPopup.BHasClass("Hidden"), "timeout cannot show loot popup");
+assert(!lootHud.sentEvents.some(function (event) { return /loot|reward|settlement/.test(event.name); }),
+    "popup display and confirmation never grant rewards again");
+console.log("PASS: victory loot icons, animation state, confirm, 3-second dismissal and stale timer isolation");

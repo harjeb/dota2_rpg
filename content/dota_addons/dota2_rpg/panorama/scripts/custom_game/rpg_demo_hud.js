@@ -188,16 +188,12 @@
     }
 
     function buildRulesForHero(side, heroIndex) {
-        var defaults = DEFAULT_RULE_BY_ACTION.attack;
+        // The action picker also lists hidden/unlearned abilities. Wait for the
+        // authoritative rules snapshot before showing generated skill rules.
         return [{
-            action: "attack",
-            condition: defaults.condition,
-            value: defaults.value,
-            target_attr: defaults.target_attr,
-            target_side: defaults.target_side,
-            target: composeTarget(defaults.target_attr, defaults.target_side),
-            forced: defaults.forced,
-            enabled: true
+            action: "attack", condition: "always", value: 50,
+            target_attr: "distance", target_side: "nearest",
+            target: "enemy_distance_nearest", forced: false, enabled: true
         }];
     }
 
@@ -998,6 +994,7 @@
             forced: false,
             enabled: false
         };
+        rules._authored = true;
         RpgRuleSync.sendRule({
             heroIndex: entry.hero_index,
             heroName: entry.name,
@@ -1882,6 +1879,38 @@
             .replace("%s1", String(index)).replace("%s2", String(total));
     }
 
+    var lootPopupGeneration = 0;
+
+    function closeLootPopup() {
+        lootPopupGeneration++;
+        $("#LootPopup").SetHasClass("Hidden", true);
+        $("#LootPopup").SetHasClass("LootPopupShowing", false);
+    }
+
+    function showLootPopup(items) {
+        closeLootPopup();
+        var list = $("#LootPopupItems");
+        list.RemoveAndDeleteChildren();
+        if (!items.length) { return; }
+        items.forEach(function (name) {
+            var card = $.CreatePanel("Panel", list, "");
+            card.AddClass("LootItemCard");
+            var image = $.CreatePanel("DOTAItemImage", card, "");
+            image.itemname = name;
+            image.hittest = false;
+            var label = $.CreatePanel("Label", card, "");
+            label.text = damageName(name);
+            label.hittest = false;
+        });
+        var generation = lootPopupGeneration;
+        var popup = $("#LootPopup");
+        popup.SetHasClass("Hidden", false);
+        popup.SetHasClass("LootPopupShowing", true);
+        $.Schedule(3, function () {
+            if (generation === lootPopupGeneration) { closeLootPopup(); }
+        });
+    }
+
     function onSettlement(settlement) {
         var reward = grantSettlement(settlement);
         var rewardLabel = $("#RewardLabel");
@@ -1894,14 +1923,14 @@
                 .replace("%s1", String(reward.totalXp))
                 .replace("%s2", String(reward.activeXp))
                 .replace("%s3", String(reward.benchXp)));
-            var lootDrops = settlement.loot_text ? settlement.loot_text.split(";") : [];
+            var lootDrops = splitList(settlement.loot_text).filter(function (name) { return !!name; });
+            showLootPopup(lootDrops);
             for (var li = 0; li < lootDrops.length; li++) {
-                if (lootDrops[li]) {
-                    parts.push("+" + lootDrops[li].replace("item_", ""));
-                }
+                parts.push("+" + damageName(lootDrops[li]));
             }
             rewardLabel.text = parts.join("   ");
         } else if (settlement) {
+            closeLootPopup();
             rewardLabel.text = settlement.winner === "timeout"
                 ? $.Localize("#dota2_rpg_result_timeout")
                 : $.Localize("#dota2_rpg_result_dire");
@@ -1926,6 +1955,7 @@
         GameEvents.SendCustomGameEventToServer("rpg_start_battle", buildPayload());
     });
 
+    $("#LootPopupConfirm").SetPanelEvent("onactivate", closeLootPopup);
     $("#DamageFriendly").SetPanelEvent("onactivate", function () { damageTeam = 2; selectedDamageUnit = null; selectedDamageSource = null; renderDamage(); });
     $("#DamageEnemy").SetPanelEvent("onactivate", function () { damageTeam = 3; selectedDamageUnit = null; selectedDamageSource = null; renderDamage(); });
     GameEvents.Subscribe("rpg_enemy_roster", onEnemyRoster);
@@ -1961,12 +1991,15 @@
             var side = match[1] === "radiant" ? "Radiant" : "Dire";
             var heroIndex = Math.max(0, Number(match[2]) - 1);
             var current = getRules(side, heroIndex);
-            if (Number(data.rules_ready) === 1 && (!current._serverHydrated || heroSlots[slotKey].can_edit === false)) {
+            if (Number(data.rules_ready) === 1 && (!current._serverHydrated || !current._authored || heroSlots[slotKey].can_edit === false)) {
                 var restored = RpgRuleSync.list(data.rules).map(RpgRuleSync.fromServer);
                 if (!restored.length) { restored = buildRulesForHero(side,heroIndex); }
                 current.splice(0,current.length);
                 restored.forEach(function(rule) { current.push(rule); });
                 current._serverHydrated = true;
+            } else if (!current._serverHydrated && !current._authored) {
+                current.splice(0,current.length);
+                buildRulesForHero(side,heroIndex).forEach(function(rule) { current.push(rule); });
             }
             renderSide(side);
         }

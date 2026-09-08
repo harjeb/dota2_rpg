@@ -169,12 +169,19 @@ local DEFAULT_RULES = {
 	{ action = "attack", condition = "always", value = 50, target = "enemy_distance_nearest", forced = true },
 }
 
--- Legacy bridge fallback uses the same single range-only rule as the editor.
-local function BuildDefaultRulesForSlots()
-	return {
-		{ action = "attack", condition = "always", value = 50,
-			target = "enemy_distance_nearest", forced = false, enabled = true },
-	}
+-- Legacy consumers receive the same learned-ability defaults as the bridge.
+local function BuildDefaultRulesForSlots(_slots, hero)
+	local rules = {}
+	for _, rule in ipairs(require("issue_fixes.default_rules").CreateForHero(hero)) do
+		rules[#rules + 1] = {
+			id = rule.id, is_default = true,
+			action = rule.action.kind == "attack" and "attack" or rule.action.logical_id,
+			condition = "always", value = 50,
+			target = rule.target.team == "self" and "self" or (rule.target.team .. "_distance_nearest"),
+			forced = false, enabled = true,
+		}
+	end
+	return rules
 end
 
 local function CloneDefaultRules()
@@ -2602,9 +2609,11 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 					end
 				end
 				battleManager:RegisterHero(DOTA_TEAM_GOODGUYS, index, hero)
-				-- Only a missing rule list receives the single default attack rule.
-				self.heroRulesByName[heroName] = self.heroRulesByName[heroName]
-					or BuildDefaultRulesForSlots(BuildHeroActionSlots(hero))
+				-- Rebuild only known generated defaults; authored lists survive respawns.
+				if self.heroRulesByName[heroName] == nil
+					or require("issue_fixes.default_rules").IsDefaultOnly(self.heroRulesByName[heroName]) then
+					self.heroRulesByName[heroName] = BuildDefaultRulesForSlots(BuildHeroActionSlots(hero), hero)
+				end
 				battleManager.teamRules[DOTA_TEAM_GOODGUYS][index] = self.heroRulesByName[heroName]
 			end
 		else

@@ -143,6 +143,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 
 	return RuleService.StripRemovedConditions({
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
+        is_default = legacy.is_default == true,
 		enabled = legacy.enabled ~= false,
 		action = {
 			kind = actionKind,
@@ -268,16 +269,16 @@ function TacticBridge:Install()
 		local heroName = unit.lineupHeroName or unit:GetUnitName()
 		local cache = legacyCache[heroName]
 		if cache ~= nil then
+            cache = DefaultRules.Normalize(cache, unit)
+            legacyCache[heroName] = cache
 			return cache
 		end
 		local legacyRules = gameMode.heroRulesByName[heroName] or {}
 		local converted = {}
 		for slot, legacy in ipairs(legacyRules) do
-			if legacy.enabled ~= false then
-				table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
-			end
+            table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
 		end
-		converted = DefaultRules.Normalize(converted)
+		converted = DefaultRules.Normalize(converted, unit)
 		legacyCache[heroName] = converted
 		return converted
 	end
