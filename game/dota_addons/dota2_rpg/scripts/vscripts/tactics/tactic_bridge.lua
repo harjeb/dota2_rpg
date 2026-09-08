@@ -79,10 +79,10 @@ local function decomposeLegacyTarget(target)
 		table.insert(filters, { type = "is_casting" })
 		table.insert(priorities, { type = "nearest" })
 	elseif string.match(id, "_boss$") ~= nil then
-		table.insert(filters, { type = "has_tag", value = "boss" })
+		table.insert(priorities, { type = "prefer_tag", value = "boss" })
 		table.insert(priorities, { type = "nearest" })
 	elseif string.match(id, "_healer$") ~= nil then
-		table.insert(filters, { type = "has_tag", value = "healer" })
+		table.insert(priorities, { type = "prefer_tag", value = "healer" })
 		table.insert(priorities, { type = "nearest" })
 	elseif string.match(id, "_controlled$") ~= nil then
 		table.insert(filters, { type = "is_controlled" })
@@ -119,9 +119,6 @@ local function mapRuleCondition(conditionType, value)
 	if conditionType == "any_ally_recently_damaged" then
 		return { type = "any_ally_recently_damaged", seconds = math.max(1, v) }
 	end
-	if conditionType == "dead_ally_count_gte" then
-		return { type = "dead_ally_count_gte", value = v }
-	end
 	return { type = tostring(conditionType), value = value }
 end
 
@@ -144,7 +141,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
     if #decoded.target_filters > 0 then filters = decoded.target_filters end
     if #decoded.target_priorities > 0 then priorities = decoded.target_priorities end
 
-	return {
+	return RuleService.StripRemovedConditions({
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
 		enabled = legacy.enabled ~= false,
 		action = {
@@ -157,7 +154,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 		target_priorities = priorities,
 		use_conditions = useConditions,
 		approach = legacy.forced and "allow_approach" or "range_only",
-	}
+	})
 end
 
 function TacticBridge.new(options)

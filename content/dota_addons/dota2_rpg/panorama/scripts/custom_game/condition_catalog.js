@@ -9,15 +9,13 @@ var RpgConditionCatalog = (function () {
     }
     add("use", "always", "general", "");
     ["self_hp_pct_lte", "self_hp_pct_gte", "self_mana_pct_lte", "self_mana_pct_gte"].forEach(function (id) { add("use", id, "resources", "value"); });
-    ["alive_ally_count_gte", "alive_enemy_count_gte", "alive_enemy_count_lte", "dead_ally_count_gte"].forEach(function (id) { add("use", id, "battle", "value"); });
+    ["alive_ally_count_gte", "alive_enemy_count_gte", "alive_enemy_count_lte", ].forEach(function (id) { add("use", id, "battle", "value"); });
     ["nearby_allies_gte", "nearby_enemies_gte"].forEach(function (id) { add("use", id, "proximity", "value,radius"); });
     add("use", "no_enemy_within", "proximity", "radius");
     ["elapsed_gte", "elapsed_lte", "self_recently_damaged", "any_ally_recently_damaged"].forEach(function (id) { add("use", id, "time", "seconds"); });
-    ["self_strength_gte", "self_agility_gte", "owned_summons_gte", "owned_summons_lte"].forEach(function(id) { add("use",id,"resources","value"); });
     ["action_elapsed_gte", "action_elapsed_lte"].forEach(function(id) { add("use",id,"action","seconds,action_id"); });
     add("use", "action_use_count_lt", "action", "value,action_id");
     add("use", "ability_charges_gte", "action", "value,action_id");
-    ["action_used_within", "action_not_used_within"].forEach(function (id) { add("use", id, "action", "seconds,action_id"); });
     ["self_has_modifier", "self_not_has_modifier"].forEach(function (id) { add("use", id, "advanced", "modifier"); });
     ["stacks", "remaining"].forEach(function (property) {
         ["gte", "lte"].forEach(function (direction) {
@@ -27,8 +25,8 @@ var RpgConditionCatalog = (function () {
     ["hp_pct_lte", "hp_pct_gte", "mana_pct_lte", "mana_pct_gte", "health_lte", "health_gte", "missing_health_gte", "missing_health_lte"].forEach(function (id) { add("target", id, "resources", "value"); });
     ["distance_lte", "distance_gte"].forEach(function (id) { add("target", id, "proximity", "value"); });
     ["nearby_allies_gte", "nearby_enemies_gte"].forEach(function (id) { add("target", id, "proximity", "value,radius"); });
-    ["exclude_self", "is_hero", "is_summon", "not_illusion", "is_illusion", "is_creep", "owned_by_self"].forEach(function (id) { add("target", id, "identity", ""); });
-    ["is_casting", "is_channeling", "is_controlled", "is_stunned", "is_silenced", "is_rooted", "is_spell_immune", "not_spell_immune", "is_invulnerable", "not_invulnerable", "has_dispellable_buff", "has_dispellable_debuff"].forEach(function (id) { add("target", id, "status", ""); });
+    ["exclude_self", "is_hero", "is_summon", "is_illusion", "owned_by_self"].forEach(function (id) { add("target", id, "identity", ""); });
+    ["is_casting", "is_channeling", "is_controlled", "is_stunned", "is_silenced", "is_rooted", "is_spell_immune", "not_spell_immune", "has_dispellable_buff", "has_dispellable_debuff"].forEach(function (id) { add("target", id, "status", ""); });
     add("target", "recently_damaged", "time", "seconds");
     ["has_modifier", "not_has_modifier"].forEach(function (id) { add("target", id, "advanced", "modifier"); });
     ["stacks", "remaining"].forEach(function (property) {
@@ -36,7 +34,6 @@ var RpgConditionCatalog = (function () {
             add("target", "modifier_" + property + "_" + direction, "advanced", "modifier," + (property === "remaining" ? "seconds" : "value"));
         });
     });
-    ["has_tag", "not_has_tag"].forEach(function (id) { add("target", id, "advanced", "value_text"); });
     ["nearest", "farthest", "lowest_hp_pct", "highest_hp_pct", "lowest_health", "highest_health", "most_missing_health", "lowest_armor", "highest_armor", "lowest_attack_damage", "highest_attack_damage", "lowest_magic_resistance", "highest_magic_resistance"].forEach(function (id) { add("priority", id, "priority", ""); });
 
     function text(id) { return $.Localize("#dota2_rpg_v2_" + id); }
@@ -46,12 +43,13 @@ var RpgConditionCatalog = (function () {
     }
     function clone(value) { return JSON.parse(JSON.stringify(value)); }
     var valueLimits = { alive_enemy_count_gte: 1000, alive_ally_count_gte: 20, alive_enemy_count_lte: 20,
-        dead_ally_count_gte: 20, nearby_allies_gte: 20, nearby_enemies_gte: 20, elapsed_gte: 120,
+        nearby_allies_gte: 20, nearby_enemies_gte: 20, elapsed_gte: 120,
         elapsed_lte: 120, action_use_count_lt: 100, ability_charges_gte: 1000 };
+    var retired = {"dead_ally_count_gte": true, "self_strength_gte": true, "self_agility_gte": true, "owned_summons_gte": true, "owned_summons_lte": true, "action_used_within": true, "action_not_used_within": true, "not_illusion": true, "is_creep": true, "is_invulnerable": true, "not_invulnerable": true, "has_tag": true, "not_has_tag": true};
     function normalize(group, input) {
         input = input && typeof input === "object" ? input : {};
         var type = String(input.type || "");
-        if (!type) { return { type: "" }; }
+        if (!type || retired[type]) { return { type: "" }; }
         var def = definitions[group + ":" + type];
         // Preserve unknown authored conditions so future server additions are not silently erased.
         if (!def) { return clone(input); }

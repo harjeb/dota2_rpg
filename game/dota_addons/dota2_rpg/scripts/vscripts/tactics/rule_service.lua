@@ -3,6 +3,39 @@ local Conditions = require("tactics/condition_registry")
 local RuleService = {}
 RuleService.__index = RuleService
 
+-- Only persisted rules are migrated; newly submitted removed IDs stay invalid.
+local REMOVED_CONDITIONS = {
+    dead_ally_count_gte = true,
+    self_strength_gte = true,
+    self_agility_gte = true,
+    owned_summons_gte = true,
+    owned_summons_lte = true,
+    action_used_within = true,
+    action_not_used_within = true,
+    not_illusion = true,
+    is_creep = true,
+    is_invulnerable = true,
+    not_invulnerable = true,
+    has_tag = true,
+    not_has_tag = true,
+}
+
+function RuleService.StripRemovedConditions(rule)
+    if type(rule) ~= "table" then return rule end
+    for _, field in ipairs({ "use_conditions", "target_filters" }) do
+        local conditions = rule[field]
+        if type(conditions) == "table" then
+            for index = #conditions, 1, -1 do
+                local condition = conditions[index]
+                if type(condition) == "table" and REMOVED_CONDITIONS[condition.type] then
+                    table.remove(conditions, index)
+                end
+            end
+        end
+    end
+    return rule
+end
+
 local MAX_RULES = 32
 local Context = require("tactics/condition_context")
 local finite = Context.Number
@@ -11,10 +44,6 @@ local VALID_APPROACH = { range_only = true, allow_approach = true }
 local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = true, wait = true }
 
 local NUMERIC_LIMITS = {
-    self_strength_gte = { 0, 1000000 },
-    self_agility_gte = { 0, 1000000 },
-    owned_summons_gte = { 0, 1000 },
-    owned_summons_lte = { 0, 1000 },
     action_elapsed_gte = { 0, 86400 },
     action_elapsed_lte = { 0, 86400 },
     self_hp_pct_lte = { 0, 1 },
@@ -35,7 +64,6 @@ local NUMERIC_LIMITS = {
     ability_charges_gte = { 0, 1000 },
     alive_ally_count_gte = { 0, 20 },
     alive_enemy_count_lte = { 0, 20 },
-    dead_ally_count_gte = { 0, 20 },
     elapsed_gte = { 0, 120 },
     elapsed_lte = { 0, 120 },
     action_use_count_lt = { 0, 100 },
@@ -216,8 +244,7 @@ function RuleService:ValidateCondition(condition, registry)
     end
     if condition.type:find("modifier_stacks_", 1, true) or condition.type:find("modifier_remaining_", 1, true) then
         if condition.modifier == nil then return false, "modifier_required" end
-    elseif condition.type:find("has_modifier", 1, true) or condition.type == "has_tag"
-        or condition.type == "not_has_tag" or condition.type == "has_affix" or condition.type == "phase_is" then
+    elseif condition.type:find("has_modifier", 1, true) or condition.type == "has_affix" or condition.type == "phase_is" then
         local name = condition.modifier or condition.value
         if type(name) ~= "string" or name == "" or #name > 256 then return false, "string_value_required" end
     end
@@ -231,7 +258,7 @@ function RuleService:ValidateCondition(condition, registry)
             condition[field] = n
         end
     end
-    if condition.type:find("recently_damaged", 1, true) or condition.type:find("used_within", 1, true) then
+    if condition.type:find("recently_damaged", 1, true) then
         local seconds = finite(condition.seconds or condition.value or 2)
         if seconds == nil or seconds < 0 or seconds > 86400 then return false, "invalid_condition_seconds" end
         condition.seconds = seconds
@@ -332,6 +359,9 @@ function RuleService:GetHeroRules(hero)
         return {}
     end
     self.state.rules[key] = self.state.rules[key] or {}
+    for _, rule in pairs(self.state.rules[key]) do
+        RuleService.StripRemovedConditions(rule)
+    end
     return self.state.rules[key]
 end
 

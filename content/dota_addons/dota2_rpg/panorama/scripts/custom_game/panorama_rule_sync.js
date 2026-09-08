@@ -119,7 +119,7 @@ var RpgRuleSync = (function () {
         if (condition === "self_hp_pct_lte" || condition === "self_mana_pct_gte") {
             return { type: condition, value: value / 100 };
         }
-        if (condition === "alive_enemy_count_gte" || condition === "dead_ally_count_gte") {
+        if (condition === "alive_enemy_count_gte") {
             return { type: condition, value: value };
         }
         if (condition === "elapsed_gte" || condition === "self_recently_damaged" || condition === "any_ally_recently_damaged") {
@@ -134,12 +134,6 @@ var RpgRuleSync = (function () {
         var value = numberValue(rule.value, 50);
         if (attr === "casting" || target === "enemy_casting") {
             return { type: "is_casting" };
-        }
-        if (attr === "boss" || target.indexOf("_boss") >= 0) {
-            return { type: "has_tag", value: "boss" };
-        }
-        if (attr === "healer" || target.indexOf("_healer") >= 0) {
-            return { type: "has_tag", value: "healer" };
         }
         if (attr === "controlled" || target.indexOf("_controlled") >= 0) {
             return { type: "is_controlled" };

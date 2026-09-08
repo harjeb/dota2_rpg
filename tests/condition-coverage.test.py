@@ -127,7 +127,7 @@ class ConditionCoverage(unittest.TestCase):
         self.assertNotRegex(unique_doc, r'- \[ \]|- \[x\]')
 
     def test_generic_only_and_all_unique_excluded(self):
-        allowed = {'nearby_enemies_gte', 'distance_lte', 'distance_gte', 'not_invulnerable',
+        allowed = {'nearby_enemies_gte', 'distance_lte', 'distance_gte',
             'hp_pct_lte', 'self_hp_pct_lte', 'self_hp_pct_gte', 'recently_damaged',
             'self_recently_damaged', 'mana_pct_lte', 'mana_pct_gte', 'is_controlled',
             'self_mana_pct_gte', 'self_mana_pct_lte', 'no_enemy_within', 'ability_charges_gte',
@@ -143,6 +143,12 @@ class ConditionCoverage(unittest.TestCase):
         self.assertNotIn('var unsupported =', js)
         self.assertNotIn('modifier_', js)
         self.assertNotIn('npc_dota_', js)
+        removed = {'dead_ally_count_gte', 'self_strength_gte', 'self_agility_gte',
+            'owned_summons_gte', 'owned_summons_lte', 'action_used_within',
+            'action_not_used_within', 'not_illusion', 'is_creep', 'is_invulnerable',
+            'not_invulnerable', 'has_tag', 'not_has_tag'}
+        for kind in removed:
+            self.assertNotIn('"' + kind + '"', js)
         for r in self.rows:
             excluded = r['unique_mechanism']['excluded_from_presets']
             if excluded:

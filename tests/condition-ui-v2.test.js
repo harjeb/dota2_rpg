@@ -318,6 +318,16 @@ click(hud,"DireRuleSettings0");click(hud,"RuleSettingsApply");
 editor.FindChildTraverse("TargetAttrSelect").events.onactivate();pickValue(attrMenu,"distance");
 assert(latest(hud,lion).target_filter_1_type === "","compact nearest no longer retains an invisible casting gate");
 
+var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
+var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
+[["use", retiredUse, 25], ["target", retiredTarget, 34], ["priority", [], 13]].forEach(function (spec) {
+    var catalog = hud.context.RpgConditionCatalog;
+    assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
+    spec[1].forEach(function (id) {
+        assert(!catalog.groups[spec[0]].some(function (entry) { return entry.id === id; }), "removed menu entry " + id);
+        assert(catalog.normalize(spec[0], { type: id, value: 1 }).type === "", "retired draft condition cleared " + id);
+    });
+});
 var translations = ["english", "schinese"].map(function (language) {
     var buffer = fs.readFileSync(path.join(repoRoot, "game/dota_addons/dota2_rpg/resource/addon_" + language + ".txt"));
     return buffer[0] === 255 && buffer[1] === 254 ? buffer.toString("utf16le") : buffer.toString("utf8");

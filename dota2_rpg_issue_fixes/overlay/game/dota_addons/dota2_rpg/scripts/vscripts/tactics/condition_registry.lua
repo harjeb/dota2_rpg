@@ -149,10 +149,6 @@ ConditionRegistry:RegisterUseCondition("alive_enemy_count_lte", function(ctx, co
     return tonumber(ctx.alive_enemy_count or 0) <= tonumber(condition.value)
 end)
 
-ConditionRegistry:RegisterUseCondition("dead_ally_count_gte", function(ctx, condition)
-    return tonumber(ctx.dead_ally_count or 0) >= tonumber(condition.value)
-end)
-
 ConditionRegistry:RegisterUseCondition("elapsed_gte", function(ctx, condition)
     return tonumber(ctx.elapsed or 0) >= tonumber(condition.value)
 end)
@@ -234,14 +230,6 @@ ConditionRegistry:RegisterTargetFilter("distance_lte", function(ctx, target, con
     return distance_between(ctx.caster, target) <= tonumber(condition.value)
 end)
 
-ConditionRegistry:RegisterTargetFilter("has_tag", function(ctx, target, condition)
-    return has_tag(ctx, target, tostring(condition.value))
-end)
-
-ConditionRegistry:RegisterTargetFilter("not_has_tag", function(ctx, target, condition)
-    return not has_tag(ctx, target, tostring(condition.value))
-end)
-
 ConditionRegistry:RegisterTargetFilter("is_channeling", function(_ctx, target, _condition)
     return target.IsChanneling ~= nil and target:IsChanneling()
 end)
@@ -280,10 +268,6 @@ end)
 ConditionRegistry:RegisterTargetFilter("is_summon", function(ctx, target, _condition)
     if type(ctx.is_summon) == "function" then return ctx.is_summon(target) == true end
     return Context.IsSummon(target)
-end)
-
-ConditionRegistry:RegisterTargetFilter("not_illusion", function(_ctx, target, _condition)
-    return target.IsIllusion == nil or not target:IsIllusion()
 end)
 
 ConditionRegistry:RegisterTargetFilter("recently_damaged", function(ctx, target, condition)
@@ -387,7 +371,7 @@ ConditionRegistry:RegisterTargetFilter("is_controlled", function(_, target)
     end
     return false
 end)
-for id, method in pairs({ spell_immune = "IsMagicImmune", invulnerable = "IsInvulnerable" }) do
+for id, method in pairs({ spell_immune = "IsMagicImmune" }) do
     ConditionRegistry:RegisterTargetFilter("is_" .. id, function(_, target)
         return Context.Call(target, method) == true
     end)
@@ -400,15 +384,6 @@ ConditionRegistry:RegisterUseCondition("ability_charges_gte", function(ctx, c)
     local n = ctx.get_ability_charges(ctx.caster, c.action_id or ctx.current_action_id)
     return n ~= nil and n >= tonumber(c.value)
 end)
-for _, id in ipairs({ "action_used_within", "action_not_used_within" }) do
-    ConditionRegistry:RegisterUseCondition(id, function(ctx, c)
-        if ctx.action_used_within == nil then return false end
-        local result = ctx.action_used_within(ctx.caster, c.action_id or ctx.current_action_id,
-            tonumber(c.seconds or c.value or 2))
-        if result == nil then return false end
-        return result == (id == "action_used_within")
-    end)
-end
 
 -- Special conditions use explicit observations; unknown is never zero.
 local function observe(ctx, name, ...)
@@ -422,15 +397,7 @@ local function measured_compare(actual, threshold, direction)
     if direction == "gte" then return actual >= threshold end
     return actual <= threshold
 end
-for id, method in pairs({ strength = "GetStrength", agility = "GetAgility" }) do
-    ConditionRegistry:RegisterUseCondition("self_" .. id .. "_gte", function(ctx, c)
-        return measured_compare(Context.Number(Context.Call(ctx.caster, method)), c.value, "gte")
-    end)
-end
 for _, direction in ipairs({ "gte", "lte" }) do
-    ConditionRegistry:RegisterUseCondition("owned_summons_" .. direction, function(ctx, c)
-        return measured_compare(observe(ctx, "count_owned_summons", ctx.caster), c.value, direction)
-    end)
     ConditionRegistry:RegisterUseCondition("action_elapsed_" .. direction, function(ctx, c)
         local elapsed = observe(ctx, "get_action_elapsed", ctx.caster, c.action_id or ctx.current_action_id)
         return elapsed ~= nil and elapsed >= 0 and measured_compare(elapsed, c.seconds or c.value, direction)
@@ -440,11 +407,6 @@ ConditionRegistry:RegisterTargetFilter("owned_by_self", function(ctx, target)
     if type(ctx.is_owned_by) ~= "function" then return false end
     local ok, owned = pcall(ctx.is_owned_by, target, ctx.caster)
     return ok and owned == true
-end)
-ConditionRegistry:RegisterTargetFilter("is_creep", function(_, target)
-    local creep = Context.Call(target, "IsCreep")
-    if type(creep) == "boolean" then return creep end
-    return Context.Call(target, "IsHero") == false
 end)
 ConditionRegistry:RegisterTargetFilter("is_illusion", function(_, target)
     return Context.Call(target, "IsIllusion") == true

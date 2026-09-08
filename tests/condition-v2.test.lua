@@ -63,10 +63,40 @@ check(C:EvaluateUseConditions({{type="ability_charges_gte",value=2}},ctx),"charg
 check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=1}},ctx),"unknown history")
 ctx.get_action_use_count=function() return 1 end
 check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=1}},ctx),"order limit")
-ctx.action_used_within=function(_,id,seconds) return id=="lina_laguna_blade" and seconds>=1 end
-check(C:EvaluateUseConditions({{type="action_used_within",action_id="lina_laguna_blade",seconds=2}},ctx),"recent action")
 local service=R.new({get_phase=function() return "PREPARE" end,is_roster_hero=function() return true end,
     is_action_allowed=function(_,_,a) return a.logical_id=="spell" end,state={rules={}}})
+local removedUse={"dead_ally_count_gte","self_strength_gte","self_agility_gte","owned_summons_gte",
+    "owned_summons_lte","action_used_within","action_not_used_within"}
+local removedTarget={"not_illusion","is_creep","is_invulnerable","not_invulnerable","has_tag","not_has_tag"}
+for _, group in ipairs({{removedUse,C.use_conditions,"use_conditions"},{removedTarget,C.target_filters,"target_filters"}}) do
+    for _, id in ipairs(group[1]) do
+        local condition={type=id,value=1}
+        check(group[2][id]==nil,"removed registry entry "..id)
+        local ok,reason=service:ValidateCondition(condition,group[2])
+        check(not ok and reason=="unknown_condition:"..id,"removed submission rejected "..id)
+        if group[3]=="use_conditions" then
+            ok,reason=C:EvaluateUseConditions({condition},ctx)
+        else
+            ok,reason=C:EvaluateTargetFilters({condition},ctx,enemy)
+        end
+        check(not ok and reason:find("unknown_",1,true)==1,"removed runtime rejected "..id)
+    end
+end
+local stored=service:DecodeFlat({action_kind="ability",action_id="spell"})
+for _,id in ipairs(removedUse) do table.insert(stored.use_conditions,{type=id,value=1}) end
+stored.use_conditions[#stored.use_conditions+1]={type="always"}
+for _,id in ipairs(removedTarget) do table.insert(stored.target_filters,{type=id,value="boss"}) end
+stored.target_filters[#stored.target_filters+1]={type="is_illusion"}
+service.state.rules.hero={stored}
+local migrated=service:GetHeroRules(caster)[1]
+check(migrated==stored and #stored.use_conditions==1 and stored.use_conditions[1].type=="always","stored use conditions compacted")
+check(#stored.target_filters==1 and stored.target_filters[1].type=="is_illusion","stored filters preserve retained condition")
+check(service:ValidateRule(0,caster,stored),"migrated rule remains valid")
+check(#service:GetHeroRules(caster)[1].target_filters==1,"migration is idempotent")
+service.state.rules.hero[7]={use_conditions={{type="owned_summons_gte",value=1}},target_filters={{type="not_illusion"},{type="is_illusion"}}}
+service:GetHeroRules(caster)
+check(#service.state.rules.hero[7].use_conditions==0 and #service.state.rules.hero[7].target_filters==1,"sparse saved rule slots are migrated")
+check(C.HasTag({get_tags=function() return {boss=true} end},enemy,"boss"),"native tag helper retained")
 local args={action_kind="ability",action_id="spell",desired_toggle_state="0",rule_count=32}
 for i=1,4 do args["use_condition_"..i.."_type"]="self_hp_pct_lte";args["use_condition_"..i.."_value"]=.5
     args["target_filter_"..i.."_type"]="hp_pct_lte";args["target_filter_"..i.."_value"]=.5 end
@@ -113,11 +143,20 @@ Bridge=TacticBridge
 for _, legacy in ipairs({{"always",0,"always"},{"self_hp_pct_lte",50,"self_hp_pct_lte"},
     {"self_mana_pct_gte",50,"self_mana_pct_gte"},{"alive_enemy_count_gte",2,"alive_enemy_count_gte"},
     {"elapsed_gte",3,"elapsed_gte"},{"self_recently_damaged",2,"self_recently_damaged"},
-    {"any_ally_recently_damaged",2,"any_ally_recently_damaged"},{"dead_ally_count_gte",1,"dead_ally_count_gte"}}) do
+    {"any_ally_recently_damaged",2,"any_ally_recently_damaged"}}) do
     local converted=Bridge.ConvertLegacyRule(1,{action="attack",condition=legacy[1],value=legacy[2]})
     check(converted.use_conditions[1].type==legacy[3],"legacy "..legacy[1])
     if legacy[2]==50 then check(converted.use_conditions[1].value==.5,"legacy percent migration") end
 end
+for _,id in ipairs(removedUse) do
+    check(#Bridge.ConvertLegacyRule(1,{condition=id,value=1}).use_conditions==0,"removed legacy use stripped "..id)
+end
+for _,id in ipairs(removedTarget) do
+    local converted=Bridge.ConvertLegacyRule(1,{target_filter_1_type=id,target_filter_2_type="is_illusion"})
+    check(#converted.target_filters==1 and converted.target_filters[1].type=="is_illusion","removed numbered legacy filter stripped "..id)
+end
+local bossRule=Bridge.ConvertLegacyRule(1,{target="enemy_boss"})
+check(#bossRule.target_filters==0 and bossRule.target_priorities[1].type=="prefer_tag","legacy boss migrates to retained tag priority")
 check(Bridge.ConvertLegacyRule(1,{condition="bogus"}).use_conditions[1].type=="bogus","unknown legacy not always")
 DOTA_TEAM_GOODGUYS=2;DOTA_TEAM_BADGUYS=3;ABILITY_TYPE_ULTIMATE=1
 local time=0

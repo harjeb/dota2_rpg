@@ -422,7 +422,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-conditions-v8-20260908 loaded; log=dota2_rpg_runtime.log")
+	RuntimeLog.Write("BUILD rpg-conditions-v9-20260908 loaded; log=dota2_rpg_runtime.log")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 

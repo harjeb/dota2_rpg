@@ -469,16 +469,13 @@
       }
     },
     "charged_offensive_unit": {
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context. Optional variant also requires at least one observed native charge.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility. Optional variant also requires at least one observed native charge.",
       "rule": {
         "target": "enemy_distance_nearest",
         "target_filters": [
           {
             "type": "distance_lte",
             "value": 900
-          },
-          {
-            "type": "not_invulnerable"
           }
         ],
         "target_priorities": [
@@ -503,9 +500,6 @@
           {
             "type": "distance_lte",
             "value": 900
-          },
-          {
-            "type": "not_invulnerable"
           }
         ],
         "target_priorities": [
@@ -876,16 +870,13 @@
       }
     },
     "offensive_unit": {
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "rule": {
         "target": "enemy_distance_nearest",
         "target_filters": [
           {
             "type": "distance_lte",
             "value": 900
-          },
-          {
-            "type": "not_invulnerable"
           }
         ],
         "target_priorities": [
@@ -905,9 +896,6 @@
           {
             "type": "distance_lte",
             "value": 900
-          },
-          {
-            "type": "not_invulnerable"
           }
         ],
         "target_priorities": [
@@ -2462,7 +2450,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -2937,7 +2925,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -3043,7 +3031,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -3317,7 +3305,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -4179,7 +4167,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -4541,7 +4529,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -5370,7 +5358,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -7307,7 +7295,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -7541,7 +7529,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -8548,7 +8536,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -9211,7 +9199,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -11530,7 +11518,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -13395,7 +13383,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -13753,7 +13741,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -15031,7 +15019,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -17431,7 +17419,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -18142,7 +18130,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -18773,7 +18761,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -19121,7 +19109,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -19255,7 +19243,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -20129,7 +20117,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -21039,7 +21027,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -21605,7 +21593,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -21843,7 +21831,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -21937,7 +21925,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -22455,7 +22443,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -22544,7 +22532,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -22687,7 +22675,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -23946,7 +23934,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -24170,7 +24158,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -24509,7 +24497,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -25101,7 +25089,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -26171,7 +26159,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -26591,7 +26579,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -27849,7 +27837,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -28669,7 +28657,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -30779,7 +30767,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -31744,7 +31732,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -33529,7 +33517,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -33858,7 +33846,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -34335,7 +34323,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -34466,7 +34454,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -35329,7 +35317,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -35720,7 +35708,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -35943,7 +35931,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -37158,7 +37146,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -37948,7 +37936,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -38165,7 +38153,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -38812,7 +38800,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -39992,7 +39980,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -41418,7 +41406,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -42024,7 +42012,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -42159,7 +42147,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -42857,7 +42845,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -42959,7 +42947,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -43551,7 +43539,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -46006,7 +45994,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -47152,7 +47140,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -48042,7 +48030,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -50607,7 +50595,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -52033,7 +52021,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -52807,7 +52795,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -53753,7 +53741,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -54439,7 +54427,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -55824,7 +55812,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -56033,7 +56021,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -56344,7 +56332,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -56456,7 +56444,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -56894,7 +56882,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -57440,7 +57428,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -57908,7 +57896,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -59420,7 +59408,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -59633,7 +59621,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -60720,7 +60708,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -61618,7 +61606,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -61846,7 +61834,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -62856,7 +62844,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -63149,7 +63137,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -65271,7 +65259,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -70831,7 +70819,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -70952,7 +70940,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -71449,7 +71437,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -73085,7 +73073,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -74186,7 +74174,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -74291,7 +74279,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -75041,7 +75029,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -75506,7 +75494,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -76088,7 +76076,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -77915,7 +77903,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -78524,7 +78512,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -80794,7 +80782,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -81745,7 +81733,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -83837,7 +83825,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -83961,7 +83949,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -85419,7 +85407,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -85541,7 +85529,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -87421,7 +87409,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -91119,7 +91107,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -92517,7 +92505,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -93234,7 +93222,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -94696,7 +94684,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -96201,7 +96189,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -98501,7 +98489,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -99971,7 +99959,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -100482,7 +100470,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -100721,7 +100709,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -103726,7 +103714,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -110954,7 +110942,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -111059,7 +111047,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -112737,7 +112725,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -114993,7 +114981,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -116728,7 +116716,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -117628,7 +117616,7 @@
         "offensive_unit",
         "charged_offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {
@@ -126835,7 +126823,7 @@
       "preset_variants": [
         "offensive_unit"
       ],
-      "rationale": "Native hostile unit targeting: select a nearby non-invulnerable opponent rather than spending the action without combat context.",
+      "rationale": "Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.",
       "review_note": null,
       "reviewed_family": "offensive_unit",
       "unique_mechanism": {

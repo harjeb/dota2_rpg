@@ -27,7 +27,7 @@ local function unit(id,x,hp,team)
     function u:GetMaxMana() return 100 end
     function u:IsAlive() return self.hp>0 end
     function u:IsNull() return false end
-    function u:IsInvulnerable() return false end
+    function u:IsInvulnerable() return self.invulnerable == true end
     function u:IsMagicImmune() return self.immune end
     function u:GetTeamNumber() return self.team end
     entities[id]=u
@@ -58,7 +58,7 @@ local rule=service:DecodeFlat({action_kind="ability",action_id="test_spell",acti
     use_condition_4_type="elapsed_gte",use_condition_4_value="5",
     target_filter_1_type="hp_pct_lte",target_filter_1_value="0.8",
     target_filter_2_type="distance_gte",target_filter_2_value="100",
-    target_filter_3_type="not_invulnerable",target_filter_4_type="not_spell_immune",
+    target_filter_3_type="mana_pct_gte",target_filter_3_value="0.1",target_filter_4_type="not_spell_immune",
     target_priority_1_type="lowest_hp_pct",target_priority_2_type="nearest"})
 assert(service:ValidateRule(0,caster,rule))
 local orders={}
@@ -80,7 +80,12 @@ caster.mana=100; elapsed=4
 assert(not attempt() and #orders==0,"fourth AND gate is actually evaluated")
 elapsed=10; near.immune=true
 assert(not attempt() and #orders==0,"invalid native target never wins selection")
-near.immune=false; rule.approach="allow_approach"; engine:Reset()
+near.immune=false; near.invulnerable=true
+local nativeFilter=spell.CastFilterResultTarget
+spell.CastFilterResultTarget=nil
+assert(not attempt() and #orders==0,"native invulnerability fallback blocks casting without a condition")
+spell.CastFilterResultTarget=nativeFilter
+near.invulnerable=false; rule.approach="allow_approach"; engine:Reset()
 assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_MOVE_TO_TARGET)
 local state=engine:GetState(caster)
 assert(state.chase and state.chase.target_index==far.id)

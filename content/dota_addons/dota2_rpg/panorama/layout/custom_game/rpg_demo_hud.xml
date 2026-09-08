@@ -35,7 +35,6 @@
 					<Button id="BattleTimeOption" class="ConditionOption" value="elapsed_gte"><Label text="#dota2_rpg_condition_elapsed_gte" /></Button>
 					<Button id="SelfDamagedOption" class="ConditionOption" value="self_recently_damaged"><Label text="#dota2_rpg_condition_self_recently_damaged" /></Button>
 					<Button id="AllyDamagedOption" class="ConditionOption" value="any_ally_recently_damaged"><Label text="#dota2_rpg_condition_any_ally_recently_damaged" /></Button>
-					<Button id="AllyDeathOption" class="ConditionOption" value="dead_ally_count_gte"><Label text="#dota2_rpg_condition_dead_ally_count_gte" /></Button>
 				</Panel>
 				<Panel id="EffectMenu" class="EffectMenu Hidden">
 					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
@@ -61,8 +60,6 @@
 					<Button class="TargetOption" value="mr"><Label text="#dota2_rpg_target_attr_mr" /></Button>
 					<Button class="TargetOption" value="distance"><Label text="#dota2_rpg_target_attr_distance" /></Button>
 					<Button class="TargetOption" value="casting"><Label text="#dota2_rpg_target_attr_casting" /></Button>
-					<Button class="TargetOption" value="boss"><Label text="#dota2_rpg_target_attr_boss" /></Button>
-					<Button class="TargetOption" value="healer"><Label text="#dota2_rpg_target_attr_healer" /></Button>
 					<Button class="TargetOption" value="controlled"><Label text="#dota2_rpg_target_attr_controlled" /></Button>
 				</Panel>
 				<Panel id="TargetSideMenu" class="TargetMenu Hidden">

@@ -78,21 +78,9 @@ end
 local function target(id,unit)
     return C:EvaluateTargetFilters({{type=id}},ctx,unit)
 end
-for _, id in ipairs({"self_strength_gte","self_agility_gte","owned_summons_gte","owned_summons_lte",
-    "action_elapsed_gte","action_elapsed_lte"}) do
+for _, id in ipairs({"action_elapsed_gte","action_elapsed_lte"}) do
     check(not use(id,0),id.." missing observation fails closed")
 end
-caster.GetStrength=function() return 25 end; caster.GetAgility=function() return 0 end
-check(use("self_strength_gte",25) and not use("self_strength_gte",26),"strength threshold")
-check(use("self_agility_gte",0) and not use("self_agility_gte",1),"zero agility observation")
-caster.GetStrength=function() error("unavailable") end
-check(not use("self_strength_gte",0),"throwing attribute API")
-caster.GetAgility=function() return 0/0 end
-check(not use("self_agility_gte",0),"NaN attribute rejected")
-ctx.count_owned_summons=function(who) check(who==caster,"owned count caster"); return 0 end
-check(use("owned_summons_gte",0) and use("owned_summons_lte",0),"known summon count zero")
-ctx.count_owned_summons=function() return nil end
-check(not use("owned_summons_lte",0),"unknown summon count is not zero")
 ctx.get_action_elapsed=function(who,id) check(who==caster and id=="current","current action identity"); return 0 end
 check(use("action_elapsed_gte",0) and use("action_elapsed_lte",0),"elapsed zero known")
 ctx.get_action_elapsed=function(_,id) return id=="spell" and 3 or nil end
@@ -111,11 +99,6 @@ ctx.is_summon=function(observed) return H.IsSummon(observed,roster) end
 check(target("is_summon",nested) and not target("is_summon",wild),"verified ownership callback")
 ctx.is_summon=nil; wild.IsSummoned=function() return true end
 check(target("is_summon",wild),"native summon filter")
-check(not target("is_creep",{}),"missing creep APIs")
-check(target("is_creep",{IsHero=function() return false end}),"nonhero native creep fallback")
-check(not target("is_creep",{IsCreep=function() return false end,IsHero=function() return false end}),"explicit creep false authoritative")
-check(target("is_creep",{IsCreep=function() return true end}),"native creep true")
-check(not target("is_creep",{IsHero=function() error("invalid") end}),"throwing creep API")
 check(target("is_illusion",{IsIllusion=function() return true end}),"native illusion true")
 check(not target("is_illusion",{}) and not target("is_illusion",{IsIllusion=function() error("invalid") end}),"illusion unknown fails closed")
 print("condition-specials: "..checks.." checks passed")

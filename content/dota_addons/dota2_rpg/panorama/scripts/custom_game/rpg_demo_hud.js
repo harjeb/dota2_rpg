@@ -23,7 +23,6 @@
         elapsed_gte: "#dota2_rpg_condition_elapsed_gte",
         self_recently_damaged: "#dota2_rpg_condition_self_recently_damaged",
         any_ally_recently_damaged: "#dota2_rpg_condition_any_ally_recently_damaged",
-        dead_ally_count_gte: "#dota2_rpg_condition_dead_ally_count_gte"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -35,8 +34,6 @@
         mr: "#dota2_rpg_target_attr_mr",
         distance: "#dota2_rpg_target_attr_distance",
         casting: "#dota2_rpg_target_attr_casting",
-        boss: "#dota2_rpg_target_attr_boss",
-        healer: "#dota2_rpg_target_attr_healer",
         controlled: "#dota2_rpg_target_attr_controlled"
     };
 
@@ -111,7 +108,6 @@
         elapsed_gte: "seconds",
         self_recently_damaged: "seconds",
         any_ally_recently_damaged: "seconds",
-        dead_ally_count_gte: "count"
     };
 
     var EFFECT_CONDITIONS = {}; // v1 条件为单一条件，状态类条件 v2 预留
@@ -731,7 +727,7 @@
         var rule = rules[index];
         var previousFilter = RpgRuleSync.initialSettings({target:rule.target,target_attr:rule.target_attr}).target_filters[0];
         rule.target_attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
-        if ((rule.target_attr === "casting" || rule.target_attr === "boss" || rule.target_attr === "healer" || rule.target_attr === "controlled") && rule.target_side !== "self") {
+        if ((rule.target_attr === "casting" || rule.target_attr === "controlled") && rule.target_side !== "self") {
             rule.target_side = "enemy_highest";
         }
         if (rule.target_attr === "distance" && rule.target_side !== "self") {

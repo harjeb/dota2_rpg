@@ -277,8 +277,7 @@ $expectedConditionValues = @(
     "alive_enemy_count_gte",
     "elapsed_gte",
     "self_recently_damaged",
-    "any_ally_recently_damaged",
-    "dead_ally_count_gte"
+    "any_ally_recently_damaged"
 )
 $actualConditionValues = @(
     $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |
@@ -289,7 +288,7 @@ if ($conditionDifference.Count -gt 0) {
     throw "Condition dropdown values must exactly match the conditions supported by Panorama JavaScript"
 }
 
-$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting", "boss", "healer", "controlled")
+$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting", "controlled")
 $actualTargetAttrValues = @(
     $hudXml.SelectNodes("//Panel[@id='TargetAttrMenu']//Button") |
         ForEach-Object { $_.GetAttribute("value") }
@@ -352,8 +351,7 @@ foreach ($conditionName in @(
     'alive_enemy_count_gte:',
     'elapsed_gte:',
     'self_recently_damaged:',
-    'any_ally_recently_damaged:',
-    'dead_ally_count_gte:'
+    'any_ally_recently_damaged:'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($conditionName)) {
         throw "Panorama UI is missing condition: $conditionName"
