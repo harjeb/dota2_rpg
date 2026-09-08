@@ -17,6 +17,7 @@ require = function(name)
         ["tactics/rule_snapshot"] = true,
         ["battle.damage_stats"] = true,
         ["battle.enemy_scaling"] = true,
+        ["battle.boss_scaling"] = true,
         ["data.progression_data"] = true,
         ["patches.recruitment_patch"] = true,
         ["patches.progression_patch"] = true,

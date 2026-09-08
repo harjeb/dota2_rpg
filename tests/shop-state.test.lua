@@ -40,6 +40,7 @@ require = function(name)
 		["tactics/ability_catalog"] = moduleRoot .. "tactics/ability_catalog.lua",
 		["tactics/rule_snapshot"] = moduleRoot .. "tactics/rule_snapshot.lua",
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
+		["battle.boss_scaling"] = moduleRoot .. "battle/boss_scaling.lua",
 		["battle.damage_stats"] = moduleRoot .. "battle/damage_stats.lua",
 		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",

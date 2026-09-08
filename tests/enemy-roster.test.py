@@ -89,6 +89,24 @@ class EnemyRosterTests(unittest.TestCase):
                     found.append(role)
                 self.assertTrue({'front', 'damage', 'support'} <= set(found), (label, chapter))
 
+    def test_boss_strength_only_on_the_three_chapter_bosses(self):
+        fields = ['boss_health_multiplier', 'boss_attack_damage_pct',
+                  'boss_spell_amp_pct', 'boss_cooldown_reduction_pct']
+        expected = {10: (6, 100, 100, 25), 20: (10, 200, 150, 40),
+                    30: (16, 300, 200, 50)}
+        for label, teams in self.teams.items():
+            for chapter, team in teams.items():
+                for slot, entry in enumerate(team):
+                    with self.subTest(data=label, chapter=chapter, slot=slot):
+                        if chapter in expected and slot == 0:
+                            self.assertEqual(tuple(float(entry[field]) for field in fields), expected[chapter])
+                            tags = entry['tags']
+                            if isinstance(tags, dict):
+                                tags = list(tags.values())
+                            self.assertIn('boss', tags)
+                        else:
+                            self.assertFalse(set(fields).intersection(entry), entry['unit'])
+
     def test_authored_roster_matches_both_files_and_reauthoring_is_stable(self):
         intended = author['roster'](self.source)
         changes = []

@@ -12,6 +12,7 @@ local DamageStats = require("battle.damage_stats")
 local AbilityCatalog = require("tactics/ability_catalog")
 local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
+local BossScaling = require("battle.boss_scaling")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
@@ -266,7 +267,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v14-20260908") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v15-20260908") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -431,7 +432,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v14-20260908 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v15-20260908 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2753,6 +2754,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 						print(string.format("[Dota2Rpg] Enemy %s equipped %d items.", entry.unit, equipped))
 					end
 				end
+				BossScaling.Apply(unit, entry)
 				local enemyName = unit:GetUnitName()
 				local occurrence = enemyOccurrences[enemyName] or 0
 				unit.ruleSnapshotKey = "enemy:" .. enemyName .. ":" .. occurrence

@@ -17,6 +17,7 @@ end
 
 DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
+function IsServer() return true end
 
 require = function(moduleName)
 	if moduleName == "tactics/ability_catalog" or moduleName == "tactics/rule_snapshot"
@@ -29,11 +30,14 @@ require = function(moduleName)
 	if moduleName == "issue_fixes.default_rules" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/default_rules.lua")
 	end
+	if moduleName == "patches.enemy_items_patch" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/patches/enemy_items_patch.lua")
+	end
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
-	if moduleName == "battle.enemy_scaling" then
-		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/enemy_scaling.lua")
+	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
 	-- The production entry point installs the issue-fix bootstrap at EOF.  This
 	-- focused test exercises precache/spawn geometry, so only stub that module.
@@ -366,3 +370,75 @@ assert(radiant.acquisitionRange == 4000 and dire.acquisitionRange == 4000,
 	"both teams must use the expanded 4000-unit acquisition range")
 
 print("PASS: categorized unit precache, compact team spawns, and expanded battle acquisition range")
+
+-- Exercise the actual spawn -> auto-level -> equipment -> BossScaling path.
+-- Only the native unit API is simulated; no stub replaces the Boss module.
+local bossCases = {
+	{ chapter = "ch10", hero = "centaur", level = 14, items = 3, hp = 6, attack = 100, spell = 100, cdr = 25 },
+	{ chapter = "ch20", hero = "spirit_breaker", level = 24, items = 3, hp = 10, attack = 200, spell = 150, cdr = 40 },
+	{ chapter = "ch30", hero = "skeleton_king", level = 30, items = 5, hp = 16, attack = 300, spell = 200, cdr = 50 },
+}
+local activeBossCase
+function CreateUnitByName(unitName, position, _, _, _, team)
+	local unit = newUnit(unitName, position, team)
+	unit.level, unit.itemCount = 1, 0
+	function unit:IsRealHero() return true end
+	function unit:IsIllusion() return false end
+	function unit:GetLevel() return self.level end
+	function unit:HeroLevelUp() self.level = self.level + 1 end
+	function unit:SetRespawnsDisabled(value) self.respawnsDisabled = value end
+	function unit:CalculateStatBonus() self.statRecalculations = (self.statRecalculations or 0) + 1 end
+	function unit:GetMaxHealth()
+		local power = self.modifiers.modifier_rpg_boss_power
+		return 1000 + self.level * 10 + self.itemCount * 100 + (power and power:GetModifierHealthBonus() or 0)
+	end
+	function unit:AddItemByName()
+		self.itemCount = self.itemCount + 1
+		return { IsNull = function() return false end }
+	end
+	function unit:FindModifierByName(name) return self.modifiers[name] end
+	function unit:AddNewModifier(_, _, name, params)
+		if name == "modifier_rpg_boss_power" then
+			assert(self.level == activeBossCase.level and self.itemCount == activeBossCase.items,
+				"Boss power must be applied after native levels and all configured items")
+		end
+		local modifier = { params = params }
+		function modifier:GetModifierHealthBonus() return tonumber(self.params.health_bonus) or 0 end
+		function modifier:IsNull() return false end
+		self.modifiers[name] = modifier
+		return modifier
+	end
+	return unit
+end
+spawnGame.PrepareBattleHero = CDota2RpgDemo.PrepareBattleHero
+local BossScaling = require("battle.boss_scaling")
+for _, case in ipairs(bossCases) do
+	activeBossCase = case
+	local equipment = {}
+	for index = 1, case.items do equipment[tostring(index)] = "item_bracer" end
+	local bossEntry = {
+		unit = "npc_dota_hero_" .. case.hero, level = tostring(case.level), items = equipment,
+		tags = { ["1"] = "boss" }, ai = "aggro_front",
+		boss_health_multiplier = tostring(case.hp), boss_attack_damage_pct = tostring(case.attack),
+		boss_spell_amp_pct = tostring(case.spell), boss_cooldown_reduction_pct = tostring(case.cdr),
+	}
+	local ordinaryEntry = { unit = "npc_dota_hero_lina", level = tostring(case.level),
+		items = equipment, tags = { ["1"] = "hero" }, ai = "focus_lowest_hp" }
+	spawnGame.dataLoader.GetLevel = function() return { enemies = { bossEntry, ordinaryEntry } } end
+	spawnGame:SpawnLevelEnemies(case.chapter)
+	local boss, ordinary
+	for _, unit in pairs(spawnGame.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
+		if unit.name == bossEntry.unit then boss = unit else ordinary = unit end
+	end
+	local baseline = 1000 + case.level * 10 + case.items * 100
+	assert(boss and ordinary and boss.enemyRuleIndex and ordinary.enemyRuleIndex)
+	assert(boss:GetMaxHealth() == baseline * case.hp and boss.health == boss:GetMaxHealth(),
+		"real spawn must create a full-health boss scaled from the equipped hero")
+	assert(ordinary:GetMaxHealth() == baseline and ordinary.modifiers.modifier_rpg_boss_power == nil,
+		"ordinary enemies in the same stage must retain normal stats")
+	spawnGame:PrepareEnemyHero(boss, case.level)
+	BossScaling.Apply(boss, bossEntry)
+	assert(boss:GetMaxHealth() == baseline * case.hp and boss.health == boss:GetMaxHealth(),
+		"repreparing/reapplying cannot compound boss health")
+end
+print("PASS: all three Boss tiers reach actual spawn/level/equipment/rule registration with full HP and no compounding")
