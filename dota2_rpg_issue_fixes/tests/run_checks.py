@@ -81,7 +81,7 @@ def check_python_syntax(paths: list[Path]) -> None:
 
 
 def main() -> None:
-    py_files = [ROOT / "tools/apply_issue_fixes.py", ROOT / "tests/test_installer.py"]
+    py_files = [ROOT / "tools/apply_issue_fixes.py", ROOT / "tests/test_installer.py", ROOT.parent / "scripts/export-level-configuration.py"]
     check_python_syntax(py_files)
 
     lua_files = sorted((ROOT / "overlay").rglob("*.lua"))
@@ -102,6 +102,7 @@ def main() -> None:
     run([sys.executable, str(ROOT.parent / "tests/enemy-equipment-data.test.py")], cwd=ROOT.parent)
     run([sys.executable, str(ROOT.parent / "tests/enemy-roster.test.py")], cwd=ROOT.parent)
     run([sys.executable, str(ROOT.parent / "tests/recruitable-heroes.test.py")], cwd=ROOT.parent)
+    run([sys.executable, str(ROOT.parent / "tests/export-level-configuration.test.py")], cwd=ROOT.parent)
     run([node, str(ROOT.parent / "tests/panorama-save.test.js")])
     for script in (ROOT.parent / "content/dota_addons/dota2_rpg/panorama/scripts/custom_game").glob("*.js"):
         run([node, "--check", str(script)])

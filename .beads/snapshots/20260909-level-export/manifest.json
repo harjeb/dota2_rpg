@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-09T08:02:27.830675+00:00",
+  "counts": {
+    "issues": 95,
+    "dependencies": 47,
+    "comments": 4,
+    "events": 227,
+    "labels": 0,
+    "config": 13
+  },
+  "dolt_log": [
+    {
+      "commit_hash": "6v2v1j8pa8gnq2i5idisiipl1a6ptct3",
+      "date": "2026-09-09T08:02:26.346Z",
+      "message": "bd: close dota2_rpg-tw9"
+    }
+  ],
+  "reason": "Level configuration export task snapshot; bd sync is a no-op and no Dolt remote is configured."
+}
