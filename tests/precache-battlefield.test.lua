@@ -36,7 +36,8 @@ require = function(moduleName)
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
-	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives" then
+	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
+        or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
 	-- The production entry point installs the issue-fix bootstrap at EOF.  This
@@ -442,3 +443,47 @@ for _, case in ipairs(bossCases) do
 		"repreparing/reapplying cannot compound boss health")
 end
 print("PASS: all three Boss tiers reach actual spawn/level/equipment/rule registration with full HP and no compounding")
+
+-- Exercise the actual npc_spawned routing: a real-hero native double must not
+-- reach commander hiding, ownership reassignment or roster preparation.
+local copy = {
+    IsNull=function() return false end,
+    IsTempestDouble=function() return true end,
+    IsRealHero=function() error("double reached commander routing") end,
+    SetIdleAcquire=function(self,value) self.acquire=value end,
+    SetAcquisitionRange=function(self,value) self.range=value end,
+}
+local oldResolve = EntIndexToHScript
+EntIndexToHScript = function(index) assert(index==901); return copy end
+local summonGame=setmetatable({phase="fight"},CDota2RpgDemo)
+summonGame:OnNpcSpawned({entindex=901})
+assert(copy.acquire and copy.range==4000 and summonGame.tempestDoubles[copy])
+EntIndexToHScript = oldResolve
+print("PASS: native Tempest Double spawn bypasses commander routing and acquires attacks")
+
+for _, spec in ipairs({{"morphling", "morphling_replicate", "morphling_waveform"},
+    {"largo", "largo_amphibian_rhapsody", "largo_frogstomp"}}) do
+    for _, location in ipairs({"benchHeroName", "lineupHeroName"}) do
+        local hero=CreateUnitByName("npc_dota_hero_"..spec[1],Vector(0,0,0),false,nil,nil,DOTA_TEAM_GOODGUYS)
+        hero[location]=hero.name
+        local abilities={}
+        for _, name in ipairs({spec[2],spec[3]}) do
+            abilities[#abilities+1]={IsNull=function() return false end,GetAbilityName=function() return name end}
+        end
+        function hero:GetAbilityCount() return #abilities end
+        function hero:GetAbilityByIndex(index) return abilities[index+1] end
+        function hero:FindAbilityByName(name)
+            for _, ability in ipairs(abilities) do if ability:GetAbilityName()==name then return ability end end
+        end
+        function hero:RemoveAbility(name)
+            for i=#abilities,1,-1 do if abilities[i]:GetAbilityName()==name then table.remove(abilities,i) end end
+        end
+        local prepareGame=setmetatable({autoAbilityHeroes={},heroData={},CaptureHeroAbilities=function(_,unit)
+            assert(not unit:FindAbilityByName(spec[2]) and unit:FindAbilityByName(spec[3]),
+                "removed ultimate cannot enter stored levels or rule catalogs")
+        end},CDota2RpgDemo)
+        prepareGame:PrepareBattleHero(hero,1)
+        assert(hero.abilityPoints==1 and hero:FindAbilityByName(spec[3]), "manual basic skill points remain available")
+    end
+end
+print("PASS: bench and lineup preparation remove disabled ultimates before ability capture")

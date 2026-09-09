@@ -14,6 +14,8 @@ local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
 local BossScaling = require("battle.boss_scaling")
 local RunLives = require("battle.run_lives")
+local TempestDouble = require("battle.tempest_double")
+local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
@@ -270,7 +272,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v17-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v18-20260909") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -438,7 +440,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v17-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v18-20260909 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -611,6 +613,8 @@ end
 
 function CDota2RpgDemo:OnNpcSpawned(event)
 	local unit = EntIndexToHScript(event.entindex or -1)
+	-- Native doubles are combat summons, never the hidden player commander.
+	if TempestDouble.OnSpawn(self, unit, BATTLE_ACQUISITION_RANGE) then return end
 	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
 		return
 	end
@@ -2840,6 +2844,7 @@ function CDota2RpgDemo:CaptureHeroAbilities(hero)
 end
 
 function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
+	HeroAbilityPolicy.Apply(hero)
 	self:CaptureHeroAbilities(hero)
 	local wantedLevel = tonumber(targetLevel) or HERO_LEVEL
 	while hero:GetLevel() < wantedLevel do
@@ -3366,6 +3371,7 @@ function CDota2RpgDemo:OnEntityKilled(event)
 end
 
 function CDota2RpgDemo:OnThink()
+	TempestDouble.OnThink(self)
 	self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
 	local lives = RunLives.Ensure(self)
 	if self.phase ~= "fight" and #lives.pendingItems > 0
@@ -3419,6 +3425,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 	-- Claim settlement before any wallet/item/event callback can re-enter.
 	self.phase = "result"
+	TempestDouble.Clear(self)
 	local lifeReward = { gold = 0, items = {} }
 	if winner ~= "radiant" then
 		lifeReward = RunLives.Lose(self)

@@ -4,14 +4,16 @@
 		{ "name": "npc_dota_hero_sven", "label": "sven" },
 		{ "name": "npc_dota_hero_dragon_knight", "label": "dragon_knight" },
 		{ "name": "npc_dota_hero_sand_king", "label": "sand_king" },
-		{ "name": "npc_dota_hero_huskar", "label": "huskar" }
+		{ "name": "npc_dota_hero_huskar", "label": "huskar" },
+		{ "name": "npc_dota_hero_largo", "label": "largo" }
 	],
 	"agility": [
 		{ "name": "npc_dota_hero_juggernaut", "label": "juggernaut" },
 		{ "name": "npc_dota_hero_phantom_assassin", "label": "phantom_assassin" },
 		{ "name": "npc_dota_hero_sniper", "label": "sniper" },
 		{ "name": "npc_dota_hero_riki", "label": "riki" },
-		{ "name": "npc_dota_hero_phantom_lancer", "label": "phantom_lancer" }
+		{ "name": "npc_dota_hero_phantom_lancer", "label": "phantom_lancer" },
+		{ "name": "npc_dota_hero_morphling", "label": "morphling" }
 	],
 	"intelligence": [
 		{ "name": "npc_dota_hero_lina", "label": "lina" },
@@ -25,7 +27,8 @@
 		{ "name": "npc_dota_hero_primal_beast", "label": "primal_beast" },
 		{ "name": "npc_dota_hero_muerta", "label": "muerta" },
 		{ "name": "npc_dota_hero_dawnbreaker", "label": "dawnbreaker" },
-		{ "name": "npc_dota_hero_kez", "label": "kez" }
+		{ "name": "npc_dota_hero_kez", "label": "kez" },
+		{ "name": "npc_dota_hero_arc_warden", "label": "arc_warden" }
 	],
 	"hero_cost": 500,
 	"refresh_cost": 20,
