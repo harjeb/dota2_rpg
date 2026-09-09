@@ -15,6 +15,9 @@ local EnemyScaling = require("battle.enemy_scaling")
 local BossScaling = require("battle.boss_scaling")
 local RunLives = require("battle.run_lives")
 local TempestDouble = require("battle.tempest_double")
+local SpecialTargets = require("tactics/special_targets")
+local SummonBehavior = require("battle/summon_behavior")
+local TinyTree = require("issue_fixes/tiny_tree")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -235,19 +238,8 @@ function Precache(context)
 	PrecacheItem("item_aegis")
 	PrecacheItem("item_cheese")
 
-	-- 只预缓存可招募子集（全量 112 个同步预缓存会导致加载崩溃）
-	local heroData = UnwrapKeyValues(LoadKeyValues("scripts/data/heroes.kv"), "heroes")
-	if type(heroData) == "table" then
-		local pool = heroData.recruitable ~= nil and heroData.recruitable or heroData
-		for _, categoryName in ipairs(SHOP_CATEGORIES) do
-			for _, heroEntry in pairs(pool[categoryName] or {}) do
-				-- 与 LoadHeroPool 一致：兼容纯字符串目录和 { name = ... } 数据项。
-				local heroName = type(heroEntry) == "string" and heroEntry
-					or (type(heroEntry) == "table" and heroEntry.name or nil)
-				PrecacheUnit(heroName)
-			end
-		end
-	end
+	-- Expanded recruitment is precached asynchronously on purchase. Keep startup
+    -- loading bounded to the commander and authored enemy encounters.
 
 	local levelData = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
 	if type(levelData) == "table" then
@@ -272,7 +264,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v18-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v19-20260909") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -440,7 +432,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v18-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v19-20260909 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -615,6 +607,8 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	local unit = EntIndexToHScript(event.entindex or -1)
 	-- Native doubles are combat summons, never the hidden player commander.
 	if TempestDouble.OnSpawn(self, unit, BATTLE_ACQUISITION_RANGE) then return end
+    if SpecialTargets.OnSpawn(self, unit) then return end
+    if SummonBehavior.OnSpawn(self, unit) then return end
 	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
 		return
 	end
@@ -3372,6 +3366,8 @@ end
 
 function CDota2RpgDemo:OnThink()
 	TempestDouble.OnThink(self)
+    SummonBehavior.OnThink(self)
+    TinyTree.OnThink(self)
 	self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
 	local lives = RunLives.Ensure(self)
 	if self.phase ~= "fight" and #lives.pendingItems > 0
@@ -3426,6 +3422,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- Claim settlement before any wallet/item/event callback can re-enter.
 	self.phase = "result"
 	TempestDouble.Clear(self)
+    SpecialTargets.Clear(self)
+    SummonBehavior.Clear(self)
+    TinyTree.Clear(self)
 	local lifeReward = { gold = 0, items = {} }
 	if winner ~= "radiant" then
 		lifeReward = RunLives.Lose(self)

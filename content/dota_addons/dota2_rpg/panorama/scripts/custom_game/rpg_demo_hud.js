@@ -678,6 +678,7 @@
         if (!rules[index]) {
             return;
         }
+        if (rules[index].action !== actionKey) { rules[index].destination = "target"; }
         rules[index].action = actionKey;
         closeEditorMenus();
         sendRuleToServer(side, selectedHeroIndex[side], index);

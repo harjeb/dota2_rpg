@@ -1,39 +1,508 @@
 {
-	"strength": [
-		{ "name": "npc_dota_hero_axe", "label": "axe" },
-		{ "name": "npc_dota_hero_sven", "label": "sven" },
-		{ "name": "npc_dota_hero_dragon_knight", "label": "dragon_knight" },
-		{ "name": "npc_dota_hero_sand_king", "label": "sand_king" },
-		{ "name": "npc_dota_hero_huskar", "label": "huskar" },
-		{ "name": "npc_dota_hero_largo", "label": "largo" }
-	],
-	"agility": [
-		{ "name": "npc_dota_hero_juggernaut", "label": "juggernaut" },
-		{ "name": "npc_dota_hero_phantom_assassin", "label": "phantom_assassin" },
-		{ "name": "npc_dota_hero_sniper", "label": "sniper" },
-		{ "name": "npc_dota_hero_riki", "label": "riki" },
-		{ "name": "npc_dota_hero_phantom_lancer", "label": "phantom_lancer" },
-		{ "name": "npc_dota_hero_morphling", "label": "morphling" }
-	],
-	"intelligence": [
-		{ "name": "npc_dota_hero_lina", "label": "lina" },
-		{ "name": "npc_dota_hero_lion", "label": "lion" },
-		{ "name": "npc_dota_hero_crystal_maiden", "label": "crystal_maiden" },
-		{ "name": "npc_dota_hero_witch_doctor", "label": "witch_doctor" },
-		{ "name": "npc_dota_hero_dazzle", "label": "dazzle" }
-	],
-	"universal": [
-		{ "name": "npc_dota_hero_marci", "label": "marci" },
-		{ "name": "npc_dota_hero_primal_beast", "label": "primal_beast" },
-		{ "name": "npc_dota_hero_muerta", "label": "muerta" },
-		{ "name": "npc_dota_hero_dawnbreaker", "label": "dawnbreaker" },
-		{ "name": "npc_dota_hero_kez", "label": "kez" },
-		{ "name": "npc_dota_hero_arc_warden", "label": "arc_warden" }
-	],
-	"hero_cost": 500,
-	"refresh_cost": 20,
-	"bench_slot_cost": 200,
-	"bench_slot_max": 5,
-	"lineup_max": 5,
-	"initial_gold": 500
+  "strength": [
+    {
+      "name": "npc_dota_hero_abyssal_underlord",
+      "label": "abyssal_underlord"
+    },
+    {
+      "name": "npc_dota_hero_alchemist",
+      "label": "alchemist"
+    },
+    {
+      "name": "npc_dota_hero_axe",
+      "label": "axe"
+    },
+    {
+      "name": "npc_dota_hero_bristleback",
+      "label": "bristleback"
+    },
+    {
+      "name": "npc_dota_hero_centaur",
+      "label": "centaur"
+    },
+    {
+      "name": "npc_dota_hero_chaos_knight",
+      "label": "chaos_knight"
+    },
+    {
+      "name": "npc_dota_hero_dawnbreaker",
+      "label": "dawnbreaker"
+    },
+    {
+      "name": "npc_dota_hero_doom_bringer",
+      "label": "doom_bringer"
+    },
+    {
+      "name": "npc_dota_hero_dragon_knight",
+      "label": "dragon_knight"
+    },
+    {
+      "name": "npc_dota_hero_earthshaker",
+      "label": "earthshaker"
+    },
+    {
+      "name": "npc_dota_hero_elder_titan",
+      "label": "elder_titan"
+    },
+    {
+      "name": "npc_dota_hero_huskar",
+      "label": "huskar"
+    },
+    {
+      "name": "npc_dota_hero_kunkka",
+      "label": "kunkka"
+    },
+    {
+      "name": "npc_dota_hero_largo",
+      "label": "largo"
+    },
+    {
+      "name": "npc_dota_hero_legion_commander",
+      "label": "legion_commander"
+    },
+    {
+      "name": "npc_dota_hero_life_stealer",
+      "label": "life_stealer"
+    },
+    {
+      "name": "npc_dota_hero_lycan",
+      "label": "lycan"
+    },
+    {
+      "name": "npc_dota_hero_mars",
+      "label": "mars"
+    },
+    {
+      "name": "npc_dota_hero_night_stalker",
+      "label": "night_stalker"
+    },
+    {
+      "name": "npc_dota_hero_ogre_magi",
+      "label": "ogre_magi"
+    },
+    {
+      "name": "npc_dota_hero_omniknight",
+      "label": "omniknight"
+    },
+    {
+      "name": "npc_dota_hero_phoenix",
+      "label": "phoenix"
+    },
+    {
+      "name": "npc_dota_hero_primal_beast",
+      "label": "primal_beast"
+    },
+    {
+      "name": "npc_dota_hero_pudge",
+      "label": "pudge"
+    },
+    {
+      "name": "npc_dota_hero_rattletrap",
+      "label": "rattletrap"
+    },
+    {
+      "name": "npc_dota_hero_shredder",
+      "label": "shredder"
+    },
+    {
+      "name": "npc_dota_hero_skeleton_king",
+      "label": "skeleton_king"
+    },
+    {
+      "name": "npc_dota_hero_slardar",
+      "label": "slardar"
+    },
+    {
+      "name": "npc_dota_hero_spirit_breaker",
+      "label": "spirit_breaker"
+    },
+    {
+      "name": "npc_dota_hero_sven",
+      "label": "sven"
+    },
+    {
+      "name": "npc_dota_hero_tidehunter",
+      "label": "tidehunter"
+    },
+    {
+      "name": "npc_dota_hero_tiny",
+      "label": "tiny"
+    },
+    {
+      "name": "npc_dota_hero_treant",
+      "label": "treant"
+    },
+    {
+      "name": "npc_dota_hero_tusk",
+      "label": "tusk"
+    },
+    {
+      "name": "npc_dota_hero_undying",
+      "label": "undying"
+    }
+  ],
+  "agility": [
+    {
+      "name": "npc_dota_hero_antimage",
+      "label": "antimage"
+    },
+    {
+      "name": "npc_dota_hero_bloodseeker",
+      "label": "bloodseeker"
+    },
+    {
+      "name": "npc_dota_hero_bounty_hunter",
+      "label": "bounty_hunter"
+    },
+    {
+      "name": "npc_dota_hero_broodmother",
+      "label": "broodmother"
+    },
+    {
+      "name": "npc_dota_hero_clinkz",
+      "label": "clinkz"
+    },
+    {
+      "name": "npc_dota_hero_drow_ranger",
+      "label": "drow_ranger"
+    },
+    {
+      "name": "npc_dota_hero_ember_spirit",
+      "label": "ember_spirit"
+    },
+    {
+      "name": "npc_dota_hero_faceless_void",
+      "label": "faceless_void"
+    },
+    {
+      "name": "npc_dota_hero_gyrocopter",
+      "label": "gyrocopter"
+    },
+    {
+      "name": "npc_dota_hero_hoodwink",
+      "label": "hoodwink"
+    },
+    {
+      "name": "npc_dota_hero_juggernaut",
+      "label": "juggernaut"
+    },
+    {
+      "name": "npc_dota_hero_lone_druid",
+      "label": "lone_druid"
+    },
+    {
+      "name": "npc_dota_hero_luna",
+      "label": "luna"
+    },
+    {
+      "name": "npc_dota_hero_medusa",
+      "label": "medusa"
+    },
+    {
+      "name": "npc_dota_hero_meepo",
+      "label": "meepo"
+    },
+    {
+      "name": "npc_dota_hero_mirana",
+      "label": "mirana"
+    },
+    {
+      "name": "npc_dota_hero_monkey_king",
+      "label": "monkey_king"
+    },
+    {
+      "name": "npc_dota_hero_morphling",
+      "label": "morphling"
+    },
+    {
+      "name": "npc_dota_hero_naga_siren",
+      "label": "naga_siren"
+    },
+    {
+      "name": "npc_dota_hero_nevermore",
+      "label": "nevermore"
+    },
+    {
+      "name": "npc_dota_hero_phantom_assassin",
+      "label": "phantom_assassin"
+    },
+    {
+      "name": "npc_dota_hero_phantom_lancer",
+      "label": "phantom_lancer"
+    },
+    {
+      "name": "npc_dota_hero_razor",
+      "label": "razor"
+    },
+    {
+      "name": "npc_dota_hero_riki",
+      "label": "riki"
+    },
+    {
+      "name": "npc_dota_hero_slark",
+      "label": "slark"
+    },
+    {
+      "name": "npc_dota_hero_sniper",
+      "label": "sniper"
+    },
+    {
+      "name": "npc_dota_hero_spectre",
+      "label": "spectre"
+    },
+    {
+      "name": "npc_dota_hero_templar_assassin",
+      "label": "templar_assassin"
+    },
+    {
+      "name": "npc_dota_hero_terrorblade",
+      "label": "terrorblade"
+    },
+    {
+      "name": "npc_dota_hero_troll_warlord",
+      "label": "troll_warlord"
+    },
+    {
+      "name": "npc_dota_hero_ursa",
+      "label": "ursa"
+    },
+    {
+      "name": "npc_dota_hero_vengefulspirit",
+      "label": "vengefulspirit"
+    },
+    {
+      "name": "npc_dota_hero_viper",
+      "label": "viper"
+    },
+    {
+      "name": "npc_dota_hero_weaver",
+      "label": "weaver"
+    }
+  ],
+  "intelligence": [
+    {
+      "name": "npc_dota_hero_ancient_apparition",
+      "label": "ancient_apparition"
+    },
+    {
+      "name": "npc_dota_hero_chen",
+      "label": "chen"
+    },
+    {
+      "name": "npc_dota_hero_crystal_maiden",
+      "label": "crystal_maiden"
+    },
+    {
+      "name": "npc_dota_hero_dark_seer",
+      "label": "dark_seer"
+    },
+    {
+      "name": "npc_dota_hero_dark_willow",
+      "label": "dark_willow"
+    },
+    {
+      "name": "npc_dota_hero_disruptor",
+      "label": "disruptor"
+    },
+    {
+      "name": "npc_dota_hero_enchantress",
+      "label": "enchantress"
+    },
+    {
+      "name": "npc_dota_hero_grimstroke",
+      "label": "grimstroke"
+    },
+    {
+      "name": "npc_dota_hero_jakiro",
+      "label": "jakiro"
+    },
+    {
+      "name": "npc_dota_hero_keeper_of_the_light",
+      "label": "keeper_of_the_light"
+    },
+    {
+      "name": "npc_dota_hero_leshrac",
+      "label": "leshrac"
+    },
+    {
+      "name": "npc_dota_hero_lich",
+      "label": "lich"
+    },
+    {
+      "name": "npc_dota_hero_lina",
+      "label": "lina"
+    },
+    {
+      "name": "npc_dota_hero_lion",
+      "label": "lion"
+    },
+    {
+      "name": "npc_dota_hero_muerta",
+      "label": "muerta"
+    },
+    {
+      "name": "npc_dota_hero_necrolyte",
+      "label": "necrolyte"
+    },
+    {
+      "name": "npc_dota_hero_obsidian_destroyer",
+      "label": "obsidian_destroyer"
+    },
+    {
+      "name": "npc_dota_hero_oracle",
+      "label": "oracle"
+    },
+    {
+      "name": "npc_dota_hero_puck",
+      "label": "puck"
+    },
+    {
+      "name": "npc_dota_hero_pugna",
+      "label": "pugna"
+    },
+    {
+      "name": "npc_dota_hero_queenofpain",
+      "label": "queenofpain"
+    },
+    {
+      "name": "npc_dota_hero_ringmaster",
+      "label": "ringmaster"
+    },
+    {
+      "name": "npc_dota_hero_shadow_demon",
+      "label": "shadow_demon"
+    },
+    {
+      "name": "npc_dota_hero_shadow_shaman",
+      "label": "shadow_shaman"
+    },
+    {
+      "name": "npc_dota_hero_silencer",
+      "label": "silencer"
+    },
+    {
+      "name": "npc_dota_hero_skywrath_mage",
+      "label": "skywrath_mage"
+    },
+    {
+      "name": "npc_dota_hero_storm_spirit",
+      "label": "storm_spirit"
+    },
+    {
+      "name": "npc_dota_hero_tinker",
+      "label": "tinker"
+    },
+    {
+      "name": "npc_dota_hero_warlock",
+      "label": "warlock"
+    },
+    {
+      "name": "npc_dota_hero_winter_wyvern",
+      "label": "winter_wyvern"
+    },
+    {
+      "name": "npc_dota_hero_witch_doctor",
+      "label": "witch_doctor"
+    },
+    {
+      "name": "npc_dota_hero_zuus",
+      "label": "zuus"
+    }
+  ],
+  "universal": [
+    {
+      "name": "npc_dota_hero_abaddon",
+      "label": "abaddon"
+    },
+    {
+      "name": "npc_dota_hero_arc_warden",
+      "label": "arc_warden"
+    },
+    {
+      "name": "npc_dota_hero_bane",
+      "label": "bane"
+    },
+    {
+      "name": "npc_dota_hero_batrider",
+      "label": "batrider"
+    },
+    {
+      "name": "npc_dota_hero_beastmaster",
+      "label": "beastmaster"
+    },
+    {
+      "name": "npc_dota_hero_brewmaster",
+      "label": "brewmaster"
+    },
+    {
+      "name": "npc_dota_hero_dazzle",
+      "label": "dazzle"
+    },
+    {
+      "name": "npc_dota_hero_death_prophet",
+      "label": "death_prophet"
+    },
+    {
+      "name": "npc_dota_hero_enigma",
+      "label": "enigma"
+    },
+    {
+      "name": "npc_dota_hero_furion",
+      "label": "furion"
+    },
+    {
+      "name": "npc_dota_hero_magnataur",
+      "label": "magnataur"
+    },
+    {
+      "name": "npc_dota_hero_marci",
+      "label": "marci"
+    },
+    {
+      "name": "npc_dota_hero_nyx_assassin",
+      "label": "nyx_assassin"
+    },
+    {
+      "name": "npc_dota_hero_pangolier",
+      "label": "pangolier"
+    },
+    {
+      "name": "npc_dota_hero_sand_king",
+      "label": "sand_king"
+    },
+    {
+      "name": "npc_dota_hero_snapfire",
+      "label": "snapfire"
+    },
+    {
+      "name": "npc_dota_hero_techies",
+      "label": "techies"
+    },
+    {
+      "name": "npc_dota_hero_venomancer",
+      "label": "venomancer"
+    },
+    {
+      "name": "npc_dota_hero_visage",
+      "label": "visage"
+    },
+    {
+      "name": "npc_dota_hero_void_spirit",
+      "label": "void_spirit"
+    },
+    {
+      "name": "npc_dota_hero_windrunner",
+      "label": "windrunner"
+    },
+    {
+      "name": "npc_dota_hero_wisp",
+      "label": "wisp"
+    }
+  ],
+  "hero_cost": 500,
+  "refresh_cost": 20,
+  "bench_slot_cost": 200,
+  "bench_slot_max": 5,
+  "lineup_max": 5,
+  "initial_gold": 500
 }

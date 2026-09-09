@@ -69,6 +69,7 @@ function Snapshot.ForHero(manager, hero)
             forced=rule.approach == "allow_approach" and 1 or 0,
             use_conditions=list(rule.use_conditions), target_filters=list(rule.target_filters),
             target_priorities=list(rule.target_priorities), min_aoe_hits=rule.min_aoe_hits or 0,
+            destination=action.destination or "target",
             cast_preference=action.cast_preference or "auto",
             desired_toggle_state=action.desired_toggle_state == nil and "" or (action.desired_toggle_state and "1" or "0") }
     end

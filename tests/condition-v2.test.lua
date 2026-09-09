@@ -132,8 +132,9 @@ check(S.new():SortCandidates({enemy,ally},{{type="lowest_attack_damage"}},ctx)[1
 check(S.new():SortCandidates({enemy,ally},{{type="highest_magic_resistance"}},ctx)[1]==enemy,"highest MR")
 -- Install the actual bridge with engine/order plumbing stubbed, then exercise
 -- the context callbacks and validation handed to the real RuleService.
+local filterOptions
 package.loaded["tactics/order_filter"]={OrderGate={new=function() return {} end},
-    OrderFilter={new=function() return {Install=function() end} end}}
+    OrderFilter={new=function(options) filterOptions=options; return {Install=function() end} end}}
 local engineOptions
 package.loaded["tactics/tactic_engine"]={new=function(options)
     engineOptions=options; return {Reset=function() end} end}
@@ -294,4 +295,29 @@ for _, pair in ipairs({
             and rehydrated.use_conditions[1].value==index, "phase identity and independent condition survive save "..name)
     end
 end
+abilities[#abilities+1] = ability("ember_spirit_activate_fire_remnant",false,false)
+local destinationRule=bridge.ruleService:DecodeFlat({action_kind="ability",action_id="ember_spirit_activate_fire_remnant",
+    destination="remnant_safe",cast_preference="point",min_aoe_hits=2,target_team="enemy"})
+check(bridge.ruleService:ValidateRule(0,caster,destinationRule),"destination validates on native remnant activation")
+gm.battleManager.getRules=function() return {destinationRule} end
+local destinationSnapshot=Snapshot.ForHero(gm.battleManager,caster)[1]
+local destinationRestored=Bridge.ConvertLegacyRule(1,destinationSnapshot)
+check(bridge.ruleService:ValidateRule(0,caster,destinationRestored)
+    and destinationRestored.action.destination=="remnant_safe" and destinationRestored.action.cast_preference=="point"
+    and destinationRestored.min_aoe_hits==2,"snapshot and legacy restore retain destination, cast choice and hit gate")
+local controlled=unit(99,2,100)
+check(not filterOptions.is_battle_unit(controlled),"unrelated unit is not order-managed")
+for _,field in ipairs({"managedSummons","tempestDoubles","specialObjects"}) do
+    gm[field]={[controlled]=true}
+    check(filterOptions.is_battle_unit(controlled),"native auxiliary unit obeys the battle order lock: "..field)
+    gm[field]={}
+end
+gm.treeGrabBusy={[caster]=true}
+local included=false
+for _,u in ipairs(engineOptions.get_battle_units()) do if u==caster then included=true end end
+check(not included,"native tree cast reserves caster from tactic orders")
+gm.treeGrabBusy={}
+bridge:RecordAuxiliaryAction(caster,"tiny_tree_grab")
+check(real.get_action_use_count(caster,"tiny_tree_grab")==1 and real.get_action_elapsed(caster,"tiny_tree_grab")==0,
+    "automatic native tree order participates in action history")
 print("condition-v2: "..checks.." checks passed")

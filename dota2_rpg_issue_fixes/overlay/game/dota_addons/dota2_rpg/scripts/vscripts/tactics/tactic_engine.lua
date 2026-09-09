@@ -224,6 +224,8 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
 end
 
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
+    local handled, point, anchor, reason = require("tactics/special_targets").SelectDestination(rule, spec, ctx, self.conditions)
+    if handled then return point, anchor, reason end
     if spec.target_mode == "vector" then
         return self.selector:SelectVector(rule, spec, ctx)
     elseif spec.target_mode == "point" then

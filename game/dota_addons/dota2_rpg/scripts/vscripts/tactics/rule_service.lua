@@ -48,6 +48,8 @@ local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = 
 local NUMERIC_LIMITS = {
     action_elapsed_gte = { 0, 86400 },
     action_elapsed_lte = { 0, 86400 },
+    tiny_grab_hp_pct_lte = { 0, 1 },
+    tiny_grab_hp_pct_gte = { 0, 1 },
     self_hp_pct_lte = { 0, 1 },
     self_hp_pct_gte = { 0, 1 },
     self_mana_pct_lte = { 0, 1 },
@@ -189,6 +191,7 @@ function RuleService:DecodeFlat(args)
             target_mode = args.target_mode ~= "" and args.target_mode or nil,
             target_team = args.target_team ~= "" and args.target_team or nil,
             desired_toggle_state = toggle,
+            destination = args.destination ~= "" and args.destination or nil,
             cast_preference = args.cast_preference ~= "" and args.cast_preference or nil,
             aoe_radius = args.aoe_radius,
         },
@@ -283,6 +286,9 @@ function RuleService:ValidateRule(player_id, hero, rule)
         or type(rule.target_filters) ~= "table" or type(rule.use_conditions) ~= "table"
         or type(rule.target_priorities) ~= "table" then return false, "invalid_rule" end
     if type(rule.action.logical_id) ~= "string" or #rule.action.logical_id > 256 then return false, "invalid_action_id" end
+    if not require("tactics/special_targets").ValidDestination(rule.action.logical_id, rule.action.destination) then
+        return false, "invalid_destination"
+    end
     local preference = rule.action.cast_preference
     if preference ~= nil and preference ~= "auto" and preference ~= "unit" and preference ~= "point" then
         return false, "invalid_cast_preference"
@@ -455,6 +461,7 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
     local key = hero_key .. ":" .. tostring(slot)
     local payload = {
         desired_toggle_state = rule.action.desired_toggle_state == nil and "" or (rule.action.desired_toggle_state and "1" or "0"),
+        destination = rule.action.destination or "target",
         cast_preference = rule.action.cast_preference or "auto",
         target_types = table.concat(rule.target.types or {}, ","),
         id = rule.id,

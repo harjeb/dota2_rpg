@@ -37,6 +37,8 @@ require = function(moduleName)
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
 	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
+        or moduleName == "battle/summon_behavior" or moduleName == "issue_fixes/tiny_tree"
+        or moduleName == "issue_fixes/hero_precache" or moduleName == "tactics/special_targets"
         or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
@@ -116,18 +118,13 @@ Precache(precacheContext)
 local expectedUnits = {
 	"npc_dota_hero_wisp",
 	"npc_dota_hero_axe",
-	"npc_dota_hero_sven",
-	"npc_dota_hero_juggernaut",
-	"npc_dota_hero_sniper",
-	"npc_dota_hero_lina",
-	"npc_dota_hero_lion",
-	"npc_dota_hero_marci",
-	"npc_dota_hero_muerta",
 	"npc_dota_neutral_kobold",
 }
 for _, unitName in ipairs(expectedUnits) do
 	assert(precached[unitName] == 1, unitName .. " must be precached exactly once")
 end
+assert(precached.npc_dota_hero_sven == nil and precached.npc_dota_hero_lion == nil,
+    "shop-only heroes load asynchronously on purchase, not all at startup")
 assert(precached["Level display name must not be precached"] == nil, "level labels are not unit names")
 assert(precachedItems.item_rpg_scroll_low == 1 and precachedItems.item_rpg_scroll_high == 1,
 	"the two project scroll items must be precached exactly once")

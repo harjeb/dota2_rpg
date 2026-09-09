@@ -152,12 +152,16 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 		action = {
 			kind = actionKind,
 			logical_id = logicalId,
+            destination = decoded.action.destination,
+            cast_preference = decoded.action.cast_preference,
+            desired_toggle_state = decoded.action.desired_toggle_state,
 			target_team = "enemy",
 		},
 		target = target,
 		target_filters = filters,
 		target_priorities = priorities,
 		use_conditions = useConditions,
+        min_aoe_hits = decoded.min_aoe_hits,
 		approach = legacy.forced and "allow_approach" or "range_only",
 	})
 end
@@ -194,6 +198,8 @@ function TacticBridge:Install()
 		if not is_valid_entity(unit) then
 			return false
 		end
+		if (gameMode.managedSummons or {})[unit] or (gameMode.tempestDoubles or {})[unit]
+            or (gameMode.specialObjects or {})[unit] then return true end
 		if unit.benchHeroName ~= nil then
 			return false
 		end
@@ -310,6 +316,10 @@ function TacticBridge:Install()
                 if root and root ~= member then roots[member] = root end
             end
         end
+        for object in pairs(gameMode.specialObjects or {}) do
+            local owner = Context.OwnerRoot(object, roster)
+            if owner ~= nil and owner ~= object then roots[object] = owner end
+        end
         local team = sides[roots[unit] or unit] or unit:GetTeamNumber()
         local nativeCasterTeam = unit:GetTeamNumber()
         if nativeCasterTeam == DOTA_TEAM_GOODGUYS or nativeCasterTeam == DOTA_TEAM_BADGUYS then team = nativeCasterTeam end
@@ -335,6 +345,7 @@ function TacticBridge:Install()
 		end
 		return {
 			caster = unit,
+            special_objects = gameMode.specialObjects or {},
 			allies = allies,
 			enemies = enemies,
 			alive_ally_count = aliveAllies,
@@ -437,6 +448,10 @@ function TacticBridge:Install()
 		}
 	end
 
+    self.RecordAuxiliaryAction = function(_, unit, name)
+        buildContext(unit).record_action_order(unit, name)
+    end
+
 	local conditionsRegistry = Conditions
 	local function is_current_lineup_hero(hero, player_id)
 		if not is_valid_entity(hero) or hero.benchHeroName ~= nil then
@@ -536,7 +551,13 @@ function TacticBridge:Install()
 	self.tacticEngine = TacticEngine.new({
 		order_gate = orderGate,
 		get_phase = getPhase,
-		get_battle_units = getBattleUnits,
+		get_battle_units = function()
+            local available = {}
+            for _, unit in ipairs(getBattleUnits()) do
+                if not (gameMode.treeGrabBusy or {})[unit] then available[#available+1] = unit end
+            end
+            return available
+        end,
 		get_rules = manager.getRules,
 		build_context = buildContext,
 		conditions = conditionsRegistry,

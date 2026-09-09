@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-09T02:48:58.665395+00:00",
+  "counts": {
+    "issues": 88,
+    "dependencies": 44,
+    "comments": 4,
+    "events": 211,
+    "labels": 0,
+    "config": 13
+  },
+  "dolt_log": [
+    {
+      "commit_hash": "inktt6sp8jq4qtfhsi1j2skedfllf134",
+      "date": "2026-09-09T02:48:20.516Z",
+      "message": "bd: close dota2_rpg-bch"
+    }
+  ],
+  "reason": "bd 0.56.1 sync is a no-op and no Dolt remote is configured; native table snapshot preserved in Git. Previous backup retained."
+}

@@ -395,7 +395,7 @@ assert(latest(hud,lion).target_filter_1_type === "","compact nearest no longer r
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 25], ["target", retiredTarget, 34], ["priority", [], 13]].forEach(function (spec) {
+[["use", retiredUse, 31], ["target", retiredTarget, 34], ["priority", [], 13]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -555,6 +555,32 @@ assert(applied.target_team === "ally" && applied.target === "ally_distance_neare
         && panel(phaseHud,"V2_use0_action_id").GetChild(0).abilityname===pair[1],"follow-up condition and reference survive refresh and reopen");
 });
 
+// Destination selection and Tiny grab gates survive real editor save/reopen.
+var destinationHud = runHud(), emberHero = "npc_dota_hero_ember_spirit";
+destinationHud.subscriptions.rpg_shop_state({lineup_text:emberHero,owned_text:emberHero});
+destinationHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:950,hero_name:emberHero,rule_key:emberHero,
+    can_edit:1,rules_ready:1,actions_text:"ember_spirit_activate_fire_remnant;attack",
+    rules:[{action:"ember_spirit_activate_fire_remnant",enabled:1,target_team:"enemy",destination:"remnant_nearest"}]});
+click(destinationHud,"RadiantRuleSettings0");
+choice(destinationHud,"V2Destination","destination_remnant_safe");
+click(destinationHud,"RuleSettingsApply");
+assert(latest(destinationHud,emberHero).destination==="remnant_safe","destination serializes independently of ordinary target settings");
+click(destinationHud,"RadiantRuleSettings0");
+assert(panel(destinationHud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_remnant_safe","destination survives reopening");
+click(destinationHud,"RuleSettingsClose");
+var grabHud=runHud(), tinyHero="npc_dota_hero_tiny";
+grabHud.subscriptions.rpg_shop_state({lineup_text:tinyHero,owned_text:tinyHero});
+grabHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:951,hero_name:tinyHero,rule_key:tinyHero,
+    can_edit:1,rules_ready:1,actions_text:"tiny_toss;attack",rules:[{action:"tiny_toss",enabled:1,target_team:"enemy"}]});
+click(grabHud,"RadiantRuleSettings0");
+choice(grabHud,"V2_use0","tiny_grab_is_enemy");
+choice(grabHud,"V2_use1","tiny_grab_hp_pct_lte"); input(grabHud,"V2_use1_value",35);
+choice(grabHud,"V2_target0","hp_pct_gte"); input(grabHud,"V2_target0_value",80);
+click(grabHud,"RuleSettingsApply");
+var grabWire=latest(grabHud,tinyHero);
+assert(grabWire.use_condition_1_type==="tiny_grab_is_enemy" && grabWire.use_condition_2_value===.35
+    && grabWire.target_filter_1_value===.8,"grabbed-unit gates and landing-target gates remain independent");
+
 var livesHud = runHud();
 assert(panel(livesHud,"RunHearts").children.length === 5, "HUD opens with five hearts");
 function lifeSnapshot(left, phase) {
@@ -582,5 +608,5 @@ lifeSnapshot(0, "result");
 assert(!panel(livesHud,"StartBattleButton").enabled
     && panel(livesHud,"BattleStatus").text === "#dota2_rpg_run_failed", "fifth loss displays run end and disables start");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, 72 stable documented menu IDs, U13/U14 selection, previews and stale field removal");
+console.log("PASS: " + presetCount + " complete template variants, 78 stable documented menu IDs, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");

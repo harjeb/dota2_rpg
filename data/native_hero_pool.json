@@ -1,0 +1,642 @@
+{
+  "source": "scripts/npc/npc_heroes.txt",
+  "source_vpk": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota\\pak01_dir.vpk",
+  "source_sha256": "03375c615ae05cc71ffedf3a9df407ba9925d31d42d864e6e449423bccad1b6f",
+  "rows": [
+    {
+      "name": "npc_dota_hero_abaddon",
+      "attribute": "universal",
+      "hero_id": 102
+    },
+    {
+      "name": "npc_dota_hero_abyssal_underlord",
+      "attribute": "strength",
+      "hero_id": 108
+    },
+    {
+      "name": "npc_dota_hero_alchemist",
+      "attribute": "strength",
+      "hero_id": 73
+    },
+    {
+      "name": "npc_dota_hero_ancient_apparition",
+      "attribute": "intelligence",
+      "hero_id": 68
+    },
+    {
+      "name": "npc_dota_hero_antimage",
+      "attribute": "agility",
+      "hero_id": 1
+    },
+    {
+      "name": "npc_dota_hero_arc_warden",
+      "attribute": "universal",
+      "hero_id": 113
+    },
+    {
+      "name": "npc_dota_hero_axe",
+      "attribute": "strength",
+      "hero_id": 2
+    },
+    {
+      "name": "npc_dota_hero_bane",
+      "attribute": "universal",
+      "hero_id": 3
+    },
+    {
+      "name": "npc_dota_hero_batrider",
+      "attribute": "universal",
+      "hero_id": 65
+    },
+    {
+      "name": "npc_dota_hero_beastmaster",
+      "attribute": "universal",
+      "hero_id": 38
+    },
+    {
+      "name": "npc_dota_hero_bloodseeker",
+      "attribute": "agility",
+      "hero_id": 4
+    },
+    {
+      "name": "npc_dota_hero_bounty_hunter",
+      "attribute": "agility",
+      "hero_id": 62
+    },
+    {
+      "name": "npc_dota_hero_brewmaster",
+      "attribute": "universal",
+      "hero_id": 78
+    },
+    {
+      "name": "npc_dota_hero_bristleback",
+      "attribute": "strength",
+      "hero_id": 99
+    },
+    {
+      "name": "npc_dota_hero_broodmother",
+      "attribute": "agility",
+      "hero_id": 61
+    },
+    {
+      "name": "npc_dota_hero_centaur",
+      "attribute": "strength",
+      "hero_id": 96
+    },
+    {
+      "name": "npc_dota_hero_chaos_knight",
+      "attribute": "strength",
+      "hero_id": 81
+    },
+    {
+      "name": "npc_dota_hero_chen",
+      "attribute": "intelligence",
+      "hero_id": 66
+    },
+    {
+      "name": "npc_dota_hero_clinkz",
+      "attribute": "agility",
+      "hero_id": 56
+    },
+    {
+      "name": "npc_dota_hero_crystal_maiden",
+      "attribute": "intelligence",
+      "hero_id": 5
+    },
+    {
+      "name": "npc_dota_hero_dark_seer",
+      "attribute": "intelligence",
+      "hero_id": 55
+    },
+    {
+      "name": "npc_dota_hero_dark_willow",
+      "attribute": "intelligence",
+      "hero_id": 119
+    },
+    {
+      "name": "npc_dota_hero_dawnbreaker",
+      "attribute": "strength",
+      "hero_id": 135
+    },
+    {
+      "name": "npc_dota_hero_dazzle",
+      "attribute": "universal",
+      "hero_id": 50
+    },
+    {
+      "name": "npc_dota_hero_death_prophet",
+      "attribute": "universal",
+      "hero_id": 43
+    },
+    {
+      "name": "npc_dota_hero_disruptor",
+      "attribute": "intelligence",
+      "hero_id": 87
+    },
+    {
+      "name": "npc_dota_hero_doom_bringer",
+      "attribute": "strength",
+      "hero_id": 69
+    },
+    {
+      "name": "npc_dota_hero_dragon_knight",
+      "attribute": "strength",
+      "hero_id": 49
+    },
+    {
+      "name": "npc_dota_hero_drow_ranger",
+      "attribute": "agility",
+      "hero_id": 6
+    },
+    {
+      "name": "npc_dota_hero_earth_spirit",
+      "attribute": "strength",
+      "hero_id": 107
+    },
+    {
+      "name": "npc_dota_hero_earthshaker",
+      "attribute": "strength",
+      "hero_id": 7
+    },
+    {
+      "name": "npc_dota_hero_elder_titan",
+      "attribute": "strength",
+      "hero_id": 103
+    },
+    {
+      "name": "npc_dota_hero_ember_spirit",
+      "attribute": "agility",
+      "hero_id": 106
+    },
+    {
+      "name": "npc_dota_hero_enchantress",
+      "attribute": "intelligence",
+      "hero_id": 58
+    },
+    {
+      "name": "npc_dota_hero_enigma",
+      "attribute": "universal",
+      "hero_id": 33
+    },
+    {
+      "name": "npc_dota_hero_faceless_void",
+      "attribute": "agility",
+      "hero_id": 41
+    },
+    {
+      "name": "npc_dota_hero_furion",
+      "attribute": "universal",
+      "hero_id": 53
+    },
+    {
+      "name": "npc_dota_hero_grimstroke",
+      "attribute": "intelligence",
+      "hero_id": 121
+    },
+    {
+      "name": "npc_dota_hero_gyrocopter",
+      "attribute": "agility",
+      "hero_id": 72
+    },
+    {
+      "name": "npc_dota_hero_hoodwink",
+      "attribute": "agility",
+      "hero_id": 123
+    },
+    {
+      "name": "npc_dota_hero_huskar",
+      "attribute": "strength",
+      "hero_id": 59
+    },
+    {
+      "name": "npc_dota_hero_invoker",
+      "attribute": "intelligence",
+      "hero_id": 74
+    },
+    {
+      "name": "npc_dota_hero_jakiro",
+      "attribute": "intelligence",
+      "hero_id": 64
+    },
+    {
+      "name": "npc_dota_hero_juggernaut",
+      "attribute": "agility",
+      "hero_id": 8
+    },
+    {
+      "name": "npc_dota_hero_keeper_of_the_light",
+      "attribute": "intelligence",
+      "hero_id": 90
+    },
+    {
+      "name": "npc_dota_hero_kez",
+      "attribute": "agility",
+      "hero_id": 145
+    },
+    {
+      "name": "npc_dota_hero_kunkka",
+      "attribute": "strength",
+      "hero_id": 23
+    },
+    {
+      "name": "npc_dota_hero_largo",
+      "attribute": "strength",
+      "hero_id": 155
+    },
+    {
+      "name": "npc_dota_hero_legion_commander",
+      "attribute": "strength",
+      "hero_id": 104
+    },
+    {
+      "name": "npc_dota_hero_leshrac",
+      "attribute": "intelligence",
+      "hero_id": 52
+    },
+    {
+      "name": "npc_dota_hero_lich",
+      "attribute": "intelligence",
+      "hero_id": 31
+    },
+    {
+      "name": "npc_dota_hero_life_stealer",
+      "attribute": "strength",
+      "hero_id": 54
+    },
+    {
+      "name": "npc_dota_hero_lina",
+      "attribute": "intelligence",
+      "hero_id": 25
+    },
+    {
+      "name": "npc_dota_hero_lion",
+      "attribute": "intelligence",
+      "hero_id": 26
+    },
+    {
+      "name": "npc_dota_hero_lone_druid",
+      "attribute": "agility",
+      "hero_id": 80
+    },
+    {
+      "name": "npc_dota_hero_luna",
+      "attribute": "agility",
+      "hero_id": 48
+    },
+    {
+      "name": "npc_dota_hero_lycan",
+      "attribute": "strength",
+      "hero_id": 77
+    },
+    {
+      "name": "npc_dota_hero_magnataur",
+      "attribute": "universal",
+      "hero_id": 97
+    },
+    {
+      "name": "npc_dota_hero_marci",
+      "attribute": "universal",
+      "hero_id": 136
+    },
+    {
+      "name": "npc_dota_hero_mars",
+      "attribute": "strength",
+      "hero_id": 129
+    },
+    {
+      "name": "npc_dota_hero_medusa",
+      "attribute": "agility",
+      "hero_id": 94
+    },
+    {
+      "name": "npc_dota_hero_meepo",
+      "attribute": "agility",
+      "hero_id": 82
+    },
+    {
+      "name": "npc_dota_hero_mirana",
+      "attribute": "agility",
+      "hero_id": 9
+    },
+    {
+      "name": "npc_dota_hero_monkey_king",
+      "attribute": "agility",
+      "hero_id": 114
+    },
+    {
+      "name": "npc_dota_hero_morphling",
+      "attribute": "agility",
+      "hero_id": 10
+    },
+    {
+      "name": "npc_dota_hero_muerta",
+      "attribute": "intelligence",
+      "hero_id": 138
+    },
+    {
+      "name": "npc_dota_hero_naga_siren",
+      "attribute": "agility",
+      "hero_id": 89
+    },
+    {
+      "name": "npc_dota_hero_necrolyte",
+      "attribute": "intelligence",
+      "hero_id": 36
+    },
+    {
+      "name": "npc_dota_hero_nevermore",
+      "attribute": "agility",
+      "hero_id": 11
+    },
+    {
+      "name": "npc_dota_hero_night_stalker",
+      "attribute": "strength",
+      "hero_id": 60
+    },
+    {
+      "name": "npc_dota_hero_nyx_assassin",
+      "attribute": "universal",
+      "hero_id": 88
+    },
+    {
+      "name": "npc_dota_hero_obsidian_destroyer",
+      "attribute": "intelligence",
+      "hero_id": 76
+    },
+    {
+      "name": "npc_dota_hero_ogre_magi",
+      "attribute": "strength",
+      "hero_id": 84
+    },
+    {
+      "name": "npc_dota_hero_omniknight",
+      "attribute": "strength",
+      "hero_id": 57
+    },
+    {
+      "name": "npc_dota_hero_oracle",
+      "attribute": "intelligence",
+      "hero_id": 111
+    },
+    {
+      "name": "npc_dota_hero_pangolier",
+      "attribute": "universal",
+      "hero_id": 120
+    },
+    {
+      "name": "npc_dota_hero_phantom_assassin",
+      "attribute": "agility",
+      "hero_id": 44
+    },
+    {
+      "name": "npc_dota_hero_phantom_lancer",
+      "attribute": "agility",
+      "hero_id": 12
+    },
+    {
+      "name": "npc_dota_hero_phoenix",
+      "attribute": "strength",
+      "hero_id": 110
+    },
+    {
+      "name": "npc_dota_hero_primal_beast",
+      "attribute": "strength",
+      "hero_id": 137
+    },
+    {
+      "name": "npc_dota_hero_puck",
+      "attribute": "intelligence",
+      "hero_id": 13
+    },
+    {
+      "name": "npc_dota_hero_pudge",
+      "attribute": "strength",
+      "hero_id": 14
+    },
+    {
+      "name": "npc_dota_hero_pugna",
+      "attribute": "intelligence",
+      "hero_id": 45
+    },
+    {
+      "name": "npc_dota_hero_queenofpain",
+      "attribute": "intelligence",
+      "hero_id": 39
+    },
+    {
+      "name": "npc_dota_hero_rattletrap",
+      "attribute": "strength",
+      "hero_id": 51
+    },
+    {
+      "name": "npc_dota_hero_razor",
+      "attribute": "agility",
+      "hero_id": 15
+    },
+    {
+      "name": "npc_dota_hero_riki",
+      "attribute": "agility",
+      "hero_id": 32
+    },
+    {
+      "name": "npc_dota_hero_ringmaster",
+      "attribute": "intelligence",
+      "hero_id": 131
+    },
+    {
+      "name": "npc_dota_hero_rubick",
+      "attribute": "intelligence",
+      "hero_id": 86
+    },
+    {
+      "name": "npc_dota_hero_sand_king",
+      "attribute": "universal",
+      "hero_id": 16
+    },
+    {
+      "name": "npc_dota_hero_shadow_demon",
+      "attribute": "intelligence",
+      "hero_id": 79
+    },
+    {
+      "name": "npc_dota_hero_shadow_shaman",
+      "attribute": "intelligence",
+      "hero_id": 27
+    },
+    {
+      "name": "npc_dota_hero_shredder",
+      "attribute": "strength",
+      "hero_id": 98
+    },
+    {
+      "name": "npc_dota_hero_silencer",
+      "attribute": "intelligence",
+      "hero_id": 75
+    },
+    {
+      "name": "npc_dota_hero_skeleton_king",
+      "attribute": "strength",
+      "hero_id": 42
+    },
+    {
+      "name": "npc_dota_hero_skywrath_mage",
+      "attribute": "intelligence",
+      "hero_id": 101
+    },
+    {
+      "name": "npc_dota_hero_slardar",
+      "attribute": "strength",
+      "hero_id": 28
+    },
+    {
+      "name": "npc_dota_hero_slark",
+      "attribute": "agility",
+      "hero_id": 93
+    },
+    {
+      "name": "npc_dota_hero_snapfire",
+      "attribute": "universal",
+      "hero_id": 128
+    },
+    {
+      "name": "npc_dota_hero_sniper",
+      "attribute": "agility",
+      "hero_id": 35
+    },
+    {
+      "name": "npc_dota_hero_spectre",
+      "attribute": "agility",
+      "hero_id": 67
+    },
+    {
+      "name": "npc_dota_hero_spirit_breaker",
+      "attribute": "strength",
+      "hero_id": 71
+    },
+    {
+      "name": "npc_dota_hero_storm_spirit",
+      "attribute": "intelligence",
+      "hero_id": 17
+    },
+    {
+      "name": "npc_dota_hero_sven",
+      "attribute": "strength",
+      "hero_id": 18
+    },
+    {
+      "name": "npc_dota_hero_techies",
+      "attribute": "universal",
+      "hero_id": 105
+    },
+    {
+      "name": "npc_dota_hero_templar_assassin",
+      "attribute": "agility",
+      "hero_id": 46
+    },
+    {
+      "name": "npc_dota_hero_terrorblade",
+      "attribute": "agility",
+      "hero_id": 109
+    },
+    {
+      "name": "npc_dota_hero_tidehunter",
+      "attribute": "strength",
+      "hero_id": 29
+    },
+    {
+      "name": "npc_dota_hero_tinker",
+      "attribute": "intelligence",
+      "hero_id": 34
+    },
+    {
+      "name": "npc_dota_hero_tiny",
+      "attribute": "strength",
+      "hero_id": 19
+    },
+    {
+      "name": "npc_dota_hero_treant",
+      "attribute": "strength",
+      "hero_id": 83
+    },
+    {
+      "name": "npc_dota_hero_troll_warlord",
+      "attribute": "agility",
+      "hero_id": 95
+    },
+    {
+      "name": "npc_dota_hero_tusk",
+      "attribute": "strength",
+      "hero_id": 100
+    },
+    {
+      "name": "npc_dota_hero_undying",
+      "attribute": "strength",
+      "hero_id": 85
+    },
+    {
+      "name": "npc_dota_hero_ursa",
+      "attribute": "agility",
+      "hero_id": 70
+    },
+    {
+      "name": "npc_dota_hero_vengefulspirit",
+      "attribute": "agility",
+      "hero_id": 20
+    },
+    {
+      "name": "npc_dota_hero_venomancer",
+      "attribute": "universal",
+      "hero_id": 40
+    },
+    {
+      "name": "npc_dota_hero_viper",
+      "attribute": "agility",
+      "hero_id": 47
+    },
+    {
+      "name": "npc_dota_hero_visage",
+      "attribute": "universal",
+      "hero_id": 92
+    },
+    {
+      "name": "npc_dota_hero_void_spirit",
+      "attribute": "universal",
+      "hero_id": 126
+    },
+    {
+      "name": "npc_dota_hero_warlock",
+      "attribute": "intelligence",
+      "hero_id": 37
+    },
+    {
+      "name": "npc_dota_hero_weaver",
+      "attribute": "agility",
+      "hero_id": 63
+    },
+    {
+      "name": "npc_dota_hero_windrunner",
+      "attribute": "universal",
+      "hero_id": 21
+    },
+    {
+      "name": "npc_dota_hero_winter_wyvern",
+      "attribute": "intelligence",
+      "hero_id": 112
+    },
+    {
+      "name": "npc_dota_hero_wisp",
+      "attribute": "universal",
+      "hero_id": 91
+    },
+    {
+      "name": "npc_dota_hero_witch_doctor",
+      "attribute": "intelligence",
+      "hero_id": 30
+    },
+    {
+      "name": "npc_dota_hero_zuus",
+      "attribute": "intelligence",
+      "hero_id": 22
+    }
+  ]
+}

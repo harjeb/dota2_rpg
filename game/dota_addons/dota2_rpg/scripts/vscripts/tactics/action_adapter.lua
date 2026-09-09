@@ -90,6 +90,7 @@ local special_effect_reaches = {
 -- Zero is also the native representation of these reviewed global casts.
 -- Never turn an arbitrary zero-range or self-centered ability into a global one.
 local global_casts = {
+    elder_titan_move_spirit = true,
     rattletrap_rocket_flare = true,
     furion_wrath_of_nature = true,
     treant_living_armor = true,

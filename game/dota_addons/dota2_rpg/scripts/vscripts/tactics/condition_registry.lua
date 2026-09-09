@@ -1,4 +1,5 @@
 local Context = require("tactics/condition_context")
+local SpecialTargets = require("tactics/special_targets")
 local ConditionRegistry = {
     use_conditions = {},
     target_filters = {},
@@ -424,5 +425,30 @@ ConditionRegistry.ManaPct = mana_pct
 ConditionRegistry.DistanceBetween = distance_between
 ConditionRegistry.HasTag = has_tag
 ConditionRegistry.IsValidEntity = is_valid_entity
+
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_enemy", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and unit:GetTeamNumber() ~= ctx.caster:GetTeamNumber()
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_ally", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and unit:GetTeamNumber() == ctx.caster:GetTeamNumber()
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_hero", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and Context.Call(unit,"IsHero") == true
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_creep", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and Context.Call(unit,"IsCreep") == true
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_hp_pct_lte", function(ctx,c)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and health_pct(unit) <= tonumber(c.value)
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_hp_pct_gte", function(ctx,c)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and health_pct(unit) >= tonumber(c.value)
+end)
 
 return ConditionRegistry

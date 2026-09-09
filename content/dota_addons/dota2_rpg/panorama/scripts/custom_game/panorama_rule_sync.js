@@ -219,6 +219,7 @@ var RpgRuleSync = (function () {
         // A zero/absent hit count disables spatial AoE gating. Radius always
         // comes from the native spell; UI cannot enlarge its real effect.
         if (numberValue(rule.min_aoe_hits, 0) > 0) { payload.min_aoe_hits = Math.max(1, Math.min(20, Math.floor(numberValue(rule.min_aoe_hits, 1)))); }
+        if (rule.destination && rule.destination !== "target") { payload.destination = rule.destination; }
         if (rule.cast_preference === "unit" || rule.cast_preference === "point") { payload.cast_preference = rule.cast_preference; }
         if (rule.desired_toggle_state === true || rule.desired_toggle_state === "1" || rule.desired_toggle_state === 1) { payload.desired_toggle_state = "1"; }
         if (rule.desired_toggle_state === false || rule.desired_toggle_state === "0" || rule.desired_toggle_state === 0) { payload.desired_toggle_state = "0"; }
@@ -259,6 +260,7 @@ var RpgRuleSync = (function () {
         var side = team === "self" ? "self" : attr === "distance" ? (team === "ally" ? "ally_" : "")+ordering : team+"_"+ordering;
         var rule = { action:source.action || "attack",enabled:Number(source.enabled)!==0,forced:Number(source.forced)===1,
             target:team === "self" ? "self" : team+"_"+suffix,target_attr:attr,target_side:side,
+            destination:source.destination || "target",
             cast_preference:source.cast_preference || "auto",
             min_aoe_hits:numberValue(source.min_aoe_hits,0),desired_toggle_state:source.desired_toggle_state === "0" ? false : source.desired_toggle_state === "1" ? true : null };
         ["use_conditions","target_filters","target_priorities"].forEach(function(key) {
@@ -286,6 +288,7 @@ var RpgRuleSync = (function () {
                 use_conditions: rule.use_conditions || [use],
                 target_filters: rule.target_filters || [targetFilter(rule) || { type: "" }],
                 target_priorities: rule.target_priorities || [{ type: targetPriority(rule.target) }],
+                destination: rule.destination || "target",
                 cast_preference: rule.cast_preference || "auto",
                 min_aoe_hits: rule.min_aoe_hits || 0,
                 desired_toggle_state: rule.desired_toggle_state === undefined ? null : rule.desired_toggle_state

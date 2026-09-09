@@ -6,6 +6,8 @@ local Catalog = {}
 -- be visible, so unavailable upgrade/facet groups do not leak into the picker.
 -- Keep native identities separate; never alias a follow-up to its first cast.
 local phase_groups = {
+    {"ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant"},
+    {"elder_titan_ancestral_spirit", "elder_titan_move_spirit", "elder_titan_return_spirit"},
     {"dawnbreaker_celestial_hammer", "dawnbreaker_converge"},
     {"dawnbreaker_solar_guardian", "dawnbreaker_land"},
     {"phoenix_fire_spirits", "phoenix_launch_fire_spirit"},

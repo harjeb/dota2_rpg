@@ -15,7 +15,8 @@ LUA_SCENARIOS = (
     "condition-v2.test.lua", "action-v2.test.lua", "condition-specials.test.lua",
     "condition-execution.test.lua", "condition-phase.test.lua", "condition-native-targets.test.lua", "condition-vector.test.lua",
     "enemy-items.test.lua", "enemy-rules.test.lua", "hero-lifecycle-log.test.lua", "boss-scaling.test.lua", "battle-reincarnation.test.lua",
-    "hero-ability-policy.test.lua", "tempest-double.test.lua",
+    "hero-ability-policy.test.lua", "tempest-double.test.lua", "special-targets.test.lua",
+    "hero-precache.test.lua", "tiny-tree.test.lua", "summon-behavior.test.lua",
 )
 
 

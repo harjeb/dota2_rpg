@@ -36,9 +36,11 @@ var RpgConditionCatalog = (function () {
     });
     ["nearest", "farthest", "lowest_hp_pct", "highest_hp_pct", "lowest_health", "highest_health", "most_missing_health", "lowest_armor", "highest_armor", "lowest_attack_damage", "highest_attack_damage", "lowest_magic_resistance", "highest_magic_resistance"].forEach(function (id) { add("priority", id, "priority", ""); });
 
+    ["tiny_grab_is_enemy", "tiny_grab_is_ally", "tiny_grab_is_hero", "tiny_grab_is_creep"].forEach(function(id) { add("use", id, "tiny_grab", ""); });
+    ["tiny_grab_hp_pct_lte", "tiny_grab_hp_pct_gte"].forEach(function(id) { add("use", id, "tiny_grab", "value"); });
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
-        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32],
+        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38],
         target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13]
     };
@@ -66,6 +68,7 @@ var RpgConditionCatalog = (function () {
         parts.push(text("min_aoe_hits") + "=" + (settings.min_aoe_hits || 0));
         var desired = settings.desired_toggle_state;
         parts.push(text("toggle_title") + ": " + text(desired === false || desired === "0" || desired === 0 ? "toggle_off" : desired === true || desired === "1" || desired === 1 ? "toggle_on" : "toggle_auto"));
+        parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
         return parts.join("\n");
     }
@@ -250,7 +253,7 @@ var RpgConditionCatalog = (function () {
             button(body, "V2ClearConditions", text("clear_conditions"), function () {
                 readers.forEach(function (read) { read(); });
                 draft.use_conditions = []; draft.target_filters = []; draft.target_priorities = [];
-                draft.min_aoe_hits = 0; draft.desired_toggle_state = null;
+                draft.min_aoe_hits = 0; draft.desired_toggle_state = null; draft.destination = "target";
                 open(rule, draft, onApply, options);
             });
         }
@@ -271,6 +274,17 @@ var RpgConditionCatalog = (function () {
         var castPreference = draft.cast_preference || "auto";
         choose(casting,"V2CastSelect",[{id:"cast_auto"},{id:"cast_unit"},{id:"cast_point"}],"cast_"+castPreference,function(id) { castPreference=id.substring(5); });
         readers.push(function() { draft.cast_preference=castPreference; });
+        if (["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"].indexOf(options.abilityName) >= 0) {
+            var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");
+            label(destinationRow,"",text("destination"));
+            var destination = draft.destination || "target", modes = ["target", "self"];
+            if (options.abilityName === "ember_spirit_activate_fire_remnant") {
+                modes = modes.concat(["remnant_nearest", "remnant_farthest", "remnant_near_enemy", "remnant_safe"]);
+            }
+            choose(destinationRow,"V2DestinationSelect",modes.map(function(mode) { return {id:"destination_"+mode}; }),
+                "destination_"+destination,function(value) { destination=value.replace("destination_",""); });
+            readers.push(function() { draft.destination=destination; });
+        }
         var actionOptions = $.CreatePanel("Panel", body, ""); actionOptions.AddClass("V2Parameters"); actionOptions.AddClass("V2ActionOptions");
         ["min_aoe_hits"].forEach(function (key) {
             var wrap = $.CreatePanel("Panel", actionOptions, ""); wrap.AddClass("V2Field"); label(wrap, "", text(key));
