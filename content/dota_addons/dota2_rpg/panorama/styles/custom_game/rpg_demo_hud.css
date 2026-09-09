@@ -108,24 +108,6 @@
 	transition-duration: 0.18s;
 }
 
-.TeamEditor.ConditionMenuExpanded
-{
-	height: 888px;
-	margin-top: 0px;
-}
-
-.TeamEditor.EffectMenuExpanded
-{
-	height: 802px;
-	margin-top: 0px;
-}
-
-.TeamEditor.TargetMenuExpanded
-{
-	height: 1032px;
-	margin-top: 0px;
-}
-
 .RadiantEditor
 {
 	horizontal-align: left;
@@ -478,17 +460,6 @@
 	width: 112px;
 }
 
-.ConditionColumn
-{
-	width: 300px;
-}
-
-.ForceColumn
-{
-	width: 68px;
-	text-align: center;
-}
-
 .RulesContainer
 {
 	width: 100%;
@@ -519,7 +490,7 @@
 .RuleRow
 {
 	width: 100%;
-	height: 130px;
+	height: 62px;
 	flow-children: right;
 	border-bottom: 1px solid #303b43;
 }
@@ -569,119 +540,12 @@
 	text-overflow: shrink;
 }
 
-.ActionNameLegacy
-{
-	width: 112px;
-	vertical-align: center;
-	font-size: 17px;
-	font-weight: bold;
-	color: #e8edf0;
-	text-overflow: shrink;
-}
-
-.ConditionEditor
-{
-	width: 300px;
-	height: 100%;
-	flow-children: down;
-}
-
 .RuleRow.MenuOpen
 {
 	z-index: 100;
 }
 
-.RuleRow.ConditionMenuOpen
-{
-	height: 338px;
-}
-
-.RuleRow.EffectMenuOpen
-{
-	height: 252px;
-}
-
-.RuleRow.TargetMenuOpen
-{
-	height: 482px;
-}
-
-.RuleRow.MenuOpen .ActionName,
-.RuleRow.MenuOpen .ForceToggle,
-.RuleRow.MenuOpen .MoveButton
-{
-	vertical-align: top;
-	margin-top: 24px;
-}
-
-.ConditionTop
-{
-	width: 300px;
-	height: 62px;
-	flow-children: right;
-}
-
-.ConditionSelect
-{
-	width: 198px;
-	height: 42px;
-	vertical-align: center;
-	margin-right: 5px;
-	flow-children: right;
-	background-color: #202a31;
-	border: 1px solid #5a6871;
-}
-
-.ConditionValue
-{
-	width: fill-parent-flow(1);
-	vertical-align: center;
-	padding-left: 9px;
-	font-size: 15px;
-	color: #d7dfe3;
-	text-overflow: shrink;
-}
-
-.SelectChevron
-{
-	width: 28px;
-	vertical-align: center;
-	font-size: 14px;
-	font-weight: bold;
-	color: #aeb9bf;
-	text-align: center;
-}
-
-.ConditionSelect:hover
-{
-	brightness: 1.25;
-	border-color: #aab5bb;
-}
-
-.ConditionSelect:disabled
-{
-	brightness: 0.65;
-}
-
-.ConditionEditor.WideConditionSelect .ConditionSelect
-{
-	width: 300px;
-	margin-right: 0px;
-}
-
-.ConditionMenu
-{
-	width: 300px;
-	height: 280px;
-	overflow: squish scroll;
-	flow-children: down;
-	background-color: #141d23;
-	border: 1px solid #8b989f;
-	box-shadow: #000000dd 0px 4px 12px 0px;
-	z-index: 200;
-}
-
-.ConditionOption
+.ActionOption
 {
 	width: 100%;
 	height: 34px;
@@ -689,266 +553,24 @@
 	border-bottom: 1px solid #39454d;
 }
 
-.ConditionOption:hover
+.ActionOption:hover
 {
 	brightness: 1.35;
 	background-color: #314049;
 }
 
-.ConditionOption:active
+.ActionOption:active
 {
 	brightness: 0.8;
 }
 
-.ConditionOption Label
+.ActionOption Label
 {
 	width: 100%;
 	vertical-align: center;
 	padding-left: 10px;
 	font-size: 15px;
 	color: #e1e7e9;
-	text-overflow: shrink;
-}
-
-.ThresholdControls
-{
-	width: 97px;
-	height: 62px;
-	flow-children: right;
-}
-
-.ThresholdEntry
-{
-	width: 64px;
-	height: 42px;
-	vertical-align: center;
-	padding: 5px 6px 3px 6px;
-	background-color: #202a31;
-	border: 1px solid #5a6871;
-	font-size: 16px;
-	font-weight: bold;
-	color: #f1e6c8;
-	text-align: right;
-}
-
-.ThresholdEntry:hover
-{
-	brightness: 1.25;
-	border-color: #aab5bb;
-}
-
-.ThresholdEntry:focus
-{
-	border-color: #d7b85a;
-}
-
-.PercentLabel
-{
-	width: 33px;
-	vertical-align: center;
-	font-size: 15px;
-	font-weight: bold;
-	color: #b6c1c7;
-	text-align: center;
-}
-
-.EffectSelect
-{
-	width: 97px;
-	height: 42px;
-	vertical-align: center;
-	flow-children: right;
-	background-color: #202a31;
-	border: 1px solid #5a6871;
-	transition-property: brightness, border;
-	transition-duration: 0.12s;
-}
-
-.EffectSelect:hover
-{
-	brightness: 1.25;
-	border-color: #aab5bb;
-}
-
-.EffectSelect:disabled
-{
-	brightness: 0.65;
-}
-
-.EffectValue
-{
-	width: fill-parent-flow(1);
-	vertical-align: center;
-	padding-left: 6px;
-	font-size: 13px;
-	color: #f1e6c8;
-	text-overflow: shrink;
-}
-
-.EffectMenu
-{
-	width: 300px;
-	height: 136px;
-	flow-children: down;
-	background-color: #141d23;
-	border: 1px solid #8b989f;
-	box-shadow: #000000dd 0px 4px 12px 0px;
-	z-index: 200;
-}
-
-.EffectOption
-{
-	width: 100%;
-	height: 34px;
-	background-color: #1c272e;
-	border-bottom: 1px solid #39454d;
-}
-
-.EffectOption:hover
-{
-	brightness: 1.35;
-	background-color: #314049;
-}
-
-.EffectOption:active
-{
-	brightness: 0.8;
-}
-
-.EffectOption Label
-{
-	width: 100%;
-	vertical-align: center;
-	padding-left: 8px;
-	font-size: 14px;
-	color: #e1e7e9;
-	text-overflow: shrink;
-}
-
-.TargetTop
-{
-	width: 300px;
-	height: 38px;
-	flow-children: right;
-}
-
-.TargetSelect
-{
-	width: fill-parent-flow(1.0);
-	height: 36px;
-	margin-right: 4px;
-	flow-children: right;
-	background-color: #1d262d;
-	border: 1px solid #4d5a63;
-}
-
-.TargetSideSelect
-{
-	margin-right: 0px;
-}
-
-.TargetValue
-{
-	width: fill-parent-flow(1);
-	vertical-align: center;
-	padding-left: 9px;
-	font-size: 14px;
-	color: #c8d2d7;
-	text-overflow: shrink;
-}
-
-.TargetSelect:hover
-{
-	brightness: 1.25;
-	border-color: #aab5bb;
-}
-
-.TargetSelect:disabled
-{
-	brightness: 0.65;
-}
-
-.TargetMenu
-{
-	width: 300px;
-	height: 374px;
-	flow-children: down;
-	background-color: #141d23;
-	border: 1px solid #8b989f;
-	box-shadow: #000000dd 0px 4px 12px 0px;
-	z-index: 200;
-}
-
-.TargetOption
-{
-	width: 100%;
-	height: 34px;
-	background-color: #1c272e;
-	border-bottom: 1px solid #39454d;
-}
-
-.TargetOption:hover
-{
-	brightness: 1.35;
-	background-color: #314049;
-}
-
-.TargetOption:active
-{
-	brightness: 0.8;
-}
-
-.TargetOption Label
-{
-	width: 100%;
-	vertical-align: center;
-	padding-left: 10px;
-	font-size: 15px;
-	color: #e1e7e9;
-	text-overflow: shrink;
-}
-
-.ForceToggle
-{
-	width: 66px;
-	height: 36px;
-	vertical-align: center;
-	margin-left: 2px;
-	background-color: #29333a;
-	border: 1px solid #65727a;
-	transition-property: brightness, background-color, border;
-	transition-duration: 0.12s;
-}
-
-.ForceToggle.Forced
-{
-	background-color: #76582b;
-	border-color: #d5b665;
-}
-
-.ForceToggle:hover
-{
-	brightness: 1.3;
-}
-
-.ForceToggle:active
-{
-	brightness: 0.8;
-}
-
-.ForceToggle:disabled
-{
-	brightness: 0.6;
-}
-
-.ForceToggleValue
-{
-	width: 100%;
-	vertical-align: center;
-	font-size: 12px;
-	font-weight: bold;
-	color: #e7edf0;
-	text-align: center;
 	text-overflow: shrink;
 }
 
@@ -1416,9 +1038,6 @@
 	z-index: 1000;
 }
 
-.DropdownLayer .ConditionMenu,
-.DropdownLayer .EffectMenu,
-.DropdownLayer .TargetMenu,
 .DropdownLayer .ActionMenu
 {
 	horizontal-align: left;
@@ -1530,7 +1149,7 @@
 	z-index: 300;
 }
 
-.ActionMenu .ConditionOption
+.ActionMenu .ActionOption
 {
 	width: 100%;
 	height: 44px;
@@ -1547,13 +1166,13 @@
 	vertical-align: center;
 }
 
-.ActionMenu .ConditionOption .ActionOptionLabel
+.ActionMenu .ActionOption .ActionOptionLabel
 {
 	width: fill-parent-flow(1.0);
 	font-size: 14px;
 }
 
-.ActionMenu .ConditionOption:hover
+.ActionMenu .ActionOption:hover
 {
 	brightness: 1.35;
 }
@@ -1815,7 +1434,7 @@
 
 /* Explicit per-rule conditions; the compact row keeps its original geometry. */
 .RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: #402821ee; padding: 8px; white-space: normal; z-index: 50; }
-.RuleSettingsButton { ignore-parent-flow: true; margin-top: 102px; width: 82px; height: 24px; background-color: #253a49; border: 1px solid #667b86; }
+.RuleSettingsButton { vertical-align: center; margin-left: 12px; margin-right: 16px; width: fill-parent-flow(1); height: 36px; background-color: #253a49; border: 1px solid #667b86; }
 .RuleSettingsButton Label { font-size: 14px; color: #e7edf2; horizontal-align: center; vertical-align: center; }
 .RuleSettingsButton.HasAdvancedSettings { border-color: #d7b85a; }
 .RuleSettingsButton:hover { brightness: 1.4; }

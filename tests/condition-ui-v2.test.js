@@ -18,7 +18,7 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
     "import json,sys,xml.etree.ElementTree as E; " +
     "encode=lambda e:dict(type=e.tag,attrs=e.attrib,children=[encode(c) for c in e]); " +
     "print(json.dumps(encode(E.parse(sys.argv[1]).getroot())))", layoutPath], { encoding: "utf8" }));
-var snippetTree = layoutTree.children.filter(function (node) { return node.type === "snippets"; })[0].children[0];
+
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 
 function instantiateSnippet(node, parent) {
@@ -50,7 +50,7 @@ function createPanel(id) {
         events: {},
         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
         BLoadLayoutSnippet: function () {
-            this.children = snippetTree.children.map(function (child) { return instantiateSnippet(child, this); }, this);
+            throw new Error("Legacy outer editor snippets must not be instantiated");
         },
         FindChildTraverse: function (childId) {
             for (var child of this.children) {
@@ -282,14 +282,17 @@ click(hud, "DireRuleSettings0"); choice(hud, "V2_use1", ""); choice(hud, "V2Togg
 assert(latest(hud, lion).use_condition_2_type === "" && latest(hud, lion).use_condition_2_radius === undefined, "cleared slots remove stale parameters");
 assert(latest(hud, lion).desired_toggle_state === undefined, "default toggle omits desired state");
 
-// Compact XML controls retain friendly distance targets and basic priority mappings.
-var editor = panel(hud, "DireConditionEditor0");
-var attrMenu = editor.FindChildTraverse("TargetAttrMenu");
-editor.FindChildTraverse("TargetAttrSelect").events.onactivate();
-function pickValue(menu, value) { var p = menu.children.filter(function (p) { return p.attributes.value === value; })[0]; assert(p, "XML option " + value); p.events.onactivate(); }
-pickValue(attrMenu, "distance");
-var sideMenu = editor.FindChildTraverse("TargetSideMenu"); editor.FindChildTraverse("TargetSideSelect").events.onactivate(); pickValue(sideMenu, "ally_farthest");
-assert(latest(hud, lion).target_team === "ally" && latest(hud, lion).target_priority_1_type === "farthest", "compact farthest friend stays ally");
+// Target editing is exclusively inside the complete settings panel.
+assert(!panel(hud,"DireConditionEditor0") && !panel(hud,"DireForceToggle0"),"outer editing controls are absent");
+click(hud,"DireRuleSettings0");
+choice(hud,"V2Team","team_ally"); choice(hud,"V2_priority0","farthest");
+choice(hud,"V2Approach","approach_chase"); click(hud,"RuleSettingsApply");
+assert(latest(hud,lion).target_team === "ally" && latest(hud,lion).target_priority_1_type === "farthest"
+    && latest(hud,lion).approach === "allow_approach", "complete settings own target and approach behavior");
+click(hud,"DireRuleSettings0");
+assert(panel(hud,"V2ApproachSelect").GetChild(0).text === "#dota2_rpg_v2_approach_chase","approach survives reopening");
+choice(hud,"V2Approach","approach_wait");click(hud,"RuleSettingsApply");
+assert(latest(hud,lion).approach === "range_only","approach can be disabled in settings");
 var sync = hud.context.RpgRuleSync;
 [["enemy_attack_lowest", "lowest_attack_damage"], ["ally_mr_highest", "highest_magic_resistance"], ["ally_distance_nearest", "nearest"]].forEach(function (pair) {
     var payload = sync.serialize({rule: {target: pair[0]}}); assert(payload.target_priority_1_type === pair[1], "legacy priority mapping " + pair[0]);
@@ -339,9 +342,7 @@ fresh.subscriptions.rpg_rule_update_result({request_id:restored.request_id,ok:0,
 assert(!panel(fresh,"RuleSyncNotice").visible,"stale responses cannot replace current acceptance");
 
 // Preset editing survives the actual HUD Apply -> wire -> reopen path.
-var restoredEditor = panel(fresh,"RadiantConditionEditor0");
-assert(restoredEditor.FindChildTraverse("TargetAttrValue").text === "#dota2_rpg_v2_lowest_hp_pct"
-    && restoredEditor.FindChildTraverse("TargetSideValue").text === "#dota2_rpg_v2_team_ally", "compact preset display matches active priority and team");
+assert(!panel(fresh,"RadiantConditionEditor0"), "restored rules expose only the settings entry");
 click(fresh,"RadiantRuleSettings0"); click(fresh,"V2Preset0");
 input(fresh,"V2_target0_value",72.5);
 choice(fresh,"V2_use0","elapsed_lte"); input(fresh,"V2_use0_seconds",17.25);
@@ -362,7 +363,7 @@ assert(panel(fresh,"V2_target0_value").text === "72.5" && panel(fresh,"V2_use0_s
 ["enemy","self","ally"].forEach(function(team) {
     choice(fresh,"V2Team","team_"+team); click(fresh,"RuleSettingsApply");
     assert(latest(fresh,omni).target_team === team && latest(fresh,omni).target_priority_1_type === "lowest_hp_pct", "team change preserves explicit ranking on wire");
-    assert(restoredEditor.FindChildTraverse("TargetSideValue").text === "#dota2_rpg_v2_team_"+team, "compact team matches wire");
+
     click(fresh,"RadiantRuleSettings0");
     assert(panel(fresh,"V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_"+team, "team survives reopen");
 });
@@ -387,11 +388,10 @@ assert(panel(fresh,"V2_use0_seconds").text === "12" && !panel(fresh,"RuleSetting
 click(fresh,"RuleSettingsApply");
 assert(fresh.sentEvents.length === beforeReadOnly,"read-only enemy conditions cannot be sent");
 
-// Replacing a compact casting target clears its old filter, keeping other slots.
-editor.FindChildTraverse("TargetAttrSelect").events.onactivate();pickValue(attrMenu,"casting");
-click(hud,"DireRuleSettings0");click(hud,"RuleSettingsApply");
-editor.FindChildTraverse("TargetAttrSelect").events.onactivate();pickValue(attrMenu,"distance");
-assert(latest(hud,lion).target_filter_1_type === "","compact nearest no longer retains an invisible casting gate");
+// Removing a target condition inside settings clears the same wire slot.
+click(hud,"DireRuleSettings0");choice(hud,"V2_target0","is_casting");click(hud,"RuleSettingsApply");
+click(hud,"DireRuleSettings0");choice(hud,"V2_target0","");click(hud,"RuleSettingsApply");
+assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the casting gate");
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");

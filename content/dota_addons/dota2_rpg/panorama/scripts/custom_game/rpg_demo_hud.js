@@ -15,16 +15,6 @@
         attack: "#dota2_rpg_action_attack"
     };
 
-    var CONDITION_TOKENS = {
-        always: "#dota2_rpg_condition_always",
-        self_hp_pct_lte: "#dota2_rpg_condition_self_hp_pct_lte",
-        self_mana_pct_gte: "#dota2_rpg_condition_self_mana_pct_gte",
-        alive_enemy_count_gte: "#dota2_rpg_condition_alive_enemy_count_gte",
-        elapsed_gte: "#dota2_rpg_condition_elapsed_gte",
-        self_recently_damaged: "#dota2_rpg_condition_self_recently_damaged",
-        any_ally_recently_damaged: "#dota2_rpg_condition_any_ally_recently_damaged",
-    };
-
     // 组合式目标：先选属性，再选阵营与极值
     var TARGET_ATTR_TOKENS = {
         hp: "#dota2_rpg_target_attr_hp",
@@ -92,25 +82,6 @@
         }
         return { attr: "hp", side: "enemy_lowest" };
     }
-
-    var EFFECT_TOKENS = {
-        magic_immune: "#dota2_rpg_effect_magic_immune",
-        stunned: "#dota2_rpg_effect_stunned",
-        silenced: "#dota2_rpg_effect_silenced",
-        rooted: "#dota2_rpg_effect_rooted"
-    };
-
-    // 条件参数语义：pct 显示 %，count/seconds 显示纯数字
-    var VALUE_CONDITIONS = {
-        self_hp_pct_lte: "pct",
-        self_mana_pct_gte: "pct",
-        alive_enemy_count_gte: "count",
-        elapsed_gte: "seconds",
-        self_recently_damaged: "seconds",
-        any_ally_recently_damaged: "seconds",
-    };
-
-    var EFFECT_CONDITIONS = {}; // v1 条件为单一条件，状态类条件 v2 预留
 
     var HEROES = {
         Radiant: [],  // 动态：由商店/阵容决定（CustomNetTables shop 表）
@@ -333,100 +304,6 @@
         return button;
     }
 
-    function createForceToggle(parent, side, index) {
-        var button = $.CreatePanel("Button", parent, side + "ForceToggle" + index);
-        button.AddClass("ForceToggle");
-        var valueLabel = createLabel(button, "ForceToggleValue", "");
-        button.SetPanelEvent("onactivate", function () {
-            toggleForced(side, index);
-        });
-        return {
-            button: button,
-            valueLabel: valueLabel
-        };
-    }
-
-    function wireValueButtons(panel, callback) {
-        for (var childIndex = 0; childIndex < panel.GetChildCount(); childIndex++) {
-            var child = panel.GetChild(childIndex);
-            var value = child.GetAttributeString("value", "");
-            if (value) {
-                (function (button, selectedValue) {
-                    button.SetPanelEvent("onactivate", function () {
-                        callback(selectedValue);
-                    });
-                }(child, value));
-            }
-            wireValueButtons(child, callback);
-        }
-    }
-
-    function createConditionEditor(parent, side, index) {
-        var editor = $.CreatePanel("Panel", parent, side + "ConditionEditor" + index);
-        editor.BLoadLayoutSnippet("RpgConditionEditor");
-        var selectButton = editor.FindChildTraverse("ConditionSelect");
-        var valueLabel = editor.FindChildTraverse("ConditionValue");
-        var menu = editor.FindChildTraverse("ConditionMenu");
-        var thresholdControls = editor.FindChildTraverse("ThresholdControls");
-        var thresholdEntry = editor.FindChildTraverse("ThresholdEntry");
-        var percentLabel = editor.FindChildTraverse("PercentLabel");
-        var effectSelect = editor.FindChildTraverse("EffectSelect");
-        var effectValue = editor.FindChildTraverse("EffectValue");
-        var effectMenu = editor.FindChildTraverse("EffectMenu");
-        var targetAttrSelect = editor.FindChildTraverse("TargetAttrSelect");
-        var targetAttrValue = editor.FindChildTraverse("TargetAttrValue");
-        var targetAttrMenu = editor.FindChildTraverse("TargetAttrMenu");
-        var targetSideSelect = editor.FindChildTraverse("TargetSideSelect");
-        var targetSideValue = editor.FindChildTraverse("TargetSideValue");
-        var targetSideMenu = editor.FindChildTraverse("TargetSideMenu");
-
-        selectButton.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "condition");
-        });
-        effectSelect.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "effect");
-        });
-        targetAttrSelect.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "targetAttr");
-        });
-        targetSideSelect.SetPanelEvent("onactivate", function () {
-            toggleEditorMenu(side, index, "targetSide");
-        });
-        wireValueButtons(menu, function (condition) {
-            chooseCondition(side, index, condition);
-        });
-        wireValueButtons(effectMenu, function (effect) {
-            chooseEffect(side, index, effect);
-        });
-        wireValueButtons(targetAttrMenu, function (attr) {
-            chooseTargetAttr(side, index, attr);
-        });
-        wireValueButtons(targetSideMenu, function (targetSide) {
-            chooseTargetSide(side, index, targetSide);
-        });
-        thresholdEntry.SetPanelEvent("oninputsubmit", function () {
-            syncThreshold(side, index, true);
-        });
-        return {
-            editor: editor,
-            selectButton: selectButton,
-            valueLabel: valueLabel,
-            menu: menu,
-            thresholdControls: thresholdControls,
-            thresholdEntry: thresholdEntry,
-            percentLabel: percentLabel,
-            effectSelect: effectSelect,
-            effectValue: effectValue,
-            effectMenu: effectMenu,
-            targetAttrSelect: targetAttrSelect,
-            targetAttrValue: targetAttrValue,
-            targetAttrMenu: targetAttrMenu,
-            targetSideSelect: targetSideSelect,
-            targetSideValue: targetSideValue,
-            targetSideMenu: targetSideMenu
-        };
-    }
-
     function createRuleRows(side) {
         var container = $("#" + side + "Rules");
         for (var index = rowPanels[side].length; index < getSelectedRules(side).length; index++) {
@@ -450,7 +327,7 @@
                 createLabel(settingsButton, "", $.Localize("#dota2_rpg_v2_settings"));
                 settingsButton.SetPanelEvent("onactivate", function () {
                     if (phase !== "setup") { return; }
-                    syncThreshold(side, idx, true);
+
                     closeEditorMenus();
                     var authored = getSelectedRules(side)[idx];
                     RpgConditionCatalog.open(authored, RpgRuleSync.initialSettings(authored), function (draft) {
@@ -467,8 +344,6 @@
                         sendRuleToServer(side,selectedHeroIndex[side],idx);
                     }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),actionHeroes:actionHeroes(side,selectedHeroIndex[side]),readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
                 });
-                var conditionEditor = createConditionEditor(row, side, idx);
-                var forceToggle = createForceToggle(row, side, idx);
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
                 var deleteButton = $.CreatePanel("Button", row, side + "DeleteRule" + idx);
@@ -501,26 +376,8 @@
                     deleteButton: deleteButton,
                     addButton: addButton,
                     row: row,
-                conditionEditor: conditionEditor.editor,
-                conditionSelect: conditionEditor.selectButton,
-                conditionValue: conditionEditor.valueLabel,
-                conditionMenu: conditionEditor.menu,
-                thresholdControls: conditionEditor.thresholdControls,
-                thresholdEntry: conditionEditor.thresholdEntry,
-                percentLabel: conditionEditor.percentLabel,
-                effectSelect: conditionEditor.effectSelect,
-                effectValue: conditionEditor.effectValue,
-                effectMenu: conditionEditor.effectMenu,
-                targetAttrSelect: conditionEditor.targetAttrSelect,
-                targetAttrValue: conditionEditor.targetAttrValue,
-                targetAttrMenu: conditionEditor.targetAttrMenu,
-                targetSideSelect: conditionEditor.targetSideSelect,
-                targetSideValue: conditionEditor.targetSideValue,
-                targetSideMenu: conditionEditor.targetSideMenu,
-                forceToggle: forceToggle.button,
-                forceToggleValue: forceToggle.valueLabel,
-                upButton: upButton,
-                downButton: downButton
+                    upButton: upButton,
+                    downButton: downButton
                 });
             }(index));
         }
@@ -532,34 +389,22 @@
             var side = sides[sideIndex];
             for (var index = 0; index < rowPanels[side].length; index++) {
                 var panels = rowPanels[side][index];
-                panels.conditionMenu.SetHasClass("Hidden", true);
-                panels.effectMenu.SetHasClass("Hidden", true);
-                panels.targetAttrMenu.SetHasClass("Hidden", true);
-                panels.targetSideMenu.SetHasClass("Hidden", true);
                 if (panels.actionMenu) {
                     panels.actionMenu.SetHasClass("Hidden", true);
                 }
                 panels.row.SetHasClass("MenuOpen", false);
-                panels.row.SetHasClass("ConditionMenuOpen", false);
-                panels.row.SetHasClass("EffectMenuOpen", false);
-                panels.row.SetHasClass("TargetMenuOpen", false);
             }
-            var editor = $("#" + side + "Editor");
-            editor.SetHasClass("ConditionMenuExpanded", false);
-            editor.SetHasClass("EffectMenuExpanded", false);
-            editor.SetHasClass("TargetMenuExpanded", false);
         }
     }
 
     // Anchor menus to rendered buttons, including HUD scale and rule-list scrolling.
-    function positionEditorMenu(menu, layer, anchor, menuType) {
+    function positionEditorMenu(menu, layer, anchor) {
         var scaleX = layer.actualuiscale_x || 1;
         var scaleY = layer.actualuiscale_y || 1;
         var origin = layer.GetPositionWithinWindow();
         var position = anchor.GetPositionWithinWindow();
         var width = 300;
-        var height = menuType === "action" ? 300 : menuType === "condition" ? 280
-            : menuType === "effect" ? 136 : 374;
+        var height = 300;
         var layerWidth = layer.actuallayoutwidth / scaleX;
         var layerHeight = layer.actuallayoutheight / scaleY;
         var left = (position.x - origin.x) / scaleX;
@@ -571,61 +416,20 @@
         menu.style.marginTop = Math.max(0, Math.min(top, layerHeight - height)) + "px";
     }
 
-    function openDropdownMenu(side, index, menuType) {
+    function openDropdownMenu(side, index) {
         var panels = rowPanels[side][index];
-        var menu;
-        if (menuType === "effect") {
-            menu = panels.effectMenu;
-        } else if (menuType === "targetAttr") {
-            menu = panels.targetAttrMenu;
-        } else if (menuType === "targetSide") {
-            menu = panels.targetSideMenu;
-        } else if (menuType === "action") {
-            menu = panels.actionMenu;
-        } else {
-            menu = panels.conditionMenu;
-        }
-        if (menu == null) {
-            return menu;
-        }
+        var menu = panels.actionMenu;
         var layer = $("#DropdownLayer");
-        if (layer === null || layer === undefined) {
+        if (!menu || !layer) {
             return menu;
         }
         menu.SetParent(layer);
-        var anchor = menuType === "action" ? panels.actionSelect
-            : menuType === "effect" ? panels.effectSelect
-            : menuType === "targetAttr" ? panels.targetAttrSelect
-            : menuType === "targetSide" ? panels.targetSideSelect : panels.conditionSelect;
-        positionEditorMenu(menu, layer, anchor, menuType);
+        positionEditorMenu(menu, layer, panels.actionSelect);
         menu.SetHasClass("Hidden", false);
         return menu;
     }
 
-    var ROW_HEIGHT = 130;
-
-    function toggleEditorMenu(side, index, menuType) {
-        if (phase !== "setup") {
-            return;
-        }
-        var panels = rowPanels[side][index];
-        var menu;
-        if (menuType === "effect") {
-            menu = panels.effectMenu;
-        } else if (menuType === "targetAttr") {
-            menu = panels.targetAttrMenu;
-        } else if (menuType === "targetSide") {
-            menu = panels.targetSideMenu;
-        } else {
-            menu = panels.conditionMenu;
-        }
-        var shouldOpen = menu.BHasClass("Hidden");
-        closeEditorMenus();
-        if (shouldOpen) {
-            openDropdownMenu(side, index, menuType);
-        }
-        panels.row.SetHasClass("MenuOpen", shouldOpen);
-    }
+    var ROW_HEIGHT = 62;
 
     function openActionMenu(side, index) {
         var panels = rowPanels[side][index];
@@ -643,7 +447,7 @@
         for (var i = 0; i < actions.length; i++) {
             (function (actionKey) {
                 var option = $.CreatePanel("Button", menu, "ActionOpt_" + side + index + "_" + actionKey);
-                option.AddClass("ConditionOption");
+                option.AddClass("ActionOption");
                 var detail = getActionDetail(side, selectedHeroIndex[side], actionKey);
                 if (actionKey !== "attack" && detail) {
                     var image = $.CreatePanel(detail.indexOf("item_") === 0 ? "DOTAItemImage" : "DOTAAbilityImage", option, "");
@@ -668,7 +472,7 @@
         var shouldOpen = menu.BHasClass("Hidden");
         closeEditorMenus();
         if (shouldOpen) {
-            openDropdownMenu(side, index, "action");
+            openDropdownMenu(side, index);
         }
         panels.row.SetHasClass("MenuOpen", shouldOpen);
     }
@@ -713,161 +517,6 @@
         syncHeroRules(side);
     }
 
-    function chooseCondition(side, index, condition) {
-        var rules = getSelectedRules(side);
-        rules[index].condition = CONDITION_TOKENS[condition] ? condition : "always";
-        if (Array.isArray(rules[index].use_conditions)) {
-            rules[index].use_conditions[0] = RpgRuleSync.initialSettings({ condition: rules[index].condition, value: rules[index].value }).use_conditions[0];
-        }
-        closeEditorMenus();
-        updateConditionSelector(side, index, false);
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-    }
-
-    function updateBasicTarget(rule,previousFilter) {
-        var basic = RpgRuleSync.initialSettings({ target: rule.target, target_attr: rule.target_attr });
-        if (Array.isArray(rule.target_priorities)) { rule.target_priorities[0] = basic.target_priorities[0]; }
-        if (Array.isArray(rule.target_filters)) {
-            var current = rule.target_filters[0] || {};
-            if (basic.target_filters[0].type || previousFilter && previousFilter.type && current.type === previousFilter.type && current.value === previousFilter.value) {
-                rule.target_filters[0] = basic.target_filters[0];
-            }
-        }
-    }
-
-    function chooseTargetAttr(side, index, attr) {
-        var rules = getSelectedRules(side);
-        var rule = rules[index];
-        var previousFilter = RpgRuleSync.initialSettings({target:rule.target,target_attr:rule.target_attr}).target_filters[0];
-        rule.target_attr = TARGET_ATTR_TOKENS[attr] ? attr : "hp";
-        if ((rule.target_attr === "casting" || rule.target_attr === "controlled") && rule.target_side !== "self") {
-            rule.target_side = "enemy_highest";
-        }
-        if (rule.target_attr === "distance" && rule.target_side !== "self") {
-            var ally = rule.target_side.indexOf("ally_") === 0;
-            var far = rule.target_side.indexOf("highest") >= 0 || rule.target_side.indexOf("farthest") >= 0;
-            rule.target_side = ally ? (far ? "ally_farthest" : "ally_nearest") : (far ? "farthest" : "nearest");
-        }
-        rule.target = composeTarget(rule.target_attr, rule.target_side);
-        updateBasicTarget(rule,previousFilter);
-        closeEditorMenus();
-        updateConditionSelector(side, index, false);
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-    }
-
-    function chooseTargetSide(side, index, targetSide) {
-        var rules = getSelectedRules(side);
-        var rule = rules[index];
-        var previousFilter = RpgRuleSync.initialSettings({target:rule.target,target_attr:rule.target_attr}).target_filters[0];
-        rule.target_side = TARGET_SIDE_TOKENS[targetSide] ? targetSide : "enemy_lowest";
-        if (rule.target_side === "self" && rule.target_attr === "casting") {
-            rule.target_attr = "hp";
-        }
-        rule.target = composeTarget(rule.target_attr, rule.target_side);
-        updateBasicTarget(rule,previousFilter);
-        closeEditorMenus();
-        updateConditionSelector(side, index, false);
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-    }
-
-    function chooseEffect(side, index, effect) {
-        var rules = getSelectedRules(side);
-        rules[index].effect = EFFECT_TOKENS[effect] ? effect : "magic_immune";
-        closeEditorMenus();
-        updateConditionSelector(side, index, false);
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-    }
-
-    function toggleForced(side, index) {
-        if (phase !== "setup") {
-            return;
-        }
-        var rule = getSelectedRules(side)[index];
-        rule.forced = !rule.forced;
-        updateForcedToggle(side, index, false);
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-    }
-
-    function updateForcedToggle(side, index, locked) {
-        var panels = rowPanels[side][index];
-        var forced = Boolean(getSelectedRules(side)[index].forced);
-        panels.forceToggleValue.text = $.Localize(forced ? "#dota2_rpg_force_enabled" : "#dota2_rpg_force_disabled");
-        panels.forceToggle.SetHasClass("Forced", forced);
-        panels.forceToggle.enabled = !locked;
-    }
-
-    function updateConditionSelector(side, index, locked) {
-        var panels = rowPanels[side][index];
-        var rule = getSelectedRules(side)[index];
-        var shownCondition = Array.isArray(rule.use_conditions) ? (rule.use_conditions[0] || {}).type || "always" : rule.condition;
-        panels.conditionValue.text = $.Localize(CONDITION_TOKENS[shownCondition] || "#dota2_rpg_v2_" + shownCondition);
-        var attr = rule.target_attr || "hp";
-        var tSide = rule.target_side || "enemy_lowest";
-        panels.targetAttrValue.text = $.Localize(TARGET_ATTR_TOKENS[attr] || TARGET_ATTR_TOKENS.hp);
-        panels.targetSideValue.text = $.Localize(TARGET_SIDE_TOKENS[tSide] || TARGET_SIDE_TOKENS.enemy_lowest);
-        if (Array.isArray(rule.target_priorities)) {
-            var priority = (rule.target_priorities[0] || {}).type || "none";
-            panels.targetAttrValue.text = $.Localize("#dota2_rpg_v2_" + priority);
-            var team = rule.target === "self" ? "self" : String(rule.target).indexOf("ally_") === 0 ? "ally" : "enemy";
-            panels.targetSideValue.text = $.Localize("#dota2_rpg_v2_team_" + team);
-        }
-        if (EFFECT_TOKENS[rule.effect]) {
-            panels.effectValue.text = $.Localize(EFFECT_TOKENS[rule.effect]);
-        }
-        panels.conditionSelect.enabled = !locked;
-        panels.targetAttrSelect.enabled = !locked && tSide !== "self";
-        panels.targetSideSelect.enabled = !locked && attr !== "casting";
-        var valueKind = shownCondition === rule.condition ? VALUE_CONDITIONS[rule.condition] : null;
-        var usesEffect = Boolean(EFFECT_CONDITIONS[rule.condition]);
-        panels.thresholdControls.SetHasClass("Hidden", !valueKind);
-        panels.effectSelect.SetHasClass("Hidden", !usesEffect);
-        panels.thresholdEntry.enabled = !locked && Boolean(valueKind);
-        panels.effectSelect.enabled = !locked && usesEffect;
-        panels.conditionEditor.SetHasClass("WideConditionSelect", !valueKind && !usesEffect);
-        panels.percentLabel.SetHasClass("Hidden", valueKind !== "pct" && valueKind !== "seconds");
-        panels.percentLabel.text = valueKind === "seconds" ? $.Localize("#dota2_rpg_seconds_short") : "%";
-    }
-
-    function clampValue(value, fallback, kind) {
-        var parsed = Number(value);
-        if (!isFinite(parsed)) {
-            return fallback;
-        }
-        if (kind === "count") {
-            return Math.max(1, Math.min(10, Math.round(parsed)));
-        }
-        if (kind === "seconds") {
-            return Math.max(1, Math.min(30, Math.round(parsed)));
-        }
-        return Math.max(1, Math.min(100, Math.round(parsed)));
-    }
-
-    function syncThreshold(side, index, normalizeText) {
-        if (!canEditHeroRules(side,selectedHeroIndex[side])) { return; }
-        var rule = getSelectedRules(side)[index];
-        var previous = rule.value;
-        var entry = rowPanels[side][index].thresholdEntry;
-        if (VALUE_CONDITIONS[rule.condition] && (!Array.isArray(rule.use_conditions) || (rule.use_conditions[0] || {}).type === rule.condition)) {
-            if (String(entry.text) !== String(previous)) { rule.value = clampValue(entry.text, rule.value || 50, VALUE_CONDITIONS[rule.condition]); }
-            if (Array.isArray(rule.use_conditions) && previous !== rule.value) {
-                var condition = rule.use_conditions[0];
-                if (condition.seconds !== undefined) { condition.seconds = rule.value; }
-                else { condition.value = rule.value; }
-            }
-        }
-        if (normalizeText) {
-            entry.text = String(rule.value);
-        }
-        if (previous !== rule.value) { sendRuleToServer(side, selectedHeroIndex[side], index); }
-    }
-
-    function syncAllRuleInputs(side) {
-        var rules = getSelectedRules(side);
-        for (var index = 0; index < rules.length; index++) {
-            syncThreshold(side, index, true);
-        }
-    }
-
     function moveRule(side, index, offset) {
         if (phase !== "setup") {
             return;
@@ -878,7 +527,6 @@
             return;
         }
 
-        syncAllRuleInputs(side);
         var current = rules[index];
         rules[index] = rules[nextIndex];
         rules[nextIndex] = current;
@@ -900,9 +548,6 @@
                 renderItemShop();
             }
             return;
-        }
-        if (phase === "setup") {
-            syncAllRuleInputs(side);
         }
         closeEditorMenus();
         selectedHeroIndex[side] = index;
@@ -976,9 +621,8 @@
             panels.settingsButton.enabled = !hidePanels;
             panels.actionSelect.enabled = !locked;
             panels.settingsButton.SetHasClass("HasAdvancedSettings", Array.isArray(definition.use_conditions));
-            panels.thresholdEntry.text = String(definition.value);
-            updateConditionSelector(side, index, locked);
-            updateForcedToggle(side, index, locked);
+
+
             panels.upButton.enabled = !locked && index > 0;
             panels.downButton.enabled = !locked && index < rules.length - 1;
             if (panels.deleteButton) {
@@ -1036,8 +680,8 @@
     }
 
     function buildPayload() {
-        syncAllRuleInputs("Radiant");
-        syncAllRuleInputs("Dire");
+
+
         return {};
     }
 

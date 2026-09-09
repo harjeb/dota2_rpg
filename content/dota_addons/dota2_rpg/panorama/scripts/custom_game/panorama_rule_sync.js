@@ -288,6 +288,7 @@ var RpgRuleSync = (function () {
                 use_conditions: rule.use_conditions || [use],
                 target_filters: rule.target_filters || [targetFilter(rule) || { type: "" }],
                 target_priorities: rule.target_priorities || [{ type: targetPriority(rule.target) }],
+                forced: Boolean(rule.forced),
                 destination: rule.destination || "target",
                 cast_preference: rule.cast_preference || "auto",
                 min_aoe_hits: rule.min_aoe_hits || 0,

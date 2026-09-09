@@ -268,47 +268,14 @@ foreach ($eventName in @("rpg_start_battle", "rpg_request_battle_state", "rpg_ba
     }
 }
 
-$conditionSource = $javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout
+$catalogJavascript = Get-Content -LiteralPath (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\condition_catalog.js") -Raw
+$conditionSource = $javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $catalogJavascript
 $hudXml = [xml]$hudLayout
-$expectedConditionValues = @(
-    "always",
-    "self_hp_pct_lte",
-    "self_mana_pct_gte",
-    "alive_enemy_count_gte",
-    "elapsed_gte",
-    "self_recently_damaged",
-    "any_ally_recently_damaged"
-)
-$actualConditionValues = @(
-    $hudXml.SelectNodes("//Panel[@id='ConditionMenu']//Button") |
-        ForEach-Object { $_.GetAttribute("value") }
-)
-$conditionDifference = @(Compare-Object -ReferenceObject $expectedConditionValues -DifferenceObject $actualConditionValues)
-if ($conditionDifference.Count -gt 0) {
-    throw "Condition dropdown values must exactly match the conditions supported by Panorama JavaScript"
+foreach ($removed in @('RpgConditionEditor', 'ConditionSelect', 'ConditionMenu', 'ThresholdEntry', 'TargetAttrSelect', 'TargetSideSelect', 'ForceColumn')) {
+    if ($hudLayout -match [regex]::Escape($removed)) { throw "Outer rule editor must remain removed: $removed" }
 }
-
-$expectedTargetAttrValues = @("hp", "hp_pct", "armor", "attack", "mr", "distance", "casting", "controlled")
-$actualTargetAttrValues = @(
-    $hudXml.SelectNodes("//Panel[@id='TargetAttrMenu']//Button") |
-        ForEach-Object { $_.GetAttribute("value") }
-)
-$targetAttrDifference = @(Compare-Object -ReferenceObject $expectedTargetAttrValues -DifferenceObject $actualTargetAttrValues)
-if ($targetAttrDifference.Count -gt 0) {
-    throw "Target attribute dropdown values must exactly match the attributes supported by Panorama JavaScript"
-}
-
-$expectedTargetSideValues = @("enemy_highest", "enemy_lowest", "ally_highest", "ally_lowest", "nearest", "farthest", "ally_nearest", "ally_farthest", "self")
-$actualTargetSideValues = @(
-    $hudXml.SelectNodes("//Panel[@id='TargetSideMenu']//Button") |
-        ForEach-Object { $_.GetAttribute("value") }
-)
-$targetSideDifference = @(Compare-Object -ReferenceObject $expectedTargetSideValues -DifferenceObject $actualTargetSideValues)
-if ($targetSideDifference.Count -gt 0) {
-    throw "Target side dropdown values must exactly match the sides supported by Panorama JavaScript"
-}
-if ($hudLayout -match "ConditionMenuColumn|TargetMenuColumn") {
-    throw "Condition and target dropdowns must use the readable single-column layout"
+if ($javascript -match 'createConditionEditor|syncThreshold|syncAllRuleInputs|createForceToggle') {
+    throw "Removed outer inputs must not be created or synchronized"
 }
 
 # 金币已改走 Dota 原版 HUD 钱包，普通装备走原版商店，项目面板只保留双卷轴与转交。
@@ -345,13 +312,13 @@ foreach ($localizationFile in $localizationFiles) {
 }
 
 foreach ($conditionName in @(
-    'always:',
-    'self_hp_pct_lte:',
-    'self_mana_pct_gte:',
-    'alive_enemy_count_gte:',
-    'elapsed_gte:',
-    'self_recently_damaged:',
-    'any_ally_recently_damaged:'
+    'always',
+    'self_hp_pct_lte',
+    'self_mana_pct_gte',
+    'alive_enemy_count_gte',
+    'elapsed_gte',
+    'self_recently_damaged',
+    'any_ally_recently_damaged'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($conditionName)) {
         throw "Panorama UI is missing condition: $conditionName"
@@ -363,21 +330,21 @@ foreach ($targetName in @(
     'TARGET_SIDE_TOKENS',
     'composeTarget',
     'decomposeTarget',
-    'chooseTargetAttr',
-    'chooseTargetSide'
+    'target_filters',
+    'target_priorities'
 )) {
     if ($conditionSource -notmatch [regex]::Escape($targetName)) {
         throw "Panorama UI is missing compositional target selector: $targetName"
     }
 }
 
-foreach ($snippetPattern in @('name="RpgConditionEditor"', 'id="ConditionSelect"', 'id="ConditionMenu"', 'id="EffectSelect"', 'id="EffectMenu"', 'id="TargetAttrSelect"', 'id="TargetAttrMenu"', 'id="TargetSideSelect"', 'id="TargetSideMenu"', 'BLoadLayoutSnippet("RpgConditionEditor")', 'toggleEditorMenu', 'chooseCondition', 'chooseTarget', 'chooseEffect')) {
+foreach ($snippetPattern in @('RuleSettings', 'RpgConditionCatalog.open', 'V2Team', 'use_conditions', 'target_filters', 'target_priorities')) {
     if ($conditionSource -notmatch [regex]::Escape($snippetPattern)) {
         throw "Panorama UI is missing declarative dropdown behavior: $snippetPattern"
     }
 }
 
-foreach ($thresholdPattern in @("ThresholdEntry", "clampValue", "putCondition")) {
+foreach ($thresholdPattern in @("putCondition", "use_condition", "target_filter")) {
     if (($javascript + "`n" + $ruleSyncJavascript) -notmatch [regex]::Escape($thresholdPattern)) {
         throw "Panorama JavaScript is missing configurable value behavior: $thresholdPattern"
     }
@@ -423,13 +390,13 @@ if ($javascript -match 'owned: saveData\.owned' -or $javascript -match 'lineup: 
     throw "Panorama save sync still sends nested arrays"
 }
 
-foreach ($forcedPattern in @('dota2_rpg_force_column', 'forced: true', 'ForceToggle', 'toggleForced', 'approach', 'allow_approach', 'dota2_rpg_force_enabled', 'dota2_rpg_force_disabled')) {
+foreach ($forcedPattern in @('V2ApproachSelect', 'approach_chase', 'approach_wait', 'draft.forced', 'allow_approach')) {
     if ($conditionSource -notmatch [regex]::Escape($forcedPattern)) {
         throw "Panorama UI is missing forced execution toggle behavior: $forcedPattern"
     }
 }
 
-foreach ($effectName in @('"magic_immune"', '"stunned"', '"silenced"', '"rooted"')) {
+foreach ($effectName in @('"is_spell_immune"', '"is_stunned"', '"is_silenced"', '"is_rooted"')) {
     if ($conditionSource -notmatch [regex]::Escape($effectName)) {
         throw "Panorama UI is missing effect selector: $effectName"
     }

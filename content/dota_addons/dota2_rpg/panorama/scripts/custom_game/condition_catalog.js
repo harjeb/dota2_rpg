@@ -273,6 +273,11 @@ var RpgConditionCatalog = (function () {
         label(casting,"",text("cast_preference"));
         var castPreference = draft.cast_preference || "auto";
         choose(casting,"V2CastSelect",[{id:"cast_auto"},{id:"cast_unit"},{id:"cast_point"}],"cast_"+castPreference,function(id) { castPreference=id.substring(5); });
+        var approachRow = $.CreatePanel("Panel", body, "V2ApproachRow"); approachRow.AddClass("V2Selector");
+        label(approachRow,"",text("approach_title"));
+        var approach = draft.forced ? "approach_chase" : "approach_wait";
+        choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) { approach=value; });
+        readers.push(function() { draft.forced=approach === "approach_chase"; });
         readers.push(function() { draft.cast_preference=castPreference; });
         if (["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"].indexOf(options.abilityName) >= 0) {
             var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");

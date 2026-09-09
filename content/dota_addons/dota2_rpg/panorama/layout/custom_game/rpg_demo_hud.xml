@@ -10,72 +10,6 @@
 		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
 		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 	</scripts>
-	<snippets>
-		<snippet name="RpgConditionEditor">
-			<Panel class="ConditionEditor">
-				<Panel class="ConditionTop">
-					<Button id="ConditionSelect" class="ConditionSelect">
-						<Label id="ConditionValue" class="ConditionValue" />
-						<Label class="SelectChevron" text="v" />
-					</Button>
-					<Panel id="ThresholdControls" class="ThresholdControls">
-						<TextEntry id="ThresholdEntry" class="ThresholdEntry" text="50" maxchars="3" />
-						<Label id="PercentLabel" class="PercentLabel" text="%" />
-					</Panel>
-					<Button id="EffectSelect" class="EffectSelect Hidden">
-						<Label id="EffectValue" class="EffectValue" />
-						<Label class="SelectChevron" text="v" />
-					</Button>
-				</Panel>
-				<Panel id="ConditionMenu" class="ConditionMenu Hidden">
-					<Button id="AlwaysOption" class="ConditionOption" value="always"><Label text="#dota2_rpg_condition_always" /></Button>
-					<Button id="SelfHpPctOption" class="ConditionOption" value="self_hp_pct_lte"><Label text="#dota2_rpg_condition_self_hp_pct_lte" /></Button>
-					<Button id="SelfManaPctOption" class="ConditionOption" value="self_mana_pct_gte"><Label text="#dota2_rpg_condition_self_mana_pct_gte" /></Button>
-					<Button id="EnemyCountOption" class="ConditionOption" value="alive_enemy_count_gte"><Label text="#dota2_rpg_condition_alive_enemy_count_gte" /></Button>
-					<Button id="BattleTimeOption" class="ConditionOption" value="elapsed_gte"><Label text="#dota2_rpg_condition_elapsed_gte" /></Button>
-					<Button id="SelfDamagedOption" class="ConditionOption" value="self_recently_damaged"><Label text="#dota2_rpg_condition_self_recently_damaged" /></Button>
-					<Button id="AllyDamagedOption" class="ConditionOption" value="any_ally_recently_damaged"><Label text="#dota2_rpg_condition_any_ally_recently_damaged" /></Button>
-				</Panel>
-				<Panel id="EffectMenu" class="EffectMenu Hidden">
-					<Button id="MagicImmuneOption" class="EffectOption" value="magic_immune"><Label text="#dota2_rpg_effect_magic_immune" /></Button>
-					<Button id="StunnedOption" class="EffectOption" value="stunned"><Label text="#dota2_rpg_effect_stunned" /></Button>
-					<Button id="SilencedOption" class="EffectOption" value="silenced"><Label text="#dota2_rpg_effect_silenced" /></Button>
-					<Button id="RootedOption" class="EffectOption" value="rooted"><Label text="#dota2_rpg_effect_rooted" /></Button>
-				</Panel>
-				<Panel class="TargetTop">
-					<Button id="TargetAttrSelect" class="TargetSelect TargetAttrSelect">
-						<Label id="TargetAttrValue" class="TargetValue" />
-						<Label class="SelectChevron" text="v" />
-					</Button>
-					<Button id="TargetSideSelect" class="TargetSelect TargetSideSelect">
-						<Label id="TargetSideValue" class="TargetValue" />
-						<Label class="SelectChevron" text="v" />
-					</Button>
-				</Panel>
-				<Panel id="TargetAttrMenu" class="TargetMenu Hidden">
-					<Button class="TargetOption" value="hp"><Label text="#dota2_rpg_target_attr_hp" /></Button>
-					<Button class="TargetOption" value="hp_pct"><Label text="#dota2_rpg_target_attr_hp_pct" /></Button>
-					<Button class="TargetOption" value="armor"><Label text="#dota2_rpg_target_attr_armor" /></Button>
-					<Button class="TargetOption" value="attack"><Label text="#dota2_rpg_target_attr_attack" /></Button>
-					<Button class="TargetOption" value="mr"><Label text="#dota2_rpg_target_attr_mr" /></Button>
-					<Button class="TargetOption" value="distance"><Label text="#dota2_rpg_target_attr_distance" /></Button>
-					<Button class="TargetOption" value="casting"><Label text="#dota2_rpg_target_attr_casting" /></Button>
-					<Button class="TargetOption" value="controlled"><Label text="#dota2_rpg_target_attr_controlled" /></Button>
-				</Panel>
-				<Panel id="TargetSideMenu" class="TargetMenu Hidden">
-					<Button class="TargetOption" value="enemy_highest"><Label text="#dota2_rpg_target_side_enemy_highest" /></Button>
-					<Button class="TargetOption" value="enemy_lowest"><Label text="#dota2_rpg_target_side_enemy_lowest" /></Button>
-					<Button class="TargetOption" value="ally_highest"><Label text="#dota2_rpg_target_side_ally_highest" /></Button>
-					<Button class="TargetOption" value="ally_lowest"><Label text="#dota2_rpg_target_side_ally_lowest" /></Button>
-					<Button class="TargetOption" value="nearest"><Label text="#dota2_rpg_target_side_nearest" /></Button>
-					<Button class="TargetOption" value="farthest"><Label text="#dota2_rpg_target_side_farthest" /></Button>
-					<Button class="TargetOption" value="ally_nearest"><Label text="#dota2_rpg_v2_ally_nearest" /></Button>
-					<Button class="TargetOption" value="ally_farthest"><Label text="#dota2_rpg_v2_ally_farthest" /></Button>
-					<Button class="TargetOption" value="self"><Label text="#dota2_rpg_target_self" /></Button>
-</Panel>
-			</Panel>
-		</snippet>
-	</snippets>
 
 	<Panel class="RpgDemoHudRoot" hittest="false">
         <Label id="RuleSyncNotice" class="RuleSyncNotice" text="" visible="false" hittest="false" />
@@ -110,8 +44,6 @@
 			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
 				<Panel class="ColumnHeader">
 					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
-					<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
-					<Label class="ForceColumn" text="#dota2_rpg_force_column" />
 				</Panel>
 				<Panel id="RadiantRulesViewport" class="RulesViewport">
 					<Panel id="RadiantRules" class="RulesContainer" hittest="true" hittestchildren="true" />
@@ -180,8 +112,6 @@
 			<Panel id="DireEditorBody" class="EditorBody" flow-children="down">
 				<Panel class="ColumnHeader">
 				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
-				<Label class="ConditionColumn" text="#dota2_rpg_condition_column" />
-				<Label class="ForceColumn" text="#dota2_rpg_force_column" />
 			</Panel>
 			<Panel id="DireRulesViewport" class="RulesViewport">
 				<Panel id="DireRules" class="RulesContainer" hittest="true" hittestchildren="true" />

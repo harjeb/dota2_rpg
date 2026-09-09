@@ -18,7 +18,7 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
     "import json,sys,xml.etree.ElementTree as E; " +
     "encode=lambda e:dict(type=e.tag,attrs=e.attrib,children=[encode(c) for c in e]); " +
     "print(json.dumps(encode(E.parse(sys.argv[1]).getroot())))", layoutPath], { encoding: "utf8" }));
-var snippetTree = layoutTree.children.filter(function (node) { return node.type === "snippets"; })[0].children[0];
+
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 
 function instantiateSnippet(node, parent) {
@@ -50,7 +50,7 @@ function createPanel(id) {
         events: {},
         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
         BLoadLayoutSnippet: function () {
-            this.children = snippetTree.children.map(function (child) { return instantiateSnippet(child, this); }, this);
+            throw new Error("Legacy outer editor snippets must not be instantiated");
         },
         FindChildTraverse: function (childId) {
             for (var child of this.children) {
@@ -193,25 +193,20 @@ assert(!firstMenu.BHasClass("Hidden"), "first click opens the action list");
 assert(firstMenu.parent.id === "DropdownLayer", "action list escapes editor clipping");
 created(hud, "DireActionSelect0").events.onactivate();
 assert(firstMenu.BHasClass("Hidden"), "second click closes action list");
-var conditionEditor = created(hud, "DireConditionEditor0");
-var conditionButton = conditionEditor.FindChildTraverse("ConditionSelect");
-var conditionMenu = conditionEditor.FindChildTraverse("ConditionMenu");
-conditionButton.position = { x: 1780, y: 1020 };
-conditionButton.events.onactivate();
-assert(!conditionMenu.BHasClass("Hidden"), "real XML condition menu opens on first click");
-assert(conditionMenu.style.marginLeft === "1620px" && conditionMenu.style.marginTop === "740px",
-    "menus clamp to viewport edge and flip above bottom-row buttons");
-conditionMenu.FindChildTraverse("SelfHpPctOption").events.onactivate();
-assert(conditionMenu.BHasClass("Hidden"), "condition selection closes menu");
-assert(conditionEditor.FindChildTraverse("ConditionValue").text === "#dota2_rpg_condition_self_hp_pct_lte",
-    "real XML condition selection updates visible rule");
-conditionButton.position = { x: 360, y: 540 };
+assert(!created(hud,"DireConditionEditor0") && !created(hud,"DireForceToggle0"),"outer condition and force controls are removed");
+var actionButton=created(hud,"DireActionSelect0");
+actionButton.position = { x: 1780, y: 1020 };
+actionButton.events.onactivate();
+assert(firstMenu.style.marginLeft === "1620px" && firstMenu.style.marginTop === "720px",
+    "action menu clamps to viewport edge and flips above bottom-row buttons");
+actionButton.events.onactivate();
+actionButton.position = { x: 360, y: 540 };
 hud.panels["#DropdownLayer"].actualuiscale_x = 1.5;
 hud.panels["#DropdownLayer"].actualuiscale_y = 1.5;
-conditionButton.events.onactivate();
-assert(conditionMenu.style.marginLeft === "240px" && conditionMenu.style.marginTop === "388px",
-    "menu coordinates account for HUD scale and current button position");
-conditionButton.events.onactivate();
+actionButton.events.onactivate();
+assert(firstMenu.style.marginLeft === "240px" && firstMenu.style.marginTop === "388px",
+    "action menu coordinates account for HUD scale and current button position");
+actionButton.events.onactivate();
 hud.panels["#DropdownLayer"].actualuiscale_x = 1;
 hud.panels["#DropdownLayer"].actualuiscale_y = 1;
 hud = runHud();
@@ -264,8 +259,10 @@ function chooseAction(hud, side, row, action) {
     assert(visibleRules(hud, side).length === expectedActions.length + 1, side + " defaults include active skills plus attack");
     expectedActions.forEach(function (name, index) {
         assert(created(hud, side + "ActionAbility" + index).abilityname === name, "active skills precede attack");
-        assert(created(hud, side + "ConditionEditor" + index).FindChildTraverse("ConditionValue").text === "#dota2_rpg_condition_always",
-            "default skills use the simplest always condition");
+        created(hud, side+"RuleSettings"+index).events.onactivate();
+        assert(hud.panels["#V2_use0Select"].GetChild(0).text === "#dota2_rpg_v2_none",
+            "default skills retain empty, unrestricted use conditions inside settings");
+        hud.panels["#RuleSettingsClose"].events.onactivate();
     });
     // Reduce to one authored rule for the existing add/delete/scroll regression below.
     for (var row = expectedActions.length; row > 0; row--) { created(hud, side + "DeleteRule" + row).events.onactivate(); }
@@ -309,11 +306,12 @@ assert(visibleRules(hud, "Radiant").length === 2, "active skills/items refresh m
 assert(created(hud, "RadiantActionAbility1").abilityname === "axe_battle_hunger", "authored action survives slot refresh");
 created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 3, "a second Add creates the third rule");
-assert(!hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "rail appears when authored rows overflow");
+assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "three compact rows fit without scrolling");
+for (var extra=3;extra<7;extra++) { created(hud,"RadiantAddRule0").events.onactivate(); }
+assert(!hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "rail appears when compact rows overflow");
 hud.panels["#RadiantRulesScrollDown"].events.onactivate();
-assert(hud.panels["#RadiantRules"].style.marginTop === "-10px", "scroll maximum derives from three rows, not ten");
-created(hud, "RadiantDeleteRule2").events.onactivate();
-created(hud, "RadiantDeleteRule1").events.onactivate();
+assert(hud.panels["#RadiantRules"].style.marginTop === "-54px", "scroll maximum derives from seven compact rows");
+for (var remove=6;remove>0;remove--) { created(hud,"RadiantDeleteRule"+remove).events.onactivate(); }
 assert(visibleRules(hud, "Radiant").length === 1, "delete removes rows without padding");
 assert(hud.panels["#RadiantRules"].style.marginTop === "0px", "delete clamps stale scroll offset");
 assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "delete hides unnecessary rail");
@@ -461,8 +459,8 @@ assert(/\.RulesContainer\s*\{[^}]*height:\s*fill-parent-flow\(1\.0\)[^}]*overflo
     "action rows must live in a full-height vertical scroll viewport");
 assert(/\.RulesContainer VerticalScrollBar[\s\S]*\.ScrollThumb/.test(cssSource),
     "action row viewport must expose a visible scrollbar thumb");
-assert(/\.RuleRow\s*\{[^}]*height:\s*130px/s.test(cssSource),
-    "action rows must reserve space for the lower condition controls");
+assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s*62/.test(hudSource),
+    "compact row height matches scroll calculations after removing outer editors");
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&
     /id="DireRules"[^>]*hittest="true"/.test(layoutSource),
     "both action lists must accept wheel and pointer input");
@@ -574,14 +572,16 @@ function slots(side, index, name, entity) {
         rules_ready: 1, rules: serverRules(["ability_1", "attack"])});
 }
 function setHealthCondition(side) {
-    var editor = created(persistenceHud, side + "ConditionEditor0");
-    var menu = editor.FindChildTraverse("ConditionMenu");
-    editor.FindChildTraverse("ConditionSelect").events.onactivate();
-    menu.FindChildTraverse("SelfHpPctOption").events.onactivate();
+    created(persistenceHud,side+"RuleSettings0").events.onactivate();
+    persistenceHud.panels["#V2_use0Select"].events.onactivate();
+    persistenceHud.panels["#V2_use0SelectOption_self_hp_pct_lte"].events.onactivate();
+    persistenceHud.panels["#RuleSettingsApply"].events.onactivate();
 }
 function healthCondition(side) {
-    return created(persistenceHud, side + "ConditionEditor0").FindChildTraverse("ConditionValue").text
-        === "#dota2_rpg_condition_self_hp_pct_lte";
+    created(persistenceHud,side+"RuleSettings0").events.onactivate();
+    var result=persistenceHud.panels["#V2_use0Select"].GetChild(0).text.indexOf("#dota2_rpg_v2_self_hp_pct_lte") >= 0;
+    persistenceHud.panels["#RuleSettingsClose"].events.onactivate();
+    return result;
 }
 var lionName = "npc_dota_hero_lion";
 var axeName = "npc_dota_hero_axe";
