@@ -215,6 +215,8 @@
         Dire: []
     };
     var phase = "setup";
+    var itemSellRequestId = 0;
+    var pendingItemSales = {};
     var serverReady = false;
     var lastNativePurchaseTarget = -1;
     var lastNativePurchaseHero = "";
@@ -1007,6 +1009,60 @@
         return icon;
     }
 
+    function setItemSellNotice(reason, refund, success) {
+        var notice = $("#ItemSellNotice");
+        var text = $.Localize("#dota2_rpg_item_sell_" + reason);
+        notice.text = success ? text.replace("{refund}", String(refund)) : text;
+        notice.SetHasClass("Hidden", false);
+        notice.SetHasClass("Success", Boolean(success));
+        notice.SetHasClass("Error", reason !== "pending" && !success);
+    }
+
+    function createItemSellButton(row, heroName, itemName, itemId) {
+        var entityId = Number(itemId);
+        var validId = isFinite(entityId) && entityId > 0 && Math.floor(entityId) === entityId;
+        var button = $.CreatePanel("Button", row, "Sell_" + row.id);
+        button.AddClass("ItemRowBtn");
+        button.AddClass("ItemSellBtn");
+        createLabel(button, "", $.Localize("#dota2_rpg_item_sell"));
+        button.enabled = phase === "setup" && validId && !pendingItemSales[entityId];
+        button.SetPanelEvent("onactivate", function () {
+            if (phase !== "setup" || !validId || pendingItemSales[entityId]) {
+                return;
+            }
+            var requestId = ++itemSellRequestId;
+            pendingItemSales[entityId] = requestId;
+            button.enabled = false;
+            setItemSellNotice("pending", 0, false);
+            GameEvents.SendCustomGameEventToServer("rpg_item_sell", {
+                hero: heroName,
+                item: itemName,
+                item_index: entityId,
+                request_id: requestId
+            });
+            renderItemShop();
+        });
+    }
+
+    function onItemSellResult(data) {
+        var requestId = Number(data.request_id);
+        var entityId = Number(data.item_index);
+        // A duplicate or stale reply must not unlock a newer sale of this item.
+        if (pendingItemSales[entityId] !== requestId) {
+            return;
+        }
+        delete pendingItemSales[entityId];
+        if (requestId === itemSellRequestId) {
+            var success = Number(data.ok) === 1;
+            var reasons = ["wrong_phase", "invalid_item", "not_owned", "not_sellable",
+                "purchase_pending", "sale_failed", "unavailable"];
+            var reason = success ? "sold" : (reasons.indexOf(data.reason) >= 0 ? data.reason : "unavailable");
+            // Only the authoritative shop state updates gold; show the native wallet delta verbatim.
+            setItemSellNotice(reason, data.refund, success);
+        }
+        renderItemShop();
+    }
+
     function renderItemTarget(target) {
         var label = $("#ItemTargetLabel");
         var heroes = $("#ItemTargetHeroes");
@@ -1045,6 +1101,7 @@
 
         for (var itemIndex = 0; itemIndex < target.inventory.length; itemIndex++) {
             (function (itemName, itemId, itemSlot, index) {
+                if (!itemName || itemSlot < 0 || itemSlot > 14) { return; }
                 var row = $.CreatePanel("Panel", equipped, "Equipped_" + target.name + "_" + index);
                 row.AddClass("ItemEquippedRow");
                 createItemIcon(row, itemName);
@@ -1063,6 +1120,7 @@
                     });
                 });
                 unequip.enabled = phase === "setup" && shopState.stock.length < MAX_STASH_SLOTS && Boolean(itemId);
+                createItemSellButton(row, target.name, itemName, itemId);
             }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "",
                 Number(target.inventorySlots[itemIndex] !== undefined ? target.inventorySlots[itemIndex] : itemIndex), itemIndex));
         }
@@ -1083,7 +1141,7 @@
 
         renderItemTarget(target);
 
-        // 普通装备只来自 Valve 原版商店。这里显示小精灵持有的真实实例，并提供一键转交。
+        // Ordinary equipment comes from the native shop; transfer or sell its real instances here.
         var stockList = $("#ItemStockList");
         stockList.RemoveAndDeleteChildren();
         if (!stock.length) {
@@ -1113,10 +1171,11 @@
                     }
                 });
                 equip.enabled = phase === "setup" && Boolean(target) && targetHasSpace && Boolean(itemId);
+                createItemSellButton(row, "__stash", itemName, itemId);
             }(stock[stockIndex], stockIndex));
         }
 
-        // 项目面板只出售两种经验卷轴；购买/出售普通物品请使用原版 Dota 商店。
+        // Only experience scrolls are purchased here; equipment is bought in the native shop.
         var scrollList = $("#ScrollShopList");
         scrollList.RemoveAndDeleteChildren();
         for (var scrollIndex = 0; scrollIndex < scrollDefs.length; scrollIndex++) {
@@ -1675,6 +1734,7 @@
     });
     // 服务端数据（商店/关卡/动作槽）通过 CEM 事件推送
     GameEvents.Subscribe("rpg_rule_update_result", RpgRuleSync.onResult);
+    GameEvents.Subscribe("rpg_item_sell_result", onItemSellResult);
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {

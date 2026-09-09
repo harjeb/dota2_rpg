@@ -581,6 +581,45 @@ var grabWire=latest(grabHud,tinyHero);
 assert(grabWire.use_condition_1_type==="tiny_grab_is_enemy" && grabWire.use_condition_2_value===.35
     && grabWire.target_filter_1_value===.8,"grabbed-unit gates and landing-target gates remain independent");
 
+// Equipment sales use exact entities, never mutate the client wallet, and
+// retain retry/duplicate protection across authoritative inventory refreshes.
+var saleHud = runHud();
+var saleState = {gold:1000,owned_text:axe+";"+lion,lineup_text:axe,
+    stock_text:"item_magic_wand|9401;item_magic_wand|9402",
+    equipped_text:axe+":item_blink|9301|0,item_force_staff|9302|14;"+lion+":item_manta|9303|6"};
+saleHud.subscriptions.rpg_shop_state(saleState);
+function saleEvents() { return saleHud.sentEvents.filter(function(e) { return e.name === "rpg_item_sell"; }); }
+var saleButton = "Sell_Equipped_"+axe+"_0";
+assert(panel(saleHud,saleButton).enabled && panel(saleHud,"Sell_Equipped_"+axe+"_1").enabled,"equipped and native stash slots expose selling");
+var oldSaleButton = panel(saleHud,saleButton);
+click(saleHud,saleButton); oldSaleButton.events.onactivate();
+assert(saleEvents().length===1 && !panel(saleHud,saleButton).enabled,"pending exact entity cannot be sold twice after rerender");
+var request = saleEvents()[0].payload;
+assert(request.hero===axe && request.item==="item_blink" && request.item_index===9301 && request.request_id>0,"sale locks exact name, entity and carrier");
+saleHud.subscriptions.rpg_item_sell_result({request_id:request.request_id,item_index:9301,ok:0,reason:"purchase_pending",refund:0});
+assert(panel(saleHud,saleButton).enabled && panel(saleHud,"ItemSellNotice").BHasClass("Error"),"failed sale shows reason and allows retry");
+click(saleHud,saleButton);
+var retry = saleEvents()[1].payload;
+saleHud.subscriptions.rpg_item_sell_result({request_id:request.request_id,item_index:9301,ok:0,reason:"sale_failed",refund:0});
+assert(!panel(saleHud,saleButton).enabled,"stale reply cannot unlock a newer request");
+var walletBeforeSale = panel(saleHud,"WalletBalance").text;
+saleHud.subscriptions.rpg_item_sell_result({request_id:retry.request_id,item_index:9301,ok:1,reason:"sold",refund:225});
+assert(panel(saleHud,"ItemSellNotice").BHasClass("Success") && panel(saleHud,"WalletBalance").text===walletBeforeSale,"native sale notice never credits client gold");
+saleState.gold=1225; saleState.equipped_text=axe+":item_force_staff|9302|14;"+lion+":item_manta|9303|6";
+saleHud.subscriptions.rpg_shop_state(saleState);
+assert(panel(saleHud,"WalletBalance").text.indexOf("1225")>=0,"authoritative wallet refresh displays refund once");
+click(saleHud,"ItemTarget_"+lion);
+assert(panel(saleHud,"Sell_Equipped_"+lion+"_0").enabled,"bench hero backpack can be sold directly");
+saleHud.subscriptions.rpg_shop_state({gold:1225,owned_text:"",lineup_text:"",stock_text:saleState.stock_text});
+assert(panel(saleHud,"Sell_Stock0").enabled,"shared stash selling does not require a selected hero");
+click(saleHud,"Sell_Stock0");
+var stockRequest=saleEvents().slice(-1)[0].payload;
+assert(stockRequest.hero==="__stash" && stockRequest.item_index===9401 && panel(saleHud,"Sell_Stock1").enabled,"same-name stash copies are independent");
+saleHud.subscriptions.rpg_battle_state({phase:"fight"});
+var beforeFightSales=saleEvents().length;
+click(saleHud,"Sell_Stock1");
+assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFightSales,"combat cannot emit sale requests");
+
 var livesHud = runHud();
 assert(panel(livesHud,"RunHearts").children.length === 5, "HUD opens with five hearts");
 function lifeSnapshot(left, phase) {

@@ -278,15 +278,15 @@ if ($javascript -match 'createConditionEditor|syncThreshold|syncAllRuleInputs|cr
     throw "Removed outer inputs must not be created or synchronized"
 }
 
-# 金币已改走 Dota 原版 HUD 钱包，普通装备走原版商店，项目面板只保留双卷轴与转交。
-if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy|rpg_item_sell' -or $hudLayout -match 'ItemCatalogList') {
+# 普通装备通过原版商店购买；项目面板提供原生出售包装、双卷轴与转交。
+if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy' -or $hudLayout -match 'ItemCatalogList') {
     throw "Custom ordinary-item catalog/purchase controls must remain removed"
 }
 $scrollItemText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\npc\npc_items_custom.txt") -Raw
 if ($scrollItemText -match '"ItemPurchasable"\s+"1"') {
     throw "project scrolls must not be natively purchasable; panel stock limits are server-authoritative"
 }
-foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'MAX_STASH_SLOTS', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target')) {
+foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'MAX_STASH_SLOTS', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target', 'rpg_item_sell', 'OnItemSell', 'ItemSellNotice')) {
     if (($javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
         throw "Native shop / scroll-only wiring is missing: $nativeShopPattern"
     }

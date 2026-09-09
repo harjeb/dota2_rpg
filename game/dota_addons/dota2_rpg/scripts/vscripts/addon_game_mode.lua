@@ -18,6 +18,7 @@ local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
 local SummonBehavior = require("battle/summon_behavior")
 local TinyTree = require("issue_fixes/tiny_tree")
+local ItemSales = require("issue_fixes/item_sales")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -264,7 +265,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v20-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v21-20260909") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -415,6 +416,9 @@ function CDota2RpgDemo:InitGameMode()
 	CustomGameEventManager:RegisterListener("rpg_item_equip", function(eventSourceIndex, payload)
 		return self:OnItemEquip(eventSourceIndex, payload)
 	end)
+	CustomGameEventManager:RegisterListener("rpg_item_sell", function(eventSourceIndex, payload)
+		return self:OnItemSell(eventSourceIndex, payload)
+	end)
 	CustomGameEventManager:RegisterListener("rpg_item_unequip", function(eventSourceIndex, payload)
 		return self:OnItemUnequip(eventSourceIndex, payload)
 	end)
@@ -432,7 +436,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v20-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v21-20260909 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2216,6 +2220,22 @@ function CDota2RpgDemo:OnItemEquip(_, payload)
 	end
 end
 
+function CDota2RpgDemo:OnItemSell(_, payload)
+    -- PlayerID is supplied by the engine, not inferred from client selection.
+    if type(payload) ~= "table" or self.playerId == nil or self.playerId < 0
+        or tonumber(payload.PlayerID) ~= self.playerId then return end
+    local ok, reason, refund = ItemSales.Sell(self, payload)
+    if ok then self:SyncLiveEquipmentState(true) end
+    local player = PlayerResource:GetPlayer(self.playerId)
+    if player ~= nil then
+        CustomGameEventManager:Send_ServerToPlayer(player, "rpg_item_sell_result", {
+            request_id = tonumber(payload.request_id) or 0,
+            item_index = tostring(payload.item_index or ""),
+            ok = ok and 1 or 0, reason = reason, refund = refund,
+        })
+    end
+end
+
 function CDota2RpgDemo:OnItemUnequip(_, payload)
 	if payload ~= nil and payload.PlayerID ~= nil
 		and tonumber(payload.PlayerID) ~= self.playerId then return end
@@ -3119,6 +3139,8 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 	end
 
 	if isSell or isDisassemble then
+        -- A sale refund must not conceal a still-unreconciled purchase debit.
+        if isSell and (self.itemSaleInProgress or ItemSales.HasPendingPurchase(self)) then return false end
 		local itemIndex = tonumber(filterTable.entindex_ability) or -1
 		local item = itemIndex > 0 and EntIndexToHScript(itemIndex) or nil
 		if not self:IsLiveItem(item) then
@@ -3128,8 +3150,14 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		local holder = source or self:FindEquipmentItemHolder(item)
 		-- 原版物品栏、背包和远程购买储藏栏都属于该当前上阵载体。
 		local lastSlot = NATIVE_STASH_LAST_SLOT
-		return holder ~= nil and self:IsEquipmentCarrier(holder)
-			and self:IsItemHeldBy(holder, item, 0, lastSlot)
+        if holder == nil or not self:IsEquipmentCarrier(holder)
+            or not self:IsItemHeldBy(holder, item, 0, lastSlot) then return false end
+        if isSell and source == nil then
+            -- Validation alone did not tell the native engine which extra hero
+            -- holds the item. Populate the actual carrier for unitless orders.
+            filterTable.units = { ["0"] = holder:GetEntityIndex() }
+        end
+        return true
 	end
 
 	-- 原版 HUD 的拖放、交付与地面拾取：只可在小精灵、当前上阵英雄和待命英雄之间发生。

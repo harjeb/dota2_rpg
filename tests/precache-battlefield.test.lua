@@ -38,6 +38,7 @@ require = function(moduleName)
 	end
 	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
         or moduleName == "battle/summon_behavior" or moduleName == "issue_fixes/tiny_tree"
+        or moduleName == "issue_fixes/item_sales"
         or moduleName == "issue_fixes/hero_precache" or moduleName == "tactics/special_targets"
         or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")

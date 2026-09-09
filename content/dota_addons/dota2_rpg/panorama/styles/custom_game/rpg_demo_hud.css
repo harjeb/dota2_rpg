@@ -1223,6 +1223,27 @@
 	text-overflow: shrink;
 }
 
+.ItemSellNotice
+{
+	width: 100%;
+	margin-top: 3px;
+	padding: 3px 5px;
+	font-size: 12px;
+	color: #f2d982;
+	background-color: #17232b;
+	white-space: normal;
+}
+
+.ItemSellNotice.Success
+{
+	color: #a8f0b8;
+}
+
+.ItemSellNotice.Error
+{
+	color: #e99486;
+}
+
 .ItemTargetRow
 {
 	width: 100%;
@@ -1283,9 +1304,9 @@
 .ItemEquippedList
 {
 	width: 100%;
-	height: 34px;
+	height: 102px;
 	overflow: squish scroll;
-	flow-children: right;
+	flow-children: down;
 	margin-top: 3px;
 	background-color: #111820;
 	border: 1px solid #34414a;
@@ -1317,7 +1338,7 @@
 
 .ItemEquippedRow
 {
-	width: 164px;
+	width: 100%;
 	height: 32px;
 	flow-children: right;
 	border-right: 1px solid #2a333b;
@@ -1344,7 +1365,7 @@
 
 .ItemEquippedRow .ItemRowName
 {
-	width: 85px;
+	width: fill-parent-flow(1.0);
 }
 
 .ItemRowCost
@@ -1386,6 +1407,14 @@
 	width: 50px;
 	background-color: #493237;
 	border-color: #aa737a;
+}
+
+.ItemSellBtn
+{
+	width: 52px;
+	margin-right: 3px;
+	background-color: #4a3d22;
+	border-color: #d7b85a;
 }
 
 .ItemRowBtn:hover

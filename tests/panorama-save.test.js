@@ -482,10 +482,10 @@ assert(hud.sentEvents.some(function (event) {
     return event.name === "rpg_native_purchase_target" && event.payload.unit_index === 503;
 }), "Panorama must tell the server which active or bench hero is selected for native purchases");
 assert(hudSource.indexOf('SendCustomGameEventToServer("rpg_item_buy') < 0
-    && hudSource.indexOf('SendCustomGameEventToServer("rpg_item_sell') < 0
+    && hudSource.indexOf('SendCustomGameEventToServer("rpg_item_sell') >= 0
     && hudSource.indexOf("rpg_item_equip") >= 0
     && hudSource.indexOf("rpg_item_unequip") >= 0,
-    "equipment UI must remove custom ordinary-item buy/sell events and retain exact transfer events");
+    "equipment UI uses native purchases and exposes exact-entity selling and transfers");
 
 assert(/id="DropdownLayer"[^>]*hittest="false"[^>]*hittestchildren="true"/.test(layoutSource),
     "fullscreen dropdown layer must pass through native shop/ability clicks while menus remain interactive");

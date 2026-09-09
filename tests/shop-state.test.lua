@@ -44,6 +44,7 @@ require = function(name)
 		["battle.run_lives"] = moduleRoot .. "battle/run_lives.lua",
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",
+        ["issue_fixes/item_sales"] = moduleRoot .. "issue_fixes/item_sales.lua",
 		["issue_fixes/hero_precache"] = moduleRoot .. "issue_fixes/hero_precache.lua",
 		["tactics/special_targets"] = moduleRoot .. "tactics/special_targets.lua",
 		["battle.tempest_double"] = moduleRoot .. "battle/tempest_double.lua",
@@ -1170,6 +1171,7 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 	itemname = "item_prepare_empty_units",
 }), "prepare order filter must allow an affordable empty-units native purchase during setup")
+function fieldedHero:GetEntityIndex() return 501 end
 function wisp:GetEntityIndex() return 502 end
 local benchPurchaseOrder = {
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
@@ -1241,10 +1243,16 @@ assert(not equipmentGame:ValidatePrepareOrder({
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = -1, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {},
 }), "managed native shop orders without a real player issuer must not bypass phase or ownership checks")
-assert(equipmentGame:ValidatePrepareOrder({
-	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
-	units = {}, entindex_ability = equippedBlink:GetEntityIndex(),
-}), "prepare order filter must allow selling an item held by a managed hero")
+local saleOrder = {
+    issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
+    units = {}, entindex_ability = equippedBlink:GetEntityIndex(),
+}
+equipmentGame.nativePurchaseOrderContexts = {{gold_before=1000}}
+assert(not equipmentGame:ValidatePrepareOrder(saleOrder), "refund cannot hide an unconfirmed purchase debit")
+equipmentGame.nativePurchaseOrderContexts = {}
+equipmentGame.pendingNativePurchases = {}
+assert(equipmentGame:ValidatePrepareOrder(saleOrder), "prepare order filter must allow selling an item held by a managed hero")
+assert(saleOrder.units["0"] == fieldedHero:GetEntityIndex(), "unitless native sale receives the actual holder, not merely validation")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
 	units = {}, entindex_ability = nativeStashSale:GetEntityIndex(),
@@ -1346,7 +1354,6 @@ CustomGameEventManager = {
 		shopPayload = data
 	end,
 }
-function fieldedHero:GetEntityIndex() return 501 end
 function benchHero:GetEntityIndex() return 503 end
 local broadcastGame = newGame({
 	ownedHeroes = { "npc_dota_hero_axe", "npc_dota_hero_lion" },
@@ -1442,4 +1449,41 @@ do
     CreateItem, CreateItemOnPositionSync = previousCreate, previousDrop
 end
 
-print("PASS: initial hero shop, native inventory transfers, five lives and exactly-once transferable life rewards")
+-- Exercise the actual panel handler, native wallet and inventory synchronization.
+do
+    local previousEvents, previousGetPlayer = CustomGameEventManager, PlayerResource.GetPlayer
+    local player, replies = {}, {}
+    PlayerResource.GetPlayer = function() return player end
+    CustomGameEventManager = {Send_ServerToPlayer=function(_, recipient, event, payload)
+        assert(recipient==player and event=="rpg_item_sell_result")
+        replies[#replies+1]=payload
+    end}
+    equipmentGame.phase="setup"
+    equipmentGame.nativePurchaseOrderContexts, equipmentGame.pendingNativePurchases = {}, {}
+    equipmentGame:SetGoldBalance(1000)
+    local sold = makeItem("item_belt_of_strength")
+    function sold:IsSellable() return true end
+    entities[sold:GetEntityIndex()] = sold
+    fieldedHero.slots[14] = sold
+    local nativeSales = 0
+    function fieldedHero:SellItem(item)
+        nativeSales = nativeSales + 1
+        self:RemoveItem(item)
+        nativeWalletReliable[0] = nativeWalletReliable[0] + 225
+    end
+    local broadcasts = equipmentGame.shopBroadcasts or 0
+    local payload = {hero="npc_dota_hero_axe",item=sold.name,item_index=sold:GetEntityIndex(),request_id=71}
+    equipmentGame:OnItemSell(nil,payload)
+    assert(nativeSales==0 and #replies==0,"missing engine player identity cannot sell")
+    payload.PlayerID=0
+    equipmentGame:OnItemSell(nil,payload)
+    assert(nativeSales==1 and sold:IsNull() and fieldedHero.slots[14]==nil,"real handler removes the exact native item")
+    assertEqual(equipmentGame:GetGoldBalance(),1225,"native sale credits shared authoritative wallet once")
+    assert((equipmentGame.shopBroadcasts or 0)>broadcasts and replies[1].ok==1 and replies[1].refund==225
+        and replies[1].request_id==71,"inventory broadcast and correlated sale result reach the client")
+    equipmentGame:OnItemSell(nil,payload)
+    assert(nativeSales==1 and replies[2].ok==0 and equipmentGame:GetGoldBalance()==1225,"replayed request cannot refund twice")
+    CustomGameEventManager, PlayerResource.GetPlayer = previousEvents, previousGetPlayer
+end
+
+print("PASS: initial hero shop, native inventory transfers, five lives, native equipment sales and exactly-once transferable life rewards")

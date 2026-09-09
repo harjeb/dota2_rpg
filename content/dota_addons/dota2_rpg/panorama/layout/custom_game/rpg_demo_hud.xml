@@ -79,6 +79,7 @@
 				<Panel id="ItemShopPanel" class="LineupPanel ItemShopPanel">
 					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
 					<Label id="NativeShopHint" class="NativeShopHint" text="#dota2_rpg_native_shop_hint" />
+					<Label id="ItemSellNotice" class="ItemSellNotice Hidden" text="" />
 					<Panel class="ItemTargetRow">
 						<Label id="ItemTargetLabel" class="ItemTargetLabel" />
 						<Panel id="ItemTargetHeroes" class="ItemTargetHeroes" />

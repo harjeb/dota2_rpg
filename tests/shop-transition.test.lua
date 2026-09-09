@@ -21,6 +21,7 @@ require = function(name)
         ["battle.run_lives"] = true,
         ["battle/summon_behavior"] = true,
         ["issue_fixes/tiny_tree"] = true,
+        ["issue_fixes/item_sales"] = true,
         ["issue_fixes/hero_precache"] = true,
         ["tactics/special_targets"] = true,
         ["battle.tempest_double"] = true,
