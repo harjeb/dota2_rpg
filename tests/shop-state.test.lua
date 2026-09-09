@@ -1253,6 +1253,18 @@ equipmentGame.nativePurchaseOrderContexts = {}
 equipmentGame.pendingNativePurchases = {}
 assert(equipmentGame:ValidatePrepareOrder(saleOrder), "prepare order filter must allow selling an item held by a managed hero")
 assert(saleOrder.units["0"] == fieldedHero:GetEntityIndex(), "unitless native sale receives the actual holder, not merely validation")
+for _, sourceId in ipairs({502, 501}) do
+    local rightClick = {issuer_player_id_const=0, order_type=DOTA_UNIT_ORDER_SELL_ITEM,
+        units={["0"]=sourceId}, entindex_ability=equippedBlink:GetEntityIndex()}
+    assert(equipmentGame:ValidatePrepareOrder(rightClick), "right-click sale accepts assigned hero or actual holder")
+    assert(rightClick.units["0"]==501, "right-click sale executes on exact item's actual holder")
+    rightClick.issuer_player_id_const=1
+    assert(not equipmentGame:ValidatePrepareOrder(rightClick), "foreign player cannot reroute sale")
+    rightClick.issuer_player_id_const=0
+    equipmentGame.phase="fight"
+    assert(not equipmentGame:ValidatePrepareOrder(rightClick), "right-click sale remains blocked during combat")
+    equipmentGame.phase="setup"
+end
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_SELL_ITEM,
 	units = {}, entindex_ability = nativeStashSale:GetEntityIndex(),

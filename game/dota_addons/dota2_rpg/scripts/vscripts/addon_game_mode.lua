@@ -265,7 +265,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v21-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v22-20260909") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -436,7 +436,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v21-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v22-20260909 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3147,15 +3147,19 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 			return false
 		end
 		-- 少数原版出售订单不带 units，按物品在我方可控载体中的真实归属补齐来源。
-		local holder = source or self:FindEquipmentItemHolder(item)
+		local holder = isSell and self:FindEquipmentItemHolder(item)
+            or source or self:FindEquipmentItemHolder(item)
 		-- 原版物品栏、背包和远程购买储藏栏都属于该当前上阵载体。
 		local lastSlot = NATIVE_STASH_LAST_SLOT
         if holder == nil or not self:IsEquipmentCarrier(holder)
             or not self:IsItemHeldBy(holder, item, 0, lastSlot) then return false end
-        if isSell and source == nil then
-            -- Validation alone did not tell the native engine which extra hero
-            -- holds the item. Populate the actual carrier for unitless orders.
+        if isSell then
+            -- Native HUD may use the assigned Wisp as issuer even when the
+            -- inspected item is held by a roster hero. The exact owned entity,
+            -- not UI selection, determines the native sale's actual carrier.
+            if not self:BindEquipmentCarrierToPlayer(holder) then return false end
             filterTable.units = { ["0"] = holder:GetEntityIndex() }
+            self.nativeShopTransactionPending = true
         end
         return true
 	end
