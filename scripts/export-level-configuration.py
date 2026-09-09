@@ -69,6 +69,31 @@ AI_NAMES = {
     "simple_nearest": "最近目标（野怪）", "aggro_front": "前排近距攻击",
     "focus_lowest_hp": "优先最低生命", "ai_healer_protect": "治疗/保护友军",
 }
+# Snapshot of the current native abilities_schinese localization for every item
+# actually referenced by levels.kv. Keep IDs too: the KV accepts IDs, not labels.
+ITEM_NAMES = {
+    "item_abyssal_blade": "深渊之刃", "item_aeon_disk": "永恒之盘", "item_aether_lens": "以太透镜",
+    "item_arcane_boots": "奥术鞋", "item_armlet": "莫尔迪基安的臂章", "item_assault": "强袭胸甲",
+    "item_basher": "碎颅锤", "item_bfury": "狂战斧", "item_black_king_bar": "黑皇杖",
+    "item_blade_mail": "刃甲", "item_blink": "闪烁匕首", "item_bloodstone": "血精石",
+    "item_bloodthorn": "血棘", "item_boots": "速度之靴", "item_bracer": "护腕",
+    "item_butterfly": "蝴蝶", "item_crimson_guard": "赤红甲", "item_cyclone": "Eul的神圣法杖",
+    "item_desolator": "黯灭", "item_diffusal_blade": "净魂之刃", "item_disperser": "散魂剑",
+    "item_dragon_lance": "魔龙枪", "item_echo_sabre": "回音战刃", "item_eternal_shroud": "永世法衣",
+    "item_force_staff": "原力法杖", "item_glimmer_cape": "微光披风", "item_greater_crit": "代达罗斯之殇",
+    "item_guardian_greaves": "卫士胫甲", "item_halberd": "天堂之戟（兼容旧 ID）", "item_harpoon": "鱼叉",
+    "item_heart": "恐鳌之心", "item_hurricane_pike": "飓风长戟", "item_invis_sword": "影刃",
+    "item_kaya_and_sange": "散慧对剑", "item_lotus_orb": "清莲宝珠", "item_maelstrom": "漩涡",
+    "item_magic_wand": "魔杖", "item_manta": "幻影斧", "item_mekansm": "梅肯斯姆",
+    "item_meteor_hammer": "陨星锤", "item_mjollnir": "雷神之锤", "item_null_talisman": "空灵挂件",
+    "item_octarine_core": "玲珑心", "item_orchid": "紫怨", "item_phase_boots": "相位鞋",
+    "item_phylactery": "灵匣", "item_pipe": "洞察烟斗", "item_power_treads": "动力鞋",
+    "item_refresher": "刷新球", "item_rod_of_atos": "阿托斯之棍", "item_sange_and_yasha": "散夜对剑",
+    "item_satanic": "撒旦之邪力", "item_sheepstick": "邪恶镰刀", "item_shivas_guard": "希瓦的守护",
+    "item_skadi": "斯嘉蒂之眼", "item_spirit_vessel": "魂之灵瓮", "item_ultimate_scepter": "阿哈利姆神杖",
+    "item_wind_lace": "风灵之纹", "item_wind_waker": "风之杖", "item_wraith_band": "怨灵系带",
+    "item_yasha": "夜叉",
+}
 
 
 def read_kv(text: str) -> dict[str, Any]:
@@ -121,6 +146,10 @@ def row_items(enemy: dict[str, Any]) -> list[str]:
     return [str(item) for item in ordered_values(enemy.get("items", {}))]
 
 
+def item_name(item_id: str) -> str:
+    return ITEM_NAMES.get(item_id, "未收录中文名（" + item_id + "）")
+
+
 def row_tags(enemy: dict[str, Any]) -> list[str]:
     return [str(tag) for tag in ordered_values(enemy.get("tags", {}))]
 
@@ -168,11 +197,13 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
                 "Boss攻击伤害+%": as_number(enemy.get("boss_attack_damage_pct", "")),
                 "Boss法术增幅+%": as_number(enemy.get("boss_spell_amp_pct", "")),
                 "Boss冷却减少%": as_number(enemy.get("boss_cooldown_reduction_pct", "")),
-                "装备数量": len(items), "装备合计（原生ID）": "；".join(items),
-                "配置路径": f"levels/{stage_id}/enemies/{config_index}",
+                "装备数量": len(items), "装备合计（中文）": "；".join(item_name(item) for item in items),
+                "装备合计（原生ID）": "；".join(items), "配置路径": f"levels/{stage_id}/enemies/{config_index}",
             }
             for item_index in range(1, 6):
-                row[f"装备{item_index}（原生ID）"] = items[item_index - 1] if item_index <= len(items) else ""
+                item = items[item_index - 1] if item_index <= len(items) else ""
+                row[f"装备{item_index}（中文）"] = item_name(item) if item else ""
+                row[f"装备{item_index}（原生ID）"] = item
             rows.append(row)
     return rows
 
@@ -186,7 +217,7 @@ def equipment_rows(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 rows.append({
                     "关卡": unit["关卡"], "关卡序号": unit["关卡序号"], "配置序号": unit["配置序号"],
                     "单位名称": unit["单位名称"], "单位原生ID": unit["单位原生ID"], "单位等级": unit["等级"],
-                    "标签": unit["标签"], "装备槽": item_index, "装备原生ID": item,
+                    "标签": unit["标签"], "装备槽": item_index, "装备中文名": item_name(item), "装备原生ID": item,
                     "配置路径": unit["配置路径"] + f"/items/{item_index}",
                 })
     return rows
@@ -319,8 +350,9 @@ def write_workbook(path: Path, sheets: list[tuple[str, list[dict[str, Any]]]], m
         ("运行时优先", "游戏实际读取 levels.kv。本表绝不使用 levels_v07.json 覆盖运行时数值。若存在差异，请看“源文件差异”表。"),
         ("如何手动调整", "不要编辑本 Excel/CSV 让游戏生效；请编辑 levels.kv，并按需要同步更新 levels_v07.json，再运行本导出工具复查。"),
         ("关卡总览", "每关一行：奖励、推荐等级、限时、总数量、倍率与战利品表。"),
-        ("单位明细", "每关每个 enemies 配置一行。配置路径直接对应 levels.kv 的 enemies/N。装备1–5按原生槽位原样导出。"),
-        ("装备明细", "每件装备一行，便于按装备名或关卡筛选。"),
+        ("装备中文名", "中文名来自当前 Dota 简体中文物品本地化快照；“原生ID”仍是手动改 KV 时必须使用的名称。item_halberd 是兼容旧 ID，特别标注。"),
+        ("单位明细", "每关每个 enemies 配置一行。配置路径直接对应 levels.kv 的 enemies/N。装备1–5按原生槽位导出中文名及原生ID。"),
+        ("装备明细", "每件装备一行，便于按中文名、原生ID或关卡筛选。"),
         ("单位出现汇总", "按单位汇总当前所有关卡的配置次数、实际累计刷出数量、等级范围与 Boss 出现关卡。"),
         ("AI说明", "simple_nearest=野怪最近目标；aggro_front=前排近距攻击；focus_lowest_hp=优先最低生命；ai_healer_protect=治疗/保护友军。"),
         ("Boss列", "仅 Boss 行有 Boss生命倍率、攻击伤害、法术增幅、冷却减少数值；这些由 modifier_rpg_boss_power 生效。"),
@@ -367,6 +399,8 @@ def export(output_dir: Path) -> dict[str, Path]:
         "validated_against": str(SOURCE_PATH.relative_to(ROOT)).replace("\\", "/"),
         "stage_count": len(stages), "unit_configuration_rows": len(units),
         "equipment_rows": len(equipment), "unique_units": len(appearances),
+        "item_name_count": len(ITEM_NAMES),
+        "untranslated_item_ids": sorted({row["装备原生ID"] for row in equipment if row["装备原生ID"] not in ITEM_NAMES}),
         "maintenance_source_difference_rows": len(source_differences),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "files": {key: path.name for key, path in outputs.items()},

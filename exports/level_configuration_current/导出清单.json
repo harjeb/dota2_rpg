@@ -6,8 +6,10 @@
   "unit_configuration_rows": 139,
   "equipment_rows": 343,
   "unique_units": 73,
+  "item_name_count": 61,
+  "untranslated_item_ids": [],
   "maintenance_source_difference_rows": 93,
-  "generated_utc": "2026-09-09T08:01:30.305366+00:00",
+  "generated_utc": "2026-09-09T08:22:30.302693+00:00",
   "files": {
     "excel": "当前关卡配置.xlsx",
     "stages_csv": "关卡总览.csv",

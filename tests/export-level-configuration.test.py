@@ -31,6 +31,8 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual(manifest["unit_configuration_rows"], 139)
             self.assertEqual(manifest["equipment_rows"], 343)
             self.assertEqual(manifest["unique_units"], 73)
+            self.assertEqual(manifest["item_name_count"], 61)
+            self.assertEqual(manifest["untranslated_item_ids"], [])
             # The old JSON currently stores level 30 for hero rows while the
             # runtime KV stores their actual stage levels. This is report-only:
             # the export must never use the JSON level instead.
@@ -48,8 +50,9 @@ class LevelConfigurationExportTests(unittest.TestCase):
             headers = [cell.value for cell in unit_sheet[1]]
             records = [dict(zip(headers, values)) for values in unit_sheet.iter_rows(min_row=2, values_only=True)]
             axe = next(row for row in records if row["关卡"] == "ch05" and row["单位原生ID"] == "npc_dota_hero_axe")
-            self.assertEqual((axe["单位名称"], axe["数量"], axe["等级"], axe["AI类型"], axe["装备1（原生ID）"], axe["装备2（原生ID）"]),
-                             ("斧王", 1, 8, "aggro_front", "item_boots", "item_bracer"))
+            self.assertEqual((axe["单位名称"], axe["数量"], axe["等级"], axe["AI类型"],
+                              axe["装备1（中文）"], axe["装备1（原生ID）"], axe["装备2（中文）"], axe["装备2（原生ID）"]),
+                             ("斧王", 1, 8, "aggro_front", "速度之靴", "item_boots", "护腕", "item_bracer"))
             boss = next(row for row in records if row["关卡"] == "ch30" and row["是否Boss"] == "是")
             self.assertEqual((boss["单位原生ID"], boss["等级"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
                              ("npc_dota_hero_skeleton_king", 30, 16, 300, 200, 50))
@@ -62,6 +65,14 @@ class LevelConfigurationExportTests(unittest.TestCase):
             first = differences[0]
             self.assertEqual((first["关卡"], first["单位原生ID"], first["运行时 levels.kv"], first["维护 levels_v07.json"]),
                              ("ch05", "npc_dota_hero_axe", "8", "30"))
+
+            equipment_sheet = book["装备明细"]
+            equipment_headers = [cell.value for cell in equipment_sheet[1]]
+            equipment = [dict(zip(equipment_headers, values)) for values in equipment_sheet.iter_rows(min_row=2, values_only=True)]
+            self.assertTrue(all(row["装备中文名"] and row["装备原生ID"] for row in equipment))
+            self.assertEqual({row["装备原生ID"] for row in equipment}, set(EXPORT.ITEM_NAMES))
+            self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_blink"), "闪烁匕首")
+            self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_halberd"), "天堂之戟（兼容旧 ID）")
 
             raw = files["units_csv"].read_bytes()
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"), "CSV needs an Excel-friendly UTF-8 BOM")

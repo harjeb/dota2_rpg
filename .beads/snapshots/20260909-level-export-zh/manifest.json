@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-09T08:23:14.373585+00:00",
+  "counts": {
+    "issues": 96,
+    "dependencies": 47,
+    "comments": 4,
+    "events": 230,
+    "labels": 0,
+    "config": 13
+  },
+  "dolt_log": [
+    {
+      "commit_hash": "to9ads2jhov7ftro0e5vtbouads1f62u",
+      "date": "2026-09-09T08:23:12.697Z",
+      "message": "bd: close dota2_rpg-bvb"
+    }
+  ],
+  "reason": "Chinese item names added to live level export; bd sync is no-op without Dolt remote."
+}
