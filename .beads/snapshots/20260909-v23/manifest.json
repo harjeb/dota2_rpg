@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-09T09:38:28.821364+00:00",
+  "counts": {
+    "issues": 98,
+    "dependencies": 48,
+    "comments": 4,
+    "events": 234,
+    "labels": 0,
+    "config": 13
+  },
+  "dolt_log": [
+    {
+      "commit_hash": "nj0uc38ag4cr0et6pro135bh7pej89fk",
+      "date": "2026-09-09T09:38:14.557Z",
+      "message": "bd: close dota2_rpg-jf4"
+    }
+  ],
+  "reason": "bd 0.56.1 sync is a no-op and no Dolt remote is configured; native table snapshot preserved in Git. Previous backup retained."
+}

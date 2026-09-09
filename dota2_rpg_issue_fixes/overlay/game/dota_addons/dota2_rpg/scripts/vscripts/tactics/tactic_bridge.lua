@@ -364,6 +364,9 @@ function TacticBridge:Install()
                 end
                 return count
             end,
+            get_target_actor = function(key)
+                return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, unit, key)
+            end,
             get_action_actor = function(key)
                 -- Resolve stable roster identities each tick; never trust an old entity index.
                 for _, team in ipairs({ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS }) do
@@ -542,6 +545,9 @@ function TacticBridge:Install()
 			end
 			return nil
 		end,
+        is_target_actor_allowed = function(_player_id, hero, key)
+            return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, hero, key) ~= nil
+        end,
 		is_action_allowed = is_action_allowed_for_hero,
 		state = state,
 		conditions = conditionsRegistry,

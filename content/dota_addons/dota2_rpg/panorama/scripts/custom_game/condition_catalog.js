@@ -38,10 +38,11 @@ var RpgConditionCatalog = (function () {
 
     ["tiny_grab_is_enemy", "tiny_grab_is_ally", "tiny_grab_is_hero", "tiny_grab_is_creep"].forEach(function(id) { add("use", id, "tiny_grab", ""); });
     ["tiny_grab_hp_pct_lte", "tiny_grab_hp_pct_gte"].forEach(function(id) { add("use", id, "tiny_grab", "value"); });
+    add("target", "specified_enemy", "identity", "target_actor");
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
         use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38],
-        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38],
+        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13]
     };
     Object.keys(groups).forEach(function (group) {
@@ -90,7 +91,7 @@ var RpgConditionCatalog = (function () {
         if (!def) { return clone(input); }
         var out = { type: type };
         def.fields.forEach(function (field) {
-            if (field === "modifier" || field === "action_id" || field === "value_text") {
+            if (field === "modifier" || field === "action_id" || field === "target_actor" || field === "value_text") {
                 var key = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
                 out[key] = String(input[key] || (field === "modifier" ? input.value || "" : "")).slice(0, 128);
             } else {
@@ -190,6 +191,53 @@ var RpgConditionCatalog = (function () {
             });
             refresh();
         }
+        // Actor keys are opaque, level-scoped snapshot identities, never entity IDs or names.
+        function targetPicker(parent, id, current, clear) {
+            parent.AddClass("V2ActionField");
+            function actors() { return options.readOnly ? [] : (options.getTargetActors ? options.getTargetActors() : options.targetActors || []); }
+            var trigger = button(parent, id, "", function () {
+                if (options.readOnly) { return; }
+                if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
+                populate(); refresh(); menu.SetHasClass("Hidden", false); activeMenu = menu;
+            });
+            trigger.AddClass("V2TargetChoice");
+            var menu = $.CreatePanel("Panel", parent, id + "Menu");
+            menu.AddClass("V2AbilityChoices"); menu.AddClass("Hidden");
+            function draw(panel, actor, caption) {
+                panel.RemoveAndDeleteChildren();
+                if (actor) {
+                    var hero = actor.name.indexOf("npc_dota_hero_") === 0;
+                    var icon = $.CreatePanel(hero ? "DOTAHeroImage" : "Image", panel, "");
+                    icon.AddClass("V2TargetPortrait"); icon.hittest = false;
+                    if (hero) { icon.heroname = actor.name; icon.heroimagestyle = "portrait"; }
+                    else { icon.SetImage("file://{images}/units/" + actor.name + ".png"); }
+                }
+                label(panel, "", caption).hittest = false;
+            }
+            function refresh() {
+                var selected = actors().filter(function (actor) { return actor.actor === current.target_actor; })[0];
+                trigger.SetHasClass("V2UnavailableTarget", !!current.target_actor && !selected);
+                draw(trigger, selected, selected ? selected.label : text(current.target_actor ? "unavailable_target" : "choose_target"));
+                trigger.SetPanelEvent("onmouseover", function () { $.DispatchEvent("DOTAShowTextTooltip", trigger, text("specified_enemy_hint")); });
+                trigger.SetPanelEvent("onmouseout", function () { $.DispatchEvent("DOTAHideTextTooltip", trigger); });
+            }
+            function populate() {
+                menu.RemoveAndDeleteChildren();
+                button(menu, id + "Clear", text("clear_target"), function () {
+                    if (options.readOnly) { return; }
+                    menu.SetHasClass("Hidden", true); activeMenu = null; clear();
+                });
+                actors().forEach(function (actor, index) {
+                    var option = button(menu, id + "Option_" + index, "", function () {
+                        // Roster may have changed while this menu was open. Never substitute another unit.
+                        if (!actors().some(function (live) { return live.actor === actor.actor; })) { populate(); refresh(); return; }
+                        current.target_actor = actor.actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
+                    });
+                    option.AddClass("V2TargetChoice"); draw(option, actor, actor.label);
+                });
+            }
+            populate(); refresh();
+        }
         function slots(group, key, count, title) {
             label(body, "", text(title)).AddClass("V2SectionTitle");
             for (var i = 0; i < count; i++) {
@@ -210,6 +258,13 @@ var RpgConditionCatalog = (function () {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
                             var wrap = $.CreatePanel("Panel", params, ""); wrap.AddClass("V2Field");
                             label(wrap, "", text(field === "value" && current.type.indexOf("_pct_") >= 0 ? "percent" : field));
+                            if (field === "target_actor") {
+                                targetPicker(wrap, "V2_" + group + index + "_" + field, current, function () {
+                                    current = {type: ""}; draft[key][index] = current;
+                                    selector.GetChild(0).GetChild(0).text = text("none"); renderFields();
+                                });
+                                return;
+                            }
                             if (field === "action_id") {
                                 actionPicker(wrap, "V2_" + group + index + "_" + field, current);
                                 return;

@@ -163,6 +163,7 @@ var RpgRuleSync = (function () {
         if (condition.radius !== undefined) {
             payload[prefix + "_radius"] = condition.radius;
         }
+        if (condition.target_actor !== undefined) { payload[prefix + "_target_actor"] = condition.target_actor; }
         if (condition.action_actor !== undefined) { payload[prefix + "_action_actor"] = condition.action_actor; }
         if (condition.action_id !== undefined) {
             payload[prefix + "_action_id"] = condition.action_id;
@@ -206,7 +207,7 @@ var RpgRuleSync = (function () {
             if (!Array.isArray(rule[spec[0]])) { return; }
             for (var i = 0; i < spec[3]; i++) {
                 var prefix = spec[1] + "_" + (i + 1);
-                ["type", "value", "radius", "seconds", "action_id", "action_actor", "modifier"].forEach(function (field) { delete payload[prefix + "_" + field]; });
+                ["type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier"].forEach(function (field) { delete payload[prefix + "_" + field]; });
                 var raw = rule[spec[0]][i] || { type: "" };
                 var normalized = typeof RpgConditionCatalog !== "undefined" ? RpgConditionCatalog.wire(spec[2], raw) : raw;
                 putCondition(payload, prefix, normalized);

@@ -49,6 +49,7 @@ function createPanel(id) {
         BHasClass: function (name) { return Boolean(classes[name]); },
         events: {},
         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
+        SetImage: function (src) { this.src = src; },
         BLoadLayoutSnippet: function () {
             throw new Error("Legacy outer editor snippets must not be instantiated");
         },
@@ -205,6 +206,73 @@ assert(!panel(pickerHud,"RuleSyncNotice").visible,"departed roster clears stale 
 pickerHud.subscriptions.rpg_rule_update_result({request_id:delayed.request_id,ok:0,reason:"invalid_hero"});
 assert(!panel(pickerHud,"RuleSyncNotice").visible,"late rejection cannot resurrect absent-unit warning");
 assert(pickerHud.context.RpgConditionCatalog.abilityLabel("missing_native_token").indexOf("#DOTA") < 0,"missing native localization never leaks token");
+
+// F39: actual HUD -> current opposing roster portraits -> wire -> authoritative reload.
+var targetHud = runHud(), targetCaster = "npc_dota_hero_axe";
+targetHud.subscriptions.rpg_shop_state({lineup_text:targetCaster,owned_text:targetCaster});
+targetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:900,hero_name:targetCaster,
+    can_edit:1,rules_ready:1,actions_text:"attack",rules:[{action:"attack",enabled:1,target_team:"enemy"}]});
+var targetRoster = [{id:901,name:lion},{id:902,name:lion},{id:903,name:"npc_dota_neutral_centaur_khan"},{id:904,name:"npc_dota_roshan"}];
+function feedTargets(level, roster) {
+    targetHud.subscriptions.rpg_enemy_roster({units:roster});
+    roster.forEach(function(unit,index) {
+        targetHud.subscriptions.rpg_hero_slots({slot_key:"dire_"+(index+1),hero_index:unit.id,hero_name:unit.name,
+            target_actor:level+":enemy:"+unit.name+":"+index,can_edit:1,rules_ready:1,actions_text:"attack"});
+    });
+}
+feedTargets("ch05",targetRoster);
+click(targetHud,"RadiantRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy");
+assert(panel(targetHud,"V2_target0Select").GetChild(0).text.indexOf("F39 ")===0,"specified enemy appends F39");
+click(targetHud,"RuleSettingsApply");
+assert(latest(targetHud,targetCaster).target_filter_1_type==="specified_enemy" && latest(targetHud,targetCaster).target_filter_1_target_actor==="","empty selection keeps fail-closed filter");
+click(targetHud,"RadiantRuleSettings0"); click(targetHud,"V2_target0_target_actor");
+var targetMenu=panel(targetHud,"V2_target0_target_actorMenu");
+assert(targetMenu.children.length===5,"only four current opposing positions plus clear");
+assert(targetMenu.children[1].GetChild(0).type==="DOTAHeroImage" && targetMenu.children[2].GetChild(0).heroname===lion,"duplicate heroes have separate portraits");
+assert(targetMenu.children[3].GetChild(0).type==="Image" && targetMenu.children[3].GetChild(0).src.indexOf("npc_dota_neutral_centaur_khan.png")>=0,"neutral uses unit image asset");
+assert(targetMenu.children[4].GetChild(0).src.indexOf("npc_dota_roshan.png")>=0,"boss has unit portrait");
+click(targetHud,"V2_target0_target_actorOption_1"); click(targetHud,"RuleSettingsApply");
+var selectedActor="ch05:enemy:"+lion+":1";
+assert(latest(targetHud,targetCaster).target_filter_1_target_actor===selectedActor,"duplicate position key saved exactly");
+click(targetHud,"RadiantRuleSettings0");
+assert(panel(targetHud,"V2_target0_target_actor").GetChild(0).heroname===lion && panel(targetHud,"V2_target0_target_actor").GetChild(1).text.indexOf("2")>=0,"reopen preserves duplicate position");
+var targetSync=targetHud.context.RpgRuleSync;
+var restoredTarget=targetSync.fromServer({action:"attack",enabled:1,target_team:"enemy",target_filters:{1:{type:"specified_enemy",target_actor:selectedActor}}});
+assert(targetSync.serialize({rule:restoredTarget}).target_filter_1_target_actor===selectedActor,"fromServer round trip preserves opaque actor key");
+// Changing level with identical enemies must not alias an older snapshot identity.
+feedTargets("ch06",targetRoster);
+click(targetHud,"RadiantRuleSettings0");
+assert(panel(targetHud,"V2_target0_target_actor").BHasClass("V2UnavailableTarget") && panel(targetHud,"V2_target0_target_actor").GetChild(0).text==="#dota2_rpg_v2_unavailable_target","old-level target visibly unavailable");
+click(targetHud,"RuleSettingsApply");
+assert(latest(targetHud,targetCaster).target_filter_1_target_actor===selectedActor,"missing selection is never silently cleared or retargeted");
+click(targetHud,"RadiantRuleSettings0"); click(targetHud,"V2_target0_target_actor");
+var removedOption=panel(targetHud,"V2_target0_target_actorOption_1");
+feedTargets("ch06",[targetRoster[0]]);
+removedOption.events.onactivate();
+assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===2,"open menu refresh excludes removed units");
+click(targetHud,"RuleSettingsApply");
+assert(latest(targetHud,targetCaster).target_filter_1_target_actor===selectedActor,"stale menu click cannot select departed unit");
+click(targetHud,"RadiantRuleSettings0"); click(targetHud,"V2_target0_target_actor"); click(targetHud,"V2_target0_target_actorClear"); click(targetHud,"RuleSettingsApply");
+assert(latest(targetHud,targetCaster).target_filter_1_type==="" && latest(targetHud,targetCaster).target_filter_1_target_actor===undefined,"clear removes entire filter including key");
+click(targetHud,"RadiantRuleSettings0");
+assert(panel(targetHud,"V2_target0Select").GetChild(0).text==="#dota2_rpg_v2_none","clear survives reopen");
+click(targetHud,"DireRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy"); click(targetHud,"V2_target0_target_actor");
+assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1,"enemy editor has no invented ally keys");
+var readOnlyDraft;
+targetHud.context.RpgConditionCatalog.open(restoredTarget,targetSync.initialSettings(restoredTarget),function(d){readOnlyDraft=d;},
+    {readOnly:true,targetActors:[{actor:selectedActor,name:lion,label:"enemy"}]});
+assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1 && !panel(targetHud,"RuleSettingsApply").enabled,"read-only editor exposes no roster choices");
+click(targetHud,"RuleSettingsApply"); assert(!readOnlyDraft,"read-only apply is inert");
+// A late slot message cannot resurrect an entity replaced in the current roster.
+targetHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:999,hero_name:lion,target_actor:"ch04:enemy:"+lion+":0"});
+click(targetHud,"RadiantRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy"); click(targetHud,"V2_target0_target_actor");
+assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1,"mismatched current entity excludes stale slot metadata");
+var beforeFight=targetHud.sentEvents.filter(function(e){return e.name==="rpg_update_rule";}).length;
+targetHud.subscriptions.rpg_battle_state({phase:"fight"});
+assert(panel(targetHud,"RuleSettings").BHasClass("Hidden"),"fight closes prep picker");
+click(targetHud,"RadiantRuleSettings0"); click(targetHud,"RuleSettingsApply");
+assert(panel(targetHud,"RuleSettings").BHasClass("Hidden") && targetHud.sentEvents.filter(function(e){return e.name==="rpg_update_rule";}).length===beforeFight,"fight cannot reopen or save prep target selection");
+console.log("PASS: F39 current-enemy hero/neutral/boss portraits, duplicate keys, save/reopen, stale targets, clear and fight guards");
 
 var hud = runHud();
 function slots(side, index, name, entity, actions, details) {
@@ -395,7 +463,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 31], ["target", retiredTarget, 34], ["priority", [], 13]].forEach(function (spec) {
+[["use", retiredUse, 31], ["target", retiredTarget, 35], ["priority", [], 13]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -433,6 +501,8 @@ var catalog = catalogContext.RpgConditionCatalog;
 var docs = fs.readFileSync(path.join(repoRoot, "docs/CONDITION_LIST_ZH.md"), "utf8");
 Object.keys(catalog.groups).forEach(function (group) {
     catalog.groups[group].forEach(function (def) {
+        // F39 is the appended contract; the prior documented IDs must remain unchanged.
+        if (def.id === "specified_enemy") { assert(def.code === "F39", "new target filter appends F39"); return; }
         assert(docs.split("\n").some(function (line) { return line.indexOf("| " + def.code + " |") === 0 && line.indexOf("`" + def.id + "`") >= 0; }), "stable documented ID " + def.code);
     });
 });
@@ -647,5 +717,5 @@ lifeSnapshot(0, "result");
 assert(!panel(livesHud,"StartBattleButton").enabled
     && panel(livesHud,"BattleStatus").text === "#dota2_rpg_run_failed", "fifth loss displays run end and disables start");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, 78 stable documented menu IDs, U13/U14 selection, previews and stale field removal");
+console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");

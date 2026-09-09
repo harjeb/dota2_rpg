@@ -265,7 +265,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v22-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v23-20260909") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -436,7 +436,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v22-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v23-20260909 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3619,7 +3619,8 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 	local roster = {}
 	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
 		if TacticEngine.IsValidUnit(unit) then
-			table.insert(roster, { id = unit:entindex(), name = unit:GetUnitName() })
+			table.insert(roster, { id = unit:entindex(), name = unit:GetUnitName(),
+                target_actor = RuleSnapshot.TargetActor(self.battleManager, self.currentLevelId, unit) or "" })
 		end
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_enemy_roster", { units = roster })
@@ -3645,6 +3646,8 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 					abilities_text = table.concat(AbilityCatalog.ListAbilities(hero), ";"),
 					details_text = table.concat(descriptions, ";"),
                     rule_key = RuleSnapshot.HeroKey(self.battleManager,hero),
+                    target_actor = side.team == DOTA_TEAM_BADGUYS
+                        and (RuleSnapshot.TargetActor(self.battleManager, self.currentLevelId, hero) or "") or "",
                     can_edit = (side.team == DOTA_TEAM_GOODGUYS or RuleSnapshot.IsDeveloperMode()) and 1 or 0,
                     rules_ready = self.tacticBridge ~= nil and self.tacticBridge.getRules ~= nil and 1 or 0,
                     rules = self.tacticBridge ~= nil and RuleSnapshot.ForHero(self.tacticBridge, hero) or {},

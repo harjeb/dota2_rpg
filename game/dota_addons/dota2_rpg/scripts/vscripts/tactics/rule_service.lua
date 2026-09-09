@@ -136,6 +136,7 @@ local function condition_from_flat(prefix, args)
         modifier = args[prefix .. "_modifier"],
         action_id = args[prefix .. "_action_id"],
         action_actor = args[prefix .. "_action_actor"],
+        target_actor = args[prefix .. "_target_actor"],
     }
 end
 
@@ -162,6 +163,7 @@ function RuleService.new(options)
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_roster_hero = assert(options.is_roster_hero, "is_roster_hero is required"),
         find_roster_hero = options.find_roster_hero,
+        is_target_actor_allowed = options.is_target_actor_allowed,
         get_hero_key = options.get_hero_key or function(hero)
             if hero == nil then return nil end
             if hero.lineupHeroName ~= nil and hero.lineupHeroName ~= "" then
@@ -229,12 +231,19 @@ function RuleService:ValidateCondition(condition, registry)
         return false, "invalid_condition"
     end
     if registry[condition.type] == nil then return false, "unknown_condition:" .. condition.type end
-    for _, field in ipairs({ "modifier", "action_id", "action_actor" }) do
+    for _, field in ipairs({ "modifier", "action_id", "action_actor", "target_actor" }) do
         local value = condition[field]
         if value == "" then condition[field] = nil
         elseif value ~= nil and (type(value) ~= "string" or #value > 256) then
             return false, "invalid_condition_" .. field
         end
+    end
+    if condition.type == "specified_enemy" then
+        if not require("tactics/rule_snapshot").ValidTargetActor(condition.target_actor) then
+            return false, "invalid_condition_target_actor"
+        end
+    elseif condition.target_actor ~= nil then
+        return false, "unexpected_condition_target_actor"
     end
     if condition.action_actor ~= nil then
         if not condition.action_actor:match("^[%w_:]+$") or condition.action_id == nil then
@@ -343,6 +352,13 @@ function RuleService:ValidateRule(player_id, hero, rule)
     for _, condition in ipairs(rule.target_filters) do
         local ok, reason = self:ValidateCondition(condition, self.conditions.target_filters)
         if not ok then return false, reason end
+        if condition.type == "specified_enemy" then
+            if rule.target.team ~= "enemy" then return false, "invalid_specified_enemy_team" end
+            if self.is_target_actor_allowed ~= nil
+                and not self.is_target_actor_allowed(player_id, hero, condition.target_actor) then
+                return false, "target_actor_not_in_current_roster"
+            end
+        end
     end
     for _, condition in ipairs(rule.use_conditions) do
         local ok, reason = self:ValidateCondition(condition, self.conditions.use_conditions)
@@ -483,7 +499,7 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
             local item = list[index] or {}
             local keyPrefix = prefix .. "_" .. index
             payload[keyPrefix] = item.type or ""
-            for _, field in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "modifier" }) do
+            for _, field in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier" }) do
                 payload[keyPrefix .. "_" .. field] = item[field] ~= nil and item[field] or ""
             end
         end

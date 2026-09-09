@@ -202,6 +202,26 @@ check(not bridge.ruleService:ValidateRule(0,caster,forged),"client action name c
 -- snapshot and legacy rehydration before the real bridge evaluates them.
 local Snapshot=require("tactics/rule_snapshot")
 enemy.ruleSnapshotKey="enemy:hero:0";far.ruleSnapshotKey="enemy:hero:1"
+gm.currentLevelId="ch05"
+local targetKey="ch05:enemy:hero:0"
+local targetArgs={action_kind="ability",action_id="native_active",target_team="enemy",
+    target_filter_1_type="specified_enemy",target_filter_1_target_actor=targetKey}
+local targetRule=bridge.ruleService:DecodeFlat(targetArgs)
+check(real.get_target_actor(targetKey)==enemy,"real bridge resolves chapter-qualified on-field target")
+check(bridge.ruleService:ValidateRule(0,caster,targetRule),"real service accepts current roster selection")
+check(C:EvaluateTargetFilters(targetRule.target_filters,real,enemy),"real bridge callback matches selected enemy")
+check(not C:EvaluateTargetFilters(targetRule.target_filters,real,far),"real bridge distinguishes same-name occurrences")
+local benchTarget=unit(77,3,0);benchTarget.ruleSnapshotKey="enemy:hero:2"
+gm.benchHeroes={benchTarget}
+check(real.get_target_actor("ch05:enemy:hero:2")==nil,"bridge excludes bench units")
+targetRule.target_filters[1].target_actor="ch05:enemy:hero:2"
+check(not bridge.ruleService:ValidateRule(0,caster,targetRule),"real service rejects bench target")
+targetRule.target_filters[1].target_actor=targetKey
+gm.currentLevelId="ch06"
+check(real.get_target_actor(targetKey)==nil and not C:EvaluateTargetFilters(targetRule.target_filters,real,enemy),"existing context reads current chapter dynamically")
+check(not bridge.ruleService:ValidateRule(0,caster,targetRule),"real service rejects stale newly submitted selection")
+gm.currentLevelId="ch05"
+check(real.get_target_actor(targetKey)==enemy,"same chapter retry retains target identity")
 local actorKey=Snapshot.HeroKey(gm.battleManager,far)
 local actorArgs={action_kind="ability",action_id="native_active",
     use_condition_1_type="action_elapsed_gte",use_condition_1_value=3,

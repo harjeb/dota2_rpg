@@ -158,6 +158,19 @@
         return "";
     }
 
+    function targetActors(side, heroIndex) {
+        if (!canEditHeroRules(side, heroIndex)) { return []; }
+        var team = side === "Radiant" ? "Dire" : "Radiant", result = [];
+        (HEROES[team] || []).forEach(function (hero, index) {
+            var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
+            if (!entry || !entry.target_actor || entry.name !== hero.name || entry.hero_index < 0
+                || (hero.entityIndex !== undefined && entry.hero_index !== hero.entityIndex)) { return; }
+            result.push({actor: entry.target_actor, name: entry.name,
+                label: localizeHeroName(entry.name) + " · " + (index + 1)});
+        });
+        return result;
+    }
+
     function actionHeroes(side, heroIndex) {
         var selected = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)], result = [];
         ["Radiant", "Dire"].forEach(function (team) {
@@ -344,7 +357,7 @@
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
                         renderSide(side);
                         sendRuleToServer(side,selectedHeroIndex[side],idx);
-                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),actionHeroes:actionHeroes(side,selectedHeroIndex[side]),readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
+                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),actionHeroes:actionHeroes(side,selectedHeroIndex[side]),targetActors:targetActors(side,selectedHeroIndex[side]),getTargetActors:function () { return targetActors(side,selectedHeroIndex[side]); },readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -1451,7 +1464,7 @@
             if (isHero) { portrait.heroname = unit.name; portrait.heroimagestyle = "portrait"; }
             else { damageLabel(portrait, localizeHeroName(unit.name)); }
             portrait.SetPanelEvent("onactivate", function () { selectHero("Dire", index); });
-            HEROES.Dire.push({ panelId: portrait.id, name: unit.name });
+            HEROES.Dire.push({ panelId: portrait.id, name: unit.name, entityIndex: Number(unit.id) });
         });
         selectedHeroIndex.Dire = Math.min(selectedHeroIndex.Dire, Math.max(0, roster.length - 1));
         renderSide("Dire");
@@ -1748,6 +1761,7 @@
         }
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
+            target_actor: String(data.target_actor || ""),
             rule_key: String(data.rule_key || data.hero_name || "")+ (data.rule_key ? "" : ":"+slotKey),
             hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
             actions_text: String(data.actions_text || ""),

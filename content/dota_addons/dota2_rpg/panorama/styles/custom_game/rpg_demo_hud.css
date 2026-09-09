@@ -1501,6 +1501,10 @@
 .V2ActionChoice { width: 100%; height: fit-children; min-height: 44px; flow-children: right; padding: 4px; }
 .V2ActionChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
 .V2AbilityIcon { width: 36px; height: 36px; margin-right: 8px; }
+.V2TargetChoice { width: 100%; min-height: 52px; height: fit-children; flow-children: right; padding: 4px; }
+.V2TargetChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
+.V2TargetPortrait { width: 64px; height: 48px; margin-right: 8px; }
+.V2UnavailableTarget Label { color: #edaa83; }
 .V2Footer { width: 100%; flow-children: right; margin-top: 12px; }
 .V2Footer .V2Button { width: 150px; margin-right: 12px; }
 

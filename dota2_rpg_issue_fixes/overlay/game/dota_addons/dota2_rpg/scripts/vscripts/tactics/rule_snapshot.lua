@@ -35,11 +35,37 @@ function Snapshot.HeroKey(manager, hero)
     end
     return name
 end
+-- Public wire identity: <currentLevelId>:enemy:<unit name>:<zero-based occurrence>.
+function Snapshot.ValidTargetActor(key)
+    if type(key) ~= "string" or #key > 256 then return false end
+    local chapter, name, occurrence = key:match("^([%w_-]+):enemy:([%w_]+):(%d+)$")
+    return chapter ~= nil and name ~= nil and (occurrence == "0" or occurrence:match("^[1-9]%d*$") ~= nil)
+end
+function Snapshot.TargetActor(manager, chapter, hero)
+    if chapter == nil or not Snapshot.IsEnemy(manager, hero) then return nil end
+    local key = Snapshot.HeroKey(manager, hero)
+    key = key and (tostring(chapter) .. ":" .. key)
+    return Snapshot.ValidTargetActor(key) and key or nil
+end
+function Snapshot.ResolveTargetActor(manager, chapter, caster, key)
+    if not Snapshot.ValidTargetActor(key) or unit_name(caster) == nil then return nil end
+    local casterTeam = caster:GetTeamNumber()
+    for _, hero in ipairs(manager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
+        if unit_name(hero) ~= nil and Snapshot.TargetActor(manager, chapter, hero) == key then
+            local team = hero:GetTeamNumber()
+            -- Stage neutrals use their registered opposing side; converted
+            -- units use their actual allegiance rather than their spawn side.
+            if team ~= DOTA_TEAM_GOODGUYS and team ~= DOTA_TEAM_BADGUYS then team = DOTA_TEAM_BADGUYS end
+            if team ~= casterTeam and hero ~= caster then return hero end
+        end
+    end
+    return nil
+end
 local function list(input)
     local output = {}
     for _, condition in ipairs(input or {}) do
         local entry = {}
-        for _, key in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "modifier" }) do
+        for _, key in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier" }) do
             if condition[key] ~= nil then entry[key] = condition[key] end
         end
         output[#output+1] = entry

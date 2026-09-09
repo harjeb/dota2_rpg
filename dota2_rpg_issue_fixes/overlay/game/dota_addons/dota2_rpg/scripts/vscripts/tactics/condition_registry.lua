@@ -126,6 +126,13 @@ function ConditionRegistry:EvaluateTargetFilters(filters, ctx, target)
     return true, nil, nil
 end
 
+ConditionRegistry:RegisterTargetFilter("specified_enemy", function(ctx, target, condition)
+    if not require("tactics/rule_snapshot").ValidTargetActor(condition.target_actor)
+        or type(ctx.get_target_actor) ~= "function" or not is_valid_entity(target)
+        or target.IsAlive == nil or not target:IsAlive() then return false end
+    return ctx.get_target_actor(condition.target_actor) == target
+end)
+
 -- Use conditions -----------------------------------------------------------
 
 ConditionRegistry:RegisterUseCondition("always", function(_ctx, _condition)
