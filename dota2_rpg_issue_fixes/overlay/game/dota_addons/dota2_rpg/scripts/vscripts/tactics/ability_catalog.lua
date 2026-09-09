@@ -88,11 +88,13 @@ function Catalog.ListActions(hero)
             end
         end
     end
+    table.insert(actions, "sustained_move")
     table.insert(actions, "attack")
     return actions
 end
 
 function Catalog.DescribeAction(hero, action)
+    if action == "sustained_move" then return "move", "" end
     if action == "attack" then return "attack", "" end
     if action == "ultimate" then
         for slot = 0, hero:GetAbilityCount() - 1 do

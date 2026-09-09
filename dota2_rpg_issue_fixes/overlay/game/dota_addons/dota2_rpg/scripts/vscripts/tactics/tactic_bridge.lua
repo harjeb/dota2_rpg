@@ -131,12 +131,15 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 		logicalId = legacy.action
 	end
 
+    if legacy.action == "sustained_move" then actionKind = "move" end
 	local target, filters, priorities = decomposeLegacyTarget(legacy.target)
+    if legacy.target_team then target.team = legacy.target_team end
 
 	local useConditions = { mapRuleCondition(legacy.condition, legacy.value) }
     -- Existing gameplay payloads may retain action/target while carrying v2
     -- numbered clauses. Only the original eight-condition path uses percent units.
     local decoded = RuleService.DecodeFlat(nil, legacy)
+    if legacy.target_types then target.types = decoded.target.types end
     if #decoded.use_conditions > 0 then useConditions = decoded.use_conditions end
     if #decoded.target_filters > 0 then filters = decoded.target_filters end
     if #decoded.target_priorities > 0 then priorities = decoded.target_priorities end
@@ -148,21 +151,21 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 	return RuleService.StripRemovedConditions({
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
         is_default = legacy.is_default == true,
-		enabled = legacy.enabled ~= false,
-		action = {
+		enabled = legacy.enabled ~= false and legacy.enabled ~= 0 and legacy.enabled ~= "0",
+		action = require("tactics/movement_contract").Copy(decoded.action, {
 			kind = actionKind,
 			logical_id = logicalId,
             destination = decoded.action.destination,
             cast_preference = decoded.action.cast_preference,
             desired_toggle_state = decoded.action.desired_toggle_state,
-			target_team = "enemy",
-		},
+			target_team = target.team or "enemy",
+		}),
 		target = target,
 		target_filters = filters,
 		target_priorities = priorities,
 		use_conditions = useConditions,
         min_aoe_hits = decoded.min_aoe_hits,
-		approach = legacy.forced and "allow_approach" or "range_only",
+		approach = (legacy.forced == true or legacy.forced == 1 or legacy.forced == "1") and "allow_approach" or "range_only",
 	})
 end
 

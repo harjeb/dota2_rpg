@@ -2,6 +2,9 @@ local Conditions = require("tactics/condition_registry")
 local TargetSelector = require("tactics/target_selector")
 local ActionAdapter = require("tactics/action_adapter")
 local Context = require("tactics/condition_context")
+local Movement = require("tactics/persistent_movement")
+local Positioning = require("tactics/positioning")
+local NativeEvents = require("tactics/native_events")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -87,6 +90,11 @@ end
 function TacticEngine:GetState(unit)
     local id = entity_index(unit)
     local state = self.states[id]
+    if state ~= nil and state.unit ~= unit then
+        Movement.Release(self, state.unit, state, {}, false)
+        pcall(NativeEvents.Detach, state.unit)
+        state = nil
+    end
     if state == nil then
         state = {
             next_eval = now() + ((math.max(0, id) % 4) * 0.03),
@@ -94,13 +102,25 @@ function TacticEngine:GetState(unit)
             last_order_time = -math.huge,
             chase = nil,
             wait_until = 0,
+            unit = unit,
+            events = NativeEvents.Attach(unit),
         }
         self.states[id] = state
     end
     return state
 end
 
+function TacticEngine:IsExclusiveMovement(unit)
+    local state = self.states[entity_index(unit)]
+    return state ~= nil and state.unit == unit and state.movement ~= nil
+end
+
 function TacticEngine:Reset()
+    for _, state in pairs(self.states) do
+        if state.movement then Movement.Release(self, state.unit, state, {}, true)
+        else Movement.StopOrder(self, state.unit, state.posture_order, {}) end
+        pcall(NativeEvents.Detach, state.unit)
+    end
     self.states = {}
 end
 
@@ -120,13 +140,25 @@ end
 
 function TacticEngine:Stop()
     self.running = false
+    self:Reset()
 end
 
 function TacticEngine:Think()
     if self.get_phase() ~= "FIGHT" then
+        self:Reset()
         return
     end
 
+    -- The bridge temporarily omits live units during auxiliary native casts
+    -- (e.g. Tiny grabbing a tree). Keep their observer so cast completion is
+    -- still recorded. Stage reset handles roster changes; dead handles release.
+    for id, state in pairs(self.states) do
+        if not is_alive(state.unit) then
+            Movement.Release(self, state.unit, state, {}, true)
+            pcall(NativeEvents.Detach, state.unit)
+            self.states[id] = nil
+        end
+    end
     local current_time = now()
     for _, unit in ipairs(self.get_battle_units() or {}) do
         if is_alive(unit) then
@@ -170,9 +202,21 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         return
     end
 
-    if self:IsBusy(unit) then return end
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
+    state.events = state.events or NativeEvents.Attach(unit)
+    Movement.Observe(unit, state, rules)
+    if state.movement then
+        local active = state.movement
+        if active.rule.action.movement_interruptible == true and not self:IsBusy(unit) then
+            if self:EvaluateRules(unit, state, ctx, rules, 1, active.rule_index - 1, "non_attack") then
+                if state.movement == active then Movement.Release(self, unit, state, ctx, false) end
+                return
+            end
+        end
+        if Movement.Continue(self, unit, state, ctx) then return end
+    end
+    if self:IsBusy(unit) then return end
 
     -- A higher-priority emergency rule may interrupt a movement chase.
     if state.chase ~= nil then
@@ -267,6 +311,17 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return false, target_reason
     end
 
+    if spec.logical_id == "sustained_move" then
+        return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
+    end
+    if Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
+        state.chase = nil
+        state.posture_order = {owns_order=true}
+        -- The next attack must not be suppressed as a duplicate of the order
+        -- that preceded this move.
+        state.last_order_signature = nil
+        return true
+    end
     if self.actions:IsInRange(unit, spec, target_or_point) then
         state.chase = nil
         return self:IssueAction(unit, state, ctx, rule, rule_index, spec, target_or_point, anchor)
@@ -403,8 +458,10 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
         return false, reason
     end
 
+    state.posture_order = nil
     state.last_order_signature = signature
     state.last_order_time = ctx.now
+    if spec.kind == "attack" then state.attack_order_time = ctx.now end
     if spec.kind == "wait" then
         state.wait_until = ctx.now + tonumber(spec.wait_duration or 0.35)
     end

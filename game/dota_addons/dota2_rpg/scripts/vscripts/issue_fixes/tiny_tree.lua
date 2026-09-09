@@ -29,7 +29,8 @@ function Tiny.OnThink(game)
                     state.tree=nil
                 elseif (state.untilTime or 0)>now then
                     game.treeGrabBusy[hero]=true
-                elseif valid(ability) and (tonumber(call(ability,"GetLevel")) or 0)>0
+                elseif not (hero.rpgTacticsEvents and hero.rpgTacticsEvents.exclusive_movement)
+                    and valid(ability) and (tonumber(call(ability,"GetLevel")) or 0)>0
                     and call(ability,"IsHidden") ~= true and call(ability,"IsActivated") ~= false
                     and call(ability,"IsCooldownReady") == true and call(ability,"IsFullyCastable") == true
                     and call(hero,"IsStunned") ~= true and call(hero,"IsFrozen") ~= true and call(hero,"IsSilenced") ~= true

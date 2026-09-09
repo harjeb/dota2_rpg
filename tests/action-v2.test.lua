@@ -51,10 +51,10 @@ local caster = {
     GetAbsOrigin=function() return {x=0,y=0,z=0} end,
 }
 local actions=Catalog.ListActions(caster)
-assert(table.concat(actions,",")=="first_ultimate,second_ultimate,extra_spell,attack","action picker excludes hidden helpers")
+assert(table.concat(actions,",")=="first_ultimate,second_ultimate,extra_spell,sustained_move,attack","action picker excludes hidden helpers")
 assert(table.concat(Catalog.ListAbilities(caster),",")=="first_ultimate,passive_ultimate,second_ultimate,extra_spell","condition picker includes visible passives")
 spells[5].hidden=false
-assert(table.concat(Catalog.ListActions(caster),",")=="first_ultimate,second_ultimate,extra_spell,later_phase,attack","newly visible phase becomes selectable")
+assert(table.concat(Catalog.ListActions(caster),",")=="first_ultimate,second_ultimate,extra_spell,later_phase,sustained_move,attack","newly visible phase becomes selectable")
 spells[5].hidden=true
 local _,name=Catalog.DescribeAction(caster,"second_ultimate")
 assert(name=="second_ultimate", "multi-ultimate identity does not collapse")

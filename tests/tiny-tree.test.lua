@@ -23,7 +23,9 @@ end
 local game={phase="setup",battleManager={teamHeroes={[2]={hero}}},tacticBridge={orderGate={Execute=function(_,order) orders[#orders+1]=order; return true end}}}
 Tiny.OnThink(game);assert(created==0)
 game.phase="fight";hero.stunned=true;Tiny.OnThink(game);assert(created==0)
-hero.stunned=false;Tiny.OnThink(game)
+hero.stunned=false;hero.rpgTacticsEvents={exclusive_movement=true};Tiny.OnThink(game)
+assert(created==0 and #orders==0,"exclusive movement prevents automatic native tree cast and tree creation")
+hero.rpgTacticsEvents.exclusive_movement=nil;Tiny.OnThink(game)
 assert(created==1 and #orders==1 and orders[1].OrderType==7 and orders[1].TargetIndex==901 and orders[1].AbilityIndex==2)
 assert(game.treeGrabBusy[hero],"native cast gets priority over the ordinary tactic tick")
 time=.1;Tiny.OnThink(game);assert(created==1 and #orders==1,"pending tree cast is not duplicated")
@@ -41,6 +43,10 @@ game.tacticBridge.orderGate.Execute=function() return false end
 Tiny.OnThink(game)
 assert(not game.treeGrabBusy[hero] and recorded==0,"gate failure cannot block tactics or record a successful order")
 game.tacticBridge.orderGate.Execute=previous
+hero.rpgTacticsEvents.exclusive_movement=true;time=6;Tiny.OnThink(game)
+assert(#orders==2 and not game.treeGrabBusy[hero],"exclusive movement also guards an existing temporary tree")
+hero.rpgTacticsEvents.exclusive_movement=nil;Tiny.OnThink(game)
+assert(#orders==3 and recorded==1,"automatic cast resumes after session release")
 local tree=game.tinyTrees[hero].tree
 Tiny.Clear(game);assert(tree.dead and next(game.tinyTrees)==nil and next(game.treeGrabBusy)==nil)
 print("tiny-tree tests passed")

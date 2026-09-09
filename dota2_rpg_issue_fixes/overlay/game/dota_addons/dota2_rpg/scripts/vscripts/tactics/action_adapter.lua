@@ -208,7 +208,7 @@ function ActionAdapter:Resolve(caster, action, ctx)
         return {
             kind = "move",
             logical_id = action.logical_id or "move",
-            target_mode = action.target_mode or "point",
+            target_mode = action.logical_id == "sustained_move" and "unit" or (action.target_mode or "point"),
             target_team = action.target_team,
             cast_range = 0,
             source = nil,
@@ -334,6 +334,10 @@ local function native_control(caster, spec, approaching)
         return caster[method] ~= nil and caster[method](caster)
     end
     if state("IsChanneling") then return false, "channeling" end
+    local active = caster.GetCurrentActiveAbility and caster:GetCurrentActiveAbility()
+    if state("IsInAbilityPhase") or (active and active.IsInAbilityPhase and active:IsInAbilityPhase()) then
+        return false, "ability_phase"
+    end
     -- Waiting emits no order and does not attempt to break a disable.
     if spec.kind == "wait" and not approaching then return true end
     for _, entry in ipairs({
@@ -344,8 +348,10 @@ local function native_control(caster, spec, approaching)
     }) do
         if state(entry[1]) then return false, entry[2] end
     end
-    if (approaching or spec.kind == "move") and state("IsRooted") then
-        return false, "caster_rooted"
+    if approaching or spec.kind == "move" then
+        if state("IsRooted") then return false, "caster_rooted" end
+        if state("IsCurrentlyHorizontalMotionControlled") or state("IsCurrentlyVerticalMotionControlled")
+            or state("IsTaunted") or state("IsFeared") then return false, "native_movement_control" end
     end
     if spec.kind == "attack" and state("IsDisarmed") then return false, "cannot_attack" end
     if not approaching then
@@ -434,6 +440,7 @@ function ActionAdapter:GetRequiredRange(caster, spec, target)
 end
 
 function ActionAdapter:IsInRange(caster, spec, target_or_point)
+    if spec.kind == "move" and spec.logical_id == "sustained_move" then return true end
     if spec.cast_type == "toggle" or spec.target_mode == "none" or spec.target_mode == "self" or spec.kind == "wait" then
         return true
     end

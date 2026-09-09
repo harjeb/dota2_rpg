@@ -71,6 +71,13 @@ var RpgConditionCatalog = (function () {
         parts.push(text("toggle_title") + ": " + text(desired === false || desired === "0" || desired === 0 ? "toggle_off" : desired === true || desired === "1" || desired === 1 ? "toggle_on" : "toggle_auto"));
         parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
+        ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance"].forEach(function (key) {
+            if (settings[key] !== undefined) {
+                var value = settings[key];
+                if (key === "movement_mode" || key === "movement_direction" || key === "positioning_mode" || typeof value === "boolean") { value = text(key + "_" + value); }
+                parts.push(text(key) + ": " + value);
+            }
+        });
         return parts.join("\n");
     }
     function number(value, fallback, min, max) {
@@ -126,6 +133,13 @@ var RpgConditionCatalog = (function () {
         return localized && localized.charAt(0) !== "#" && localized.toLowerCase() !== token.slice(1).toLowerCase()
             ? localized : String(name || "").replace(/_/g, " ");
     }
+    function movementPreset(name) {
+        return {movement_mode:name === "shukuchi" ? "cycle" : "orbit",
+            movement_buff:name === "shukuchi" ? "modifier_weaver_shukuchi" : "modifier_primal_beast_trample",
+            movement_trigger_ability:name === "shukuchi" ? "weaver_shukuchi" : "primal_beast_trample",
+            movement_duration:15, movement_distance:150, movement_retarget:false,
+            movement_loop:true, movement_interruptible:false, movement_direction:"auto"};
+    }
     function open(rule, initial, onApply, options) {
         options = options || {};
         var root = $("#RuleSettings");
@@ -150,7 +164,7 @@ var RpgConditionCatalog = (function () {
                 });
             });
         }
-        function actionPicker(parent, id, current) {
+        function actionPicker(parent, id, current, selfOnly) {
             parent.AddClass("V2ActionField");
             var trigger = button(parent, id, "", function () {
                 if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
@@ -173,14 +187,16 @@ var RpgConditionCatalog = (function () {
                 (options.actionHeroes || []).forEach(function (hero) {
                     if (hero.actor === (current.action_actor || "")) { actorName = hero.label + " / "; }
                 });
-                draw(trigger, name || options.abilityName, name ? actorName + abilityLabel(name) : text("current_action"));
+                draw(trigger, name || (selfOnly ? "" : options.abilityName), name ? actorName + abilityLabel(name) : text(selfOnly ? "none" : "current_action"));
             }
-            button(menu, id + "Current", text("current_action"), function () {
+            button(menu, id + "Current", text(selfOnly ? "none" : "current_action"), function () {
                 delete current.action_id; delete current.action_actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
             });
             (options.actionHeroes || []).forEach(function (hero, heroIndex) {
+                if (selfOnly && hero.actor !== "") { return; }
                 label(menu, "", hero.label).AddClass("V2Category");
                 hero.abilities.forEach(function (name, abilityIndex) {
+                    if (selfOnly && (!name || name === "attack" || name === "basic_attack" || name === "sustained_move" || name.indexOf("item_") === 0)) { return; }
                     var option = button(menu, id + "Option_" + heroIndex + "_" + abilityIndex, "", function () {
                         current.action_id = name;
                         if (hero.actor) { current.action_actor = hero.actor; } else { delete current.action_actor; }
@@ -285,6 +301,16 @@ var RpgConditionCatalog = (function () {
                 }(i));
             }
         }
+        // Choose the team before reading detailed filters or movement options.
+        label(body, "V2TargetTeamTitle", text("target_team")).AddClass("V2SectionTitle");
+        label(body, "V2TargetTeamHint", text("target_team_hint")).AddClass("V2Hint");
+        var team = $.CreatePanel("Panel", body, "V2TargetTeamRow"); team.AddClass("V2Selector");
+        var targetTeam = draft.target_team || String(draft.target || rule.target || "enemy").split("_")[0];
+        choose(team, "V2TeamSelect", [{id:"team_self"}, {id:"team_ally"}, {id:"team_enemy"}], "team_" + targetTeam, function (id) {
+            targetTeam = id.substring(5);
+            draft.target = targetTeam === "self" ? "self" : targetTeam + "_distance_nearest";
+        });
+        readers.push(function () { draft.target_team = targetTeam; });
         if (!options.readOnly && options.abilityName && typeof RpgSkillPresets !== "undefined") {
             var variants = RpgSkillPresets.variants(options.abilityName);
             if (variants.length) {
@@ -309,6 +335,7 @@ var RpgConditionCatalog = (function () {
                 readers.forEach(function (read) { read(); });
                 draft.use_conditions = []; draft.target_filters = []; draft.target_priorities = [];
                 draft.min_aoe_hits = 0; draft.desired_toggle_state = null; draft.destination = "target";
+                Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
                 open(rule, draft, onApply, options);
             });
         }
@@ -316,14 +343,58 @@ var RpgConditionCatalog = (function () {
         slots("target", "target_filters", 4, "target_title");
         slots("priority", "target_priorities", 2, "priority_title");
         label(body, "", text("action_title")).AddClass("V2SectionTitle");
-        label(body, "", text("target_team"));
-        var team = $.CreatePanel("Panel", body, ""); team.AddClass("V2Selector");
-        var targetTeam = draft.target_team || String(draft.target || rule.target || "enemy").split("_")[0];
-        choose(team, "V2TeamSelect", [{id:"team_enemy"}, {id:"team_ally"}, {id:"team_self"}], "team_" + targetTeam, function (id) {
-            targetTeam = id.substring(5);
-            draft.target = targetTeam === "self" ? "self" : targetTeam + "_distance_nearest";
+        var action = rule.action || "attack";
+        var extra = RpgRuleSync.actionSettings(draft, action);
+        Object.keys(extra).forEach(function (key) { draft[key] = extra[key]; });
+        function settingChoice(key, values) {
+            var row = $.CreatePanel("Panel", body, "V2_" + key + "Row"); row.AddClass("V2Selector");
+            label(row, "", text(key));
+            choose(row, "V2_" + key, values.map(function (value) { return {id:key + "_" + value}; }), key + "_" + draft[key], function (id) { draft[key] = id.substring(key.length + 1); });
+        }
+        function settingInput(key) {
+            var row = $.CreatePanel("Panel", body, ""); row.AddClass("V2Field"); row.AddClass("V2MotionField");
+            label(row, "", text(key));
+            var entry = $.CreatePanel("TextEntry", row, "V2_" + key); entry.AddClass("V2Input");
+            if (key === "movement_buff") { entry.AddClass("V2TextInput"); }
+            entry.maxchars = 128; entry.text = String(draft[key]);
+            readers.push(function () { draft[key] = entry.text; });
+        }
+        if (action === "sustained_move") {
+            label(body, "", text("movement_hint")).AddClass("V2Hint");
+            ["shukuchi", "trample"].forEach(function (name) {
+                button(body, "V2MovementPreset_" + name, text("movement_preset_" + name), function () {
+                    readers.forEach(function (read) { read(); });
+                    var preset = movementPreset(name);
+                    Object.keys(preset).forEach(function (key) { draft[key] = preset[key]; });
+                    open(rule, draft, onApply, options);
+                });
+            });
+            settingChoice("movement_mode", ["follow", "pass", "orbit", "cycle"]);
+            settingChoice("movement_direction", ["auto", "cw", "ccw"]);
+            var buffRow = $.CreatePanel("Panel", body, ""); buffRow.AddClass("V2Selector");
+            label(buffRow, "", text("movement_buff_selector"));
+            var associatedBuff = draft.movement_buff === "modifier_weaver_shukuchi" ? "movement_preset_shukuchi" : draft.movement_buff === "modifier_primal_beast_trample" ? "movement_preset_trample" : "movement_buff_custom";
+            choose(buffRow, "V2MovementBuffSelect", [{id:"movement_buff_custom"}, {id:"movement_preset_shukuchi"}, {id:"movement_preset_trample"}], associatedBuff, function (id) {
+                if (id !== "movement_buff_custom") { body.FindChildTraverse("V2_movement_buff").text = movementPreset(id.replace("movement_preset_", "")).movement_buff; }
+            });
+            settingInput("movement_buff");
+            label(body, "", text("movement_trigger_ability"));
+            var triggerRow = $.CreatePanel("Panel", body, ""); triggerRow.AddClass("V2Selector");
+            var trigger = {action_id:draft.movement_trigger_ability};
+            actionPicker(triggerRow, "V2MovementTrigger", trigger, true);
+            readers.push(function () { draft.movement_trigger_ability = trigger.action_id || ""; });
+            settingInput("movement_duration"); settingInput("movement_distance");
+            ["movement_retarget", "movement_loop", "movement_interruptible"].forEach(function (key) { settingChoice(key, [false, true]); });
+        } else if (extra.positioning_mode !== undefined) {
+            label(body, "", text("positioning_hint")).AddClass("V2Hint");
+            settingChoice("positioning_mode", action === "attack" || action === "basic_attack" ? ["default", "fixed", "attack_range"] : ["default", "fixed", "attack_range", "cast_range"]);
+            settingInput("positioning_distance"); settingInput("positioning_tolerance");
+        }
+        readers.push(function () {
+            var normalized = RpgRuleSync.actionSettings(draft, action);
+            Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
+            Object.keys(normalized).forEach(function (key) { draft[key] = normalized[key]; });
         });
-        readers.push(function () { draft.target_team = targetTeam; });
         var casting = $.CreatePanel("Panel",body,""); casting.AddClass("V2Selector");
         label(casting,"",text("cast_preference"));
         var castPreference = draft.cast_preference || "auto";
@@ -378,5 +449,5 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
         root.SetHasClass("Hidden", false);
     }
-    return { groups: groups, abilityLabel: abilityLabel, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
+    return { movementPreset: movementPreset, groups: groups, abilityLabel: abilityLabel, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
 }());

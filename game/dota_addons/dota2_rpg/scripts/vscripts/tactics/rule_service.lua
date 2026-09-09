@@ -223,6 +223,7 @@ function RuleService:DecodeFlat(args)
         compact_insert(rule.target_priorities, priority_from_flat("target_priority_" .. index, args))
     end
 
+    require("tactics/movement_contract").Copy(args, rule.action)
     return rule
 end
 
@@ -298,6 +299,8 @@ function RuleService:ValidateRule(player_id, hero, rule)
     if not require("tactics/special_targets").ValidDestination(rule.action.logical_id, rule.action.destination) then
         return false, "invalid_destination"
     end
+    local movement_ok, movement_reason = require("tactics/movement_contract").Validate(rule.action)
+    if not movement_ok then return false, movement_reason end
     local preference = rule.action.cast_preference
     if preference ~= nil and preference ~= "auto" and preference ~= "unit" and preference ~= "point" then
         return false, "invalid_cast_preference"
@@ -504,6 +507,7 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
             end
         end
     end
+    require("tactics/movement_contract").Copy(rule.action, payload)
     CustomNetTables:SetTableValue("rpg_rules", key, payload)
 end
 

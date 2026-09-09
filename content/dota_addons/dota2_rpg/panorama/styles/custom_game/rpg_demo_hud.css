@@ -832,14 +832,11 @@
 
 .LootPopup
 {
-	width: 520px;
+	width: 100%;
 	flow-children: down;
-	horizontal-align: center;
-	vertical-align: center;
-	padding: 22px;
-	background-color: gradient(linear, 0% 0%, 0% 100%, from(#283329fa), to(#111b20fa));
-	border: 2px solid #d3bb73;
-	box-shadow: #000000cc 0px 6px 24px 0px;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #d3bb7344;
 }
 
 .LootPopupShowing
@@ -993,10 +990,12 @@
 .BattleResult
 {
 	width: 560px;
-	height: 92px;
+	height: fit-children;
+	max-height: 700px;
+	flow-children: down;
+	padding: 22px;
 	horizontal-align: center;
 	vertical-align: center;
-	margin-top: 275px;
 	background-color: #151b20f5;
 	border: 2px solid #d3bb73;
 	box-shadow: #000000dd 0px 5px 20px 0px;
@@ -1016,7 +1015,7 @@
 {
 	width: 100%;
 	horizontal-align: center;
-	vertical-align: center;
+	margin-bottom: 12px;
 	font-family: titleFont;
 	font-size: 31px;
 	font-weight: bold;
@@ -1493,6 +1492,11 @@
 .V2Parameters.V2ActionOptions { width: 100%; }
 .V2Field { width: 110px; min-width: 110px; height: fit-children; flow-children: down; margin-left: 10px; margin-bottom: 6px; }
 .V2Field.V2WideField { width: 240px; min-width: 240px; }
+/* Movement and positioning stay in the scrollable condition modal. */
+.RuleSettingsBody .V2MotionField { width: 440px; min-width: 340px; margin-left: 0px; }
+.RuleSettingsBody .V2MotionField > Label { width: 100%; white-space: normal; }
+.RuleSettingsBody .V2MotionField .V2Input { width: 160px; }
+.RuleSettingsBody .V2MotionField .V2TextInput { width: 100%; }
 .V2Field.V2ActionField { width: 340px; min-width: 340px; }
 .V2Field Label, .V2Selector > Label { color: #b3c3cc; font-size: 14px; }
 .V2Field .V2Input { width: 100%; min-width: 100px; height: 36px; padding: 4px 6px; font-size: 18px; color: #ffffff; background-color: #091720; border: 1px solid #617a88; }

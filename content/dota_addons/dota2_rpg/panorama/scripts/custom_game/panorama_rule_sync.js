@@ -55,6 +55,29 @@ var RpgRuleSync = (function () {
         return isFinite(number) ? number : fallback;
     }
 
+    function bool(value, fallback) {
+        if (value === true || value === 1 || value === "1" || value === "true") { return true; }
+        if (value === false || value === 0 || value === "0" || value === "false") { return false; }
+        return fallback;
+    }
+    function actionSettings(input, action) {
+        input = input || {};
+        var out = {};
+        function choice(key, values, fallback) { out[key] = values.indexOf(input[key]) >= 0 ? input[key] : fallback; }
+        function numeric(key, fallback) { out[key] = Math.max(0, numberValue(input[key], fallback)); }
+        if (action === "sustained_move") {
+            choice("movement_mode", ["follow", "pass", "orbit", "cycle"], "follow");
+            choice("movement_direction", ["auto", "cw", "ccw"], "auto");
+            out.movement_buff = String(input.movement_buff || "").trim().slice(0, 128);
+            out.movement_trigger_ability = String(input.movement_trigger_ability || "").trim().slice(0, 128);
+            numeric("movement_duration", 5); numeric("movement_distance", 150);
+            ["movement_retarget", "movement_loop", "movement_interruptible"].forEach(function (key) { out[key] = bool(input[key], false); });
+        } else if (action === "attack" || action === "basic_attack" || action && action.indexOf("item_") !== 0) {
+            choice("positioning_mode", action === "attack" || action === "basic_attack" ? ["default", "fixed", "attack_range"] : ["default", "fixed", "attack_range", "cast_range"], "default");
+            numeric("positioning_distance", 0); numeric("positioning_tolerance", 50);
+        }
+        return out;
+    }
     function targetTeam(target) {
         if (target === "self") {
             return "self";
@@ -111,7 +134,8 @@ var RpgRuleSync = (function () {
 
     function actionKind(action) {
         action = String(action || "attack");
-        if (action === "attack") {
+        if (action === "sustained_move") { return "move"; }
+        if (action === "attack" || action === "basic_attack") {
             return "attack";
         }
         if (action.indexOf("item_") === 0) {
@@ -224,6 +248,9 @@ var RpgRuleSync = (function () {
         if (rule.cast_preference === "unit" || rule.cast_preference === "point") { payload.cast_preference = rule.cast_preference; }
         if (rule.desired_toggle_state === true || rule.desired_toggle_state === "1" || rule.desired_toggle_state === 1) { payload.desired_toggle_state = "1"; }
         if (rule.desired_toggle_state === false || rule.desired_toggle_state === "0" || rule.desired_toggle_state === 0) { payload.desired_toggle_state = "0"; }
+        var settings = actionSettings(rule, action);
+        Object.keys(settings).forEach(function (key) { payload[key] = typeof settings[key] === "boolean" ? (settings[key] ? 1 : 0) : settings[key]; });
+        if (action === "sustained_move") { payload.action_id = "sustained_move"; payload.action_name = ""; }
         return payload;
     }
 
@@ -259,7 +286,7 @@ var RpgRuleSync = (function () {
         var ordering = parts.pop();
         var attr = parts.join("_");
         var side = team === "self" ? "self" : attr === "distance" ? (team === "ally" ? "ally_" : "")+ordering : team+"_"+ordering;
-        var rule = { action:source.action || "attack",enabled:Number(source.enabled)!==0,forced:Number(source.forced)===1,
+        var rule = { action:source.action || (source.action_kind === "move" ? "sustained_move" : source.action_id === "basic_attack" ? "attack" : source.action_id) || "attack",enabled:Number(source.enabled)!==0,forced:Number(source.forced)===1,
             target:team === "self" ? "self" : team+"_"+suffix,target_attr:attr,target_side:side,
             destination:source.destination || "target",
             cast_preference:source.cast_preference || "auto",
@@ -273,10 +300,14 @@ var RpgRuleSync = (function () {
         });
         var first = rule.use_conditions[0] || {type:"always"};
         rule.condition = first.type; rule.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
+        var settings = actionSettings(source, rule.action);
+        Object.keys(settings).forEach(function (key) { rule[key] = settings[key]; });
         return rule;
     }
 
     return {
+        actionSettings: actionSettings,
+        bool: bool,
         forgetHero: forgetHero,
         onResult: onResult,
         fromServer: fromServer,
@@ -285,16 +316,19 @@ var RpgRuleSync = (function () {
         initialSettings: function (rule) {
             var use = useCondition(rule);
             if (use.type.indexOf("_pct_") >= 0) { use.value *= 100; }
-            return {
+            var settings = {
                 use_conditions: rule.use_conditions || [use],
                 target_filters: rule.target_filters || [targetFilter(rule) || { type: "" }],
                 target_priorities: rule.target_priorities || [{ type: targetPriority(rule.target) }],
-                forced: Boolean(rule.forced),
+                forced: bool(rule.forced, false),
                 destination: rule.destination || "target",
                 cast_preference: rule.cast_preference || "auto",
                 min_aoe_hits: rule.min_aoe_hits || 0,
                 desired_toggle_state: rule.desired_toggle_state === undefined ? null : rule.desired_toggle_state
             };
+            var extra = actionSettings(rule, rule.action);
+            Object.keys(extra).forEach(function (key) { settings[key] = extra[key]; });
+            return JSON.parse(JSON.stringify(settings));
         },
         sendRule: sendRule
     };

@@ -20,6 +20,10 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
     "print(json.dumps(encode(E.parse(sys.argv[1]).getroot())))", layoutPath], { encoding: "utf8" }));
 
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
+var resultLayout = rootLayout.children.filter(function (node) { return node.attrs.id === "BattleResult"; })[0];
+if (!resultLayout || !resultLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
+    throw new Error("loot must share the victory settlement card");
+}
 
 function instantiateSnippet(node, parent) {
     var panel = createPanel(node.attrs.id || "");
@@ -690,6 +694,23 @@ var beforeFightSales=saleEvents().length;
 click(saleHud,"Sell_Stock1");
 assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFightSales,"combat cannot emit sale requests");
 
+["marci_companion_run", "marci_bodyguard"].forEach(function (ability) {
+    var targetHud=runHud(), hero="npc_dota_hero_marci";
+    targetHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
+    targetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:960,hero_name:hero,rule_key:hero,
+        can_edit:1,rules_ready:1,actions_text:ability+";attack",rules:[{action:ability,enabled:1,target_team:"enemy"}]});
+    click(targetHud,"RadiantRuleSettings0");
+    var body=panel(targetHud,"RuleSettingsBody"), teamRow=panel(targetHud,"V2TargetTeamRow");
+    assert(body.children.indexOf(teamRow) < body.children.indexOf(panel(targetHud,"V2_use0Select").parent.parent),
+        "team choice is visible before detailed filters and positioning");
+    choice(targetHud,"V2Team","team_ally"); click(targetHud,"RuleSettingsApply");
+    assert(latest(targetHud,hero).target_team==="ally","Marci's selected ally team reaches the server");
+    click(targetHud,"RadiantRuleSettings0");
+    assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally","ally selection survives reopen");
+    choice(targetHud,"V2Team","team_self"); click(targetHud,"RuleSettingsApply");
+    assert(latest(targetHud,hero).target_team==="self","self is selectable independently of hero/creep filters");
+});
+
 var livesHud = runHud();
 assert(panel(livesHud,"RunHearts").children.length === 5, "HUD opens with five hearts");
 function lifeSnapshot(left, phase) {
@@ -716,6 +737,81 @@ assert(panel(livesHud,"StartBattleButton").enabled, "last life still permits a c
 lifeSnapshot(0, "result");
 assert(!panel(livesHud,"StartBattleButton").enabled
     && panel(livesHud,"BattleStatus").text === "#dota2_rpg_run_failed", "fifth loss displays run end and disables start");
+// Sustained movement uses the real action menu and condition modal, never outer controls.
+["shukuchi", "trample"].forEach(function (presetName) {
+    var moveHud = runHud(), hero = "npc_dota_hero_" + (presetName === "shukuchi" ? "weaver" : "primal_beast");
+    var ability = presetName === "shukuchi" ? "weaver_shukuchi" : "primal_beast_trample";
+    var sync = moveHud.context.RpgRuleSync;
+    moveHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
+    moveHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:980,hero_name:hero,rule_key:hero,
+        can_edit:1,rules_ready:1,actions_text:"attack;sustained_move;"+ability,details_text:"attack;unknown_movement_metadata;"+ability,
+        abilities_text:ability+";item_blink;attack;sustained_move",
+        rules:[{action:"attack",enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",seconds:7,value:7}]}]});
+    moveHud.subscriptions.rpg_enemy_roster({units:[{id:981,name:lion}]});
+    moveHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:981,hero_name:lion,rule_key:"enemy:lion",target_actor:"level:enemy:lion",actions_text:"attack;lion_impale",abilities_text:"lion_impale"});
+    click(moveHud,"RadiantAddRule0"); click(moveHud,"RadiantActionSelect1");
+    assert(panel(moveHud,"ActionOpt_Radiant1_sustained_move").GetChild(0).text === "#dota2_rpg_action_sustained_move", "unknown movement metadata displays localized action, not ability tooltip");
+    click(moveHud,"ActionOpt_Radiant1_sustained_move"); click(moveHud,"RadiantRuleSettings1");
+    choice(moveHud,"V2_target0","specified_enemy"); click(moveHud,"V2_target0_target_actorOption_0");
+    choice(moveHud,"V2_priority0","farthest");
+    click(moveHud,"V2MovementPreset_"+presetName);
+    var expected = moveHud.context.RpgConditionCatalog.movementPreset(presetName);
+    assert(panel(moveHud,"V2_movement_buff").text === expected.movement_buff, "preset supplies associated native modifier without current buffs");
+    assert(panel(moveHud,"V2MovementTrigger").GetChild(0).abilityname === ability, "preset trigger uses ability icon");
+    var options = panel(moveHud,"V2MovementTriggerMenu").children.filter(function(p) { return p.BHasClass("V2ActionChoice"); });
+    assert(options.length === 1 && options[0].GetChild(0).abilityname === ability, "trigger selector includes only self hero skills, not enemies/items/actions");
+    click(moveHud,"RuleSettingsApply");
+    var wire = latest(moveHud,hero,2);
+    assert(wire.action_kind === "move" && wire.action_id === "sustained_move" && wire.action_name === "", "native movement identity does not leak metadata");
+    assert(wire.movement_loop === 1 && wire.movement_duration > 5.5, "buff presets keep cycling until native buff ends, with a later safety deadline");
+    Object.keys(expected).forEach(function(key) { assert(wire[key] === (typeof expected[key] === "boolean" ? Number(expected[key]) : expected[key]), "preset full save: "+key); });
+    assert(wire.target_filter_1_target_actor === "level:enemy:lion" && wire.target_priority_1_type === "farthest", "movement retains F39 and priority through preset");
+    click(moveHud,"RadiantRuleSettings1");
+    assert(panel(moveHud,"V2_movement_mode").GetChild(0).text === "#dota2_rpg_v2_movement_mode_"+expected.movement_mode, "movement mode reopens");
+    click(moveHud,"V2MovementBuffSelectOption_movement_preset_"+(presetName === "shukuchi" ? "trample" : "shukuchi"));
+    assert(panel(moveHud,"V2_movement_buff").text !== expected.movement_buff, "buff selector independent of live buffs");
+    input(moveHud,"V2_movement_buff","modifier_custom_native"); input(moveHud,"V2_movement_duration","8.25"); input(moveHud,"V2_movement_distance","240");
+    ["movement_retarget","movement_loop","movement_interruptible"].forEach(function(key) { click(moveHud,"V2_"+key+"Option_"+key+"_true"); });
+    click(moveHud,"V2_movement_directionOption_movement_direction_ccw"); click(moveHud,"RuleSettingsApply");
+    wire = latest(moveHud,hero,2);
+    assert(wire.movement_duration === 8.25 && wire.movement_distance === 240 && wire.movement_retarget === 1 && wire.movement_loop === 1 && wire.movement_interruptible === 1 && wire.movement_direction === "ccw", "custom fields and booleans save");
+    var server = Object.assign({}, wire, {action:"sustained_move", movement_loop:"true", movement_retarget:"1", movement_interruptible:true,
+        use_conditions:[],target_filters:[{type:"specified_enemy",target_actor:wire.target_filter_1_target_actor}],target_priorities:[{type:"farthest"}]});
+    var round = sync.serialize({rule:sync.fromServer(server)});
+    Object.keys(expected).forEach(function(key) { assert(round[key] === wire[key], "server movement roundtrip: "+key); });
+    // Fresh HUD ensures the authoritative server path, not local authored cache, restores controls.
+    var reload = runHud(); reload.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
+    reload.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:980,hero_name:hero,can_edit:1,rules_ready:1,
+        actions_text:"sustained_move;attack",abilities_text:ability,rules:[server]});
+    click(reload,"RadiantRuleSettings0"); assert(panel(reload,"V2_movement_buff").text === "modifier_custom_native" && panel(reload,"V2_movement_duration").text === "8.25", "authoritative HUD reopen restores custom movement");
+    click(reload,"V2ClearConditions"); click(reload,"RuleSettingsApply");
+    assert(latest(reload,hero).movement_buff === "" && latest(reload,hero).movement_retarget === 0, "clear resets movement defaults");
+    click(moveHud,"RadiantRuleSettings0"); assert(panel(moveHud,"V2_use0_seconds").text === "7", "movement editing cannot mutate original attack rule");
+    assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_movement_buff"), "attack has no movement controls");
+    assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_positioning_modeOption_positioning_mode_cast_range"), "attack cannot choose cast range");
+    click(moveHud,"V2_positioning_modeOption_positioning_mode_attack_range"); input(moveHud,"V2_positioning_tolerance",65); click(moveHud,"RuleSettingsApply");
+    assert(latest(moveHud,hero).positioning_mode === "attack_range" && latest(moveHud,hero).positioning_tolerance === 65, "safe maximum attack-range positioning saves");
+    click(moveHud,"RadiantRuleSettings0"); assert(panel(moveHud,"V2_positioning_tolerance").text === "65", "positioning reopens");
+    click(moveHud,"RuleSettingsClose");
+    [false,0,"0","false"].forEach(function(value) { assert(sync.serialize({rule:{action:"sustained_move",movement_retarget:value,movement_loop:value,movement_interruptible:value}}).movement_retarget === 0, "false wire encodings are not truthy"); });
+    var item = sync.serialize({rule:{action:"item_blink",movement_buff:"bad",positioning_mode:"cast_range"}});
+    assert(item.movement_buff === undefined && item.positioning_mode === undefined, "unsupported item strips movement and positioning");
+    var spell = sync.fromServer({action:ability,positioning_mode:"cast_range",positioning_distance:300,positioning_tolerance:25});
+    assert(sync.serialize({rule:spell}).positioning_mode === "cast_range", "ability cast range roundtrips");
+    click(moveHud,"RadiantActionSelect1"); click(moveHud,"ActionOpt_Radiant1_"+ability); click(moveHud,"RadiantRuleSettings1");
+    assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_movement_buff"), "changing to an ability hides stale movement settings");
+    click(moveHud,"V2_positioning_modeOption_positioning_mode_cast_range"); input(moveHud,"V2_positioning_distance",320); input(moveHud,"V2_positioning_tolerance",30); click(moveHud,"RuleSettingsApply");
+    var spellWire = latest(moveHud,hero,2);
+    assert(spellWire.positioning_mode === "cast_range" && spellWire.positioning_distance === 320 && spellWire.movement_buff === undefined, "real ability modal saves positioning without stale movement payload");
+    click(moveHud,"RadiantRuleSettings1"); input(moveHud,"V2_positioning_distance",999); click(moveHud,"RuleSettingsClose"); click(moveHud,"RadiantRuleSettings1");
+    assert(panel(moveHud,"V2_positioning_distance").text === "320", "cancel does not mutate authored positioning"); click(moveHud,"RuleSettingsClose");
+    var malformed = sync.serialize({rule:{action:"sustained_move",movement_mode:"teleport",movement_direction:"up",movement_duration:"NaN",movement_distance:-1,movement_retarget:"bogus"}});
+    assert(malformed.movement_mode === "follow" && malformed.movement_direction === "auto" && malformed.movement_duration === 5 && malformed.movement_distance === 0 && malformed.movement_retarget === 0, "invalid movement inputs normalize safely");
+    var original = {action:"sustained_move",use_conditions:[{type:"always"}],movement_buff:"modifier_original"};
+    var draftCopy = sync.initialSettings(original); draftCopy.use_conditions[0].type = "elapsed_gte";
+    assert(original.use_conditions[0].type === "always", "initial settings deep clone prevents accidental rule mutation");
+});
+console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
 console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");

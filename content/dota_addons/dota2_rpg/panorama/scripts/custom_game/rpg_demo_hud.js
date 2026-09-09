@@ -12,7 +12,8 @@
         item_4: "#dota2_rpg_action_item_4",
         item_5: "#dota2_rpg_action_item_5",
         item_6: "#dota2_rpg_action_item_6",
-        attack: "#dota2_rpg_action_attack"
+        attack: "#dota2_rpg_action_attack",
+        sustained_move: "#dota2_rpg_action_sustained_move"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -135,6 +136,7 @@
     }
 
     function getActionDetail(side, heroIndex, action) {
+        if (action === "sustained_move") { return ""; }
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots ? heroSlots[key] : null;
         if (!entry) {
@@ -178,7 +180,7 @@
                 var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
                 if (!entry || entry.name !== hero.name || entry.hero_index < 0) { return; }
                 var abilities = entry.abilities_text !== undefined ? splitList(entry.abilities_text)
-                    : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action.indexOf("item_") !== 0; })
+                    : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action !== "sustained_move" && action.indexOf("item_") !== 0; })
                         .map(function (action) { return getActionDetail(team, index, action); });
                 result.push({ actor: entry === selected ? "" : entry.rule_key,
                     label: $.Localize("#dota2_rpg_v2_team_" + (team === side ? "ally" : "enemy")) + " " + localizeHeroName(entry.name) + " " + (index + 1),
@@ -1677,6 +1679,7 @@
     }
 
     function onSettlement(settlement) {
+        if (settlement) { updateResult(settlement.winner); }
         var reward = grantSettlement(settlement);
         var rewardLabel = $("#RewardLabel");
         if (settlement && settlement.winner === "radiant" && reward) {
@@ -1690,9 +1693,6 @@
                 .replace("%s3", String(reward.benchXp)));
             var lootDrops = splitList(settlement.loot_text).filter(function (name) { return !!name; });
             showLootPopup(lootDrops);
-            for (var li = 0; li < lootDrops.length; li++) {
-                parts.push("+" + damageName(lootDrops[li]));
-            }
             rewardLabel.text = parts.join("   ");
         } else if (settlement) {
             updateRunLives(settlement);
