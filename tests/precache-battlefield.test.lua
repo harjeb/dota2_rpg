@@ -40,12 +40,12 @@ require = function(moduleName)
         or moduleName == "battle/summon_behavior" or moduleName == "issue_fixes/tiny_tree"
         or moduleName == "issue_fixes/item_sales"
         or moduleName == "issue_fixes/hero_precache" or moduleName == "tactics/special_targets"
+        or moduleName == "battle.enemy_diagnostics"
         or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
-	-- The production entry point installs the issue-fix bootstrap at EOF.  This
-	-- focused test exercises precache/spawn geometry, so only stub that module.
-	if moduleName == "issue_fixes.bootstrap" then
+	-- Keep the independent debug event installer out of this focused spawn fixture.
+	if moduleName == "issue_fixes.bootstrap" or moduleName == "battle.skill_debug" then
 		return { Install = function() end }
 	end
 	error("Dota modules are not needed by the precache/battlefield test")

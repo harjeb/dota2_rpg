@@ -130,8 +130,8 @@ assert(hero:GetMaxHealth() == 200000 and power:GetModifierPercentageCooldown() =
 assert(power:GetModifierSpellAmplify_Percentage() == 1000)
 local plain = unit()
 assert(Scaling.Apply(plain, { tags = { "boss" } }) == nil, "a boss tag without strength config remains baseline")
-for _, health in ipairs({3000, 5000, 8000}) do
-    for _, baseline in ipairs({2000, 4200}) do
+for _, health in ipairs({6000, 10000, 16000}) do
+    for _, baseline in ipairs({2000, 18000}) do
         local fixed = unit()
         fixed.baseHealth = baseline
         local config = { tags = { "boss" }, boss_max_health = tostring(health) }

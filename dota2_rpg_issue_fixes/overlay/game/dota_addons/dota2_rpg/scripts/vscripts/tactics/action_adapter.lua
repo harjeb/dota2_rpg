@@ -2,6 +2,7 @@ local Conditions = require("tactics/condition_registry")
 local VectorTarget = require("tactics/vector_target")
 local Behavior = require("tactics/ability_behavior")
 local NativeTargeting = require("tactics/native_targeting")
+local NeutralAttack = require("tactics/neutral_attack")
 local ActionAdapter = {}
 ActionAdapter.__index = ActionAdapter
 
@@ -10,23 +11,21 @@ local function is_valid(entity)
 end
 
 local function release_fallback_target(caster)
-    if caster.rpg_fallback_force_target ~= nil or caster.rpg_tactic_force_target ~= nil then
-        if caster.SetForceAttackTarget ~= nil then caster:SetForceAttackTarget(nil) end
-        caster.rpg_fallback_force_target = nil
-        caster.rpg_tactic_force_target = nil
-    end
+    NeutralAttack.Release(caster)
 end
 
 local function own_attack_target(caster, spec, target)
-    if spec.kind == "attack" and caster.GetUnitName ~= nil
-        and caster:GetUnitName():match("^npc_dota_neutral_")
-        and is_valid(target) and caster.SetForceAttackTarget ~= nil then
-        caster:SetForceAttackTarget(target)
-        caster.rpg_fallback_force_target = nil
-        caster.rpg_tactic_force_target = target
-    else
+    if spec.kind ~= "attack" or not NeutralAttack.IsNeutral(caster) then
         release_fallback_target(caster)
     end
+end
+
+local function submit_order(caster, spec, target, gate, order)
+    if spec.kind == "attack" and NeutralAttack.IsNeutral(caster) then
+        return NeutralAttack.Submit(caster, target, "tactic", function() return gate:Execute(order) end)
+    end
+    if gate:Execute(order) == false then return false, "order_rejected" end
+    return true
 end
 
 local function find_item_by_name(unit, item_name)
@@ -568,8 +567,7 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         return false, "unsupported_cast_type:" .. tostring(spec.cast_type)
     end
 
-    self.order_gate:Execute(order)
-    return true, nil
+    return submit_order(caster, spec, target_or_point, self.order_gate, order)
 end
 
 function ActionAdapter:IssueApproach(caster, spec, target_or_point)
@@ -595,8 +593,7 @@ function ActionAdapter:IssueApproach(caster, spec, target_or_point)
         order.Position = target_or_point
     end
 
-    self.order_gate:Execute(order)
-    return true
+    return submit_order(caster, spec, target_or_point, self.order_gate, order)
 end
 
 return ActionAdapter

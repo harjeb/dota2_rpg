@@ -127,7 +127,10 @@ function runHud(options) {
         console: console,
         $: panorama,
         GameEvents: {
-            Subscribe: function (name, callback) { subscriptions[name] = callback; },
+            Subscribe: function (name, callback) {
+                var previous = subscriptions[name];
+                subscriptions[name] = function (payload) { if (previous) previous(payload); callback(payload); };
+            },
             SendCustomGameEventToServer: function (name, payload) {
                 sentEvents.push({ name: name, payload: payload });
             }
@@ -553,6 +556,22 @@ damageHud.subscriptions.rpg_battle_state({phase: "result"});
 assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "result retains final damage panel");
 damageHud.subscriptions.rpg_battle_state({phase: "setup", ready: 1});
 assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "setup retains the DPS panel");
+assert(damageHud.panels["#DamageUnits"].children[0].children[0].text.indexOf("15 DPS") >= 0, "preparation retains final enemy totals");
+assert(damageHud.panels["#DamageTitle"].text === "DPS · 2.0s", "preparation retains frozen duration");
+damageHud.panels["#DamageFriendly"].events.onactivate();
+assert(damageHud.panels["#DamageSources"].children.length === 3 && damageHud.panels["#DamageTargets"].children.length === 2,
+    "preparation keeps source and target breakdowns available");
+// Server sends the new collector before broadcasting the fight phase.
+var zeroDamage = {elapsed: 0, units: [{id: 101, name: "npc_dota_hero_sniper", team: 2, total: 0, dps: 0, sources: [], targets: []}]};
+damageHud.subscriptions.rpg_damage_stats(zeroDamage);
+damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
+assert(damageHud.panels["#DamageUnits"].children[0].id === "DamageUnit101", "actual start replaces previous combatants");
+assert(damageHud.panels["#DamageUnits"].children[0].children[0].text.indexOf("0 DPS") >= 0, "actual start shows zero damage");
+assert(damageHud.panels["#DamageTitle"].text === "DPS · 0.0s" && damageHud.panels["#DamageTargets"].children.length === 0,
+    "actual start clears duration and old targets");
+damageHud.subscriptions.rpg_damage_stats({elapsed: 4, units: [{id: 101, name: "npc_dota_hero_sniper", team: 2, total: 80, dps: 20, sources: [], targets: []}]});
+damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
+assert(damageHud.panels["#DamageUnits"].children[0].children[0].text.indexOf("20 DPS") >= 0, "timed damage updates survive repeated fight phase broadcasts");
 console.log("PASS: actual enemy roster, battle collapse, DPS teams, source colors and target filtering");
 
 // Stage transitions retain authored conditions by name and duplicate occurrence.

@@ -53,9 +53,17 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual((axe["单位名称"], axe["数量"], axe["等级"], axe["AI类型"],
                               axe["装备1（中文）"], axe["装备1（原生ID）"], axe["装备2（中文）"], axe["装备2（原生ID）"]),
                              ("斧王", 1, 8, "aggro_front", "速度之靴", "item_boots", "护腕", "item_bracer"))
-            boss = next(row for row in records if row["关卡"] == "ch30" and row["是否Boss"] == "是")
-            self.assertEqual((boss["单位原生ID"], boss["等级"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
-                             ("npc_dota_hero_skeleton_king", 30, 8000, None, 50, 33.333333, 8.333333))
+            for chapter, unit, health, attack, spell, cooldown in [
+                ("ch10", "npc_dota_hero_centaur", 6000, 16.666667, 16.666667, 4.166667),
+                ("ch20", "npc_dota_hero_spirit_breaker", 10000, 33.333333, 25, 6.666667),
+                ("ch30", "npc_dota_hero_skeleton_king", 16000, 50, 33.333333, 8.333333),
+            ]:
+                bosses = [row for row in records if row["关卡"] == chapter]
+                self.assertEqual(len(bosses), 1, chapter + " must remain a solo Boss")
+                boss = bosses[0]
+                self.assertEqual((boss["单位原生ID"], boss["数量"], boss["是否Boss"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
+                                 (unit, 1, "是", health, None, attack, spell, cooldown))
+            self.assertEqual(boss["等级"], 30)
 
             difference_sheet = book["源文件差异"]
             difference_headers = [cell.value for cell in difference_sheet[1]]

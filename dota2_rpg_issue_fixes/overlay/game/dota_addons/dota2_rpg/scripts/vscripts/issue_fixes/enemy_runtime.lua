@@ -3,6 +3,7 @@
 
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
+local NeutralAttack = require("tactics/neutral_attack")
 local EnemyRuntime = {}
 EnemyRuntime.__index = EnemyRuntime
 
@@ -52,7 +53,7 @@ local function nearest_alive_enemy(source, candidates)
     local source_team = safe_call(source, "GetTeamNumber", -1)
 
     for _, candidate in ipairs(candidates or {}) do
-        if is_alive(candidate)
+        if is_alive(candidate) and NeutralAttack.ValidTarget(source, candidate)
             and safe_call(candidate, "GetTeamNumber", source_team) ~= source_team then
             local distance = distance_2d(source, candidate)
             if distance < best_distance then
@@ -203,25 +204,21 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
     safe_call(unit, "SetIdleAcquire", nil, not is_native_neutral(unit))
     safe_call(unit, "SetAcquisitionRange", nil, self.acquisition_range)
     safe_call(unit, "SetForceAttackTarget", nil, nil)
-    unit.rpg_fallback_force_target = nil
-    unit.rpg_tactic_force_target = nil
+    NeutralAttack.Release(unit)
 end
 
 function EnemyRuntime:IssueAttack(unit, target)
-    if not is_alive(unit) or not is_alive(target) then return false end
-
-    -- Native neutral templates retain autonomous idle/return behavior on Dire.
-    -- Own the fallback target only until a tactic or cast takes control.
-    if is_native_neutral(unit) then
-        safe_call(unit, "SetForceAttackTarget", nil, target)
-        unit.rpg_fallback_force_target = target
+    if not is_alive(unit) or not NeutralAttack.ValidTarget(unit, target) then return false end
+    local function execute()
+        return self.execute_order({
+            UnitIndex = unit_index(unit),
+            OrderType = DOTA_UNIT_ORDER_ATTACK_TARGET,
+            TargetIndex = unit_index(target),
+            Queue = false,
+        }) == true
     end
-    return self.execute_order({
-        UnitIndex = unit_index(unit),
-        OrderType = DOTA_UNIT_ORDER_ATTACK_TARGET,
-        TargetIndex = unit_index(target),
-        Queue = false,
-    }) == true
+    if is_native_neutral(unit) then return NeutralAttack.Submit(unit, target, "fallback", execute) end
+    return execute()
 end
 
 function EnemyRuntime:IssueAttackMove(unit)
@@ -237,6 +234,7 @@ end
 
 function EnemyRuntime:CanFallbackOrder(unit)
     if not is_alive(unit) then return false end
+    if NeutralAttack.HasTactic(unit) then return false end
     if safe_call(unit, "IsChanneling", false) then return false end
     if safe_call(unit, "IsInAbilityPhase", false) then return false end
     if safe_call(unit, "IsStunned", false) then return false end
@@ -286,34 +284,28 @@ function EnemyRuntime:Think()
     end
 
     for _, unit in ipairs(self.enemy_units) do
-        if is_alive(unit) then
-            self:TraceMotion(unit)
-            -- Tactic attacks own the same persistent target as fallback attacks.
-            -- Reassert it without replacing the tactic with a nearest-target order.
-            if unit.rpg_tactic_force_target ~= nil and not is_alive(unit.rpg_tactic_force_target) then
-                safe_call(unit, "SetForceAttackTarget", nil, nil)
-                unit.rpg_tactic_force_target = nil
-            elseif is_alive(unit.rpg_tactic_force_target)
-                and not safe_call(unit, "IsChanneling", false)
-                and not safe_call(unit, "IsInAbilityPhase", false) then
-                safe_call(unit, "SetForceAttackTarget", nil, unit.rpg_tactic_force_target)
-            end
+        local intent = is_valid(unit) and unit.rpg_neutral_attack_intent
+        if intent and (not is_alive(unit) or not NeutralAttack.ValidTarget(unit, intent.target)) then
+            NeutralAttack.Release(unit)
         end
+        if is_alive(unit) then self:TraceMotion(unit) end
         if self:CanFallbackOrder(unit) then
             local current_target = safe_call(unit, "GetAttackTarget", nil)
-            if not is_alive(current_target) then
+            if is_native_neutral(unit) then
+                -- The shared submit path preserves progress and recovers lost
+                -- non-idle intent without stealing a fresh tactic-owned target.
+                local target = NeutralAttack.ValidTarget(unit, current_target) and current_target
+                    or (NeutralAttack.ValidTarget(unit, unit.rpg_fallback_force_target) and unit.rpg_fallback_force_target)
+                    or nearest_alive_enemy(unit, self.player_units)
+                if target then self:IssueAttack(unit, target)
+                else NeutralAttack.Release(unit);self:IssueAttackMove(unit) end
+            elseif not is_alive(current_target) then
                 local target = nearest_alive_enemy(unit, self.player_units)
-                if target ~= nil then
-                    self:IssueAttack(unit, target)
-                else
-                    safe_call(unit, "SetForceAttackTarget", nil, nil)
-                    unit.rpg_fallback_force_target = nil
-                    self:IssueAttackMove(unit)
-                end
+                if target then self:IssueAttack(unit, target)
+                else self:IssueAttackMove(unit) end
             end
         elseif is_valid(unit) and unit.rpg_fallback_force_target ~= nil then
-            safe_call(unit, "SetForceAttackTarget", nil, nil)
-            unit.rpg_fallback_force_target = nil
+            NeutralAttack.Release(unit)
         end
     end
 
@@ -348,11 +340,7 @@ end
 
 function EnemyRuntime:Stop()
     for _, unit in ipairs(self.enemy_units) do
-        if is_valid(unit) and (unit.rpg_fallback_force_target ~= nil or unit.rpg_tactic_force_target ~= nil) then
-            safe_call(unit, "SetForceAttackTarget", nil, nil)
-            unit.rpg_fallback_force_target = nil
-            unit.rpg_tactic_force_target = nil
-        end
+        if is_valid(unit) then NeutralAttack.Release(unit) end
     end
     self.running = false
     self.player_units = {}

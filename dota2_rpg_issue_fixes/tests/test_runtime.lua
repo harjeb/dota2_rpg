@@ -548,9 +548,11 @@ do
     assert_equal(orders, before + 1, "idle enemy receives fallback")
 end
 
--- Returning native neutrals recover without overriding casts or tactic orders.
+-- Native neutral fallback chases persist without overriding casts or tactic orders.
 do
-    local neutral, hero, target = Unit.new(3), Unit.new(3), Unit.new(2)
+    local oldClock, clock = GameRules.GetGameTime, 0
+    GameRules.GetGameTime = function() return clock end
+    local neutral, hero, target = Unit.new(3), Unit.new(3), Unit.new(2, Vector(1000,0,0))
     neutral.unit_name = "npc_dota_neutral_centaur_khan"
     neutral.IsIdle = function() return false end
     hero.IsIdle = function() return false end
@@ -565,8 +567,22 @@ do
     assert_equal(hero.idle_acquire, true, "hero acquisition unchanged")
     assert_equal(neutral.force_target, target, "neutral fallback owns target")
     local before = orders
+    for _ = 1, 8 do
+        clock=clock+.25
+        neutral.position.x=neutral.position.x+25
+        runtime:Think()
+    end
+    assert_equal(orders, before, "pending neutral chase is not restarted when attack target is nil")
+    assert_equal(neutral.force_target, target, "pending chase keeps its forced target")
+    neutral.IsIdle = function() return true end
+    clock=clock+.5
     runtime:Think()
-    assert_equal(orders, before + 1, "returning neutral recovered, moving hero untouched")
+    assert_equal(orders, before + 1, "idle neutral recovers a lost attack order")
+    neutral.IsIdle = function() return false end
+    neutral.attack_target = target
+    runtime:Think()
+    assert_equal(orders, before + 1, "active attack is not restarted")
+    neutral.attack_target = nil
     busy = true
     runtime:Think()
     assert_equal(orders, before + 1, "tactic order respected")
@@ -581,8 +597,27 @@ do
     runtime.player_units = { replacement }
     runtime:Think()
     assert_equal(neutral.force_target, replacement, "dead target replaced")
+    assert_equal(orders, before + 2, "replacement target receives one attack order")
+    runtime:Think()
+    assert_equal(orders, before + 2, "replacement chase persists across ticks")
     runtime:Stop()
     assert_equal(neutral.force_target, nil, "force target cleared on stop")
+
+    local accepted = false
+    runtime.execute_order = function() orders = orders + 1; return accepted end
+    runtime:RegisterStage({}, { neutral })
+    runtime:Start({ replacement }, Vector(0, 0, 0))
+    assert_equal(neutral.rpg_fallback_force_target, nil, "rejected attack does not own a pending chase")
+    assert_equal(neutral.force_target, nil, "rejected attack releases forced target")
+    local rejected_count = orders
+    accepted = true
+    runtime:Think()
+    assert_equal(orders, rejected_count + 1, "rejected attack retries even on a non-idle neutral")
+    assert_equal(neutral.force_target, replacement, "accepted retry owns replacement target")
+    runtime:Think()
+    assert_equal(orders, rejected_count + 1, "accepted retry is not repeated")
+    runtime:Stop()
+    GameRules.GetGameTime = oldClock
 end
 
 -- Authored actions take ownership before issuing orders, including direct attacks.

@@ -10,12 +10,13 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
-    if name == "issue_fixes.bootstrap" then return { Install = function() end } end
+    if name == "issue_fixes.bootstrap" or name == "battle.skill_debug" then return { Install = function() end } end
     local modules = {
         ["issue_fixes.hero_lifecycle_log"] = true,
         ["tactics/ability_catalog"] = true,
         ["tactics/rule_snapshot"] = true,
         ["battle.damage_stats"] = true,
+        ["battle.enemy_diagnostics"] = true,
         ["battle.enemy_scaling"] = true,
         ["battle.boss_scaling"] = true,
         ["battle.run_lives"] = true,
@@ -48,8 +49,10 @@ local function scenario(winner, final, initialLives)
             callback = fn
             scheduled = scheduled + 1
         end }
-    end }
+    end, GetGameTime = function() return 12 end }
+    local damagePacket
     CustomGameEventManager = { Send_ServerToAllClients = function(_, event, payload)
+        if event == "rpg_damage_stats" then damagePacket = payload; return end
         equal(event, "rpg_settlement", "settlement event")
         settlements = settlements + 1
         lastSettlement = payload
@@ -77,7 +80,18 @@ local function scenario(winner, final, initialLives)
         RollQuality = function(self, stage) self.qualityStage = stage; return "common" end,
         PriceFor = function() return 100 end,
     }, CDota2RpgDemo)
+    local function combatant(id, team)
+        return { IsNull = function() return false end, entindex = function() return id end,
+            GetUnitName = function() return "hero" .. id end, GetTeamNumber = function() return team end }
+    end
+    local attacker, victim = combatant(1, 2), combatant(2, 3)
+    game.damageStats = require("battle.damage_stats").new()
+    game.damageStats:Start({attacker, victim}, 10)
+    game.damageStats:Record(attacker, victim, nil, 120, 12)
+    local completedStats = game.damageStats
     game:EndBattle(winner, winner == "radiant" and 2 or 3)
+    equal(damagePacket.units[1].total, 120, "settlement retains final damage")
+    equal(damagePacket.elapsed, 2, "settlement freezes duration")
     game:EndBattle(winner, 2)
     equal(settlements, 1, "duplicate battle end rejected")
     equal(game.runLives.remaining, initialLives - (winner == "radiant" and 0 or 1), "one life per lost battle")
@@ -116,6 +130,33 @@ local function scenario(winner, final, initialLives)
     game:EndBattle(winner, 2)
     equal(game.shopOffers, offers, "callback replay and rebroadcast do not reroll")
     equal(settlements, 1, "setup rejects settlement")
+    GameRules.GetGameTime = function() return 100 end
+    game:BroadcastDamageStats()
+    equal(game.damageStats, completedStats, "next setup retains collector")
+    equal(damagePacket.units[1].total, 120, "next setup retains total")
+    equal(damagePacket.units[1].dps, 60, "preparation time does not dilute DPS")
+    equal(damagePacket.elapsed, 2, "preparation retains battle duration")
+    game.teamsSpawned = true
+    game:OnStartBattle(nil, {})
+    equal(game.damageStats, completedStats, "empty lineup rejects start without clearing")
+    game.lineup = { "axe" }
+    game.teamsSpawned = false
+    game:OnStartBattle(nil, {})
+    equal(game.damageStats, completedStats, "unready start preserves stats")
+    game.teamsSpawned = true
+    game.battleManager.teamHeroes = { [2] = {attacker}, [3] = {victim} }
+    game.battleManager.ResetBattleStats = function() end
+    game.battleManager.StartBattle = function() end
+    game.tacticBridge = { ResetState = function() end }
+    game.RemoveBattleBarrier = function() end
+    game:OnStartBattle(nil, {})
+    equal(damagePacket.units[1].total, 0, "accepted start clears damage")
+    equal(damagePacket.elapsed, 0, "accepted start clears duration")
+    local nextStats = game.damageStats
+    nextStats:Record(attacker, victim, nil, 25, 101)
+    game:OnStartBattle(nil, {})
+    equal(game.damageStats, nextStats, "duplicate start retains current collector")
+    equal(nextStats:Snapshot(101)[1].total, 25, "duplicate start preserves current damage")
     game.phase = "result"
     callback()
     equal(game.shopOffers, offers, "old callback cannot reroll a later settlement")

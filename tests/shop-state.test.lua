@@ -30,6 +30,7 @@ local walletLogs = {}
 local failWalletLog = false
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
+	if name == "battle.skill_debug" then return { Install = function() end } end
 	if name == "issue_fixes.runtime_log" then
 		return { Write = function(message)
 			if failWalletLog then error("test logger unavailable") end
@@ -50,6 +51,7 @@ require = function(name)
 		["battle.tempest_double"] = moduleRoot .. "battle/tempest_double.lua",
 		["issue_fixes/hero_ability_policy"] = moduleRoot .. "issue_fixes/hero_ability_policy.lua",
 		["battle.damage_stats"] = moduleRoot .. "battle/damage_stats.lua",
+		["battle.enemy_diagnostics"] = moduleRoot .. "battle/enemy_diagnostics.lua",
 		["data.progression_data"] = moduleRoot .. "data/progression_data.lua",
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
 		["patches.progression_patch"] = moduleRoot .. "patches/progression_patch.lua",

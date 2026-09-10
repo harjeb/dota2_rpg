@@ -1,0 +1,7 @@
+[SummonDiag]	2622.3666992188	ch07	770:npc_dota_hero_terrorblade	illusion	true	team	2	owner	188:npc_dota_hero_wisp	owner2	188:npc_dota_hero_wisp	clone	nil:nil	pid	-1	ctrl	true	cap	2	acquire	600	managed	false	attack	nil:nil	force	nil:nil	fallback	nil:nil	tactic	nil:nil	xy	-409.29251098633	-4.8594360351563	idle	true	restricted	false	disarm	false	stun	false
+
+[SummonDiag]	2624.3666992188	ch07	770:npc_dota_hero_terrorblade	illusion	true	team	2	owner	188:npc_dota_hero_wisp	owner2	188:npc_dota_hero_wisp	clone	nil:nil	pid	-1	ctrl	true	cap	2	acquire	600	managed	false	attack	nil:nil	force	nil:nil	fallback	nil:nil	tactic	nil:nil	xy	-409.29251098633	-4.8594360351563	idle	true	restricted	false	disarm	false	stun	false
+
+[SummonDiag]	2626.3666992188	ch07	770:npc_dota_hero_terrorblade	illusion	true	team	2	owner	188:npc_dota_hero_wisp	owner2	188:npc_dota_hero_wisp	clone	nil:nil	pid	-1	ctrl	true	cap	2	acquire	600	managed	false	attack	nil:nil	force	nil:nil	fallback	nil:nil	tactic	nil:nil	xy	-409.29251098633	-4.8594360351563	idle	true	restricted	false	disarm	false	stun	false
+
+[SummonDiag] observation ended

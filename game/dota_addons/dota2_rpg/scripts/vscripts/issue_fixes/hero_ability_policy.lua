@@ -57,4 +57,47 @@ function Policy.Apply(hero)
     return total
 end
 
+-- Raw talent levels do not replay the engine's learned-talent registry.
+-- New entities must learn through UpgradeAbility; an already prepared live hero
+-- retains its native choices and must not spend those points again.
+function Policy.RestoreManualAbilities(hero, data, fallbackPoints)
+    local levels = data and data.ability_levels or {}
+    local unspent = math.max(0, data and (data.skill_points or data.level) or fallbackPoints)
+    local refund, restored = 0, true
+    for slot = 0, Policy.GetSlotCount(hero) - 1 do
+        local ability = hero:GetAbilityByIndex(slot)
+        if valid(ability) then
+            local name = ability:GetAbilityName()
+            local saved = levels[name]
+            if saved ~= nil then
+                if name:sub(1, 14) == "special_bonus_" and saved > 0 then
+                    if not hero.rpgAbilitiesRestored then ability:SetLevel(0) end
+                    while ability:GetLevel() < saved do
+                        local before = ability:GetLevel()
+                        hero:SetAbilityPoints(math.max(1, hero:GetAbilityPoints()))
+                        local ok, err = pcall(function() hero:UpgradeAbility(ability) end)
+                        if not ok or ability:GetLevel() <= before then
+                            local missing = math.max(0, saved - ability:GetLevel())
+                            refund = refund + missing
+                            -- Record the actual build so another prepare/capture cannot
+                            -- refund the same failed choice a second time.
+                            levels[name] = ability:GetLevel()
+                            restored = false
+                            print(string.format("[Dota2Rpg] Talent restore failed: %s saved=%s actual=%s refunded=%s error=%s",
+                                name, tostring(saved), tostring(ability:GetLevel()), tostring(missing),
+                                ok and "native upgrade made no progress" or tostring(err)))
+                            break
+                        end
+                    end
+                else
+                    ability:SetLevel(saved)
+                end
+            end
+        end
+    end
+    hero:SetAbilityPoints(unspent + refund)
+    if data then data.skill_points = unspent + refund end
+    return restored
+end
+
 return Policy

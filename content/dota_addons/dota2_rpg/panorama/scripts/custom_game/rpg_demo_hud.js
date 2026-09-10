@@ -1572,12 +1572,8 @@
                 if (editor.RpgSetCollapsed) { editor.RpgSetCollapsed(true); }
             });
         }
-        if (phase === "setup" && previousPhase !== "setup") {
-            damageState = { elapsed: 0, units: [] };
-            selectedDamageUnit = null;
-            selectedDamageSource = null;
-            renderDamage();
-        }
+        // The server publishes a fresh zero snapshot only when a battle starts.
+        // Keep the completed battle available throughout results and preparation.
         serverReady = Number(data.ready || 0) === 1;
         if (data.gold !== undefined) {
             shopState.gold = Math.max(0, Number(data.gold) || 0);

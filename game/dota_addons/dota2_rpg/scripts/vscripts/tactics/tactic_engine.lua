@@ -5,6 +5,7 @@ local Context = require("tactics/condition_context")
 local Movement = require("tactics/persistent_movement")
 local Positioning = require("tactics/positioning")
 local NativeEvents = require("tactics/native_events")
+local NeutralAttack = require("tactics/neutral_attack")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -115,8 +116,18 @@ function TacticEngine:IsExclusiveMovement(unit)
     return state ~= nil and state.unit == unit and state.movement ~= nil
 end
 
+function TacticEngine:HasActiveOrder(unit)
+    if self.get_phase() ~= "FIGHT" then return false end
+    local state = self.states[entity_index(unit)]
+    if not state or state.unit ~= unit then return false end
+    return state.chase ~= nil or state.movement ~= nil or (state.wait_until or 0) > now()
+        or (state.posture_order ~= nil and (state.posture_order.expires or 0) > now())
+        or NeutralAttack.HasTactic(unit)
+end
+
 function TacticEngine:Reset()
     for _, state in pairs(self.states) do
+        NeutralAttack.Release(state.unit)
         if state.movement then Movement.Release(self, state.unit, state, {}, true)
         else Movement.StopOrder(self, state.unit, state.posture_order, {}) end
         pcall(NativeEvents.Detach, state.unit)
@@ -316,7 +327,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     end
     if Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
         state.chase = nil
-        state.posture_order = {owns_order=true}
+        state.posture_order = {owns_order=true, expires=ctx.now+self.tick_interval*2}
         -- The next attack must not be suppressed as a duplicate of the order
         -- that preceded this move.
         state.last_order_signature = nil
@@ -457,6 +468,7 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
     if not issued then
         return false, reason
     end
+    if reason == "attack_persisted" then return true, nil end
 
     state.posture_order = nil
     state.last_order_signature = signature

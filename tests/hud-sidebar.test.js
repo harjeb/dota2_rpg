@@ -127,7 +127,10 @@ function runHud() {
         console: console,
         $: panorama,
         GameEvents: {
-            Subscribe: function (name, callback) { subscriptions[name] = callback; },
+            Subscribe: function (name, callback) {
+                var previous = subscriptions[name];
+                subscriptions[name] = function (payload) { if (previous) previous(payload); callback(payload); };
+            },
             SendCustomGameEventToServer: function (name, payload) {
                 sentEvents.push({ name: name, payload: payload });
             }

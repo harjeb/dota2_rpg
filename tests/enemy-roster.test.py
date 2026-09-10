@@ -94,9 +94,9 @@ class EnemyRosterTests(unittest.TestCase):
     def test_boss_strength_only_on_the_three_chapter_bosses(self):
         fields = ['boss_max_health', 'boss_attack_damage_pct',
                   'boss_spell_amp_pct', 'boss_cooldown_reduction_pct']
-        expected = {10: (3000, 16.666667, 16.666667, 4.166667),
-                    20: (5000, 33.333333, 25, 6.666667),
-                    30: (8000, 50, 33.333333, 8.333333)}
+        expected = {10: (6000, 16.666667, 16.666667, 4.166667),
+                    20: (10000, 33.333333, 25, 6.666667),
+                    30: (16000, 50, 33.333333, 8.333333)}
         for label, teams in self.teams.items():
             for chapter, team in teams.items():
                 for slot, entry in enumerate(team):

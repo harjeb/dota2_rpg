@@ -1,0 +1,38 @@
+.DebugHideRecruitment { visibility: collapse; }
+#SkillDebugButton { width: 110px; height: 46px; horizontal-align: right; vertical-align: top; margin: 18px 80px 0px 0px; background-color: #172934f5; border: 1px solid #75b8ce; border-radius: 7px; z-index: 110; }
+#SkillDebugButton Label { horizontal-align: center; vertical-align: center; font-size: 19px; color: #d1eff7; }
+#SkillDebugButton:hover { brightness: 1.4; }
+#SkillDebugButton.DebugActive { border-color: #e7bc64; background-color: #334b58; }
+#SkillDebug { width: 100%; height: 100%; z-index: 2100; }
+#SkillDebug.Hidden { visibility: collapse; }
+#SkillDebugBackdrop { width: 100%; height: 100%; background-color: #050b12dd; }
+#SkillDebugCard { width: 86%; max-width: 1320px; height: 86%; horizontal-align: center; vertical-align: center; flow-children: down; background-color: #14212bfc; border: 1px solid #758997; border-top: 3px solid #75b8ce; padding: 22px; box-shadow: #000a 0px 8px 28px 0px; }
+.DebugHeader { width: 100%; height: 48px; flow-children: right; }
+#SkillDebugTitle { width: fill-parent-flow(1); font-size: 28px; font-weight: bold; color: #e2eff2; vertical-align: center; }
+.DebugButton { height: 40px; min-width: 90px; padding: 0px 14px; margin-right: 8px; background-color: #293f4d; border: 1px solid #638997; }
+.DebugButton Label { horizontal-align: center; vertical-align: center; color: #e1eff4; font-size: 18px; }
+.DebugButton:hover { brightness: 1.4; }
+.DebugButton:disabled { opacity: 0.35; }
+.DebugParagraph { width: 100%; font-size: 18px; color: #b9cfd9; white-space: normal; margin-bottom: 10px; }
+.DebugColumns { width: 100%; height: fill-parent-flow(1); flow-children: right; margin-top: 8px; }
+.DebugPicker { width: fill-parent-flow(1); height: 100%; flow-children: down; padding-right: 18px; }
+#SkillDebugSearch { width: 100%; height: 38px; padding: 5px 8px; font-size: 19px; background-color: #0c1720; border: 1px solid #668492; color: #f0f4f6; }
+#SkillDebugCount { font-size: 16px; color: #89aebf; margin: 7px 0px; }
+#SkillDebugHeroes { width: 100%; height: fill-parent-flow(1); flow-children: right-wrap; overflow: squish scroll; }
+.DebugHero { width: 100px; height: 90px; margin: 0px 6px 6px 0px; flow-children: down; background-color: #203440; border: 2px solid #203440; padding: 3px; }
+.DebugHero:hover { brightness: 1.4; }
+.DebugHero.DebugSelected { border-color: #e7bc64; background-color: #3e5360; }
+.DebugHeroIcon { width: 90px; height: 51px; }
+.DebugHero Label { width: 100%; text-align: center; color: #d8e5ec; font-size: 15px; text-overflow: ellipsis; margin-top: 5px; }
+.DebugOptions { width: 340px; height: 100%; flow-children: down; padding-left: 20px; border-left: 1px solid #3d505d; overflow: squish scroll; }
+#SkillDebugSelected { width: 100%; color: #efd49a; font-size: 23px; margin-bottom: 14px; white-space: normal; }
+.DebugFieldTitle { font-size: 18px; color: #d7e9ef; margin-bottom: 8px; }
+#SkillDebugDamage { width: 100%; height: 40px; padding: 5px 8px; background-color: #0c1720; border: 1px solid #668492; color: #f0f4f6; font-size: 22px; }
+#SkillDebugApplyDamage { margin-top: 8px; margin-bottom: 14px; }
+#SkillDebugStart, #SkillDebugReset, #SkillDebugExit { width: 100%; margin-top: 10px; }
+#SkillDebugStart { height: 46px; background-color: #375663; border-color: #91b5bb; }
+#SkillDebugExit { border-color: #ba8d70; }
+#SkillDebugWarning { color: #dfb97e; font-size: 17px; white-space: normal; width: 100%; margin: 12px 0px 8px 0px; }
+#SkillDebugStatus { color: #afd5c6; font-size: 17px; white-space: normal; width: 100%; margin-top: 10px; }
+#SkillDebugError { color: #ffaaa0; font-size: 17px; white-space: normal; width: 100%; margin-top: 10px; }
+#SkillDebugFooter { font-size: 15px; color: #9db3c1; white-space: normal; width: 100%; margin-top: 12px; }

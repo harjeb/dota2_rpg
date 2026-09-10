@@ -2,6 +2,7 @@
 	<styles>
 		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
 		<include src="file://{resources}/styles/custom_game/condition_help.css" />
+		<include src="file://{resources}/styles/custom_game/skill_debug.css" />
 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
 	</styles>
 	<scripts>
@@ -12,6 +13,7 @@
 		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
+		<include src="file://{resources}/scripts/custom_game/skill_debug.js" />
 	</scripts>
 
 	<Panel class="RpgDemoHudRoot" hittest="false">
@@ -92,6 +94,7 @@
 			<Label text="&gt;" hittest="false" />
 		</Button>
 
+		<Button id="SkillDebugButton" hittest="true"><Label id="SkillDebugButtonLabel" hittest="false" /></Button>
 		<Button id="ConditionHelpButton" hittest="true"><Label text="?" hittest="false" /></Button>
 		<Panel id="RightSidebar" hittest="false" hittestchildren="true">
 			<Panel id="DamagePanel" class="DamagePanel" hittest="true">
@@ -183,6 +186,38 @@
 					<Panel id="ConditionHelpBody" />
 				</Panel>
 				<Label id="ConditionHelpFooter" />
+			</Panel>
+		</Panel>
+		<Panel id="SkillDebug" class="Hidden" hittest="true" hittestchildren="true">
+			<Button id="SkillDebugBackdrop" />
+			<Panel id="SkillDebugCard" hittest="true">
+				<Panel class="DebugHeader">
+					<Label id="SkillDebugTitle" />
+					<Button id="SkillDebugClose" class="DebugButton"><Label id="SkillDebugCloseLabel" /></Button>
+				</Panel>
+				<Label id="SkillDebugIntro" class="DebugParagraph" />
+				<Panel class="DebugColumns">
+					<Panel class="DebugPicker">
+						<Label id="SkillDebugSearchHint" class="DebugFieldTitle" />
+						<TextEntry id="SkillDebugSearch" maxchars="80" />
+						<Label id="SkillDebugCount" />
+						<Panel id="SkillDebugHeroes" />
+					</Panel>
+					<Panel class="DebugOptions">
+						<Label id="SkillDebugSelected" />
+						<Label id="SkillDebugDamageTitle" class="DebugFieldTitle" />
+						<TextEntry id="SkillDebugDamage" text="100" maxchars="6" />
+						<Button id="SkillDebugApplyDamage" class="DebugButton"><Label id="SkillDebugApplyDamageLabel" /></Button>
+						<Label id="SkillDebugInstructions" class="DebugParagraph" />
+						<Label id="SkillDebugWarning" />
+						<Button id="SkillDebugStart" class="DebugButton"><Label id="SkillDebugStartLabel" /></Button>
+						<Button id="SkillDebugReset" class="DebugButton"><Label id="SkillDebugResetLabel" /></Button>
+						<Button id="SkillDebugExit" class="DebugButton"><Label id="SkillDebugExitLabel" /></Button>
+						<Label id="SkillDebugStatus" />
+						<Label id="SkillDebugError" />
+					</Panel>
+				</Panel>
+				<Label id="SkillDebugFooter" />
 			</Panel>
 		</Panel>
 	</Panel>

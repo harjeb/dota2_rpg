@@ -12,20 +12,56 @@ local function distance(a,b)
     if p==nil or q==nil then return math.huge end
     return math.sqrt((p.x-q.x)^2+(p.y-q.y)^2)
 end
-local function root(game,unit)
+local function ownership(unit,roster)
+    local seen={[unit]=true}
+    local level={unit}
+    for _=1,8 do
+        local nextLevel={}
+        for _,current in ipairs(level) do
+            for _,method in ipairs({"GetCloneSource","GetOwnerEntity","GetOwner"}) do
+                local owner=call(current,method)
+                if valid(owner) and not seen[owner] then
+                    if roster and roster[owner] then return owner,seen end
+                    seen[owner]=true
+                    nextLevel[#nextLevel+1]=owner
+                end
+            end
+        end
+        level=nextLevel
+        if #level==0 then break end
+    end
+    return nil,seen
+end
+function Summons.ResolveOwner(game,unit)
+    if not valid(unit) then return nil end
     local roster={}
     for _,team in pairs(game.battleManager and game.battleManager.teamHeroes or {}) do
-        for _,hero in ipairs(team) do roster[hero]=true end
+        for _,hero in ipairs(team) do if valid(hero) then roster[hero]=true end end
     end
     if roster[unit] then return nil end
-    local owner=call(unit,"GetCloneSource") or call(unit,"GetOwnerEntity") or call(unit,"GetOwner")
-    local seen={}
-    for _=1,8 do
-        if not valid(owner) or seen[owner] then return nil end
-        if roster[owner] then return owner end
-        seen[owner]=true
-        owner=call(owner,"GetOwnerEntity") or call(owner,"GetOwner")
+    local owner,ancestors=ownership(unit,roster)
+    if owner then return owner end
+    if call(unit,"IsIllusion")~=true then return nil end
+    -- Native Conjure Image can inherit the hidden Wisp owner and report player
+    -- ID -1. Match a unique fielded copy source through shared native ownership;
+    -- player ID or hero name alone would also accept unrelated/bench units.
+    local source
+    for hero in pairs(roster) do
+        if call(hero,"GetUnitName")==call(unit,"GetUnitName")
+            and call(hero,"GetTeamNumber")==call(unit,"GetTeamNumber") then
+            local _,heroAncestors=ownership(hero)
+            heroAncestors[hero]=nil
+            local shared=false
+            for ancestor in pairs(heroAncestors) do
+                if ancestor~=unit and ancestors[ancestor] then shared=true;break end
+            end
+            if shared then
+                if source then return nil end
+                source=hero
+            end
+        end
     end
+    return source
 end
 local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestral_spirit=true}
 function Summons.OnSpawn(game,unit)
@@ -34,7 +70,7 @@ function Summons.OnSpawn(game,unit)
     -- their own behavior. Do not disable their acquisition or redirect them.
     if call(unit,"IsControllableByAnyPlayer")==false then return false end
     if call(unit,"IsRealHero")==true and call(unit,"IsIllusion")~=true and call(unit,"IsClone")~=true then return false end
-    local owner=root(game,unit)
+    local owner=Summons.ResolveOwner(game,unit)
     if not owner or call(owner,"GetTeamNumber")~=call(unit,"GetTeamNumber") then return false end
     local name=call(unit,"GetUnitName")
     local healing=name=="npc_dota_juggernaut_healing_ward"
@@ -48,7 +84,7 @@ function Summons.OnSpawn(game,unit)
 end
 local function issue(game,order)
     local gate=game.tacticBridge and game.tacticBridge.orderGate
-    if gate then gate:Execute(order) end
+    return gate~=nil and gate:Execute(order)==true
 end
 function Summons.Clear(game)
     for unit in pairs(game.managedSummons or {}) do
@@ -82,7 +118,7 @@ function Summons.OnThink(game)
         end
     end
     for unit,state in pairs(game.managedSummons or {}) do
-        local owner=root(game,unit)
+        local owner=Summons.ResolveOwner(game,unit)
         if not valid(unit) or call(unit,"IsAlive")==false or not owner
             or call(owner,"GetTeamNumber")~=call(unit,"GetTeamNumber") then
             game.managedSummons[unit]=nil
@@ -110,9 +146,16 @@ function Summons.OnThink(game)
                         and call(enemy,"GetTeamNumber")~=unit:GetTeamNumber()
                         and (target==nil or distance(unit,enemy)<distance(unit,target)) then target=enemy end
                 end
-                if target and call(unit,"GetAttackTarget")~=target then
-                    issue(game,{UnitIndex=unit:entindex(),OrderType=DOTA_UNIT_ORDER_ATTACK_TARGET,TargetIndex=target:entindex(),Queue=false})
-                end
+                -- GetAttackTarget may stay nil during native approach. Keep a
+                -- successfully submitted chase instead of cancelling its order
+                -- every half second; an idle unit or a new nearest target recovers.
+                local current=call(unit,"GetAttackTarget")
+                local pursuing=current==nil and state.attackTarget==target and call(unit,"IsIdle")==false
+                if target and current~=target and not pursuing then
+                    if issue(game,{UnitIndex=unit:entindex(),OrderType=DOTA_UNIT_ORDER_ATTACK_TARGET,TargetIndex=target:entindex(),Queue=false}) then
+                        state.attackTarget=target
+                    end
+                elseif not target then state.attackTarget=nil end
             end
         end
     end

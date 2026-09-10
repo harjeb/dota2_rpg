@@ -321,8 +321,12 @@ end
 function Compat:HasTacticOrder(unit)
     local engine = self.game.tacticBridge and self.game.tacticBridge.tacticEngine
     local index = safe_call(unit, "entindex", -1)
+    if engine and type(engine.HasActiveOrder) == "function" then
+        local ok, active = pcall(engine.HasActiveOrder, engine, unit)
+        if ok then return active == true end
+    end
     local state = engine and engine.states and engine.states[index]
-    if state ~= nil then
+    if state ~= nil and (state.unit == nil or state.unit == unit) then
         local now = GameRules and GameRules.GetGameTime and GameRules:GetGameTime() or 0
         if state.chase ~= nil or (state.wait_until or 0) > now then return true end
     end

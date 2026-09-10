@@ -18,6 +18,8 @@ local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
 local SummonBehavior = require("battle/summon_behavior")
 local TinyTree = require("issue_fixes/tiny_tree")
+local EnemyDiagnostics = require("battle.enemy_diagnostics")
+local SkillDebug = require("battle.skill_debug")
 local ItemSales = require("issue_fixes/item_sales")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
@@ -265,7 +267,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v30-20260910") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v31-20260910") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -436,7 +438,8 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v30-20260910 loaded; log=console.log (-condebug)")
+	SkillDebug.Install(self)
+	RuntimeLog.Write("BUILD rpg-runtime-v31-20260910 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2910,13 +2913,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	else
 		local heroName = hero.lineupHeroName or hero.benchHeroName
 		local data = heroName ~= nil and self.heroData[heroName] or nil
-		for slot = 0, HeroAbilityPolicy.GetSlotCount(hero) - 1 do
-			local ability = hero:GetAbilityByIndex(slot)
-			local saved = ability ~= nil and data ~= nil and data.ability_levels
-				and data.ability_levels[ability:GetAbilityName()] or nil
-			if saved ~= nil and not ability:IsNull() then ability:SetLevel(saved) end
-		end
-		hero:SetAbilityPoints(math.max(0, data and (data.skill_points or data.level) or wantedLevel))
+		HeroAbilityPolicy.RestoreManualAbilities(hero, data, wantedLevel)
 		hero.rpgAbilitiesRestored = true
 	end
 	hero:SetRespawnsDisabled(true)
@@ -3411,51 +3408,69 @@ function CDota2RpgDemo:OnEntityKilled(event)
 	self:ScheduleStateBroadcast(0.05)
 end
 
-function CDota2RpgDemo:OnThink()
-	TempestDouble.OnThink(self)
-    SummonBehavior.OnThink(self)
-    TinyTree.OnThink(self)
-	self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
-	local lives = RunLives.Ensure(self)
-	if self.phase ~= "fight" and #lives.pendingItems > 0
-		and GameRules:GetGameTime() >= (self.nextLifeRewardAttempt or 0) then
-		self.nextLifeRewardAttempt = GameRules:GetGameTime() + 1
-		if RunLives.FlushItems(self) > 0 then self:BroadcastShopState() end
-	end
-	if not self.teamsSpawned then
-		local state = GameRules:State_Get()
-		if state >= DOTA_GAMERULES_STATE_PRE_GAME then
-			self:EnsureBattlefield()
+-- Native unit handles can fail during death/reincarnation and removal. Keep
+-- independent upkeep failures from cancelling the scheduled think or deadline.
+function CDota2RpgDemo:RunLifecycleStep(name, callback)
+	local ok, result = xpcall(callback, debug.traceback)
+	if not ok then
+		self.lifecycleErrors = self.lifecycleErrors or {}
+		local now = GameRules:GetGameTime()
+		local previous = self.lifecycleErrors[name]
+		if previous == nil or previous.message ~= result or now - previous.at >= 5 then
+			self.lifecycleErrors[name] = { message = result, at = now }
+			local write = RuntimeLog.WriteCritical or RuntimeLog.Write
+			write("BattleLifecycle step=" .. name .. " phase=" .. tostring(self.phase)
+				.. " level=" .. tostring(self.currentLevelId) .. " error=" .. tostring(result))
 		end
 	end
+	return ok, result
+end
 
-	if self.phase == "setup" then
-		-- 原版商店的购买/出售会直接改变 PlayerResource；先吸收余额再推送 UI，
-		-- 避免旧 self.gold 把已经扣掉/返还的原版金币覆盖回去。
-		self:SyncGoldFromPlayer()
-		-- Reconcile both event-confirmed and silent results before publishing inventory.
-		self:ReconcileNativePurchaseOrders()
-		-- 原版 TRAIN_ABILITY 也绕过自定义事件；在实体更新后的 think 中捕获
-		-- 实际等级/未分配点，避免下一次刷新把技能回滚到旧 heroData。
-		local abilitiesChanged = self:SyncRosterAbilities()
-		-- 原版 HUD 的购买、出售、拖放/拾取绕过自定义按钮，也要立即同步到库存与装备面板。
-		self:SyncLiveEquipmentState(self.nativeShopTransactionPending)
-		local walletChanged = self.lastBroadcastGold ~= self:GetGoldBalance()
-		if abilitiesChanged or walletChanged then
-			self:BroadcastShopState()
+function CDota2RpgDemo:OnThink()
+	self:RunLifecycleStep("tempest_think", function() TempestDouble.OnThink(self) end)
+	self:RunLifecycleStep("summon_think", function() SummonBehavior.OnThink(self) end)
+	self:RunLifecycleStep("tiny_tree_think", function() TinyTree.OnThink(self) end)
+	self:RunLifecycleStep("enemy_diagnostics", function() EnemyDiagnostics.OnThink(self) end)
+	self:RunLifecycleStep("roster_upkeep", function()
+		self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
+		local lives = RunLives.Ensure(self)
+		if self.phase ~= "fight" and #lives.pendingItems > 0
+			and GameRules:GetGameTime() >= (self.nextLifeRewardAttempt or 0) then
+			self.nextLifeRewardAttempt = GameRules:GetGameTime() + 1
+			if RunLives.FlushItems(self) > 0 then self:BroadcastShopState() end
 		end
-		self.nativeShopTransactionPending = nil
-	end
+		if not self.teamsSpawned then
+			local state = GameRules:State_Get()
+			if state >= DOTA_GAMERULES_STATE_PRE_GAME then
+				self:EnsureBattlefield()
+			end
+		end
+
+		if self.phase == "setup" then
+			self:SyncGoldFromPlayer()
+			self:ReconcileNativePurchaseOrders()
+			-- Capture native TRAIN_ABILITY results before a later roster rebuild.
+			local abilitiesChanged = self:SyncRosterAbilities()
+			self:SyncLiveEquipmentState(self.nativeShopTransactionPending)
+			local walletChanged = self.lastBroadcastGold ~= self:GetGoldBalance()
+			if abilitiesChanged or walletChanged then
+				self:BroadcastShopState()
+			end
+			self.nativeShopTransactionPending = nil
+		end
+	end)
 
 	if self.phase == "fight" then
-		self.battleManager:OnThink() -- 胜负/超时判定
+		self:RunLifecycleStep("battle_deadline", function() self.battleManager:OnThink() end)
 		if self.phase == "fight" then
-			self.tacticBridge:OnThink()
-			local now = GameRules:GetGameTime()
-			if now >= (self.nextDamageBroadcast or 0) then
-				self:BroadcastDamageStats()
-				self.nextDamageBroadcast = now + 0.5
-			end
+			self:RunLifecycleStep("tactics", function() self.tacticBridge:OnThink() end)
+			self:RunLifecycleStep("damage_broadcast", function()
+				local now = GameRules:GetGameTime()
+				if now >= (self.nextDamageBroadcast or 0) then
+					self:BroadcastDamageStats()
+					self.nextDamageBroadcast = now + 0.5
+				end
+			end)
 		end
 	end
 
@@ -3468,22 +3483,24 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 	-- Claim settlement before any wallet/item/event callback can re-enter.
 	self.phase = "result"
-	TempestDouble.Clear(self)
-    SpecialTargets.Clear(self)
-    SummonBehavior.Clear(self)
-    TinyTree.Clear(self)
+	self.settlementGeneration = (self.settlementGeneration or 0) + 1
+	local settlementGeneration = self.settlementGeneration
+	self:RunLifecycleStep("tempest_clear", function() TempestDouble.Clear(self) end)
+	self:RunLifecycleStep("special_targets_clear", function() SpecialTargets.Clear(self) end)
+	self:RunLifecycleStep("summon_clear", function() SummonBehavior.Clear(self) end)
+	self:RunLifecycleStep("tiny_tree_clear", function() TinyTree.Clear(self) end)
 	local lifeReward = { gold = 0, items = {} }
 	if winner ~= "radiant" then
 		lifeReward = RunLives.Lose(self)
-		RunLives.FlushItems(self)
+		self:RunLifecycleStep("life_reward_delivery", function() RunLives.FlushItems(self) end)
 	end
 	local lives = RunLives.Ensure(self)
 	self.runFailed = lives.remaining <= 0
 	if self.runFailed then self.runComplete = true end
 
 	if self.damageStats ~= nil then
-		self.damageStats:Stop(GameRules:GetGameTime())
-		self:BroadcastDamageStats()
+		self:RunLifecycleStep("damage_stop", function() self.damageStats:Stop(GameRules:GetGameTime()) end)
+		self:RunLifecycleStep("damage_final_broadcast", function() self:BroadcastDamageStats() end)
 	end
 	local clearTime = self.battleManager:GetBattleTime()
 	local level = self.dataLoader:GetLevel(self.currentLevelId)
@@ -3563,9 +3580,11 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	self.phase = "result"
 	self.winner = winner
-	self.battleManager:StopBattle()
-	self:BroadcastBattleState()
-	CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
+	self:RunLifecycleStep("battle_stop", function() self.battleManager:StopBattle() end)
+	self:RunLifecycleStep("result_broadcast", function() self:BroadcastBattleState() end)
+	self:RunLifecycleStep("settlement_broadcast", function()
+		CustomGameEventManager:Send_ServerToAllClients("rpg_settlement", settlement)
+	end)
 
 	-- 闯关推进：胜利指向下一关（进入下一关时重置刷新费用与卷轴限购）。
 	-- 第 30 关胜利后结束当前 Run，不能再次进入 setup 重复领取终局奖励。
@@ -3590,7 +3609,8 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- 单人闯关：结算展示 3 秒后回到准备阶段（不结束整局游戏）
 	local setupPending = true
 	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
-		if not setupPending or self.phase ~= "result" or self.runComplete then
+		if not setupPending or self.phase ~= "result" or self.runComplete
+			or self.settlementGeneration ~= settlementGeneration then
 			return nil
 		end
 		setupPending = false

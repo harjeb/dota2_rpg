@@ -1,0 +1,19 @@
+{
+  "source": "beads_dota2_rpg",
+  "tables": {
+    "issues": 119,
+    "dependencies": 61,
+    "comments": 4,
+    "events": 288,
+    "labels": 0,
+    "config": 13
+  },
+  "implementation": [
+    "dota2_rpg-s1w",
+    "dota2_rpg-721",
+    "dota2_rpg-vl7",
+    "dota2_rpg-7ig",
+    "dota2_rpg-57i"
+  ],
+  "runtime_acceptance": "dota2_rpg-hei"
+}

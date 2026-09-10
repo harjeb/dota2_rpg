@@ -15,6 +15,10 @@ assert(lines[1]:find("console=console.log (launch with -condebug)", 1, true))
 for i = 1, 1510 do log.Write("test " .. i) end
 assert(#lines == 1500, "console diagnostics must be bounded per session")
 for _, line in ipairs(lines) do assert(line:find("[RPGTrace t=12.50]", 1, true)) end
+log.WriteCritical("BattleLifecycle late-round error")
+assert(#lines == 1501 and lines[1501]:find("BattleLifecycle late-round error", 1, true), "throttled lifecycle errors survive the ordinary trace budget")
+log.Write("still bounded")
+assert(#lines == 1501)
 GameRules, AppendToLogFile, SendToServerConsole = nil, nil, nil
 log = dofile(path)
 log.Write("no native APIs")

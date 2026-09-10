@@ -1,6 +1,6 @@
 {
   "runtime_source": "game/dota_addons/dota2_rpg/scripts/data/levels.kv",
-  "runtime_sha256": "1e072221efbaf4a195545a01faec1ef93f5bb13bc87f19467876df819611eb9a",
+  "runtime_sha256": "a9d9cd2925b4e9deab4c67eea04eb8f678c598cd63813f6d201941f97308b319",
   "validated_against": "game/dota_addons/dota2_rpg/scripts/data/levels_v07.json",
   "stage_count": 30,
   "unit_configuration_rows": 125,
@@ -9,7 +9,7 @@
   "item_name_count": 61,
   "untranslated_item_ids": [],
   "maintenance_source_difference_rows": 85,
-  "generated_utc": "2026-09-10T03:21:11.355295+00:00",
+  "generated_utc": "2026-09-10T13:15:41.615213+00:00",
   "files": {
     "excel": "当前关卡配置.xlsx",
     "stages_csv": "关卡总览.csv",
