@@ -1,6 +1,7 @@
 <root>
 	<styles>
 		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
+		<include src="file://{resources}/styles/custom_game/condition_help.css" />
 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
 	</styles>
 	<scripts>
@@ -9,6 +10,8 @@
 		<include src="file://{resources}/scripts/custom_game/panorama_rule_sync.js" />
 		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
 		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
+		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
+		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
 	</scripts>
 
 	<Panel class="RpgDemoHudRoot" hittest="false">
@@ -89,6 +92,7 @@
 			<Label text="&gt;" hittest="false" />
 		</Button>
 
+		<Button id="ConditionHelpButton" hittest="true"><Label text="?" hittest="false" /></Button>
 		<Panel id="RightSidebar" hittest="false" hittestchildren="true">
 			<Panel id="DamagePanel" class="DamagePanel" hittest="true">
 				<Panel class="SidePanelHeader">
@@ -156,6 +160,29 @@
 					<Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
 					<Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
 				</Panel>
+			</Panel>
+		</Panel>
+		<Panel id="ConditionHelp" class="Hidden" hittest="true" hittestchildren="true">
+			<Button id="ConditionHelpBackdrop" />
+			<Panel id="ConditionHelpCard" hittest="true">
+				<Panel class="HelpHeader">
+					<Label id="ConditionHelpTitle" />
+					<Button id="ConditionHelpClose"><Label id="ConditionHelpCloseLabel" /></Button>
+				</Panel>
+				<Label id="ConditionHelpSubtitle" />
+				<Panel class="HelpColumns">
+					<Panel class="HelpSidebar">
+						<Label id="ConditionHelpSearchHint" />
+						<Panel class="HelpSearchRow">
+							<TextEntry id="ConditionHelpSearch" maxchars="80" />
+							<Button id="ConditionHelpClear"><Label id="ConditionHelpClearLabel" /></Button>
+						</Panel>
+						<Label id="ConditionHelpCount" />
+						<Panel id="ConditionHelpNav" />
+					</Panel>
+					<Panel id="ConditionHelpBody" />
+				</Panel>
+				<Label id="ConditionHelpFooter" />
 			</Panel>
 		</Panel>
 	</Panel>

@@ -103,6 +103,8 @@ def main() -> None:
     run([sys.executable, str(ROOT.parent / "tests/enemy-roster.test.py")], cwd=ROOT.parent)
     run([sys.executable, str(ROOT.parent / "tests/recruitable-heroes.test.py")], cwd=ROOT.parent)
     run([sys.executable, str(ROOT.parent / "tests/export-level-configuration.test.py")], cwd=ROOT.parent)
+    run([sys.executable, str(ROOT.parent / "tests/condition-help.test.py")], cwd=ROOT.parent)
+    run([node, str(ROOT.parent / "tests/condition-help.test.js")])
     run([node, str(ROOT.parent / "tests/hud-sidebar.test.js")])
     run([node, str(ROOT.parent / "tests/panorama-save.test.js")])
     for script in (ROOT.parent / "content/dota_addons/dota2_rpg/panorama/scripts/custom_game").glob("*.js"):

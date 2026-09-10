@@ -1,0 +1,125 @@
+{
+  "topics": [
+    {
+      "id": "buff_state",
+      "title": {"zh": "增益、层数与剩余时间", "en": "Buffs, stacks and time remaining"},
+      "description": {"zh": "按自己或目标身上的状态决定何时行动。先确认状态名称，再选择有无、层数或剩余时间。", "en": "Act based on a status on yourself or your target. Confirm its name, then choose presence, stacks or remaining time."},
+      "example_ids": ["weaver_shukuchi", "primal_beast_trample"],
+      "settings": [
+        {"label": {"zh": "防止重复启动", "en": "Avoid reactivation"}, "value": {"zh": "缩地规则：使用条件 → 自身没有指定状态 → modifier_weaver_shukuchi", "en": "Shukuchi rule: use condition → self does not have modifier → modifier_weaver_shukuchi"}},
+        {"label": {"zh": "临近结束再行动", "en": "Act near expiry"}, "value": {"zh": "另一条动作规则：自身状态剩余时间≤1秒；状态填写 modifier_weaver_shukuchi", "en": "A separate action rule: self modifier time remaining ≤1 second; modifier_weaver_shukuchi"}},
+        {"label": {"zh": "有层数的状态", "en": "Stacking statuses"}, "value": {"zh": "使用条件选自身状态层数≥N；检查目标则用目标筛选中的状态层数。N按技能调整。", "en": "Use self modifier stacks ≥N; for another unit, use target modifier stack filters. Tune N to the spell."}}
+      ],
+      "steps": [
+        {"zh": "先选要执行的动作。检查自己放在“使用条件”，检查选中的敌人或队友放在“目标筛选”。", "en": "Select the action first. Check yourself in Use conditions; check the selected enemy or ally in Target filters."},
+        {"zh": "缩地可直接使用上面的状态名称；其他技能要填写准确的状态内部名称，不能填写中文技能名。", "en": "Use the status name above for Shukuchi. Other spells need their exact modifier name, not their displayed skill name."},
+        {"zh": "如果想“没有状态，或者状态快结束”都施放，建立两条规则，分别设置两种情况。", "en": "To act when a status is absent OR nearly expired, create two separate rules, one for each case."}
+      ],
+      "notes": [
+        {"zh": "状态不存在时，层数和剩余时间条件不通过；永久状态不会满足剩余≤1秒。", "en": "Absent statuses fail stack and duration comparisons. Permanent statuses do not satisfy remaining time ≤1 second."},
+        {"zh": "当前同名状态不按施加者分开，多个实例取可读取的最大层数或最长剩余时间。", "en": "Same-name statuses are not separated by their caster; multiple instances use the greatest readable stack count or remaining duration."}
+      ]
+    },
+    {
+      "id": "global",
+      "title": {"zh": "全图与远距离技能", "en": "Global and long-range spells"},
+      "description": {"zh": "全图技能不必等敌人走近。以宙斯雷神之怒为例，用存活敌人数代替附近敌人数。", "en": "Global spells need not wait for nearby enemies. For Thundergod's Wrath, use living-enemy count instead of nearby-enemy count."},
+      "example_ids": ["zuus_thundergods_wrath"],
+      "settings": [
+        {"label": {"zh": "目标与排序", "en": "Target and ordering"}, "value": {"zh": "敌方；最近。雷神之怒本身按无目标技能释放。", "en": "Enemy; nearest. Thundergod's Wrath itself casts without a unit target."}},
+        {"label": {"zh": "使用条件", "en": "Use conditions"}, "value": {"zh": "存活敌人数≥1；可加战斗时间≥1秒", "en": "Living enemies ≥1; optionally battle time ≥1 second"}},
+        {"label": {"zh": "目标筛选", "en": "Target filters"}, "value": {"zh": "不添加近距离上限，也不要求附近有敌人", "en": "Do not add a short distance cap or require nearby enemies"}}
+      ],
+      "steps": [
+        {"zh": "选择雷神之怒，保留技能原本的施法方式。", "en": "Select Thundergod's Wrath and retain its native casting mode."},
+        {"zh": "移除普通战斗预设中的附近敌人门槛，改成存活敌人数≥1。", "en": "Remove the nearby-enemy gate from the ordinary combat preset and require at least one living enemy instead."},
+        {"zh": "其他远距离单位或地点技能仍需按自身用途选择目标，并遵守实际施法距离。", "en": "Other long-range unit or point spells still need appropriate targets and must respect their actual cast range."}
+      ],
+      "notes": [
+        {"zh": "这不会提供未知目标位置、自动传送或安全落点；全图技能的命中规则仍由技能本身决定。", "en": "This does not provide unknown target positions, automatic teleportation or safe landing points. The spell still determines who is hit."}
+      ]
+    },
+    {
+      "id": "special_objects",
+      "title": {"zh": "抓取对象与投掷落点", "en": "Grabbed units and Toss destinations"},
+      "description": {"zh": "小小投掷有两个不同对象：身边被抓起的单位，以及规则选中的落点目标。两者分别设置。", "en": "Tiny's Toss has two different subjects: the unit grabbed nearby and the destination target selected by the rule. Configure them separately."},
+      "example_ids": ["tiny_toss", "tiny_tree_grab"],
+      "settings": [
+        {"label": {"zh": "使用条件", "en": "Use conditions"}, "value": {"zh": "被抓单位是敌方；被抓单位是英雄（两项同时满足）", "en": "Grabbed unit is enemy AND grabbed unit is hero"}},
+        {"label": {"zh": "落点目标", "en": "Destination target"}, "value": {"zh": "敌方；最近；有需要再加落点目标的血量或距离筛选", "en": "Enemy; nearest. Optionally filter the destination target by health or distance"}}
+      ],
+      "steps": [
+        {"zh": "选择小小的投掷，打开条件设置。", "en": "Choose Tiny's Toss and open Condition settings."},
+        {"zh": "用“被抓单位”使用条件限制实际抓取对象；不要用普通目标血量筛选代替被抓单位血量条件。", "en": "Use Grabbed unit conditions for the actual grabbed unit. Ordinary target-health filters do not check the grabbed unit's health."},
+        {"zh": "再设置落点目标和排序。小小抓树已有自动处理，学会且可用时无需另找地图树木。", "en": "Then configure the destination target and ordering. Tree Grab already has automatic handling when learned and available; you do not need to find map trees."}
+      ],
+      "notes": [
+        {"zh": "检查的是抓取范围内最近的可抓单位，不会越过近处队友去找远处敌人。没有候选或距离并列时，这组抓取条件不通过。", "en": "The check uses the nearest grabbable unit. It does not skip a nearby ally for a farther enemy. No candidate or a distance tie fails these grab conditions."},
+        {"zh": "这只是已支持对象的示例；不能直接套到尸体、建筑、残岩或其他专属对象。", "en": "This is an example of a supported object contract, not a generic recipe for corpses, buildings, stones or other special objects."}
+      ]
+    },
+    {
+      "id": "upgrades",
+      "title": {"zh": "升级、形态与新增技能", "en": "Upgrades, forms and additional abilities"},
+      "description": {"zh": "获得升级后，新增技能单独设置；原技能也要检查目标方式和范围是否改变。以龙骑士的变身与火球为例。", "en": "After an upgrade, configure new abilities separately and check whether existing spells changed target mode or range. Dragon form and Fireball illustrate this distinction."},
+      "example_ids": ["dragon_knight_elder_dragon_form", "dragon_knight_fireball"],
+      "settings": [
+        {"label": {"zh": "变身启动", "en": "Form activation"}, "value": {"zh": "变身技能：自身；自身800范围内敌人数≥1", "en": "Form ability: self; at least one enemy within 800"}},
+        {"label": {"zh": "新增普通地点技能", "en": "New ordinary point spell"}, "value": {"zh": "另建该技能规则：敌方；最近；按实际作用范围设置敌人门槛", "en": "Create a separate rule: enemy; nearest; set combat gates for the actual spell area"}}
+      ],
+      "steps": [
+        {"zh": "先确认当前版本的升级确实提供了技能，而且技能已出现在英雄动作列表中。", "en": "First confirm the current upgrade actually grants the ability and that it appears in the hero's action list."},
+        {"zh": "新增技能建立新规则，不要把原来的变身规则当作火球施放规则。", "en": "Create a new rule for an additional skill. A form-activation rule does not also cast Fireball."},
+        {"zh": "升级改变敌友目标、施法方式或范围后，重新核对目标与筛选；需要形态条件时参考“增益、层数与剩余时间”。", "en": "Recheck target team, casting mode and filters after upgrades change them. For form gates, consult Buffs, stacks and time remaining."}
+      ],
+      "notes": [
+        {"zh": "未拥有、未学习、隐藏或禁用的技能不会因为填了规则就变得可用。教程不自动购买升级或选择形态连招。", "en": "Rules do not make unowned, unlearned, hidden or disabled abilities available. The guide does not buy upgrades or plan form-specific combos."}
+      ]
+    },
+    {
+      "id": "risk",
+      "title": {"zh": "消耗自身生命的技能", "en": "Spells that cost your own health"},
+      "description": {"zh": "救队友时也要检查施法者血量。亚巴顿迷雾缠绕可以作为自损治疗的例子。", "en": "Check your own health while helping an ally. Abaddon's Mist Coil is an example of healing with a health cost."},
+      "example_ids": ["abaddon_death_coil"],
+      "settings": [
+        {"label": {"zh": "目标与排序", "en": "Target and ordering"}, "value": {"zh": "友方；生命百分比最低", "en": "Ally; lowest health percentage"}},
+        {"label": {"zh": "使用条件", "en": "Use conditions"}, "value": {"zh": "自身生命百分比≥70%", "en": "Self health ≥70%"}},
+        {"label": {"zh": "目标筛选", "en": "Target filters"}, "value": {"zh": "目标生命百分比≤60%；排除自己", "en": "Target health ≤60%; exclude self"}}
+      ],
+      "steps": [
+        {"zh": "先套用治疗友方规则，再增加自身血量下限。", "en": "Start with an ally-healing rule, then add a minimum self-health gate."},
+        {"zh": "自身血量放在使用条件，队友血量放在目标筛选。", "en": "Put your own health in Use conditions and the ally's health in Target filters."},
+        {"zh": "按当前技能生命消耗和自身最大生命调整70%的起点。", "en": "Adjust the 70% starting threshold for the spell's health cost and your maximum health."}
+      ],
+      "notes": [
+        {"zh": "比例门槛不会预测扣血后的存活，也不会判断交换位置、拉扯队友或友军误伤是否划算；这些风险不能只靠一条血量条件解决。", "en": "A percentage gate does not predict survival after the cost, or whether swaps, ally displacement or friendly fire are worthwhile."}
+      ]
+    },
+    {
+      "id": "dual_target",
+      "title": {"zh": "同一技能治疗友方、伤害敌方", "en": "One spell for ally healing and enemy damage"},
+      "description": {"zh": "原本允许敌友两用的技能，分别建立救人和伤害两条规则。仍以亚巴顿迷雾缠绕为例。", "en": "For a spell that natively allows both teams, create separate healing and damage rules. Mist Coil provides an example."},
+      "example_ids": ["abaddon_death_coil"],
+      "settings": [
+        {"label": {"zh": "第一条：救队友", "en": "First: heal an ally"}, "value": {"zh": "友方；目标生命≤60%；排除自己；生命百分比最低；自身生命≥70%", "en": "Ally; target HP ≤60%; exclude self; lowest HP percentage; self HP ≥70%"}},
+        {"label": {"zh": "第二条：伤害敌人", "en": "Second: damage an enemy"}, "value": {"zh": "敌方；目标生命≤30%；当前生命值最低；自身生命≥70%", "en": "Enemy; target HP ≤30%; lowest current health; self HP ≥70%"}}
+      ],
+      "steps": [
+        {"zh": "添加两条同技能规则，分别设置友方和敌方目标。", "en": "Add two rules for the same skill, with ally and enemy targets respectively."},
+        {"zh": "救人规则放在伤害规则之前，先尝试救助合格队友。", "en": "Place the healing rule above the damage rule to try eligible allies first."},
+        {"zh": "两条规则分别保存，目标阵营和筛选不会自动从另一条继承。", "en": "Save each rule separately; neither inherits the other's target team or filters."}
+      ],
+      "notes": [
+        {"zh": "这不是同时施放两次：技能冷却和资源仍然共享。选择敌方不会把纯友方技能变成伤害技能，允许自身也不会绕过技能禁止自身的限制。", "en": "This does not cast twice at once: cooldown and resources are shared. Enemy targeting does not turn an ally-only spell into damage, and allowing self does not override native self-target restrictions."}
+      ]
+    }
+  ],
+  "type_pages": {
+    "G00": ["single_target"], "G01": ["healing", "protection"], "G02": ["area"],
+    "G03": ["single_target", "dispel"], "G04": ["finisher"], "G05": ["toggle"],
+    "G06": ["combo"], "G07": ["movement", "persistent_movement"], "G08": ["summon"],
+    "G09": ["buff_state"], "G10": ["channel"], "G11": ["global"], "G12": ["charges"],
+    "G13": ["special_objects"], "G14": [], "G15": ["upgrades"], "G16": ["risk"],
+    "G17": ["dual_target"], "G18": [], "G19": [], "G20": [], "G21": []
+  }
+}
