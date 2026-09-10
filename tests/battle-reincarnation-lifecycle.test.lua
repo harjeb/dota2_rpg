@@ -11,7 +11,7 @@ local logs = {}
 local hooks = { OnThink = function() end, Clear = function() end }
 require = function(name)
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
-        or name == "battle.run_lives" then return nativeRequire(name) end
+        or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end
     if name == "battle.tempest_double" then return hooks end
     return { Install=function() end, OnThink=function() end, Clear=function() end,
         Write=function(message) logs[#logs+1]=message end, Event=function() end }

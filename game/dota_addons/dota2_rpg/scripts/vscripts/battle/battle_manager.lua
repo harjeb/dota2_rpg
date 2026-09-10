@@ -10,6 +10,7 @@
 
 local UnitHelpers = require("battle.unit_helpers")
 local Behavior = require("tactics/ability_behavior")
+local RespawnPolicy = require("battle.respawn_policy")
 local TacticEngine = UnitHelpers -- compatibility name for validity checks only
 
 if BattleManager == nil then
@@ -124,6 +125,7 @@ end
 
 function BattleManager:StopBattle()
 	self.phase = "settle"
+	RespawnPolicy.SetBattleActive(self.gameMode, false)
 	for _, heroes in pairs(self.teamHeroes) do
 		for _, hero in ipairs(heroes) do
 			if TacticEngine.IsValidUnit(hero) and hero:IsAlive() then

@@ -1,0 +1,15 @@
+[TINY_NATIVE_1_BEGIN]
+
+STATE	phase	setup	level	skill_test	time	416.16668701172	tiny	282	ability_level	0	mana	1275	cooldown	0
+
+MASK	team	4	types	128	flags	0	behavior	268435496	range	0	grab_radius	0
+
+GRAB	-1	none	condition	false	use_condition_failed:tiny_grab_is_enemy	1
+
+TARGET	280	npc_rpg_skill_test_target	team	3	alive	true	invul	false	distance	1251.0129394531	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	custom_filter	unavailable	adapter	false	selector	0
+
+TARGET	282	npc_dota_hero_tiny	team	2	alive	true	invul	true	distance	0	raw_filter	1	UF_FAIL_FRIENDLY	ordinary_filter	18	custom_filter	unavailable	adapter	false	selector	0
+
+QUERY_OK	true	nil
+
+[TINY_NATIVE_1_END]

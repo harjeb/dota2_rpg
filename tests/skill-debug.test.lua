@@ -8,7 +8,10 @@ package.loaded["issue_fixes.runtime_log"] = {Write=noop}
 package.loaded["issue_fixes.hero_lifecycle_log"] = {Remove=function(_, u) u:RemoveSelf() end}
 package.loaded["issue_fixes.hero_ability_policy"] = {GetSlotCount=function(u) return #u.abilities end}
 for _, name in ipairs({"battle.tempest_double", "tactics.special_targets", "battle.summon_behavior", "issue_fixes.tiny_tree"}) do
-    package.loaded[name] = {Clear=function(g) g.cleanupCalls = g.cleanupCalls + 1 end}
+    package.loaded[name] = {Clear=function(g)
+        if g.assertRespawnStopped then g:assertRespawnStopped("cleanup") end
+        g.cleanupCalls = g.cleanupCalls + 1
+    end}
 end
 DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS = 2, 3
 local Debug = require("battle.skill_debug")
@@ -21,6 +24,10 @@ end
 local function unit(name)
     local u = {name=name, items={}, abilities={cooldown("axe_berserkers_call"), cooldown("special_bonus_hp_250")}}
     function u:IsNull() return self.removed == true end
+    function u:IsRealHero() return self.name:find("npc_dota_hero_",1,true)==1 end
+    function u:IsAlive() return not self.dead end
+    function u:IsReincarnating() return self.reincarnating==true end
+    function u:SetRespawnsDisabled(value) self.respawnsDisabled=value end
     function u:GetUnitName() return self.name end
     function u:RemoveSelf() self.removed=true end
     function u:RemoveModifierByName(name) self.removedModifier=name end
@@ -262,10 +269,42 @@ test("stale phase timeout releases pending request (regression)",function()
     f.thinks.RpgSkillDebugPrecache.fn()
     eq(g.skillDebug.pending,false,"phase change must not leave pending locked after timeout")
 end)
+test("debug end timeout reset and exit disable pending dead heroes before cleanup",function()
+    for _,action in ipairs({"end","timeout","reset","exit"}) do
+        local f,g=fixture(); f:enter(); g:OnStartBattle()
+        local pending=g.battleManager.teamHeroes[2][1]
+        pending.dead=true; pending.reincarnating=true; pending.respawnsDisabled=false
+        -- Include a real enemy hero: the normal debug target is a non-hero creep.
+        local enemy=unit("npc_dota_hero_skeleton_king")
+        enemy.dead=true; enemy.reincarnating=true; enemy.respawnsDisabled=false
+        table.insert(g.battleManager.teamHeroes[3],enemy)
+        local alive=unit("npc_dota_hero_sven"); alive.respawnsDisabled=false
+        table.insert(g.battleManager.teamHeroes[2],alive)
+        local checks=0
+        function g:assertRespawnStopped(stage)
+            eq(self.phase,"result",stage .. " follows phase claim")
+            for _,u in ipairs({pending,enemy,alive}) do
+                eq(u.respawnsDisabled,true,action .. " disables all heroes before " .. stage)
+                assert(not u.removed,"permission must change before removal")
+            end
+            checks=checks+1
+        end
+        -- The manager remains a mock so its own policy cannot conceal a missing
+        -- Debug.stop call. Cleanup observes permission before even reaching it.
+        g.battleManager.StopBattle=function(bm)
+            g:assertRespawnStopped("manager stop"); bm.stops=bm.stops+1
+        end
+        if action=="end" or action=="timeout" then
+            g:EndBattle(action=="timeout" and "timeout" or "good",3)
+        else f:emit(action,{PlayerID=7}) end
+        assert(checks>=5,"all cleanup modules and manager checked")
+        eq(pending.respawnsDisabled,true); eq(enemy.respawnsDisabled,true)
+    end
+end)
 local failures={}
 for _,entry in ipairs(tests) do
     local ok,err=xpcall(entry[2],debug.traceback)
     if ok then print("PASS "..entry[1]) else print("FAIL "..entry[1].."\n"..err); failures[#failures+1]=entry[1] end
 end
-print(string.format("skill-debug: %d passed, %d failed",#tests-#failures,#failures))
+print(string.format("skill-debug: %d passed, %d failed (native respawn semantics mocked, not proven)",#tests-#failures,#failures))
 assert(#failures==0,table.concat(failures,"; "))

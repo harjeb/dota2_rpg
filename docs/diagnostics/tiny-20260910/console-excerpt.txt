@@ -1,0 +1,43 @@
+Source: Dota game/dota/console.log, 2026-09-10. Selected saved-rule and battle lines; repetitive diagnostics omitted. Trailing whitespace stripped.
+
+09/10 22:41:44  {
+09/10 22:41:44   request_id rule_4_1789051304615
+09/10 22:41:44   hero_index int( 228 = 0xE4 )
+09/10 22:41:44   hero_name npc_dota_hero_tiny
+09/10 22:41:44   slot int( 2 = 0x2 )
+09/10 22:41:44   rule_id npc_dota_hero_tiny:2
+09/10 22:41:44   enabled int( 1 = 0x1 )
+09/10 22:41:44   action_kind ability
+09/10 22:41:44   action_id tiny_toss
+09/10 22:41:44   action_name tiny_toss
+09/10 22:41:44   target_team enemy
+09/10 22:41:44   target_types hero,monster,summon
+09/10 22:41:44   approach range_only
+09/10 22:41:44   rule_count int( 2 = 0x2 )
+09/10 22:41:44   use_condition_1_type
+09/10 22:41:44   use_condition_2_type
+09/10 22:41:44   use_condition_3_type
+09/10 22:41:44   use_condition_4_type tiny_grab_is_enemy
+09/10 22:41:44   target_filter_1_type
+09/10 22:41:44   target_filter_2_type
+09/10 22:41:44   target_filter_3_type
+09/10 22:41:44   target_filter_4_type
+09/10 22:41:44   target_priority_1_type nearest
+09/10 22:41:44   target_priority_2_type
+09/10 22:41:44   condition always
+09/10 22:41:44   value int( 50 = 0x32 )
+09/10 22:41:44   target enemy_distance_nearest
+09/10 22:41:44   target_attr distance
+09/10 22:41:44   positioning_mode default
+09/10 22:41:44   positioning_distance int( 0 = 0x0 )
+09/10 22:41:44   positioning_tolerance int( 50 = 0x32 )
+09/10 22:41:44 }
+09/10 22:41:44 [VScript] [RPGTrace t=259.87] RuleUpdate player=0 hero=228 slot=2 action=tiny_toss ok=true reason=
+09/10 22:41:46 [VScript] [RPGTrace t=261.77] Tactic unit=228 hero=npc_dota_hero_tiny event=rule_skipped rule=2 action=tiny_toss target= reason=use_condition_failed:tiny_grab_is_enemy
+09/10 22:41:46 [VScript] [RPGTrace t=261.77] Tactic unit=228 hero=npc_dota_hero_tiny event=rule_skipped rule=1 action=basic_attack target= reason=no_target_in_range_or_aoe_min_hits
+09/10 22:41:46 [VScript] [RPGTrace t=261.77] Tactic unit=228 hero=npc_dota_hero_tiny event=chase_started rule=system_fallback_attack action= target=226 reason=
+09/10 22:41:47 [VScript] [RPGTrace t=263.07] Tactic unit=228 hero=npc_dota_hero_tiny event=rule_skipped rule=2 action=tiny_toss target= reason=no_legal_target
+09/10 22:41:47 [VScript] [RPGTrace t=263.07] Tactic unit=228 hero=npc_dota_hero_tiny event=rule_executed rule=999 action=system_fallback_attack target=226 reason=
+09/10 22:41:48 [VScript] [RPGEnemy] level=skill_test phase=fight time=263.37 event=periodic entity=226.00 name=npc_rpg_skill_test_target alive=1 reincarnating=0 idle=0 stun=0 root=0 disarm=0 restricted=0 casting=unknown channel=0 abilityphase=unknown invalid=0 hp=50000.00 maxhp=50000.00 pos=92.42,50.96 delta=599.95 target=unknown targetdist=unknown forced=228.00 forceddist=202.11 range=150.00 active=unknown releaseage=unknown intent.owner=tactic intent.retry=0.00 intent.request=263.27 intent.progress=263.27 intent.blocked=unknown chase=1 chase.target_index=228.00 chase.rule_index=999.00 chase.logical_id=system_fallback_attack chase.deadline=263.77 chase.max_distance=1200.00
+09/10 22:42:51 [VScript] [RPGTrace t=326.27] SkillDebug exit normal_level=ch01
+09/10 22:42:57 [VScript] [RPGTrace t=332.53] SkillDebug enter hero=npc_dota_hero_tiny level=30 gold=99999 hp=50000 damage=10

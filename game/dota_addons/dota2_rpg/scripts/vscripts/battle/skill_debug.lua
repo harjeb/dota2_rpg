@@ -3,6 +3,7 @@ local Debug = { LEVEL = "skill_test", UNIT = "npc_rpg_skill_test_target", HP = 5
 local Log = require("issue_fixes.runtime_log")
 local Lifecycle = require("issue_fixes.hero_lifecycle_log")
 local Policy = require("issue_fixes.hero_ability_policy")
+local RespawnPolicy = require("battle.respawn_policy")
 local cleanup = { require("battle.tempest_double"), require("tactics.special_targets"),
     require("battle.summon_behavior"), require("issue_fixes.tiny_tree") }
 local function valid(unit) return unit ~= nil and (not unit.IsNull or not unit:IsNull()) end
@@ -70,6 +71,7 @@ end
 local function stop(game)
     -- Claim before native cleanup; callbacks cannot settle this fight twice.
     game.phase = "result"
+    RespawnPolicy.SetBattleActive(game, false)
     for i, module in ipairs(cleanup) do safe(game, "clear_" .. i, function() module.Clear(game) end) end
     safe(game, "stop", function() game.battleManager:StopBattle() end)
     if game.issueFixes then safe(game, "enemy_stop", function() game.issueFixes:OnBattleEnded(all_units(game)) end) end

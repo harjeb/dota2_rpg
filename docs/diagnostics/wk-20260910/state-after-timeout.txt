@@ -1,0 +1,27 @@
+[WK_STATE_1_BEGIN]
+
+STATE	time	1112.9333496094	pause	false	root_phase	setup	bm_phase	settle	start	952.46673583984	elapsed	0	left	120	debug	true	generation	15
+
+UNIT	270	npc_rpg_skill_test_target	team	3	alive	true	hp	50000	pos	Vector 0000000000483BE0 [720.000000 220.000000 128.000000]	reincarnating	false	respawn_disabled	unavailable	respawns_disabled	unavailable	respawn_time	unavailable	until_respawn	unavailable	invul	false	outgame	false	player	-1	owner	nil
+
+UNIT	272	npc_dota_hero_skeleton_king	team	2	alive	true	hp	2694	pos	Vector 00000000004262C0 [-217.465637 -70.748413 128.000000]	reincarnating	false	respawn_disabled	unavailable	respawns_disabled	true	respawn_time	100	until_respawn	0	invul	true	outgame	false	player	0	owner	table: 0x0024c850
+
+ULT	level	1	cooldown	0	delay	3	respawn_enabled	false
+
+MOD	modifier_skeleton_king_vampiric_spirit_aura	remaining	-38.366577148438	duration	-1
+
+MOD	modifier_skeleton_king_reincarnation_scepter	remaining	0.5	duration	0.5
+
+MOD	modifier_special_bonus_attributes	remaining	-38.366577148438	duration	-1
+
+MOD	modifier_skeleton_king_reincarnation	remaining	-38.366577148438	duration	-1
+
+MOD	modifier_invulnerable	remaining	-38.366577148438	duration	-1
+
+MOD	modifier_disarmed	remaining	-38.366577148438	duration	-1
+
+MOD	modifier_silence	remaining	-38.366577148438	duration	-1
+
+QUERY_OK	true	nil
+
+[WK_STATE_1_END]

@@ -43,6 +43,7 @@ require = function(name)
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
 		["battle.boss_scaling"] = moduleRoot .. "battle/boss_scaling.lua",
 		["battle.run_lives"] = moduleRoot .. "battle/run_lives.lua",
+		["battle.respawn_policy"] = moduleRoot .. "battle/respawn_policy.lua",
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",
         ["issue_fixes/item_sales"] = moduleRoot .. "issue_fixes/item_sales.lua",

@@ -20,6 +20,7 @@ local SummonBehavior = require("battle/summon_behavior")
 local TinyTree = require("issue_fixes/tiny_tree")
 local EnemyDiagnostics = require("battle.enemy_diagnostics")
 local SkillDebug = require("battle.skill_debug")
+local RespawnPolicy = require("battle.respawn_policy")
 local ItemSales = require("issue_fixes/item_sales")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
@@ -267,7 +268,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v31-20260910") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v32-20260910") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -372,7 +373,8 @@ function CDota2RpgDemo:InitGameMode()
 		print("[Dota2Rpg] WARNING: SetCanSellAnywhere is unavailable; native selling requires a shop range.")
 	end
 	if GameRules.SetHeroRespawnEnabled ~= nil then
-		GameRules:SetHeroRespawnEnabled(false)
+		-- Permit native WK/Aegis rebirth; per-hero round policy suppresses ordinary deaths.
+		GameRules:SetHeroRespawnEnabled(true)
 	end
 
 	ListenToGameEvent("player_connect_full", Dynamic_Wrap(CDota2RpgDemo, "OnPlayerConnectFull"), self)
@@ -439,7 +441,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v31-20260910 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v32-20260910 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -616,6 +618,7 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	if TempestDouble.OnSpawn(self, unit, BATTLE_ACQUISITION_RANGE) then return end
     if SpecialTargets.OnSpawn(self, unit) then return end
     if SummonBehavior.OnSpawn(self, unit) then return end
+	if RespawnPolicy.OnSpawn(self, unit) then return end
 	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
 		return
 	end
@@ -3313,6 +3316,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	-- 规则在准备阶段通过 rpg_update_rule 逐条写入当前 Run；这里不再信任客户端
 	-- 的整包旧 payload，也不在开战时覆盖 RuleService 的稳定英雄键。
 	self.phase = "fight"
+	RespawnPolicy.SetBattleActive(self, true)
 
 	for _, heroes in pairs(self.battleManager.teamHeroes) do
 		for _, hero in ipairs(heroes) do
@@ -3388,11 +3392,13 @@ function CDota2RpgDemo:BroadcastDamageStats()
 end
 
 function CDota2RpgDemo:OnEntityKilled(event)
+	local killed = EntIndexToHScript(event.entindex_killed or -1)
+	-- Classify native death before statistics/broadcasts, including late events.
+	RespawnPolicy.OnKilled(self, killed)
 	if self.phase ~= "fight" then
 		return
 	end
 
-	local killed = EntIndexToHScript(event.entindex_killed or -1)
 	if not TacticEngine.IsValidUnit(killed) then
 		return
 	end
@@ -3483,6 +3489,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 	-- Claim settlement before any wallet/item/event callback can re-enter.
 	self.phase = "result"
+	RespawnPolicy.SetBattleActive(self, false)
 	self.settlementGeneration = (self.settlementGeneration or 0) + 1
 	local settlementGeneration = self.settlementGeneration
 	self:RunLifecycleStep("tempest_clear", function() TempestDouble.Clear(self) end)

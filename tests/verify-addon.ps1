@@ -87,7 +87,7 @@ $luaChecks = @(
            'seenUnits\[unitName\]',
            'SetFogOfWarDisabled\(true\)',
            'SetUnseenFogOfWarEnabled\(false\)',
-           'SetHeroRespawnEnabled\(false\)',
+           'SetHeroRespawnEnabled\(true\)',
            'SetRespawnsDisabled\(true\)',
            'issuerPlayerId < 0',
            'local SHOP_REFRESH_COST = 20',

@@ -8,8 +8,10 @@ function NativeTargeting.IsPhantomStrike(ability)
 end
 
 function NativeTargeting.ResolveMasks(ability, team, types)
-    if NativeTargeting.IsPhantomStrike(ability) then
-        -- Native description permits other allied/enemy heroes and basic units.
+    if NativeTargeting.IsPhantomStrike(ability)
+        or Context.Call(ability, "GetAbilityName") == "tiny_toss" then
+        -- Reviewed CUSTOM skills accept allied/enemy heroes and basic units.
+        -- Toss landing targets are independent of its nearest grabbed unit.
         -- Translate only CUSTOM fields; retain ordinary masks and native flags.
         if team == (DOTA_UNIT_TARGET_TEAM_CUSTOM or 4) then
             team = DOTA_UNIT_TARGET_TEAM_BOTH or 3

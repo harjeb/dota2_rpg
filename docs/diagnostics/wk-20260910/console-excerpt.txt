@@ -1,0 +1,18 @@
+Selected original lines from game/dota/console.log; repeated diagnostics omitted.
+Source run: rpg-runtime-v31-20260910. No gameplay commands were issued by this investigation.
+
+09/10 22:53:10 [VScript] [RPGTrace t=945.30] SkillDebug enter hero=npc_dota_hero_skeleton_king level=30 gold=99999 hp=50000 damage=100
+09/10 22:53:17 [VScript] [Dota2Rpg] Battle started on level skill_test.
+09/10 22:53:17 [VScript] [RPGEnemy] level=skill_test phase=fight time=952.47 event=phase
+09/10 22:53:17 [VScript] [RPGEnemy] level=skill_test phase=fight time=952.47 event=phase entity=135.00 name=npc_rpg_skill_test_target alive=1 reincarnating=0 idle=1 stun=0 root=0 disarm=0 restricted=0 casting=unknown channel=0 abilityphase=unknown invalid=0 hp=50000.00 maxhp=50000.00 pos=720.00,220.00 delta=0.00 target=unknown targetdist=unknown forced=unknown forceddist=unknown range=150.00 active=unknown releaseage=unknown intent.owner=unknown intent.retry=unknown intent.request=unknown intent.progress=unknown intent.blocked=unknown chase=0 chase.target_index=unknown chase.rule_index=unknown chase.logical_id=unknown chase.deadline=unknown chase.max_distance=unknown
+09/10 22:53:17 [VScript] [RPGTrace t=952.57] Tactic unit=137 hero=npc_dota_hero_skeleton_king event=rule_executed rule=1 action=skeleton_king_reincarnation target=137 reason=
+09/10 22:53:18 [Server] Game code (account 0) tried to execute invalid order (19). Target NPC is dead.
+09/10 22:53:18 [VScript] [RPGTrace t=952.77] Tactic unit=135 hero=npc_rpg_skill_test_target event=chase_cancelled rule=999 action= target= reason=target_invalid
+09/10 22:53:18 [VScript] [RPGTrace t=952.77] Tactic unit=135 hero=npc_rpg_skill_test_target event=rule_skipped rule=1 action=basic_attack target= reason=no_legal_target
+09/10 22:54:58 [VScript] [RPGTrace t=1053.17] Tactic unit=135 hero=npc_rpg_skill_test_target event=rule_skipped rule=1 action=basic_attack target= reason=no_legal_target
+09/10 22:55:18 [VScript] [RPGEnemy] level=skill_test phase=result time=1072.67 event=phase
+09/10 22:55:18 [VScript] [RPGEnemy] level=skill_test phase=result time=1072.67 event=phase entity=135.00 name=npc_rpg_skill_test_target alive=1 reincarnating=0 idle=1 stun=0 root=0 disarm=0 restricted=0 casting=unknown channel=0 abilityphase=unknown invalid=0 hp=50000.00 maxhp=50000.00 pos=0.00,0.00 delta=0.00 target=unknown targetdist=unknown forced=unknown forceddist=unknown range=150.00 active=unknown releaseage=unknown intent.owner=unknown intent.retry=unknown intent.request=unknown intent.progress=unknown intent.blocked=unknown chase=0 chase.target_index=unknown chase.rule_index=unknown chase.logical_id=unknown chase.deadline=unknown chase.max_distance=unknown
+09/10 22:55:20 [VScript] [RPGLifecycle seq=241 t=1075.567 real=1075.567 level=skill_test phase=setup] remove_before role=lineup entity=137 name=npc_dota_hero_skeleton_king alive=false channel=false outofgame=false active=none modifiers=3[modifier_skeleton_king_vampiric_spirit_aura,modifier_special_bonus_attributes,modifier_skeleton_king_reincarnation]
+09/10 22:55:20 [VScript] [RPGLifecycle seq=242 t=1075.567 real=1075.567 level=skill_test phase=setup] remove_after role=lineup entity=137 name=npc_dota_hero_skeleton_king alive=false channel=false outofgame=false active=none modifiers=3[modifier_skeleton_king_vampiric_spirit_aura,modifier_special_bonus_attributes,modifier_skeleton_king_reincarnation]
+09/10 22:55:20 [VScript] [RPGTrace t=1075.57] SkillDebug reset hero=npc_dota_hero_skeleton_king damage=100
+09/10 22:55:21 [VScript] [RPGEnemy] level=skill_test phase=setup time=1075.67 event=phase
