@@ -1,0 +1,29 @@
+[PA_PATCH2_BEGIN]
+
+phase	setup	chapter	ch05	hero	756	time	1882.5334472656
+
+ability	3	4	128	0
+
+PATCH_COMPARISON (legality only; range and cast execution not attempted)
+
+target	663	npc_dota_hero_drow_ranger	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	686	npc_dota_hero_axe	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	710	npc_dota_hero_crystal_maiden	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	734	npc_dota_hero_tiny	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	756	npc_dota_hero_phantom_assassin	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	777	npc_dota_hero_terrorblade	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	799	npc_dota_hero_furion	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+target	820	npc_dota_hero_zuus	old	false	patched	false	selected	0	alive	true	invulnerable	true	out_of_game	false	ordinary_filter	18
+
+READ_ONLY_NO_ORDERS
+
+QUERY_OK	true	nil
+
+[PA_PATCH2_END]

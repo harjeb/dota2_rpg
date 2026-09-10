@@ -164,6 +164,7 @@ function RuleService.new(options)
         get_phase = assert(options.get_phase, "get_phase is required"),
         is_roster_hero = assert(options.is_roster_hero, "is_roster_hero is required"),
         find_roster_hero = options.find_roster_hero,
+        get_initial_rules = options.get_initial_rules,
         is_target_actor_allowed = options.is_target_actor_allowed,
         get_hero_key = options.get_hero_key or function(hero)
             if hero == nil then return nil end
@@ -462,6 +463,24 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
     end
 
     local rules = self:GetHeroRules(hero)
+    local seeded = false
+    -- The HUD edits one row at a time. On the first edit, preserve the rest of
+    -- the effective server defaults before this list replaces the fallback.
+    -- Copy nested data so later edits never mutate the fallback/default cache.
+    if next(rules) == nil and self.get_initial_rules ~= nil then
+        local function copy(value)
+            if type(value) ~= "table" then return value end
+            local result = {}
+            for key, item in pairs(value) do result[key] = copy(item) end
+            return result
+        end
+        local initial = self.get_initial_rules(hero) or {}
+        for index, initial_rule in ipairs(initial) do
+            if index > MAX_RULES then break end
+            rules[index] = copy(initial_rule)
+        end
+        seeded = true
+    end
     if rule_count ~= nil then
         for index = rule_count + 1, MAX_RULES do
             rules[index] = nil
@@ -469,6 +488,11 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
         end
     end
     rules[slot] = rule
+    if seeded then
+        for index, initial_rule in ipairs(rules) do
+            if index ~= slot then self:SyncRule(player_id, hero, index, initial_rule) end
+        end
+    end
     self:SyncRule(player_id, hero, slot, rule)
     return true, nil
 end

@@ -15,6 +15,7 @@ require = function(name)
 end
 dofile(moduleRoot .. "addon_game_mode.lua")
 
+local nativeWarnings = {}
 local function makeHero(level)
     local hero = { level = level, points = 2, lineupHeroName = "axe", abilities = {},
         rpgAbilitiesRestored = true, hp = 123, mana = 45, idle = true, acquisition = 600,
@@ -26,9 +27,15 @@ local function makeHero(level)
     function hero:HeroLevelUp() self.level = self.level + 1; self.points = self.points + 1 end
     function hero:GetAbilityPoints() return self.points end
     function hero:SetAbilityPoints(points) self.points = points end
-    -- Native arrays can contain sparse talent slots beyond the reported count.
-    function hero:GetAbilityCount() return 4 end
-    function hero:GetAbilityByIndex(slot) return self.abilities[slot] end
+    -- Sparse talent index 23 is valid because the native slot bound includes it.
+    function hero:GetAbilityCount() return 24 end
+    function hero:GetAbilityByIndex(slot)
+        if slot < 0 or slot >= self:GetAbilityCount() then
+            nativeWarnings[#nativeWarnings + 1] = "GetAbilityByIndex requested for invalid index " .. slot
+            return nil
+        end
+        return self.abilities[slot]
+    end
     function hero:SetRespawnsDisabled() end
     function hero:GetMaxHealth() return 1000 end
     function hero:GetMaxMana() return 500 end
@@ -122,6 +129,8 @@ assert(game:ValidatePrepareOrder({ issuer_player_id_const = 0, order_type = 11,
     units = { ["0"] = 100 }, entindex_ability = 23 }), "native talent slot training allowed")
 assert(game:ValidatePrepareOrder({ issuer_player_id_const = 0, order_type = 11,
     ability_index = 523 }), "unitless alias resolves talent caster")
+assert(not game:ValidatePrepareOrder({ issuer_player_id_const = 0, order_type = 11,
+    units = { ["0"] = 100 }, entindex_ability = 24 }), "out-of-bound talent slot rejected")
 assert(not game:ValidatePrepareOrder({ issuer_player_id_const = 1, order_type = 11,
     units = { ["0"] = 100 }, entindex_ability = 523 }), "other player rejected")
 game.phase = "fight"
@@ -137,4 +146,5 @@ assert(game.scrollStock.high == 1, "max-level heroes cannot consume scrolls")
 game.phase, data.level = "fight", 10
 game:OnScrollUse(nil, { hero = "axe", kind = "high" })
 assert(game.scrollStock.high == 1, "scroll rejected once fight has started")
+assert(#nativeWarnings == 0, table.concat(nativeWarnings, "\n"))
 print("hero-progression.test.lua: passed")

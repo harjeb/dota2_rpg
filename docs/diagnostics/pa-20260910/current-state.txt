@@ -1,0 +1,133 @@
+[PA_DIAG_BEGIN]
+
+phase	setup	stage	ch03	time	1130.3666992188
+
+PA	354	alive	true	team	2	level	3	hp	626	mana	291	points	0	count	19
+
+ability	0	phantom_assassin_stifling_dagger	level	0	passive	false	hidden	false	active	true	behavior	8	team	2	type	3	ready	false	cd	0	filter	nil
+
+ability	1	phantom_assassin_phantom_strike	level	2	passive	false	hidden	false	active	true	behavior	524296	team	4	type	128	ready	true	cd	0	filter	nil
+
+ability	2	phantom_assassin_blur	level	1	passive	false	hidden	false	active	true	behavior	8589934660	team	1	type	1	ready	true	cd	0	filter	nil
+
+ability	3	phantom_assassin_fan_of_knives	level	0	passive	false	hidden	true	active	true	behavior	8589934597	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	4	phantom_assassin_immaterial	level	1	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	true	cd	0	filter	nil
+
+ability	5	phantom_assassin_coup_de_grace	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	6	special_bonus_unique_phantom_assassin_4	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	7	special_bonus_unique_phantom_assassin_7	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	8	special_bonus_unique_phantom_assassin_3	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	9	special_bonus_unique_phantom_assassin_5	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	10	special_bonus_unique_phantom_assassin_6	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	11	special_bonus_unique_phantom_assassin_strike_aspd	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	12	special_bonus_unique_phantom_assassin_2	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	13	special_bonus_unique_phantom_assassin	level	0	passive	true	hidden	false	active	true	behavior	2	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	14	special_bonus_attributes	level	0	passive	true	hidden	true	active	true	behavior	3	team	0	type	0	ready	false	cd	0	filter	nil
+
+ability	15	ability_capture	level	1	passive	false	hidden	true	active	true	behavior	201	team	2	type	0	ready	true	cd	0	filter	nil
+
+ability	16	abyssal_underlord_portal_warp	level	1	passive	false	hidden	true	active	true	behavior	138009903305	team	2	type	0	ready	true	cd	0	filter	nil
+
+ability	17	twin_gate_portal_warp	level	1	passive	false	hidden	true	active	true	behavior	138009903305	team	2	type	0	ready	true	cd	0	filter	nil
+
+ability	18	ability_lamp_use	level	1	passive	false	hidden	true	active	true	behavior	137438953673	team	3	type	0	ready	true	cd	0	filter	nil
+
+RULE_KEY	npc_dota_hero_phantom_assassin
+
+{
+
+   1                               	= table: 0x0047ad28 (table)
+
+   {
+
+      id                              	= "npc_dota_hero_phantom_assassin:1" (string)
+
+      approach                        	= "range_only" (string)
+
+      use_conditions                  	= table: 0x0047b098 (table)
+
+      {
+
+      }
+
+      target_filters                  	= table: 0x0047b008 (table)
+
+      {
+
+      }
+
+      target_priorities               	= table: 0x0047b050 (array table)
+
+      [
+
+         1                               	= table: 0x0047b160 (table)
+
+         {
+
+            type                            	= "nearest" (string)
+
+         }
+
+      ]
+
+      enabled                         	= true (boolean)
+
+      action                          	= table: 0x0047ad70 (table)
+
+      {
+
+         kind                            	= "ability" (string)
+
+         logical_id                      	= "phantom_assassin_phantom_strike" (string)
+
+         positioning_mode                	= "default" (string)
+
+         positioning_distance            	= 0 (number)
+
+         name                            	= "phantom_assassin_phantom_strike" (string)
+
+         positioning_tolerance           	= 50 (number)
+
+         target_team                     	= "enemy" (string)
+
+      }
+
+      target                          	= table: 0x0047af40 (table)
+
+      {
+
+         types                           	= table: 0x0047afc0 (array table)
+
+         [
+
+            1                               	= "hero" (string)
+
+            2                               	= "monster" (string)
+
+            3                               	= "summon" (string)
+
+         ]
+
+         team                            	= "enemy" (string)
+
+      }
+
+   }
+
+}
+
+ENGINE_TRACES
+
+QUERY_OK	true	nil
+
+[PA_DIAG_END]

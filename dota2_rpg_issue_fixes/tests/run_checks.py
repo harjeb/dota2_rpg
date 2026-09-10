@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LUA_SCENARIOS = (
     "damage-stats.test.lua", "action-adapter.test.lua", "arena-trees.test.lua", "shop-state.test.lua",
     "shop-transition.test.lua", "runtime-log.test.lua", "precache-battlefield.test.lua", "default-rules.test.lua",
-    "condition-v2.test.lua", "action-success-chain.test.lua", "action-v2.test.lua", "condition-specials.test.lua",
+    "condition-v2.test.lua", "first-rule-save.test.lua", "phantom-strike.test.lua", "action-success-chain.test.lua", "action-v2.test.lua", "condition-specials.test.lua",
     "condition-execution.test.lua", "condition-phase.test.lua", "condition-native-targets.test.lua", "condition-vector.test.lua",
     "enemy-items.test.lua", "enemy-rules.test.lua", "hero-lifecycle-log.test.lua", "boss-scaling.test.lua", "battle-reincarnation.test.lua",
     "hero-ability-policy.test.lua", "hero-progression.test.lua", "tempest-double.test.lua", "special-targets.test.lua",

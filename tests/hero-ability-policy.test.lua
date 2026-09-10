@@ -1,6 +1,7 @@
 local root = os.getenv("DOTA_RPG_ROOT") or "."
 local Policy = dofile(root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/hero_ability_policy.lua")
 
+local nativeWarnings = {}
 local function hero(name, names, cascade)
     local unit = { abilities = {}, removed = {} }
     for _, abilityName in ipairs(names) do
@@ -15,7 +16,13 @@ local function hero(name, names, cascade)
     function unit:IsNull() return false end
     function unit:GetUnitName() return name end
     function unit:GetAbilityCount() return #self.abilities end
-    function unit:GetAbilityByIndex(index) return self.abilities[index + 1] end
+    function unit:GetAbilityByIndex(index)
+        if index < 0 or index >= self:GetAbilityCount() then
+            nativeWarnings[#nativeWarnings + 1] = "GetAbilityByIndex requested for invalid index " .. index
+            return nil
+        end
+        return self.abilities[index + 1]
+    end
     function unit:FindAbilityByName(wanted)
         for _, ability in ipairs(self.abilities) do
             if ability.name == wanted then return ability end
@@ -79,7 +86,7 @@ assert(Policy.Apply(cascading) == 0)
 local sparse = hero("npc_dota_hero_largo", { "largo_catchy_lick", "largo_song_good_vibrations" })
 sparse.abilities[24] = sparse.abilities[2]
 sparse.abilities[2] = nil
-function sparse:GetAbilityCount() return 32 end
+function sparse:GetAbilityCount() return 24 end
 function sparse:FindAbilityByName(name)
     for _, ability in pairs(self.abilities) do if ability.name == name then return ability end end
 end
@@ -99,4 +106,24 @@ end
 assert(Policy.Apply(nil) == 0)
 assert(Policy.Apply({ IsNull = function() return true end }) == 0)
 assert(Policy.Apply(hero("npc_dota_hero_morphling", morphCore)) == 0)
+assert(#nativeWarnings == 0, table.concat(nativeWarnings, "\n"))
+assert(Policy.GetSlotCount(nil) == 0)
+assert(Policy.GetSlotCount({}) == 0)
+assert(Policy.GetSlotCount({ GetAbilityCount = function() return nil end }) == 0)
+for _, count in ipairs({ 0, 4, 19, 24, 32, 40 }) do
+    assert(Policy.GetSlotCount({ GetAbilityCount = function() return count end }) == count,
+        "slot bound must match the native API, including custom heroes")
+end
+-- Model the observed PA bound: all eight talents are inside slots 0..18.
+local pa = hero("npc_dota_hero_phantom_assassin", {})
+function pa:GetAbilityCount() return 19 end
+for slot = 6, 13 do pa.abilities[slot + 1] = { talent = true } end
+local talents, visited = 0, 0
+for slot = 0, Policy.GetSlotCount(pa) - 1 do
+    local ability = pa:GetAbilityByIndex(slot)
+    visited = visited + 1
+    if ability and ability.talent then talents = talents + 1 end
+end
+assert(visited == 19 and talents == 8, "scan all valid native slots and talents")
+assert(#nativeWarnings == 0, table.concat(nativeWarnings, "\n"))
 print("hero-ability-policy.test.lua: passed")

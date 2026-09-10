@@ -3,10 +3,10 @@
 -- Apply to project-owned heroes immediately after creation, before leveling skills.
 local Policy = {}
 
--- Native talent slots can be sparse and live beyond GetAbilityCount().
--- Dota exposes 32 ability slots; retain larger counts for custom heroes.
+-- GetAbilityCount is the native addressable slot bound, including sparse talents.
+-- Empty slots within that bound are valid; probing beyond it emits engine warnings.
 function Policy.GetSlotCount(hero)
-    return math.max(32, hero.GetAbilityCount and hero:GetAbilityCount() or 0)
+    return hero and hero.GetAbilityCount and hero:GetAbilityCount() or 0
 end
 
 local removedByHero = {

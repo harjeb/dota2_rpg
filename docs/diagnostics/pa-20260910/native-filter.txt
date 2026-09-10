@@ -1,0 +1,95 @@
+[PA_NATIVE_BEGIN]
+
+strike	flags	0	range	750	charges	2	max	2
+
+target	153	npc_dota_neutral_satyr_hellcaller	team	3	alive	true	invul	false	distance	1140.2817382813	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	adapter_legal	false
+
+target	315	npc_dota_neutral_centaur_khan	team	3	alive	true	invul	false	distance	1339.1403808594	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	adapter_legal	false
+
+target	319	npc_dota_neutral_gnoll_assassin	team	3	alive	true	invul	false	distance	1267.6004638672	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	adapter_legal	false
+
+target	324	npc_dota_neutral_ogre_mauler	team	3	alive	true	invul	false	distance	823.07513427734	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	adapter_legal	false
+
+target	328	npc_dota_neutral_ogre_mauler	team	3	alive	true	invul	false	distance	1249.7098388672	raw_filter	2	UF_FAIL_ENEMY	ordinary_filter	0	adapter_legal	false
+
+target	332	npc_dota_hero_tiny	team	2	alive	true	invul	true	distance	392.16995239258	raw_filter	1	UF_FAIL_FRIENDLY	ordinary_filter	18	adapter_legal	false
+
+target	354	npc_dota_hero_phantom_assassin	team	2	alive	true	invul	true	distance	0	raw_filter	1	UF_FAIL_FRIENDLY	ordinary_filter	18	adapter_legal	false
+
+target	414	npc_dota_hero_terrorblade	team	2	alive	true	invul	true	distance	611.2412109375	raw_filter	1	UF_FAIL_FRIENDLY	ordinary_filter	18	adapter_legal	false
+
+LEGACY_RULES
+
+{
+
+   1                               	= table: 0x005ca9b8 (table)
+
+   {
+
+      condition                       	= "always" (string)
+
+      id                              	= "default_ability_phantom_assassin_phantom_strike" (string)
+
+      is_default                      	= true (boolean)
+
+      forced                          	= false (boolean)
+
+      enabled                         	= true (boolean)
+
+      target                          	= "enemy_distance_nearest" (string)
+
+      action                          	= "phantom_assassin_phantom_strike" (string)
+
+      value                           	= 50 (number)
+
+   }
+
+   2                               	= table: 0x005caac8 (table)
+
+   {
+
+      condition                       	= "always" (string)
+
+      id                              	= "default_ability_phantom_assassin_blur" (string)
+
+      is_default                      	= true (boolean)
+
+      forced                          	= false (boolean)
+
+      enabled                         	= true (boolean)
+
+      target                          	= "self" (string)
+
+      action                          	= "phantom_assassin_blur" (string)
+
+      value                           	= 50 (number)
+
+   }
+
+   3                               	= table: 0x005cabd8 (table)
+
+   {
+
+      condition                       	= "always" (string)
+
+      id                              	= "default_attack_nearest" (string)
+
+      is_default                      	= true (boolean)
+
+      forced                          	= false (boolean)
+
+      enabled                         	= true (boolean)
+
+      target                          	= "enemy_distance_nearest" (string)
+
+      action                          	= "attack" (string)
+
+      value                           	= 50 (number)
+
+   }
+
+}
+
+QUERY_OK	true	nil
+
+[PA_NATIVE_END]

@@ -1,6 +1,7 @@
 local Conditions = require("tactics/condition_registry")
 local VectorTarget = require("tactics/vector_target")
 local Behavior = require("tactics/ability_behavior")
+local NativeTargeting = require("tactics/native_targeting")
 local ActionAdapter = {}
 ActionAdapter.__index = ActionAdapter
 
@@ -310,11 +311,14 @@ function ActionAdapter:IsValidTarget(caster, spec, target)
     if spec.cast_type ~= "unit" and not (spec.cast_type == "vector" and spec.vector_mode == "unit") then return true end
     local source = spec.source
     if source == nil then return false end
+    if NativeTargeting.RejectsSelf(source, caster, target) then return false end
     if UnitFilter ~= nil and source.GetAbilityTargetTeam ~= nil
         and source.GetAbilityTargetType ~= nil and source.GetAbilityTargetFlags ~= nil
         and caster.GetTeamNumber ~= nil then
-        local ok, result = pcall(UnitFilter, target, source:GetAbilityTargetTeam(),
-            source:GetAbilityTargetType(), source:GetAbilityTargetFlags(), caster:GetTeamNumber())
+        local team, types = NativeTargeting.ResolveMasks(source,
+            source:GetAbilityTargetTeam(), source:GetAbilityTargetType())
+        local ok, result = pcall(UnitFilter, target, team,
+            types, source:GetAbilityTargetFlags(), caster:GetTeamNumber())
         if not ok or result ~= (UF_SUCCESS or 0) then return false end
     end
     if source.CastFilterResultTarget ~= nil then

@@ -556,6 +556,9 @@ function TacticBridge:Install()
             return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, hero, key) ~= nil
         end,
 		is_action_allowed = is_action_allowed_for_hero,
+        get_initial_rules = function(hero)
+            return manager.getRules(hero)
+        end,
 		state = state,
 		conditions = conditionsRegistry,
 	})

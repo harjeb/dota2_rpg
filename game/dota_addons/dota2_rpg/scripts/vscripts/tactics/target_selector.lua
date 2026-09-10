@@ -1,5 +1,6 @@
 local Context = require("tactics/condition_context")
 local Conditions = require("tactics/condition_registry")
+local NativeTargeting = require("tactics/native_targeting")
 
 local VectorTarget = require("tactics/vector_target")
 local TargetSelector = {}
@@ -108,7 +109,7 @@ local function native_legal(target, spec, ctx)
         return Context.Call(target,"IsOutOfGame") ~= true and Context.Call(target,"IsInvulnerable") ~= true
     end
     local ability = spec.ability or spec.source
-    if ability == nil then return false end
+    if ability == nil or NativeTargeting.RejectsSelf(ability, ctx.caster, target) then return false end
     local checked = false
     if spec.target_mode == "unit" or spec.target_mode == "self" then
         local readable, method = pcall(function() return ability.CastFilterResultTarget end)
@@ -119,8 +120,8 @@ local function native_legal(target, spec, ctx)
             checked = true
         end
     end
-    local team = Context.Call(ability, "GetAbilityTargetTeam")
-    local types = Context.Call(ability, "GetAbilityTargetType")
+    local team, types = NativeTargeting.ResolveMasks(ability,
+        Context.Call(ability, "GetAbilityTargetTeam"), Context.Call(ability, "GetAbilityTargetType"))
     local flags = Context.Call(ability, "GetAbilityTargetFlags")
     if type(UnitFilter) == "function" and team ~= nil and types ~= nil and types ~= 0 and flags ~= nil then
         local ok, result = pcall(UnitFilter, target, team, types, flags, ctx.caster:GetTeamNumber())
