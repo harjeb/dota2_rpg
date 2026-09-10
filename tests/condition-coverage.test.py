@@ -45,7 +45,7 @@ for (const row of data.rows) {
     for (const variant of api.variants(row.id)) {
         const preset = api.get(row.id, variant);
         assert.deepStrictEqual(JSON.parse(JSON.stringify(preset)), data.families[variant].rule, row.id);
-        let nontrivial = preset.min_aoe_hits > 1;
+        let nontrivial = preset.min_aoe_hits > 1 || variant === 'teammate_buff_allow_self';
         [['use_conditions', 'use', 4], ['target_filters', 'target', 4], ['target_priorities', 'priority', 2]].forEach(([key, group, max]) => {
             assert(Array.isArray(preset[key]));
             assert(preset[key].length <= max);
@@ -53,7 +53,7 @@ for (const row of data.rows) {
                 const def = catalog.groups[group].find(d => d.id === c.type);
                 assert(def, row.id + ':' + c.type + ' missing from actual UI');
                 assert.notStrictEqual(c.type, 'always');
-                if (group !== 'priority') nontrivial = true;
+                if (group !== 'priority' || c.type === 'prefer_teammate') nontrivial = true;
                 const wire = catalog.wire(group, c);
                 if (c.type.includes('_pct_')) {
                     assert(c.value >= 0 && c.value <= 100);
@@ -137,8 +137,27 @@ class ConditionCoverage(unittest.TestCase):
                 self.assertTrue(mechanism['mechanism_en'])
         self.assertNotRegex(unique_doc, r'- \[ \]|- \[x\]')
 
+    def test_support_presets_preserve_gates_and_original_priority(self):
+        supported = [r for r in self.rows if r['family'] in BUILDER.SUPPORT_FAMILIES]
+        self.assertTrue({'marci_bodyguard', 'magnataur_empower', 'ogre_magi_bloodlust',
+                         'dark_seer_surge', 'omniknight_purification', 'dazzle_shallow_grave'}
+                        <= {r['id'] for r in supported})
+        for row in supported:
+            base = self.data['families'][row['family']]['rule']
+            preferred_id, allowed_id = row['preset_variants'][:2]
+            self.assertTrue(preferred_id.endswith('_prefer_teammate'))
+            self.assertTrue(allowed_id.endswith('_allow_self'))
+            preferred = self.data['families'][preferred_id]['rule']
+            allowed = self.data['families'][allowed_id]['rule']
+            self.assertEqual(preferred['target_priorities'], [{'type': 'prefer_teammate'}] + base['target_priorities'][:1])
+            self.assertEqual(allowed['target_priorities'], base['target_priorities'])
+            for variant in (preferred, allowed):
+                self.assertEqual(variant['target_team'], 'ally')
+                self.assertEqual(variant['target_filters'], [c for c in base['target_filters'] if c['type'] != 'exclude_self'])
+                self.assertEqual(variant['use_conditions'], base['use_conditions'])
+
     def test_generic_only_and_all_unique_excluded(self):
-        allowed = {'exclude_self', 'nearby_enemies_gte', 'distance_lte', 'distance_gte',
+        allowed = {'prefer_teammate', 'exclude_self', 'nearby_enemies_gte', 'distance_lte', 'distance_gte',
             'hp_pct_lte', 'self_hp_pct_lte', 'self_hp_pct_gte', 'recently_damaged',
             'self_recently_damaged', 'mana_pct_lte', 'mana_pct_gte', 'is_controlled',
             'self_mana_pct_gte', 'self_mana_pct_lte', 'no_enemy_within', 'ability_charges_gte',

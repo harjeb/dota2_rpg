@@ -130,6 +130,39 @@ enemy.GetAverageTrueAttackDamage=function() return 100 end;ally.GetAverageTrueAt
 enemy.GetMagicalArmorValue=function() return .5 end;ally.GetMagicalArmorValue=function() return .2 end
 check(S.new():SortCandidates({enemy,ally},{{type="lowest_attack_damage"}},ctx)[1]==ally,"lowest attack")
 check(S.new():SortCandidates({enemy,ally},{{type="highest_magic_resistance"}},ctx)[1]==enemy,"highest MR")
+-- Soft teammate preference survives the server save/nettable/load boundary.
+local teammateArgs={action_kind="ability",action_id="spell",target_team="ally",target_types="hero",
+    target_priority_1_type="prefer_teammate",target_priority_2_type="nearest"}
+check(service:UpdateRule(0,1,1,teammateArgs),"save teammate priority")
+check(payload.target_priority_1_type=="prefer_teammate" and payload.target_priority_2_type=="nearest","serialize teammate priorities")
+local teammateRule=service:DecodeFlat(payload)
+check(service:ValidateRule(0,caster,teammateRule),"serialized teammate priority remains valid")
+check(service:GetHeroRules(caster)[1].target_priorities[1].type=="prefer_teammate","stored teammate priority survives migration")
+local fartherAlly=unit(8,2,500)
+local preferenceSpec={kind="ability",target_mode="unit",ability={CastFilterResultTarget=function() return 0 end}}
+local preferenceCtx={caster=caster,get_candidates=function() return {caster,fartherAlly,ally} end}
+local selector=S.new()
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==ally,"prefer closest teammate over zero-distance self")
+preferenceCtx.get_candidates=function() return {caster,fartherAlly} end
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==fartherAlly,"any legal teammate outranks self")
+preferenceCtx.is_in_range=function(_,target) return target==caster end
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==caster,"out-of-range teammate permits legal self")
+preferenceCtx.is_in_range=nil
+preferenceSpec.ability.CastFilterResultTarget=function(_,target) return target==caster and 0 or 1 end
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==caster,"native-illegal teammate permits legal self")
+preferenceSpec.ability.CastFilterResultTarget=function() return 0 end
+fartherAlly.IsAlive=function() return false end
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==caster,"dead teammate permits legal self")
+fartherAlly.IsAlive=function() return true end
+teammateRule.target_filters={{type="distance_lte",value=100}}
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==caster,"hard-filtered teammate permits legal self")
+preferenceCtx.get_candidates=function() return {caster} end
+teammateRule.target_filters={{type="exclude_self"}}
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==nil,"preference cannot bypass exclude_self")
+teammateRule.target_filters={}
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==caster,"solo legal self fallback")
+preferenceSpec.ability.CastFilterResultTarget=function() return 1 end
+check(selector:SelectUnit(teammateRule,preferenceSpec,preferenceCtx)==nil,"native-illegal self cannot be fallback")
 -- Install the actual bridge with engine/order plumbing stubbed, then exercise
 -- the context callbacks and validation handed to the real RuleService.
 local filterOptions
@@ -141,6 +174,11 @@ package.loaded["tactics/tactic_engine"]={new=function(options)
 package.loaded["issue_fixes.default_rules"]={Normalize=function(rules) return rules end}
 local Bridge=require("tactics/tactic_bridge") or TacticBridge
 Bridge=TacticBridge
+for _, source in ipairs({teammateArgs,{action="spell",target="ally_distance_nearest",target_priorities=teammateRule.target_priorities}}) do
+    local converted=Bridge.ConvertLegacyRule(1,source)
+    check(converted.target_priorities[1].type=="prefer_teammate" and converted.target_priorities[2].type=="nearest",
+        "bridge preserves flat and structured teammate priority order")
+end
 for _, legacy in ipairs({{"always",0,"always"},{"self_hp_pct_lte",50,"self_hp_pct_lte"},
     {"self_mana_pct_gte",50,"self_mana_pct_gte"},{"alive_enemy_count_gte",2,"alive_enemy_count_gte"},
     {"elapsed_gte",3,"elapsed_gte"},{"self_recently_damaged",2,"self_recently_damaged"},

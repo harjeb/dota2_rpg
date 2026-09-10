@@ -118,6 +118,49 @@
         "use_conditions": []
       }
     },
+    "ally_combat_buff_allow_self": {
+      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "radius": 700,
+            "type": "nearby_enemies_gte",
+            "value": 1
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "ally_combat_buff_prefer_teammate": {
+      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "radius": 700,
+            "type": "nearby_enemies_gte",
+            "value": 1
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
     "aoe": {
       "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
       "rule": {
@@ -151,6 +194,59 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_ally_combat_buff_allow_self": {
+      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "radius": 700,
+            "type": "nearby_enemies_gte",
+            "value": 1
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_ally_combat_buff_prefer_teammate": {
+      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "radius": 700,
+            "type": "nearby_enemies_gte",
+            "value": 1
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -199,6 +295,55 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_dispel_control_allow_self": {
+      "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "is_controlled"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_dispel_control_prefer_teammate": {
+      "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "is_controlled"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -279,6 +424,57 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_healing_ally_allow_self": {
+      "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "hp_pct_lte",
+            "value": 80
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_healing_ally_prefer_teammate": {
+      "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "hp_pct_lte",
+            "value": 80
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "lowest_hp_pct"
           }
@@ -402,6 +598,57 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_mana_restore_allow_self": {
+      "rationale": "Reviewed native allied mana restoration: select an ally at or below 50% mana. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "mana_pct_lte",
+            "value": 50
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_mana_restore_prefer_teammate": {
+      "rationale": "Reviewed native allied mana restoration: select an ally at or below 50% mana. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "mana_pct_lte",
+            "value": 50
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -545,6 +792,57 @@
         ]
       }
     },
+    "charged_protection_ally_allow_self": {
+      "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "seconds": 2,
+            "type": "recently_damaged"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_protection_ally_prefer_teammate": {
+      "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "seconds": 2,
+            "type": "recently_damaged"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
     "charged_protection_area": {
       "rationale": "Reviewed point-area protection: anchor the field to a recently damaged ally; native point range still applies. Optional variant also requires at least one observed native charge.",
       "rule": {
@@ -663,6 +961,47 @@
         ]
       }
     },
+    "charged_teammate_buff_allow_self": {
+      "rationale": "Native friendly buff targeting with no enemy proximity gate. Include the caster; retain the original target priority. Native legality still applies. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "charged_teammate_buff_prefer_teammate": {
+      "rationale": "Native friendly buff targeting with no enemy proximity gate. Prefer legal teammates; fall back to self only when no teammate passes the same gates. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
     "charged_time_walk_recovery": {
       "rationale": "Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat. Optional variant also requires at least one observed native charge.",
       "rule": {
@@ -696,6 +1035,45 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "dispel_control_allow_self": {
+      "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "is_controlled"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "dispel_control_prefer_teammate": {
+      "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "is_controlled"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -762,6 +1140,47 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "healing_ally_allow_self": {
+      "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "hp_pct_lte",
+            "value": 80
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "healing_ally_prefer_teammate": {
+      "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "hp_pct_lte",
+            "value": 80
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "lowest_hp_pct"
           }
@@ -862,6 +1281,47 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "mana_restore_allow_self": {
+      "rationale": "Reviewed native allied mana restoration: select an ally at or below 50% mana. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "mana_pct_lte",
+            "value": 50
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "mana_restore_prefer_teammate": {
+      "rationale": "Reviewed native allied mana restoration: select an ally at or below 50% mana. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "mana_pct_lte",
+            "value": 50
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -978,6 +1438,47 @@
         "use_conditions": []
       }
     },
+    "protection_ally_allow_self": {
+      "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "seconds": 2,
+            "type": "recently_damaged"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "protection_ally_prefer_teammate": {
+      "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "seconds": 2,
+            "type": "recently_damaged"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
+          {
+            "type": "lowest_hp_pct"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
     "protection_area": {
       "rationale": "Reviewed point-area protection: anchor the field to a recently damaged ally; native point range still applies.",
       "rule": {
@@ -1066,6 +1567,37 @@
           }
         ],
         "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "teammate_buff_allow_self": {
+      "rationale": "Native friendly buff targeting with no enemy proximity gate. Include the caster; retain the original target priority. Native legality still applies.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
+      }
+    },
+    "teammate_buff_prefer_teammate": {
+      "rationale": "Native friendly buff targeting with no enemy proximity gate. Prefer legal teammates; fall back to self only when no teammate passes the same gates.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [],
+        "target_priorities": [
+          {
+            "type": "prefer_teammate"
+          },
           {
             "type": "nearest"
           }
@@ -1980,7 +2512,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -26102,8 +26635,10 @@
         ]
       },
       "preset_variants": [
-        "protection_ally",
-        "charged_protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self",
+        "charged_protection_ally_prefer_teammate",
+        "charged_protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -26873,7 +27408,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -29686,7 +30222,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -31922,7 +32459,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -43732,7 +44270,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -43853,7 +44392,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -49638,8 +50178,10 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff",
-        "charged_ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self",
+        "charged_ally_combat_buff_prefer_teammate",
+        "charged_ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -49771,7 +50313,8 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -51869,7 +52412,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -51974,7 +52518,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -52771,7 +53316,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -54358,7 +54904,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -56759,7 +57306,8 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -59972,7 +60520,8 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -60541,7 +61090,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -64593,7 +65143,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -76024,7 +76575,8 @@
         ]
       },
       "preset_variants": [
-        "dispel_control"
+        "dispel_control_prefer_teammate",
+        "dispel_control_allow_self"
       ],
       "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable.",
       "review_note": "Ordinary generic partial mode only.",
@@ -80984,7 +81536,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -82042,7 +82595,8 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -82628,7 +83182,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -88883,7 +89438,8 @@
         ]
       },
       "preset_variants": [
-        "mana_restore"
+        "mana_restore_prefer_teammate",
+        "mana_restore_allow_self"
       ],
       "rationale": "Reviewed native allied mana restoration: select an ally at or below 50% mana.",
       "review_note": "Ordinary generic partial mode only.",
@@ -96401,7 +96957,8 @@
         ]
       },
       "preset_variants": [
-        "teammate_buff"
+        "teammate_buff_prefer_teammate",
+        "teammate_buff_allow_self"
       ],
       "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -101307,7 +101864,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -101434,7 +101992,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -103447,7 +104006,8 @@
         ]
       },
       "preset_variants": [
-        "dispel_control"
+        "dispel_control_prefer_teammate",
+        "dispel_control_allow_self"
       ],
       "rationale": "Reviewed strong-dispel/rescue mode: select a controlled ally. is_controlled is an observable status proxy, not proof that every debuff is dispellable.",
       "review_note": "Ordinary generic partial mode only.",
@@ -111460,7 +112020,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -112092,7 +112653,8 @@
         ]
       },
       "preset_variants": [
-        "healing_ally"
+        "healing_ally_prefer_teammate",
+        "healing_ally_allow_self"
       ],
       "rationale": "Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.",
       "review_note": "Ordinary generic partial mode only.",
@@ -116954,7 +117516,8 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "ally_combat_buff_prefer_teammate",
+        "ally_combat_buff_allow_self"
       ],
       "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
       "review_note": "Ordinary generic partial mode only.",
@@ -121820,7 +122383,8 @@
         ]
       },
       "preset_variants": [
-        "protection_ally"
+        "protection_ally_prefer_teammate",
+        "protection_ally_allow_self"
       ],
       "rationale": "Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.",
       "review_note": "Ordinary generic partial mode only.",
@@ -124845,7 +125409,8 @@
         ]
       },
       "preset_variants": [
-        "teammate_buff"
+        "teammate_buff_prefer_teammate",
+        "teammate_buff_allow_self"
       ],
       "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.",
       "review_note": "Ordinary generic partial mode only.",

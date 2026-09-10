@@ -54,6 +54,20 @@ FAMILIES = {
     'toggle_off': (rule('self', use=[condition('self_mana_pct_lte', value=20)], desired_toggle_state='0'), 'Mana-draining toggle: disable at or below 20% self mana. This is a separate rule and is not AND-ed with the on conditions.'),
 }
 
+# Keep each support mode's health/control/combat gates and within-group priority.
+SUPPORT_FAMILIES = {'ally_combat_buff', 'teammate_buff', 'healing_ally',
+                    'protection_ally', 'mana_restore', 'dispel_control'}
+for base_name in SUPPORT_FAMILIES:
+    base_rule, rationale = FAMILIES[base_name]
+    if base_name == 'teammate_buff':
+        rationale = 'Native friendly buff targeting with no enemy proximity gate.'
+    allowed = json.loads(json.dumps(base_rule))
+    allowed['target_filters'] = [c for c in allowed['target_filters'] if c['type'] != 'exclude_self']
+    preferred = json.loads(json.dumps(allowed))
+    preferred['target_priorities'] = [condition('prefer_teammate')] + preferred['target_priorities'][:1]
+    FAMILIES[base_name + '_prefer_teammate'] = (preferred, rationale + ' Prefer legal teammates; fall back to self only when no teammate passes the same gates.')
+    FAMILIES[base_name + '_allow_self'] = (allowed, rationale + ' Include the caster; retain the original target priority. Native legality still applies.')
+
 # Optional charge-aware variants require explicit native charge metadata. The
 # omitted action_id deliberately means the current rule's resolved native action.
 for base_name, (base_rule, base_rationale) in list(FAMILIES.items()):
@@ -209,15 +223,17 @@ def classify(row):
     if family in {'offensive_point', 'offensive_unit', 'offensive_no_target'} and 'AOE' in flags and 'DIRECTIONAL' not in flags:
         family = 'aoe'
         evidence.append('Native AOE radius required; circular approximation only.')
-    variants = [family] if family else []
+    variants = ([family + '_prefer_teammate', family + '_allow_self']
+                if family in SUPPORT_FAMILIES else [family] if family else [])
     if name == 'faceless_void_time_walk' and family == 'time_walk_recovery':
         variants.append('gapclose')
     if family in {'toggle_on', 'healing_toggle_on'}:
         variants.append('toggle_off')
     if family == 'toggle_combat_on':
         variants.extend(['toggle_health_off', 'toggle_idle_off'])
-    if family and (n['charges'] or 'AbilityCharges' in n['value_keys']) and 'charged_' + family in FAMILIES:
-        variants.append('charged_' + family)
+    if family and (n['charges'] or 'AbilityCharges' in n['value_keys']):
+        variants.extend('charged_' + variant for variant in list(variants)
+                        if 'charged_' + variant in FAMILIES)
     inventory['basic_native_mode'] = ('vector' if vector else 'channel_startup') if family and (vector or 'CHANNELLED' in flags) else None
     inventory['basic_native_note'] = (
         'native vector基础已实现：最近合法敌方锚点，沿施法者到锚点方向延长150；专属几何/弹射/落点程序未实现。'

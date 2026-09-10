@@ -97,6 +97,7 @@ local PRIORITY_TYPES = {
     highest_armor = true,
     lowest_magic_resistance = true,
     highest_attack_damage = true,
+    prefer_teammate = true,
     prefer_tag = true,
     prefer_channeling = true,
     prefer_affix = true,

@@ -65,6 +65,10 @@ local function rank_value(priority, ctx, target)
         return attack_damage(target)
     elseif kind == "highest_attack_damage" then
         return -attack_damage(target)
+    elseif kind == "prefer_teammate" then
+        -- Candidate team, native legality and hard filters remain authoritative.
+        -- Keep self eligible as a fallback; subsequent priorities rank teammates.
+        return target == ctx.caster and 1 or 0
     elseif kind == "prefer_tag" then
         return Conditions.HasTag(ctx, target, tostring(priority.value)) and 0 or 1
     elseif kind == "prefer_channeling" then

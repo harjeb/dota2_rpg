@@ -441,7 +441,8 @@ assert(panel(fresh,"V2_target0_value").text === "72.5" && panel(fresh,"V2_use0_s
     && panel(fresh,"V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_off", "edited preset and U14 reopen without loss");
 ["enemy","self","ally"].forEach(function(team) {
     choice(fresh,"V2Team","team_"+team); click(fresh,"RuleSettingsApply");
-    assert(latest(fresh,omni).target_team === team && latest(fresh,omni).target_priority_1_type === "lowest_hp_pct", "team change preserves explicit ranking on wire");
+    assert(latest(fresh,omni).target_team === team && latest(fresh,omni).target_priority_1_type === "prefer_teammate"
+        && latest(fresh,omni).target_priority_2_type === "lowest_hp_pct", "team change preserves explicit ranking on wire");
 
     click(fresh,"RadiantRuleSettings0");
     assert(panel(fresh,"V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_"+team, "team survives reopen");
@@ -476,7 +477,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 32], ["target", retiredTarget, 35], ["priority", [], 13]].forEach(function (spec) {
+[["use", retiredUse, 32], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -721,16 +722,25 @@ assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFigh
     assert(latest(targetHud,hero).target_team==="self","self is selectable independently of hero/creep filters");
     if (ability !== "marci_companion_run") {
         click(targetHud,"RadiantRuleSettings0");
+        assert(panel(targetHud,"V2Preset0").GetChild(0).text === "#dota2_rpg_v2_preset_prefer_teammate"
+            && panel(targetHud,"V2Preset1").GetChild(0).text === "#dota2_rpg_v2_preset_allow_self", "support presets have distinct names");
         click(targetHud,"V2Preset0");
         click(targetHud,"RuleSettingsApply");
         var buffWire=latest(targetHud,hero);
-        assert(buffWire.target_team==="ally" && buffWire.target_filter_1_type==="exclude_self",
-            ability+" teammate preset replaces stale self targeting and excludes caster on wire");
+        assert(buffWire.target_team==="ally" && buffWire.target_priority_1_type==="prefer_teammate"
+            && buffWire.target_priority_2_type==="nearest" && !buffWire.target_filter_1_type,
+            ability+" teammate preference replaces stale self targeting and allows fallback on wire");
         assert(!buffWire.target_filter_2_type && !buffWire.use_condition_1_type,
             ability+" buff needs no unrelated enemy proximity gate");
         click(targetHud,"RadiantRuleSettings0");
         assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally",
             ability+" teammate preset survives reopen");
+        click(targetHud,"V2Preset1");
+        click(targetHud,"RuleSettingsApply");
+        buffWire=latest(targetHud,hero);
+        assert(buffWire.target_team==="ally" && buffWire.target_priority_1_type==="nearest"
+            && !buffWire.target_priority_2_type && !buffWire.target_filter_1_type,
+            ability+" allow self clears the previous preference and keeps ally selection");
     }
 });
 
@@ -836,5 +846,5 @@ assert(!panel(livesHud,"StartBattleButton").enabled
 });
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39/U39, U13/U14 selection, previews and stale field removal");
+console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39/U39/P14, U13/U14 selection, previews and stale field removal");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and hero isolation");

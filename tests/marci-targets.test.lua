@@ -98,4 +98,26 @@ for _, customFilter in ipairs({true, false}) do
             "partner default policy must preserve authored rules")
     end
 end
+-- Authored soft preference is independent of the strict v26 defaults above.
+for _, customFilter in ipairs({true,false}) do
+    spell.CastFilterResultTarget=customFilter and function(_,t)
+        return t:GetTeamNumber()==caster:GetTeamNumber() and 0 or 1
+    end or nil
+    for _,name in ipairs({"magnataur_empower","marci_bodyguard","marci_guardian"}) do
+        spell.name=name; spell.behavior=8; spell.range=600
+        rule=service:DecodeFlat({action_kind="ability",action_id=name,target_team="ally",target_types="hero",
+            target_priority_1_type="prefer_teammate",target_priority_2_type="nearest"})
+        assert(service:ValidateRule(0,caster,rule))
+        for _,scenario in ipairs({"teammate","solo","range"}) do
+            orders={}; engine:Reset()
+            local ctx=engine:BuildContext(caster,1)
+            ctx.get_candidates=function() return scenario=="solo" and {caster} or {caster,ally} end
+            spell.range=scenario=="range" and 100 or 600
+            local ok,reason=engine:TryRule(caster,engine:GetState(caster),ctx,rule,1)
+            assert(ok and #orders==1 and orders[1].TargetIndex==(scenario=="teammate" and 2 or 1),
+                "soft teammate preference issues legal native buff order: "..name.." "..scenario.." "..tostring(reason))
+        end
+    end
+end
+print("PASS: authored prefer_teammate native orders with custom filter and UnitFilter-only fallback")
 print("PASS: Marci native target/vector mocks and Marci/Magnus generated teammate defaults (self legal, UnitFilter fallback, solo, range, authored preservation)")

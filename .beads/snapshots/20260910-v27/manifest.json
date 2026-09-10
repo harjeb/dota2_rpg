@@ -1,0 +1,14 @@
+{
+  "source": "beads_dota2_rpg",
+  "tables": {
+    "issues": 106,
+    "dependencies": 52,
+    "comments": 4,
+    "events": 255,
+    "labels": 0,
+    "config": 13
+  },
+  "implementation": "dota2_rpg-zk9",
+  "runtime_acceptance": "dota2_rpg-5c7",
+  "followup": "dota2_rpg-bf6"
+}

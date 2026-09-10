@@ -34,7 +34,7 @@ var RpgConditionCatalog = (function () {
             add("target", "modifier_" + property + "_" + direction, "advanced", "modifier," + (property === "remaining" ? "seconds" : "value"));
         });
     });
-    ["nearest", "farthest", "lowest_hp_pct", "highest_hp_pct", "lowest_health", "highest_health", "most_missing_health", "lowest_armor", "highest_armor", "lowest_attack_damage", "highest_attack_damage", "lowest_magic_resistance", "highest_magic_resistance"].forEach(function (id) { add("priority", id, "priority", ""); });
+    ["nearest", "farthest", "lowest_hp_pct", "highest_hp_pct", "lowest_health", "highest_health", "most_missing_health", "lowest_armor", "highest_armor", "lowest_attack_damage", "highest_attack_damage", "lowest_magic_resistance", "highest_magic_resistance", "prefer_teammate"].forEach(function (id) { add("priority", id, "priority", ""); });
 
     ["tiny_grab_is_enemy", "tiny_grab_is_ally", "tiny_grab_is_hero", "tiny_grab_is_creep"].forEach(function(id) { add("use", id, "tiny_grab", ""); });
     ["tiny_grab_hp_pct_lte", "tiny_grab_hp_pct_gte"].forEach(function(id) { add("use", id, "tiny_grab", "value"); });
@@ -44,7 +44,7 @@ var RpgConditionCatalog = (function () {
     var codes = {
         use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39],
         target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39],
-        priority: [1,2,3,4,5,6,7,8,9,10,11,12,13]
+        priority: [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
     };
     Object.keys(groups).forEach(function (group) {
         groups[group].forEach(function (entry, index) {
@@ -318,7 +318,9 @@ var RpgConditionCatalog = (function () {
                 label(body, "", text("preset_hint")).AddClass("V2Hint");
                 variants.forEach(function(variant,index) {
                     var preset = RpgSkillPresets.get(options.abilityName,variant);
-                    var title = text(preset.desired_toggle_state === "0" ? "preset_off" : "preset") + " " + (index+1);
+                    var supportLabel = /_prefer_teammate$/.test(variant) ? "preset_prefer_teammate" : /_allow_self$/.test(variant) ? "preset_allow_self" : "";
+                    var title = supportLabel ? text(supportLabel) + (variant.indexOf("charged_") === 0 ? " · " + text("preset_charges") : "")
+                        : text(preset.desired_toggle_state === "0" ? "preset_off" : "preset") + " " + (index+1);
                     button(body,"V2Preset"+index,title,function() {
                         preset = RpgSkillPresets.get(options.abilityName,variant);
                         preset.min_aoe_hits = preset.min_aoe_hits || 0;
