@@ -40,12 +40,12 @@
 					<Label id="RadiantTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
 					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
 				</Panel>
-				<Panel id="RadiantHeroStrip" class="HeroStrip" />
 				<Button id="RadiantCollapseButton" class="CollapseButton">
 					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="&lt;" />
 				</Button>
 			</Panel>
 			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
+				<Panel id="RadiantHeroStrip" class="HeroStrip" />
 				<Panel class="ColumnHeader">
 					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
 				</Panel>

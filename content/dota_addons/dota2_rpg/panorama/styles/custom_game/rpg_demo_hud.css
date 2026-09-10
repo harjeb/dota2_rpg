@@ -95,12 +95,12 @@
 
 .TeamEditor
 {
-	width: 620px;
+	width: 310px;
 	height: 650px;
 	vertical-align: center;
 	flow-children: down;
 	margin-top: 18px;
-	padding: 16px;
+	padding: 12px;
 	background-color: #111820f2;
 	border: 1px solid #657078;
 	box-shadow: #000000bb 0px 5px 18px 0px;
@@ -113,6 +113,41 @@
 	horizontal-align: left;
 	margin-left: 18px;
 	border-left: 4px solid #4bb99f;
+}
+
+/* Keep five selectable heroes below the title in the half-width editor. */
+#RadiantHeroStrip
+{
+	width: 100%;
+	height: 56px;
+}
+
+#RadiantHeroStrip .HeroPortrait
+{
+	width: 48px;
+	height: 48px;
+}
+
+.RadiantEditor .SelectedHeroName
+{
+	width: 100%;
+	text-overflow: ellipsis;
+}
+
+.RadiantEditor .RulesContainer
+{
+	padding-right: 4px;
+}
+
+.RadiantEditor .MoveButton
+{
+	width: 26px;
+}
+
+.RadiantEditor .DeleteRuleButton,
+.RadiantEditor .AddRuleButton
+{
+	margin-left: 2px;
 }
 
 .TeamEditor.Locked
@@ -1421,9 +1456,9 @@
 
 #WalletBalance { color: #f4cf69; font-size: 20px; horizontal-align: center; }
 
-/* Explicit per-rule conditions; the compact row keeps its original geometry. */
-.RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: #402821ee; padding: 8px; white-space: normal; z-index: 50; }
-.RuleSettingsButton { vertical-align: center; margin-left: 12px; margin-right: 16px; width: fill-parent-flow(1); height: 36px; background-color: #253a49; border: 1px solid #667b86; }
+/* Explicit per-rule conditions in the compact action list. */
+.RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: transparent; text-shadow: 0px 1px 3px 3.0 #000000; padding: 8px; white-space: normal; z-index: 50; }
+.RuleSettingsButton { vertical-align: center; margin-left: 6px; margin-right: 2px; width: fill-parent-flow(1); height: 36px; background-color: #253a49; border: 1px solid #667b86; }
 .RuleSettingsButton Label { font-size: 14px; color: #e7edf2; horizontal-align: center; vertical-align: center; }
 .RuleSettingsButton.HasAdvancedSettings { border-color: #d7b85a; }
 .RuleSettingsButton:hover { brightness: 1.4; }
