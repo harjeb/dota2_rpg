@@ -22,9 +22,5 @@ function modifier_rpg_tactics_events:OnAttack(event)
 end
 function modifier_rpg_tactics_events:OnAbilityExecuted(event)
     if not IsServer() or event.unit ~= self:GetParent() or not event.ability then return end
-    local events = self:GetParent().rpgTacticsEvents
-    if events then
-        local name = event.ability:GetAbilityName()
-        events.casts[name] = (events.casts[name] or 0) + 1
-    end
+    require("tactics/native_events").RecordSuccess(self:GetParent(), event.ability:GetAbilityName(), GameRules:GetGameTime())
 end

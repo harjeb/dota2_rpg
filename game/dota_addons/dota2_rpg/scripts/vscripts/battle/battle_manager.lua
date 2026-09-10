@@ -177,16 +177,18 @@ function BattleManager:GetEnemyTeam(team)
 end
 
 function BattleManager:CheckBattleEnd()
+	if self.phase ~= "fight" then return false end
+	-- Resolve the deadline independently of death/reincarnation state. A wipe
+	-- first observed at the deadline has not won within the allowed time.
+	if self:GetTimeLeft() <= 0 then
+		self.gameMode:EndBattle("timeout", DOTA_TEAM_BADGUYS)
+		return true
+	end
 	-- Aegis/Wraith King's native death-to-rebirth delay is not a team wipe.
 	-- Target selection and the ordinary alive counter still require IsAlive.
 	local radiantAlive = self:GetAliveCount(DOTA_TEAM_GOODGUYS, true)
 	local direAlive = self:GetAliveCount(DOTA_TEAM_BADGUYS, true)
 	if radiantAlive > 0 and direAlive > 0 then
-		if self:GetTimeLeft() <= 0 then
-			-- 超时判负（DESIGN.md §2.3：防拖时间 loop 局）
-			self.gameMode:EndBattle("timeout", DOTA_TEAM_BADGUYS)
-			return true
-		end
 		return false
 	end
 

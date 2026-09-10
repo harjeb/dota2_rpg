@@ -34,11 +34,14 @@ function BossScaling.Apply(unit, entry)
     if IsServer ~= nil and not IsServer() then return nil end
     if not eligible(unit, entry) then return nil end
     local hpMultiplier = bounded(entry.boss_health_multiplier, 1, 1, 100)
+    -- Absolute HP is applied after leveling/equipment, including a negative
+    -- bonus when the native level-30 hero already exceeds the target.
+    local targetHealth = bounded(entry.boss_max_health, 0, 0, 1000000)
     local attack = bounded(entry.boss_attack_damage_pct, 0, 0, 1000)
     local spell = bounded(entry.boss_spell_amp_pct, 0, 0, 1000)
     local cooldown = bounded(entry.boss_cooldown_reduction_pct, 0, 0, 80)
     local previous = unit:FindModifierByName(MODIFIER)
-    if hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and not valid(previous) then
+    if targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and not valid(previous) then
         return nil
     end
     unit:CalculateStatBonus(true)
@@ -47,7 +50,8 @@ function BossScaling.Apply(unit, entry)
     local baseline = unit:GetMaxHealth() - oldBonus
     if baseline ~= baseline or baseline <= 0 or baseline == math.huge then return nil end
     local modifier = unit:AddNewModifier(unit, nil, MODIFIER, {
-        health_bonus = math.floor(baseline * (hpMultiplier - 1)),
+        health_bonus = targetHealth > 0 and (math.floor(targetHealth) - baseline)
+            or math.floor(baseline * (hpMultiplier - 1)),
         attack_damage_pct = attack,
         spell_amp_pct = spell,
         cooldown_reduction_pct = cooldown,

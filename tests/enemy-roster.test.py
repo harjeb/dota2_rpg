@@ -12,6 +12,7 @@ author = runpy.run_path(str(ROOT / 'scripts/author-enemy-roster.py'))
 HERO_COUNTS = dict(zip(
     [5, 7, 8, 9, 10, 12, 13, 14, 15, 17, 18, 19, 20, 22, 23, 24, 25, 27, 28, 29, 30],
     [3] * 4 + [4] * 4 + [5] * 4 + [6] * 4 + [7] * 5))
+HERO_COUNTS.update({10: 1, 20: 1, 30: 1})
 
 
 class EnemyRosterTests(unittest.TestCase):
@@ -30,19 +31,19 @@ class EnemyRosterTests(unittest.TestCase):
                 if heroes:
                     cls.teams[label][int(stage_id[2:])] = heroes
 
-    def test_64_native_heroes_actually_spawn(self):
+    def test_native_hero_coverage_after_removing_boss_escorts(self):
         native = json.loads((ROOT / 'data/native_skill_conditions.json').read_text(encoding='utf-8'))
         known = {row['hero'] for row in native['rows']}
         for label, teams in self.teams.items():
             with self.subTest(data=label):
                 counts = Counter(e['unit'] for team in teams.values() for e in team)
-                self.assertEqual(len(counts), 64)
+                self.assertEqual(len(counts), 60)
                 self.assertTrue(set(counts) <= known, set(counts) - known)
-                self.assertEqual(Counter(counts.values()), {1: 21, 2: 43})
-                self.assertEqual(sum(counts.values()), 107)
+                self.assertEqual(Counter(counts.values()), {1: 27, 2: 33})
+                self.assertEqual(sum(counts.values()), 93)
                 introduced = {e['unit'] for chapter, team in teams.items()
                               if chapter <= 25 for e in team}
-                self.assertEqual(len(introduced), 64)
+                self.assertEqual(len(introduced), 59)
                 self.assertTrue(all(int(e.get('count', 1)) == 1
                                     for team in teams.values() for e in team))
 
@@ -87,13 +88,15 @@ class EnemyRosterTests(unittest.TestCase):
                     role = roles[entry['unit'].removeprefix('npc_dota_hero_')]
                     self.assertEqual(entry['ai'], author['PROFILES'][role], (label, chapter))
                     found.append(role)
-                self.assertTrue({'front', 'damage', 'support'} <= set(found), (label, chapter))
+                if chapter not in (10, 20, 30):
+                    self.assertTrue({'front', 'damage', 'support'} <= set(found), (label, chapter))
 
     def test_boss_strength_only_on_the_three_chapter_bosses(self):
-        fields = ['boss_health_multiplier', 'boss_attack_damage_pct',
+        fields = ['boss_max_health', 'boss_attack_damage_pct',
                   'boss_spell_amp_pct', 'boss_cooldown_reduction_pct']
-        expected = {10: (6, 100, 100, 25), 20: (10, 200, 150, 40),
-                    30: (16, 300, 200, 50)}
+        expected = {10: (3000, 16.666667, 16.666667, 4.166667),
+                    20: (5000, 33.333333, 25, 6.666667),
+                    30: (8000, 50, 33.333333, 8.333333)}
         for label, teams in self.teams.items():
             for chapter, team in teams.items():
                 for slot, entry in enumerate(team):

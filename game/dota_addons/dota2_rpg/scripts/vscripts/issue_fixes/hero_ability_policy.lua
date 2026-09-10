@@ -3,6 +3,12 @@
 -- Apply to project-owned heroes immediately after creation, before leveling skills.
 local Policy = {}
 
+-- Native talent slots can be sparse and live beyond GetAbilityCount().
+-- Dota exposes 32 ability slots; retain larger counts for custom heroes.
+function Policy.GetSlotCount(hero)
+    return math.max(32, hero.GetAbilityCount and hero:GetAbilityCount() or 0)
+end
+
 local removedByHero = {
     npc_dota_hero_morphling = {
         morphling_replicate = true,
@@ -29,7 +35,7 @@ function Policy.Apply(hero)
     -- Snapshot names first: RemoveAbility can compact native slots and removing
     -- an ultimate can also remove its subskills. Never retain handles across it.
     local names, seen = {}, {}
-    local count = hero.GetAbilityCount and hero:GetAbilityCount() or 32
+    local count = Policy.GetSlotCount(hero)
     for index = 0, count - 1 do
         local ability = hero:GetAbilityByIndex(index)
         if valid(ability) then

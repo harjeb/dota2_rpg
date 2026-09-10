@@ -184,17 +184,17 @@ function serverRules(actions) {
 }
 var hud = runHud();
 // Editing starts after authoritative hero metadata arrives.
-hud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_name:"npc_dota_hero_lion",hero_index:502,
-    actions_text:"ability_1;attack",details_text:"lion_impale;attack",can_edit:1});
-var firstMenu = created(hud, "DireActionMenu0");
+hud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_name:"npc_dota_hero_axe",hero_index:502,
+    actions_text:"ability_1;attack",details_text:"axe_berserkers_call;attack",can_edit:1});
+var firstMenu = created(hud, "RadiantActionMenu0");
 assert(firstMenu.BHasClass("Hidden"), "fresh action menu starts hidden as a separate class");
-created(hud, "DireActionSelect0").events.onactivate();
+created(hud, "RadiantActionSelect0").events.onactivate();
 assert(!firstMenu.BHasClass("Hidden"), "first click opens the action list");
 assert(firstMenu.parent.id === "DropdownLayer", "action list escapes editor clipping");
-created(hud, "DireActionSelect0").events.onactivate();
+created(hud, "RadiantActionSelect0").events.onactivate();
 assert(firstMenu.BHasClass("Hidden"), "second click closes action list");
-assert(!created(hud,"DireConditionEditor0") && !created(hud,"DireForceToggle0"),"outer condition and force controls are removed");
-var actionButton=created(hud,"DireActionSelect0");
+assert(!created(hud,"RadiantConditionEditor0") && !created(hud,"RadiantForceToggle0"),"outer condition and force controls are removed");
+var actionButton=created(hud,"RadiantActionSelect0");
 actionButton.position = { x: 1780, y: 1020 };
 actionButton.events.onactivate();
 assert(firstMenu.style.marginLeft === "1620px" && firstMenu.style.marginTop === "720px",
@@ -254,7 +254,7 @@ function chooseAction(hud, side, row, action) {
     option.events.onactivate();
 }
 
-["Radiant", "Dire"].forEach(function (side) {
+["Radiant"].forEach(function (side) {
     var expectedActions = side === "Radiant" ? ["axe_berserkers_call", "axe_battle_hunger", "axe_culling_blade"] : ["lion_impale"];
     assert(visibleRules(hud, side).length === expectedActions.length + 1, side + " defaults include active skills plus attack");
     expectedActions.forEach(function (name, index) {
@@ -322,7 +322,7 @@ assert(hud.sentEvents.filter(function (e) { return e.name === "rpg_update_rule";
     return e.payload.rule_count >= 1 && e.payload.slot <= e.payload.rule_count;
 }), "rule sync must send actual rows, not disabled padding slots");
 chooseAction(hud, "Radiant", 0, "ability_1");
-chooseAction(hud, "Dire", 0, "ability_1");
+
 
 // 服务端状态推送后，首批五个英雄报价与阵容 UI 正常渲染。
 hud.subscriptions.rpg_shop_state({
@@ -359,11 +359,8 @@ assert(hud.panels["#RewardLabel"].text.indexOf("150") >= 0
     && hud.panels["#RewardLabel"].text.indexOf("dota2_rpg_reward_xp") >= 0,
     "settlement UI must render server-authoritative gold and active/bench XP without runtime errors");
 var radiantAbility = hud.createdPanels.filter(function (p) { return p.id === "RadiantActionAbility0"; })[0];
-var direAbility = hud.createdPanels.filter(function (p) { return p.id === "DireActionAbility0"; })[0];
-assert(radiantAbility && radiantAbility.abilityname === "axe_berserkers_call",
-    "Radiant action rows must use the real ability icon name");
-assert(direAbility && direAbility.abilityname === "lion_impale",
-    "Dire action rows must use the real ability icon name");
+assert(radiantAbility.abilityname === "axe_berserkers_call", "Radiant action row uses native ability icon");
+assert(!created(hud, "DireActionAbility0"), "enemy metadata does not create editable action rows");
 
 var itemTarget = hud.panels["#ItemTargetLabel"];
 assert(itemTarget && itemTarget.text.indexOf("axe") >= 0,
@@ -462,7 +459,7 @@ assert(/\.RulesContainer VerticalScrollBar[\s\S]*\.ScrollThumb/.test(cssSource),
 assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s*62/.test(hudSource),
     "compact row height matches scroll calculations after removing outer editors");
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&
-    /id="DireRules"[^>]*hittest="true"/.test(layoutSource),
+    !/id="DireRules"/.test(layoutSource),
     "both action lists must accept wheel and pointer input");
 assert(/id="NativeShopHint"/.test(layoutSource)
     && /id="ItemTargetLabel"/.test(layoutSource)
@@ -526,21 +523,15 @@ console.log("PASS: live HUD active skill defaults, authored rows, collapse wirin
 // Real roster events replace fixed portraits and preserve identity/count across refreshes.
 var damageHud = runHud();
 damageHud.subscriptions.rpg_enemy_roster({units: {"1": {id: 80, name: "npc_dota_neutral_centaur_khan"}, "2": {id: 81, name: "npc_dota_hero_sniper"}}});
-assert(damageHud.panels["#DireHeroStrip"].children.length === 2, "enemy strip follows actual roster count");
-assert(damageHud.panels["#DireHeroDyn1"].type === "Button", "neutral receives readable unit label");
-assert(damageHud.panels["#DireHeroDyn2"].heroname === "npc_dota_hero_sniper", "actual enemy hero portrait");
-damageHud.panels["#DireHeroDyn2"].events.onactivate();
-assert(damageHud.panels["#DireSelectedHero"].text.indexOf("sniper") >= 0, "actual enemy selection updates editor");
-damageHud.subscriptions.rpg_enemy_roster({units: [{id: 82, name: "npc_dota_hero_lina"}]});
-assert(damageHud.panels["#DireHeroStrip"].children.length === 1, "next stage drops stale enemies");
+assert(!damageHud.panels["#DireHeroStrip"], "roster data has no enemy editing strip");
 damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
-["Radiant", "Dire"].forEach(function (side) {
+["Radiant"].forEach(function (side) {
     assert(damageHud.panels["#" + side + "Editor"].visible === false, "battle auto collapses " + side);
     assert(damageHud.panels["#" + side + "RestoreButton"].visible === true, "battle keeps restore " + side);
 });
-damageHud.panels["#DireRestoreButton"].events.onactivate();
+damageHud.panels["#RadiantRestoreButton"].events.onactivate();
 damageHud.subscriptions.rpg_battle_state({phase: "fight", ready: 1});
-assert(damageHud.panels["#DireEditor"].visible === true, "same-phase update respects manual restore");
+assert(damageHud.panels["#RadiantEditor"].visible === true, "same-phase update respects manual restore");
 var victimA = {id: 80, name: "npc_dota_hero_axe", total: 60};
 var victimB = {id: 81, name: "npc_dota_hero_lion", total: 40};
 damageHud.subscriptions.rpg_damage_stats({elapsed: 2, units: {"1": {id: 1, name: "npc_dota_hero_sniper", team: 2, total: 100, dps: 50,
@@ -561,7 +552,7 @@ assert(damageHud.panels["#DamageUnits"].children[0].id === "DamageUnit80", "enem
 damageHud.subscriptions.rpg_battle_state({phase: "result"});
 assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "result retains final damage panel");
 damageHud.subscriptions.rpg_battle_state({phase: "setup", ready: 1});
-assert(damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "setup hides previous battle DPS");
+assert(!damageHud.panels["#DamagePanel"].BHasClass("Hidden"), "setup retains the DPS panel");
 console.log("PASS: actual enemy roster, battle collapse, DPS teams, source colors and target filtering");
 
 // Stage transitions retain authored conditions by name and duplicate occurrence.
@@ -585,26 +576,6 @@ function healthCondition(side) {
 }
 var lionName = "npc_dota_hero_lion";
 var axeName = "npc_dota_hero_axe";
-persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 101, name: lionName}, {id: 102, name: lionName}]});
-slots("Dire", 1, lionName, 101);
-slots("Dire", 2, lionName, 102);
-setHealthCondition("Dire");
-created(persistenceHud, "DireAddRule0").events.onactivate();
-persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
-assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
-    "duplicate enemies have independent authored rules");
-persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 201, name: lionName}, {id: 202, name: lionName}]});
-slots("Dire", 1, lionName, 201);
-slots("Dire", 2, lionName, 202);
-persistenceHud.panels["#DireHeroDyn1"].events.onactivate();
-assert(healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 3,
-    "enemy respawn preserves condition and authored row count by occurrence");
-persistenceHud.panels["#DireHeroDyn2"].events.onactivate();
-assert(!healthCondition("Dire"), "second duplicate stays independent after respawn");
-persistenceHud.subscriptions.rpg_enemy_roster({units: [{id: 301, name: axeName}]});
-slots("Dire", 1, axeName, 301);
-assert(!healthCondition("Dire") && visibleRules(persistenceHud, "Dire").length === 2,
-    "new enemy identity starts with default rules");
 slots("Radiant", 1, axeName, 401);
 slots("Radiant", 2, lionName, 402);
 persistenceHud.subscriptions.rpg_shop_state({lineup_text: axeName + ";" + lionName, owned_text: axeName + ";" + lionName});
@@ -625,7 +596,45 @@ assert(persistenceHud.sentEvents.some(function (event) {
     return event.name === "rpg_update_rule" && event.payload.hero_index === 501
         && event.payload.use_condition_1_type === "self_hp_pct_lte";
 }), "explicit update sends retained conditions to the replacement entity");
-console.log("PASS: stage rule persistence, duplicate enemy isolation, new enemy defaults and player reorder");
+console.log("PASS: stage rule persistence and player reorder");
+
+// Both heroes carry the same items; an open modal must keep its original owner.
+var itemHud = runHud();
+[axeName, lionName].forEach(function (name, i) {
+    itemHud.subscriptions.rpg_hero_slots({slot_key:"radiant_"+(i+1), hero_name:name, hero_index:701+i,
+        rule_key:name, abilities_text:i ? "lion_impale" : "axe_berserkers_call",
+        actions_text:"item_1;item_2;attack", details_text:"item_blink;item_blade_mail;attack",
+        can_edit:1,rules_ready:1,rules:serverRules(["item_2","attack"])});
+});
+itemHud.subscriptions.rpg_shop_state({lineup_text:axeName+";"+lionName,owned_text:axeName+";"+lionName});
+created(itemHud,"RadiantRuleSettings0").events.onactivate();
+itemHud.panels["#V2_use0Select"].events.onactivate();
+itemHud.panels["#V2_use0SelectOption_action_succeeded_after"].events.onactivate();
+var blinkChoice=itemHud.createdPanels.filter(function(p) {
+    return p.id.indexOf("V2_use0_action_idOption_0_")===0 && p.children.some(function(c) {return c.itemname==="item_blink";});
+}).slice(-1)[0];
+assert(blinkChoice,"prerequisite picker includes this hero's blink with a native item icon");
+blinkChoice.events.onactivate();
+itemHud.panels["#V2_use0_seconds"].text="1.5";
+var applyItem=itemHud.panels["#RuleSettingsApply"].events.onactivate;
+itemHud.panels["#RadiantHeroDyn2"].events.onactivate();
+var beforeItemSave=itemHud.sentEvents.length;
+applyItem();
+var itemSaves=itemHud.sentEvents.slice(beforeItemSave).filter(function(e) { return e.name==="rpg_update_rule"; });
+assert(itemSaves.length===1 && itemSaves[0].payload.hero_index===701 && itemSaves[0].payload.hero_name===axeName,
+    "Apply after selecting Lion saves only the Axe whose modal was opened");
+assert(itemSaves[0].payload.use_condition_1_type==="action_succeeded_after"
+    && itemSaves[0].payload.use_condition_1_action_id==="item_blink"
+    && itemSaves[0].payload.use_condition_1_seconds===1.5,"U39 item prerequisite and window reach the save payload");
+created(itemHud,"RadiantRuleSettings0").events.onactivate();
+assert(itemHud.panels["#V2_use0Select"].GetChild(0).text.indexOf("action_succeeded_after")<0,
+    "Lion's identical blade mail retains its own conditions");
+itemHud.panels["#RuleSettingsClose"].events.onactivate();
+itemHud.panels["#RadiantHeroDyn1"].events.onactivate();
+created(itemHud,"RadiantRuleSettings0").events.onactivate();
+assert(itemHud.panels["#V2_use0_seconds"].text==="1.5","Axe retains its authored item condition after selection changes");
+itemHud.panels["#RuleSettingsClose"].events.onactivate();
+console.log("PASS: identical items stay hero-independent; switched-hero modal Apply and U39 item roundtrip");
 
 var walletHud = runHud();
 walletHud.subscriptions.rpg_shop_state({gold: 500, owned_text: "npc_dota_hero_lion", lineup_text: "", equipped_text: ""});

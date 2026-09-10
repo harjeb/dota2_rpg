@@ -38,10 +38,11 @@ var RpgConditionCatalog = (function () {
 
     ["tiny_grab_is_enemy", "tiny_grab_is_ally", "tiny_grab_is_hero", "tiny_grab_is_creep"].forEach(function(id) { add("use", id, "tiny_grab", ""); });
     ["tiny_grab_hp_pct_lte", "tiny_grab_hp_pct_gte"].forEach(function(id) { add("use", id, "tiny_grab", "value"); });
+    add("use", "action_succeeded_after", "action", "seconds,action_id");
     add("target", "specified_enemy", "identity", "target_actor");
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
-        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38],
+        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39],
         target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13]
     };

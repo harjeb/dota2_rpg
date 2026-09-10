@@ -281,6 +281,26 @@ check(real.get_action_use_count(replacement,"native_active")==1 and real.get_act
 bridge:ResetState()
 check(real.get_action_elapsed(replacement,"native_active")==nil and real.get_action_use_count(replacement,"native_active")==0,"reset clears actor history")
 check(not real.action_used_within(caster,"native_active",10),"history reset")
+local NativeSuccess=require("tactics/native_events")
+NativeSuccess.Attach(caster)
+NativeSuccess.Attach(replacement)
+local successItem=ability("item_blink",false,false)
+local previousItems=caster.GetItemInSlot
+caster.GetItemInSlot=function(_,slot) return slot==0 and successItem or nil end
+real.current_action_id="native_active"
+local chainGate={{type="action_succeeded_after",action_id="item_1",seconds=2}}
+real.record_action_order(caster,"item_blink")
+check(not C:EvaluateUseConditions(chainGate,real),"real bridge order history cannot unlock success condition")
+NativeSuccess.RecordSuccess(caster,"item_blink",time)
+check(C:EvaluateUseConditions(chainGate,real),"real bridge resolves item slot prerequisite to native success")
+NativeSuccess.RecordSuccess(caster,"native_active",time)
+check(not C:EvaluateUseConditions(chainGate,real),"real bridge consumes prerequisite after downstream success")
+chainGate[1].action_id="native_active";chainGate[1].action_actor=actorKey
+NativeSuccess.RecordSuccess(replacement,"native_active",time)
+check(C:EvaluateUseConditions(chainGate,real),"real bridge resolves distinct actor success with equal timestamps")
+NativeSuccess.Detach(caster);NativeSuccess.Detach(replacement)
+check(not C:EvaluateUseConditions(chainGate,real),"real bridge observes detached cross-actor history")
+caster.GetItemInSlot=previousItems
 local merged=Bridge.ConvertLegacyRule(1,{action="native_active",condition="always",
     use_condition_4_type="self_hp_pct_lte",use_condition_4_value=.25,
     target_filter_4_type="modifier_stacks_gte",target_filter_4_value=2,target_filter_4_modifier="mark"})

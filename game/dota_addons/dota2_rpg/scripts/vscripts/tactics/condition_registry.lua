@@ -418,6 +418,11 @@ for _, direction in ipairs({ "gte", "lte" }) do
         return elapsed ~= nil and elapsed >= 0 and measured_compare(elapsed, c.seconds or c.value, direction)
     end)
 end
+ConditionRegistry:RegisterUseCondition("action_succeeded_after", function(ctx, c)
+    local actor = action_actor(ctx, c)
+    if not actor or not c.action_id or type(ctx.action_succeeded_after) ~= "function" then return false end
+    return ctx.action_succeeded_after(actor, c.action_id, ctx.caster, ctx.current_action_id, tonumber(c.seconds or c.value or 2)) == true
+end)
 ConditionRegistry:RegisterTargetFilter("owned_by_self", function(ctx, target)
     if type(ctx.is_owned_by) ~= "function" then return false end
     local ok, owned = pcall(ctx.is_owned_by, target, ctx.caster)

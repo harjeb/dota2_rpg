@@ -486,50 +486,12 @@
 					"boss"
 				],
 				"ai": "aggro_front",
-				"boss_health_multiplier": 6,
-				"boss_attack_damage_pct": 100,
-				"boss_spell_amp_pct": 100,
-				"boss_cooldown_reduction_pct": 25
-			},
-			{
-				"unit": "npc_dota_hero_riki",
-				"level": 30,
-				"items": [
-					"item_power_treads",
-					"item_wraith_band",
-					"item_magic_wand"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_juggernaut",
-				"level": 30,
-				"items": [
-					"item_phase_boots",
-					"item_wraith_band"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_lich",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_magic_wand",
-					"item_wind_lace"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
+				"boss_max_health": 3000,
+				"boss_attack_damage_pct": 16.666667,
+				"boss_spell_amp_pct": 16.666667,
+				"boss_cooldown_reduction_pct": 4.166667
 			}
-		],
+    ],
 		"reward": {
 			"gold": 2000,
 			"xp_pool": 1100
@@ -1184,77 +1146,12 @@
 					"boss"
 				],
 				"ai": "aggro_front",
-				"boss_health_multiplier": 10,
-				"boss_attack_damage_pct": 200,
-				"boss_spell_amp_pct": 150,
-				"boss_cooldown_reduction_pct": 40
-			},
-			{
-				"unit": "npc_dota_hero_zuus",
-				"level": 30,
-				"items": [
-					"item_phylactery",
-					"item_ultimate_scepter",
-					"item_kaya_and_sange"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_pugna",
-				"level": 30,
-				"items": [
-					"item_aether_lens",
-					"item_glimmer_cape",
-					"item_ultimate_scepter"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_drow_ranger",
-				"level": 30,
-				"items": [
-					"item_hurricane_pike",
-					"item_yasha",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_skywrath_mage",
-				"level": 30,
-				"items": [
-					"item_rod_of_atos",
-					"item_aether_lens",
-					"item_black_king_bar"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
-			},
-			{
-				"unit": "npc_dota_hero_ancient_apparition",
-				"level": 30,
-				"items": [
-					"item_glimmer_cape",
-					"item_force_staff",
-					"item_aether_lens"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
+				"boss_max_health": 5000,
+				"boss_attack_damage_pct": 33.333333,
+				"boss_spell_amp_pct": 25.0,
+				"boss_cooldown_reduction_pct": 6.666667
 			}
-		],
+    ],
 		"reward": {
 			"gold": 5800,
 			"xp_pool": 2000
@@ -2152,102 +2049,12 @@
 					"boss"
 				],
 				"ai": "aggro_front",
-				"boss_health_multiplier": 16,
-				"boss_attack_damage_pct": 300,
-				"boss_spell_amp_pct": 200,
-				"boss_cooldown_reduction_pct": 50
-			},
-			{
-				"unit": "npc_dota_hero_queenofpain",
-				"level": 30,
-				"items": [
-					"item_power_treads",
-					"item_bloodthorn",
-					"item_kaya_and_sange",
-					"item_black_king_bar",
-					"item_shivas_guard"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_leshrac",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_bloodstone",
-					"item_kaya_and_sange",
-					"item_black_king_bar",
-					"item_shivas_guard"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_zuus",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_phylactery",
-					"item_ultimate_scepter",
-					"item_kaya_and_sange",
-					"item_refresher"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "focus_lowest_hp"
-			},
-			{
-				"unit": "npc_dota_hero_shadow_shaman",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_blink",
-					"item_aether_lens",
-					"item_black_king_bar",
-					"item_ultimate_scepter"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
-			},
-			{
-				"unit": "npc_dota_hero_life_stealer",
-				"level": 30,
-				"items": [
-					"item_phase_boots",
-					"item_armlet",
-					"item_abyssal_blade",
-					"item_sange_and_yasha",
-					"item_assault"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "aggro_front"
-			},
-			{
-				"unit": "npc_dota_hero_warlock",
-				"level": 30,
-				"items": [
-					"item_arcane_boots",
-					"item_glimmer_cape",
-					"item_ultimate_scepter",
-					"item_aeon_disk",
-					"item_refresher"
-				],
-				"tags": [
-					"hero"
-				],
-				"ai": "ai_healer_protect"
+				"boss_max_health": 8000,
+				"boss_attack_damage_pct": 50.0,
+				"boss_spell_amp_pct": 33.333333,
+				"boss_cooldown_reduction_pct": 8.333333
 			}
-		],
+    ],
 		"reward": {
 			"gold": 14500,
 			"xp_pool": 3000

@@ -130,4 +130,23 @@ assert(hero:GetMaxHealth() == 200000 and power:GetModifierPercentageCooldown() =
 assert(power:GetModifierSpellAmplify_Percentage() == 1000)
 local plain = unit()
 assert(Scaling.Apply(plain, { tags = { "boss" } }) == nil, "a boss tag without strength config remains baseline")
-print("PASS: Boss stat tiers, native properties, refresh, replication, death, eligibility and config bounds")
+for _, health in ipairs({3000, 5000, 8000}) do
+    for _, baseline in ipairs({2000, 4200}) do
+        local fixed = unit()
+        fixed.baseHealth = baseline
+        local config = { tags = { "boss" }, boss_max_health = tostring(health) }
+        local bonus = Scaling.Apply(fixed, config)
+        assert(fixed:GetMaxHealth() == health and fixed.health == health,
+            "absolute Boss HP must include native level and equipped strength")
+        assert(Scaling.Apply(fixed, config) == bonus and fixed:GetMaxHealth() == health,
+            "refresh must not compound positive or negative health bonuses")
+        fixed.alive = false
+        assert(not bonus:RemoveOnDeath())
+        fixed.alive = true
+        assert(fixed:GetMaxHealth() == health, "native reincarnation retains target HP")
+        fixed.baseHealth = baseline + 300
+        Scaling.Apply(fixed, config)
+        assert(fixed:GetMaxHealth() == health, "reapplication recalibrates a changed native baseline")
+    end
+end
+print("PASS: Boss stat tiers, absolute HP, native properties, refresh, replication, death, eligibility and config bounds")

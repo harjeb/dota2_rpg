@@ -182,6 +182,12 @@
                 var abilities = entry.abilities_text !== undefined ? splitList(entry.abilities_text)
                     : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action !== "sustained_move" && action.indexOf("item_") !== 0; })
                         .map(function (action) { return getActionDetail(team, index, action); });
+                getSlotActions(team, index).forEach(function (action) {
+                    var detail = getActionDetail(team, index, action);
+                    if (action.indexOf("item_") === 0 && detail && detail.indexOf("item_") === 0 && abilities.indexOf(detail) < 0) {
+                        abilities.push(detail);
+                    }
+                });
                 result.push({ actor: entry === selected ? "" : entry.rule_key,
                     label: $.Localize("#dota2_rpg_v2_team_" + (team === side ? "ally" : "enemy")) + " " + localizeHeroName(entry.name) + " " + (index + 1),
                     abilities: abilities.filter(function (name) { return !!name; }) });
@@ -217,18 +223,9 @@
         return rulesBySide[side][identity];
     }
 
-    var rulesBySide = {
-        Radiant: {},
-        Dire: {}
-    };
-    var selectedHeroIndex = {
-        Radiant: 0,
-        Dire: 0
-    };
-    var rowPanels = {
-        Radiant: [],
-        Dire: []
-    };
+    var rulesBySide = { Radiant: {} };
+    var selectedHeroIndex = { Radiant: 0 };
+    var rowPanels = { Radiant: [] };
     var phase = "setup";
     var itemSellRequestId = 0;
     var pendingItemSales = {};
@@ -346,9 +343,14 @@
                     if (phase !== "setup") { return; }
 
                     closeEditorMenus();
-                    var authored = getSelectedRules(side)[idx];
+                    var editingHeroIndex = selectedHeroIndex[side];
+                    var editingEntry = heroSlots[side.toLowerCase() + "_" + (editingHeroIndex + 1)];
+                    var authored = getRules(side, editingHeroIndex)[idx];
                     RpgConditionCatalog.open(authored, RpgRuleSync.initialSettings(authored), function (draft) {
-                        if (!canEditHeroRules(side,selectedHeroIndex[side])) { return; }
+                        var currentEntry = heroSlots[side.toLowerCase() + "_" + (editingHeroIndex + 1)];
+                        if (!canEditHeroRules(side, editingHeroIndex) || !editingEntry || !currentEntry
+                            || currentEntry.rule_key !== editingEntry.rule_key || currentEntry.hero_index !== editingEntry.hero_index
+                            || getRules(side, editingHeroIndex)[idx] !== authored) { return; }
                         Object.keys(draft).forEach(function (key) { authored[key] = draft[key]; });
                         if (draft.target !== undefined) {
                             authored.target_attr = "distance";
@@ -358,8 +360,8 @@
                         authored.condition = first.type || "always";
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
                         renderSide(side);
-                        sendRuleToServer(side,selectedHeroIndex[side],idx);
-                    }, {abilityName:getActionDetail(side,selectedHeroIndex[side],authored.action),actionHeroes:actionHeroes(side,selectedHeroIndex[side]),targetActors:targetActors(side,selectedHeroIndex[side]),getTargetActors:function () { return targetActors(side,selectedHeroIndex[side]); },readOnly:!canEditHeroRules(side,selectedHeroIndex[side])});
+                        sendRuleToServer(side,editingHeroIndex,idx);
+                    }, {abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -401,7 +403,7 @@
     }
 
     function closeEditorMenus() {
-        var sides = ["Radiant", "Dire"];
+        var sides = ["Radiant"];
         for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
             var side = sides[sideIndex];
             for (var index = 0; index < rowPanels[side].length; index++) {
@@ -606,6 +608,7 @@
     }
 
     function renderSide(side) {
+        if (side !== "Radiant") { return; }
         var locked = !canEditHeroRules(side,selectedHeroIndex[side]);
         var hidePanels = phase !== "setup";
         var rules = getSelectedRules(side);
@@ -953,7 +956,7 @@
             GameEvents.SendCustomGameEventToServer("rpg_bench_buy", {});
         });
         var fixUi = GameUI.CustomUIConfig().RpgIssueFixUI;
-        ["Radiant", "Dire"].forEach(function (side) {
+        ["Radiant"].forEach(function (side) {
             fixUi.bindActionPanel({
                 panel: $("#" + side + "Editor"),
                 button: $("#" + side + "CollapseButton"),
@@ -1321,7 +1324,7 @@
     // ---------------- 自绘规则列表滚动（按钮/滚轮/滑块） ----------------
     var RULE_VIEW_HEIGHT = 380;
     var RULE_SCROLL_STEP = 130;
-    var ruleScroll = { Radiant: 0, Dire: 0 };
+    var ruleScroll = { Radiant: 0 };
 
     function ruleScrollMax(side) {
         return Math.max(0, getSelectedRules(side).length * ROW_HEIGHT - RULE_VIEW_HEIGHT);
@@ -1396,7 +1399,6 @@
             parts.push($.Localize("#dota2_rpg_no_lineup"));
         }
         $("#RadiantTeamLevel").text = parts.join(" / ");
-        $("#DireTeamLevel").text = $.Localize("#dota2_rpg_dire_team_label");
     }
 
     // 结算只展示服务端已结算的结果；金币和英雄 XP 不在客户端二次修改。
@@ -1448,9 +1450,7 @@
         var signature = roster.map(function (u) { return u.id + ":" + u.name; }).join(";");
         if (signature === enemyRosterSignature) { return; }
         enemyRosterSignature = signature;
-        var container = $("#DireHeroStrip");
-        container.RemoveAndDeleteChildren();
-        HEROES.Dire = [];
+        // Keep enemy identities for condition target pickers, without an enemy editor.
         Object.keys(heroSlots).forEach(function (key) {
             if (key.indexOf("dire_") !== 0) { return; }
             var unit = roster[Number(key.slice(5)) - 1];
@@ -1459,17 +1459,10 @@
                 delete heroSlots[key];
             }
         });
-        roster.forEach(function (unit, index) {
-            var isHero = String(unit.name).indexOf("npc_dota_hero_") === 0;
-            var portrait = $.CreatePanel(isHero ? "DOTAHeroImage" : "Button", container, "DireHeroDyn" + (index + 1));
-            portrait.AddClass("HeroPortrait");
-            if (isHero) { portrait.heroname = unit.name; portrait.heroimagestyle = "portrait"; }
-            else { damageLabel(portrait, localizeHeroName(unit.name)); }
-            portrait.SetPanelEvent("onactivate", function () { selectHero("Dire", index); });
-            HEROES.Dire.push({ panelId: portrait.id, name: unit.name, entityIndex: Number(unit.id) });
+        HEROES.Dire = roster.map(function (unit) {
+            return { name: unit.name, entityIndex: Number(unit.id) };
         });
-        selectedHeroIndex.Dire = Math.min(selectedHeroIndex.Dire, Math.max(0, roster.length - 1));
-        renderSide("Dire");
+
     }
     var damageState = { elapsed: 0, units: [] };
     var damageTeam = 2;
@@ -1538,22 +1531,47 @@
                 (100 * Number(target.total) / Math.max(1, Number(active.total))).toFixed(1) + "%)");
         });
     }
-    function onDamageStats(data) { damageState = data || { elapsed: 0, units: [] }; renderDamage(); }
+    function onDamageStats(data) {
+        damageState = data || { elapsed: 0, units: [] };
+        if (phase === "fight" || phase === "battle") {
+            updateBattleCountdown({phase: phase, battle_time: damageState.elapsed, time_limit: 120});
+        }
+        renderDamage();
+    }
+
+    function updateBattleCountdown(data) {
+        if (data.phase === "result") { return; }
+        var limit = Math.max(0, Number(data.time_limit) || 120);
+        var remaining = Math.max(0, Math.ceil(limit - Math.max(0, Number(data.battle_time) || 0)));
+        if (data.phase === "setup") { remaining = Math.ceil(limit); }
+        var seconds = remaining % 60;
+        $("#BattleCountdown").text = Math.floor(remaining / 60) + ":" + (seconds < 10 ? "0" : "") + seconds;
+        $("#BattleCountdown").SetHasClass("CountdownUrgent", remaining <= 10);
+    }
+
+    function wireSidePanel(panelId, bodyId, toggleId, labelId) {
+        var minimized = false;
+        $("#" + toggleId).SetPanelEvent("onactivate", function () {
+            minimized = !minimized;
+            $("#" + panelId).SetHasClass("SidePanelMinimized", minimized);
+            $("#" + bodyId).SetHasClass("Hidden", minimized);
+            $("#" + labelId).text = minimized ? "+" : "−";
+        });
+    }
 
     function onBattleState(data) {
+        updateBattleCountdown(data);
         updateRunLives(data);
         var previousPhase = phase;
         phase = data.phase || "setup";
         if (phase !== "setup") { $("#RuleSettings").SetHasClass("Hidden", true); }
         var fighting = phase === "fight" || phase === "battle";
         if (fighting && previousPhase !== "fight" && previousPhase !== "battle") {
-            ["Radiant", "Dire"].forEach(function (side) {
+            ["Radiant"].forEach(function (side) {
                 var editor = $("#" + side + "Editor");
                 if (editor.RpgSetCollapsed) { editor.RpgSetCollapsed(true); }
             });
         }
-        $("#DamagePanel").SetHasClass("Hidden", phase === "setup");
-        $("#DireEditor").SetHasClass("WithDamagePanel", phase !== "setup");
         if (phase === "setup" && previousPhase !== "setup") {
             damageState = { elapsed: 0, units: [] };
             selectedDamageUnit = null;
@@ -1620,9 +1638,7 @@
         }
 
         renderSide("Radiant");
-        renderSide("Dire");
-        applyRuleScroll("Radiant");
-        applyRuleScroll("Dire");
+            applyRuleScroll("Radiant");
     }
 
     function onLevelsState(data) {
@@ -1719,11 +1735,8 @@
 
     updateRunLives({ lives_remaining: 5, max_lives: 5 });
     renderSide("Radiant");
-    renderSide("Dire");
     setupRuleScroll("Radiant");
-    setupRuleScroll("Dire");
     wireHeroPortraits("Radiant");
-    wireHeroPortraits("Dire");
     $("#StartBattleButton").enabled = false;
     $("#StartBattleButton").SetPanelEvent("onactivate", function () {
         if (phase !== "setup" || !serverReady) {
@@ -1771,8 +1784,8 @@
             rules_ready: data.rules_ready === undefined || Number(data.rules_ready) === 1
         };
         var match = slotKey.match(/^(radiant|dire)_(\d+)$/);
-        if (match) {
-            var side = match[1] === "radiant" ? "Radiant" : "Dire";
+        if (match && match[1] === "radiant") {
+            var side = "Radiant";
             var heroIndex = Math.max(0, Number(match[2]) - 1);
             var current = getRules(side, heroIndex);
             if (Number(data.rules_ready) === 1 && (!current._serverHydrated || !current._authored || heroSlots[slotKey].can_edit === false)) {
@@ -1789,6 +1802,9 @@
         }
     });
     wireShopButtons();
+    wireSidePanel("DamagePanel", "DamageBody", "DamageToggle", "DamageToggleLabel");
+    wireSidePanel("ItemShopPanel", "EquipmentBody", "EquipmentToggle", "EquipmentToggleLabel");
+    renderDamage();
     shopState.gold = saveData.gold;
     updateShopEconomyLabels(shopState.gold);
     updateTeamLevelLabels();

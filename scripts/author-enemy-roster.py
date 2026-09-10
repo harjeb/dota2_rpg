@@ -52,12 +52,16 @@ def roster(source):
         if len(heroes) != len(entries):
             raise ValueError(f'Unauthored mixed stage: {stage_id}')
         team = []
-        for role in FORMATIONS[len(heroes)]:
+        # Keep the original role cursors so removing Boss escorts does not
+        # reshuffle ordinary chapters when this maintenance tool is rerun.
+        boss_stage = any('boss' in entry.get('tags', []) for entry in heroes)
+        slots = {10: 4, 20: 6, 30: 7}.get(int(stage_id[2:]), len(heroes)) if boss_stage else len(heroes)
+        for role in FORMATIONS[slots]:
             pool = POOLS[role]
             hero = pool[cursors[role] % len(pool)]
             cursors[role] += 1
             team.append((hero, PROFILES[role]))
-        result[stage_id] = team
+        result[stage_id] = team[:1] if boss_stage else team
     return result
 
 

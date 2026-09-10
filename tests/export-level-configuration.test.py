@@ -28,15 +28,15 @@ class LevelConfigurationExportTests(unittest.TestCase):
             manifest = json.loads(files["manifest"].read_text(encoding="utf-8"))
             self.assertEqual(manifest["runtime_source"], "game/dota_addons/dota2_rpg/scripts/data/levels.kv")
             self.assertEqual(manifest["stage_count"], 30)
-            self.assertEqual(manifest["unit_configuration_rows"], 139)
-            self.assertEqual(manifest["equipment_rows"], 343)
-            self.assertEqual(manifest["unique_units"], 73)
+            self.assertEqual(manifest["unit_configuration_rows"], 125)
+            self.assertEqual(manifest["equipment_rows"], 290)
+            self.assertEqual(manifest["unique_units"], 69)
             self.assertEqual(manifest["item_name_count"], 61)
             self.assertEqual(manifest["untranslated_item_ids"], [])
             # The old JSON currently stores level 30 for hero rows while the
             # runtime KV stores their actual stage levels. This is report-only:
             # the export must never use the JSON level instead.
-            self.assertEqual(manifest["maintenance_source_difference_rows"], 93)
+            self.assertEqual(manifest["maintenance_source_difference_rows"], 85)
 
             book = load_workbook(files["excel"], data_only=True)
             self.assertEqual(book.sheetnames, ["说明", "关卡总览", "单位明细", "装备明细", "单位出现汇总", "源文件差异"])
@@ -54,13 +54,13 @@ class LevelConfigurationExportTests(unittest.TestCase):
                               axe["装备1（中文）"], axe["装备1（原生ID）"], axe["装备2（中文）"], axe["装备2（原生ID）"]),
                              ("斧王", 1, 8, "aggro_front", "速度之靴", "item_boots", "护腕", "item_bracer"))
             boss = next(row for row in records if row["关卡"] == "ch30" and row["是否Boss"] == "是")
-            self.assertEqual((boss["单位原生ID"], boss["等级"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
-                             ("npc_dota_hero_skeleton_king", 30, 16, 300, 200, 50))
+            self.assertEqual((boss["单位原生ID"], boss["等级"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
+                             ("npc_dota_hero_skeleton_king", 30, 8000, None, 50, 33.333333, 8.333333))
 
             difference_sheet = book["源文件差异"]
             difference_headers = [cell.value for cell in difference_sheet[1]]
             differences = [dict(zip(difference_headers, values)) for values in difference_sheet.iter_rows(min_row=2, values_only=True)]
-            self.assertEqual(len(differences), 93)
+            self.assertEqual(len(differences), 85)
             self.assertEqual({row["字段"] for row in differences}, {"level"})
             first = differences[0]
             self.assertEqual((first["关卡"], first["单位原生ID"], first["运行时 levels.kv"], first["维护 levels_v07.json"]),
@@ -70,7 +70,8 @@ class LevelConfigurationExportTests(unittest.TestCase):
             equipment_headers = [cell.value for cell in equipment_sheet[1]]
             equipment = [dict(zip(equipment_headers, values)) for values in equipment_sheet.iter_rows(min_row=2, values_only=True)]
             self.assertTrue(all(row["装备中文名"] and row["装备原生ID"] for row in equipment))
-            self.assertEqual({row["装备原生ID"] for row in equipment}, set(EXPORT.ITEM_NAMES))
+            self.assertEqual({row["装备原生ID"] for row in equipment}, set(EXPORT.ITEM_NAMES) - {
+                "item_sange_and_yasha", "item_phylactery", "item_bloodthorn", "item_rod_of_atos"})
             self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_blink"), "闪烁匕首")
             self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_halberd"), "天堂之戟（兼容旧 ID）")
 
@@ -78,7 +79,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"), "CSV needs an Excel-friendly UTF-8 BOM")
             with files["units_csv"].open(encoding="utf-8-sig", newline="") as stream:
                 csv_rows = list(csv.DictReader(stream))
-            self.assertEqual(len(csv_rows), 139)
+            self.assertEqual(len(csv_rows), 125)
             self.assertEqual(csv_rows[0]["关卡"], "ch01")
             expected_hash = hashlib.sha256(EXPORT.RUNTIME_PATH.read_bytes()).hexdigest()
             self.assertEqual(manifest["runtime_sha256"], expected_hash)

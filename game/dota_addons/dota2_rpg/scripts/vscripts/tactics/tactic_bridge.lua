@@ -381,6 +381,10 @@ function TacticBridge:Install()
                 end
                 return nil
             end,
+            action_succeeded_after = function(actor, prerequisite, caster, action, seconds)
+                return require("tactics/native_events").SucceededAfter(actor, resolveActionName(actor, prerequisite),
+                    caster, resolveActionName(caster, action), seconds, GameRules:GetGameTime())
+            end,
             get_action_elapsed = function(caster, id)
                 local name = resolveActionName(caster, tostring(id or ""))
                 local last = (self.lastActionOrders[caster] or {})[name]

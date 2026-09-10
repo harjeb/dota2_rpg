@@ -193,6 +193,7 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
                 "攻击倍率": as_number(enemy.get("attack_multiplier", "")), "额外护甲": as_number(enemy.get("bonus_armor", "")),
                 "魔法抗性%": as_number(enemy.get("magic_resistance", "")),
                 "状态抗性%": as_number(enemy.get("status_resistance", "")),
+                "Boss最大生命": as_number(enemy.get("boss_max_health", "")),
                 "Boss生命倍率": as_number(enemy.get("boss_health_multiplier", "")),
                 "Boss攻击伤害+%": as_number(enemy.get("boss_attack_damage_pct", "")),
                 "Boss法术增幅+%": as_number(enemy.get("boss_spell_amp_pct", "")),
@@ -355,7 +356,7 @@ def write_workbook(path: Path, sheets: list[tuple[str, list[dict[str, Any]]]], m
         ("装备明细", "每件装备一行，便于按中文名、原生ID或关卡筛选。"),
         ("单位出现汇总", "按单位汇总当前所有关卡的配置次数、实际累计刷出数量、等级范围与 Boss 出现关卡。"),
         ("AI说明", "simple_nearest=野怪最近目标；aggro_front=前排近距攻击；focus_lowest_hp=优先最低生命；ai_healer_protect=治疗/保护友军。"),
-        ("Boss列", "仅 Boss 行有 Boss生命倍率、攻击伤害、法术增幅、冷却减少数值；这些由 modifier_rpg_boss_power 生效。"),
+        ("Boss列", "仅 Boss 行有 Boss最大生命（优先于生命倍率）、攻击伤害、法术增幅、冷却减少数值；这些由 modifier_rpg_boss_power 生效。"),
     ]
     for key, value in notes:
         info.append([key, value])

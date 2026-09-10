@@ -246,11 +246,18 @@ function RuleService:ValidateCondition(condition, registry)
     elseif condition.target_actor ~= nil then
         return false, "unexpected_condition_target_actor"
     end
+    if condition.type == "action_succeeded_after" then
+        if condition.action_id == nil then return false, "condition_action_required" end
+        local seconds = finite(condition.seconds or condition.value or 2)
+        if seconds == nil or seconds < 0 or seconds > 86400 then return false, "invalid_condition_seconds" end
+        condition.seconds = seconds
+    end
     if condition.action_actor ~= nil then
         if not condition.action_actor:match("^[%w_:]+$") or condition.action_id == nil then
             return false, "invalid_condition_action_actor"
         end
         if condition.type ~= "action_elapsed_gte" and condition.type ~= "action_elapsed_lte"
+            and condition.type ~= "action_succeeded_after"
             and condition.type ~= "action_use_count_lt" and condition.type ~= "ability_charges_gte" then
             return false, "unexpected_condition_action_actor"
         end

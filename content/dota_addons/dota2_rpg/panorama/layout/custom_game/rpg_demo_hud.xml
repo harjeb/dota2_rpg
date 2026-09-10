@@ -26,6 +26,7 @@
 			<Label id="LevelProgress" text="1/20" />
 			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
 			<Label id="WalletBalance" text="" hittest="false" />
+			<Label id="BattleCountdown" text="2:00" hittest="false" />
 			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>
 
@@ -76,8 +77,50 @@
 					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
 					<Panel id="LineupStrip" class="HeroStrip" />
 				</Panel>
-				<Panel id="ItemShopPanel" class="LineupPanel ItemShopPanel">
+			</Panel>
+			<Label id="VersusLabel" text="#dota2_rpg_versus" />
+			<Button id="StartBattleButton">
+				<Label text="#dota2_rpg_start_battle" />
+			</Button>
+			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
+		</Panel>
+
+		<Button id="RadiantRestoreButton" class="EditorRestoreButton RadiantRestore" visible="false" hittest="true">
+			<Label text="&gt;" hittest="false" />
+		</Button>
+
+		<Panel id="RightSidebar" hittest="false" hittestchildren="true">
+			<Panel id="DamagePanel" class="DamagePanel" hittest="true">
+				<Panel class="SidePanelHeader">
+					<Label id="DamageTitle" class="DamageTitle" text="DPS" />
+					<Button id="DamageToggle" class="SidePanelToggle">
+						<Label id="DamageToggleLabel" text="−" />
+					</Button>
+				</Panel>
+				<Panel id="DamageBody" class="SidePanelBody">
+					<Panel class="DamageTabs">
+						<Button id="DamageFriendly">
+							<Label text="#dota2_rpg_damage_friendly" />
+						</Button>
+						<Button id="DamageEnemy">
+							<Label text="#dota2_rpg_damage_enemy" />
+						</Button>
+					</Panel>
+					<Panel id="DamageUnits" class="DamageUnits" />
+					<Label id="DamageSelection" class="DamageTitle" />
+					<Panel id="DamageSources" class="DamageSources" />
+					<Label id="DamageTargetsTitle" class="DamageTitle" />
+					<Panel id="DamageTargets" class="DamageTargets" />
+				</Panel>
+			</Panel>
+			<Panel id="ItemShopPanel" class="ItemShopPanel">
+				<Panel class="SidePanelHeader">
 					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
+					<Button id="EquipmentToggle" class="SidePanelToggle">
+						<Label id="EquipmentToggleLabel" text="−" />
+					</Button>
+				</Panel>
+				<Panel id="EquipmentBody" class="SidePanelBody">
 					<Label id="NativeShopHint" class="NativeShopHint" text="#dota2_rpg_native_shop_hint" />
 					<Label id="ItemSellNotice" class="ItemSellNotice Hidden" text="" />
 					<Panel class="ItemTargetRow">
@@ -90,61 +133,7 @@
 					<Label class="LineupHeader" text="#dota2_rpg_scroll_shop" />
 					<Panel id="ScrollShopList" class="ScrollShopList" />
 				</Panel>
-				</Panel>
-			<Label id="VersusLabel" text="#dota2_rpg_versus" />
-			<Button id="StartBattleButton">
-				<Label text="#dota2_rpg_start_battle" />
-			</Button>
-			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
-		</Panel>
-
-		<Panel id="DireEditor" class="TeamEditor DireEditor" hittest="true">
-			<Panel class="TeamHeader">
-					<Panel class="TeamIdentity">
-						<Label class="TeamName" text="#dota2_rpg_dire_logic" />
-						<Label id="DireTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
-						<Label id="DireSelectedHero" class="SelectedHeroName" />
-					</Panel>
-				<Panel id="DireHeroStrip" class="HeroStrip" />
-				<Button id="DireCollapseButton" class="CollapseButton">
-					<Label id="DireCollapseLabel" class="CollapseGlyph" text="&lt;" />
-				</Button>
 			</Panel>
-			<Panel id="DireEditorBody" class="EditorBody" flow-children="down">
-				<Panel class="ColumnHeader">
-				<Label class="ActionColumn" text="#dota2_rpg_action_column" />
-			</Panel>
-			<Panel id="DireRulesViewport" class="RulesViewport">
-				<Panel id="DireRules" class="RulesContainer" hittest="true" hittestchildren="true" />
-				<Panel id="DireRulesScrollRail" class="RulesScrollRail" hittest="true">
-					<Button id="DireRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
-					<Panel id="DireRulesScrollTrack" class="RulesScrollTrack">
-						<Panel id="DireRulesScrollThumb" class="RulesScrollThumb" />
-					</Panel>
-					<Button id="DireRulesScrollDown" class="RulesScrollButton"><Label text="▼" /></Button>
-				</Panel>
-			</Panel>
-				</Panel>
-		</Panel>
-
-		<Button id="RadiantRestoreButton" class="EditorRestoreButton RadiantRestore" visible="false" hittest="true">
-			<Label text="&gt;" hittest="false" />
-		</Button>
-		<Button id="DireRestoreButton" class="EditorRestoreButton DireRestore" visible="false" hittest="true">
-			<Label text="&lt;" hittest="false" />
-		</Button>
-
-		<Panel id="DamagePanel" class="DamagePanel Hidden" hittest="true">
-			<Label id="DamageTitle" class="DamageTitle" />
-			<Panel class="DamageTabs">
-				<Button id="DamageFriendly"><Label text="#dota2_rpg_damage_friendly" /></Button>
-				<Button id="DamageEnemy"><Label text="#dota2_rpg_damage_enemy" /></Button>
-			</Panel>
-			<Panel id="DamageUnits" class="DamageUnits" />
-			<Label id="DamageSelection" class="DamageTitle" />
-			<Panel id="DamageSources" class="DamageSources" />
-			<Label id="DamageTargetsTitle" class="DamageTitle" />
-			<Panel id="DamageTargets" class="DamageTargets" />
 		</Panel>
 		<Panel id="BattleResult" class="BattleResult Hidden" hittest="true">
 			<Label id="BattleResultLabel" />

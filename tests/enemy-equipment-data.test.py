@@ -114,9 +114,10 @@ class EnemyEquipmentDataTests(unittest.TestCase):
         ]
 
     def test_inventory_counts_and_native_ids(self):
-        self.assertEqual(len(self.heroes), 107)
+        self.assertEqual(len(self.heroes), 93)
         self.assertEqual({e['unit'].removeprefix('npc_dota_hero_')
-                          for _, _, e in self.heroes}, EXPECTED_HEROES)
+                          for _, _, e in self.heroes}, EXPECTED_HEROES - {
+                              'skywrath_mage', 'ancient_apparition', 'zuus', 'pugna'})
         self.assertEqual(len(EXPECTED_HEROES), 64)
         appearances = Counter(e['unit'] for _, _, e in self.heroes)
         self.assertLessEqual(max(appearances.values()), 2)

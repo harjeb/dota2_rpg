@@ -42,4 +42,19 @@ ally.invalid, ally.reviving = true, true
 assert(manager:GetAliveCount(2, true) == 0, "invalid handle cannot keep a battle alive")
 manager.teamHeroes[2] = { { IsNull = function() return false end, IsAlive = function() return false end } }
 assert(manager:GetAliveCount(2, true) == 0, "units without a native reincarnation API are not revived")
-print("PASS: native Aegis/Wraith King reincarnation postpones wipe, with ordinary death and timeout preserved")
+manager.teamHeroes = { [2] = { ally }, [3] = { enemy } }
+ally.invalid, ally.alive, ally.reviving = false, true, false
+enemy.alive, enemy.reviving = false, false
+now, result = 119.99, nil
+assert(manager:GetTimeRemaining() > 0 and manager:CheckBattleEnd() and result == "radiant")
+for _, state in ipairs({ {true, false}, {false, false}, {false, true} }) do
+    ally.alive, ally.reviving = state[1], state[2]
+    now, result = 120, nil
+    assert(manager:GetTimeRemaining() == 0 and manager:GetTimeLeft() == 0)
+    assert(manager:CheckBattleEnd() and result == "timeout", "deadline applies to wipes and rebirth too")
+end
+manager.phase, result = "settle", nil
+assert(not manager:CheckBattleEnd() and result == nil, "settled battles cannot resolve again")
+manager:StartBattle({})
+assert(manager:GetTimeRemaining() == 120, "each stage starts a fresh 120-second budget")
+print("PASS: native rebirth postpones wipe; all death states obey the strict 120-second deadline")

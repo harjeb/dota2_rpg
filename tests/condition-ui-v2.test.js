@@ -178,34 +178,47 @@ function latest(hud, hero, slot) {
 // Battlefield action references use icons and stable actor keys, including duplicate enemies.
 var lion = "npc_dota_hero_lion", axe = "npc_dota_hero_axe";
 var pickerHud = runHud();
+pickerHud.subscriptions.rpg_shop_state({lineup_text:axe,owned_text:axe});
+pickerHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:800,hero_name:axe,
+    can_edit:1,rules_ready:1,actions_text:"attack"});
 pickerHud.subscriptions.rpg_enemy_roster({units:[{id:801,name:lion},{id:802,name:lion}]});
 [801,802].forEach(function(entity,index) {
     pickerHud.subscriptions.rpg_hero_slots({slot_key:"dire_"+(index+1),hero_index:entity,hero_name:lion,
-        rule_key:"enemy:"+lion+":"+index,actions_text:"lion_impale;attack",abilities_text:"lion_impale;lion_finger_of_death"});
+        rule_key:"enemy:"+lion+":"+index,actions_text:"lion_impale;item_blink;attack",abilities_text:"lion_impale;lion_finger_of_death"});
 });
-click(pickerHud,"DireRuleSettings0");
+click(pickerHud,"RadiantRuleSettings0");
 ["action_elapsed_gte","action_elapsed_lte"].forEach(function(type,index) {
     choice(pickerHud,"V2_use"+index,type); input(pickerHud,"V2_use"+index+"_seconds",2.75);
     click(pickerHud,"V2_use"+index+"_action_id");
-    var iconOption=panel(pickerHud,"V2_use"+index+"_action_idOption_1_1");
+    var iconOption=panel(pickerHud,"V2_use"+index+"_action_idOption_2_1");
     assert(iconOption.GetChild(0).type === "DOTAAbilityImage" && iconOption.GetChild(0).abilityname === "lion_finger_of_death", "picker uses actual ability icons");
     click(pickerHud,iconOption.id);
 });
 click(pickerHud,"RuleSettingsApply");
-var picked=latest(pickerHud,lion);
+var picked=latest(pickerHud,axe);
 assert(picked.use_condition_1_action_actor === "enemy:"+lion+":1" && picked.use_condition_2_action_actor === picked.use_condition_1_action_actor
     && picked.use_condition_1_action_id === "lion_finger_of_death" && picked.use_condition_2_seconds === 2.75,"U21/U22 save selected actor, ability and seconds");
-click(pickerHud,"DireRuleSettings0");
+click(pickerHud,"RadiantRuleSettings0");
+choice(pickerHud,"V2_use2","action_succeeded_after"); input(pickerHud,"V2_use2_seconds",1.25);
+click(pickerHud,"V2_use2_action_id");
+var itemOption = panel(pickerHud,"V2_use2_action_idOption_2_2");
+assert(itemOption.GetChild(0).type === "DOTAItemImage" && itemOption.GetChild(0).itemname === "item_blink","duplicate enemy active equipment uses its native item icon");
+click(pickerHud,itemOption.id); click(pickerHud,"RuleSettingsApply");
+assert(latest(pickerHud,axe).use_condition_3_action_actor === "enemy:"+lion+":1"
+    && latest(pickerHud,axe).use_condition_3_action_id === "item_blink"
+    && latest(pickerHud,axe).use_condition_3_seconds === 1.25,"U39 saves duplicate enemy equipment, actor and delay from the allied editor");
+click(pickerHud,"RadiantRuleSettings0");
+assert(panel(pickerHud,"V2_use2_action_id").GetChild(0).itemname === "item_blink","selected enemy equipment survives reopen");
 assert(panel(pickerHud,"V2_use0_action_id").GetChild(0).abilityname === "lion_finger_of_death", "selected icon survives reopen");
 click(pickerHud,"V2_use0_action_id"); click(pickerHud,"V2_use0_action_idCurrent"); click(pickerHud,"RuleSettingsApply");
-assert(!latest(pickerHud,lion).use_condition_1_action_actor && !latest(pickerHud,lion).use_condition_1_action_id,"current action clears both reference fields");
+assert(!latest(pickerHud,axe).use_condition_1_action_actor && !latest(pickerHud,axe).use_condition_1_action_id,"current action clears both reference fields");
 // Remove both a rejected rule and an in-flight request when their unit leaves.
-var rejected=latest(pickerHud,lion);
+var rejected=latest(pickerHud,axe);
 pickerHud.subscriptions.rpg_rule_update_result({request_id:rejected.request_id,ok:0,reason:"invalid_hero"});
 assert(panel(pickerHud,"RuleSyncNotice").visible,"current roster rejection is shown");
-click(pickerHud,"DireRuleSettings0"); click(pickerHud,"RuleSettingsApply");
-var delayed=latest(pickerHud,lion);
-pickerHud.subscriptions.rpg_enemy_roster({units:[]});
+click(pickerHud,"RadiantRuleSettings0"); click(pickerHud,"RuleSettingsApply");
+var delayed=latest(pickerHud,axe);
+pickerHud.subscriptions.rpg_shop_state({lineup_text:"",owned_text:""});
 assert(!panel(pickerHud,"RuleSyncNotice").visible,"departed roster clears stale failure notice");
 pickerHud.subscriptions.rpg_rule_update_result({request_id:delayed.request_id,ok:0,reason:"invalid_hero"});
 assert(!panel(pickerHud,"RuleSyncNotice").visible,"late rejection cannot resurrect absent-unit warning");
@@ -260,13 +273,7 @@ click(targetHud,"RadiantRuleSettings0"); click(targetHud,"V2_target0_target_acto
 assert(latest(targetHud,targetCaster).target_filter_1_type==="" && latest(targetHud,targetCaster).target_filter_1_target_actor===undefined,"clear removes entire filter including key");
 click(targetHud,"RadiantRuleSettings0");
 assert(panel(targetHud,"V2_target0Select").GetChild(0).text==="#dota2_rpg_v2_none","clear survives reopen");
-click(targetHud,"DireRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy"); click(targetHud,"V2_target0_target_actor");
-assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1,"enemy editor has no invented ally keys");
-var readOnlyDraft;
-targetHud.context.RpgConditionCatalog.open(restoredTarget,targetSync.initialSettings(restoredTarget),function(d){readOnlyDraft=d;},
-    {readOnly:true,targetActors:[{actor:selectedActor,name:lion,label:"enemy"}]});
-assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1 && !panel(targetHud,"RuleSettingsApply").enabled,"read-only editor exposes no roster choices");
-click(targetHud,"RuleSettingsApply"); assert(!readOnlyDraft,"read-only apply is inert");
+assert(!panel(targetHud,"DireEditor") && !panel(targetHud,"DireRuleSettings0"),"enemy roster exposes no condition editor even with editable slot metadata");
 // A late slot message cannot resurrect an entity replaced in the current roster.
 targetHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:999,hero_name:lion,target_actor:"ch04:enemy:"+lion+":0"});
 click(targetHud,"RadiantRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy"); click(targetHud,"V2_target0_target_actor");
@@ -283,9 +290,9 @@ function slots(side, index, name, entity, actions, details) {
     hud.subscriptions.rpg_hero_slots({slot_key: side.toLowerCase() + "_" + index,
         hero_name: name, hero_index: entity, actions_text: actions || "lion_impale;lion_finger_of_death;attack", details_text: details || ""});
 }
-hud.subscriptions.rpg_enemy_roster({units: [{id: 101, name: lion}, {id: 102, name: lion}]});
-slots("Dire", 1, lion, 101); slots("Dire", 2, lion, 102);
-click(hud, "DireRuleSettings0");
+hud.subscriptions.rpg_shop_state({lineup_text:lion + ";" + axe,owned_text:lion + ";" + axe});
+slots("Radiant", 1, lion, 101); slots("Radiant", 2, axe, 102);
+click(hud, "RadiantRuleSettings0");
 assert(!panel(hud, "RuleSettings").BHasClass("Hidden"), "XML settings panel opens from compact row");
 assert(panel(hud, "V2_use3Select") && panel(hud, "V2_target3Select") && panel(hud, "V2_priority1Select"), "actual UI renders 4/4/2 slots");
 choice(hud, "V2_use0", "self_hp_pct_gte"); input(hud, "V2_use0_value", 67.5);
@@ -310,37 +317,37 @@ assert(saved.target_filter_4_type === "exclude_self", "fourth filter serialized"
 assert(saved.target_priority_1_type === "lowest_attack_damage" && saved.target_priority_2_type === "highest_magic_resistance", "two explicit priorities");
 assert(saved.aoe_radius === undefined && saved.min_aoe_hits === 3 && saved.desired_toggle_state === "0", "native radius cannot be overridden; hit gate and false toggle survive serialization");
 assert(saved.condition === "self_hp_pct_gte", "compact condition summary follows the first advanced condition");
-click(hud, "DireRuleSettings0");
+click(hud, "RadiantRuleSettings0");
 assert(panel(hud, "V2_use2_seconds").text === "57.5", "reopening does not clamp advanced time to legacy 30 seconds");
 input(hud, "V2_use2_seconds", 999); click(hud, "RuleSettingsClose");
-click(hud, "DireRuleSettings0"); assert(panel(hud, "V2_use2_seconds").text === "57.5", "cancel leaves authored rule untouched"); click(hud, "RuleSettingsApply");
-click(hud, "DireAddRule0");
+click(hud, "RadiantRuleSettings0"); assert(panel(hud, "V2_use2_seconds").text === "57.5", "cancel leaves authored rule untouched"); click(hud, "RuleSettingsApply");
+click(hud, "RadiantAddRule0");
 assert(latest(hud, lion, 2).use_condition_3_seconds === 57.5 && latest(hud, lion, 2).target_filter_2_modifier === "modifier_test", "new row deep-copies advanced options");
-click(hud, "DireRuleSettings1"); input(hud, "V2_use2_seconds", 7); click(hud, "RuleSettingsApply");
+click(hud, "RadiantRuleSettings1"); input(hud, "V2_use2_seconds", 7); click(hud, "RuleSettingsApply");
 assert(latest(hud, lion).use_condition_3_seconds === 57.5, "editing copied row does not mutate source");
-click(hud, "DireHeroDyn2");
-click(hud,"DireRuleSettings0"); click(hud,"RuleSettingsApply");
-assert(latest(hud, lion).hero_index === 102 && latest(hud, lion).use_condition_1_type === "always", "duplicate heroes start independently");
-hud.subscriptions.rpg_enemy_roster({units: [{id: 201, name: lion}, {id: 202, name: lion}]});
-slots("Dire", 1, lion, 201); slots("Dire", 2, lion, 202); click(hud, "DireHeroDyn1");
-click(hud,"DireRuleSettings0"); click(hud,"RuleSettingsApply");
-assert(latest(hud, lion).hero_index === 201 && latest(hud, lion).use_condition_3_seconds === 57.5, "respawn retains first occurrence advanced values");
-click(hud, "DireHeroDyn2"); click(hud,"DireRuleSettings0"); click(hud,"RuleSettingsApply"); assert(latest(hud, lion).use_condition_1_type === "always", "respawn preserves duplicate isolation");
+click(hud, "RadiantHeroDyn2");
+click(hud,"RadiantRuleSettings0"); click(hud,"RuleSettingsApply");
+assert(latest(hud, axe).hero_index === 102 && latest(hud, axe).use_condition_1_type === "always", "allied heroes start independently");
+hud.subscriptions.rpg_shop_state({lineup_text:lion + ";" + axe,owned_text:lion + ";" + axe});
+slots("Radiant", 1, lion, 201); slots("Radiant", 2, axe, 202); click(hud, "RadiantHeroDyn1");
+click(hud,"RadiantRuleSettings0"); click(hud,"RuleSettingsApply");
+assert(latest(hud, lion).hero_index === 201 && latest(hud, lion).use_condition_3_seconds === 57.5, "respawn retains authored advanced values");
+click(hud, "RadiantHeroDyn2"); click(hud,"RadiantRuleSettings0"); click(hud,"RuleSettingsApply"); assert(latest(hud, axe).hero_index === 202 && latest(hud, axe).use_condition_1_type === "always", "respawn preserves hero isolation");
 
 // Native server action list includes extra dynamic slots and missing metadata.
-click(hud, "DireHeroDyn1");
-slots("Dire", 1, lion, 201, "lion_impale;lion_voodoo;lion_mana_drain;lion_finger_of_death;lion_extra_action;attack");
-click(hud, "DireActionSelect0");
-assert(panel(hud, "ActionOpt_Dire0_lion_extra_action"), "extra native skill appears without hardcoded slot cap");
-click(hud, "ActionOpt_Dire0_lion_extra_action");
-assert(panel(hud, "DireActionAbility0").abilityname === "lion_extra_action", "native name supplies icon without details");
+click(hud, "RadiantHeroDyn1");
+slots("Radiant", 1, lion, 201, "lion_impale;lion_voodoo;lion_mana_drain;lion_finger_of_death;lion_extra_action;attack");
+click(hud, "RadiantActionSelect0");
+assert(panel(hud, "ActionOpt_Radiant0_lion_extra_action"), "extra native skill appears without hardcoded slot cap");
+click(hud, "ActionOpt_Radiant0_lion_extra_action");
+assert(panel(hud, "RadiantActionAbility0").abilityname === "lion_extra_action", "native name supplies icon without details");
 assert(latest(hud, lion).action_id === "lion_extra_action" && latest(hud, lion).action_name === "lion_extra_action", "native name reaches server");
-slots("Dire", 1, lion, 201, "ability_1;attack", "lion_impale;attack");
-click(hud, "DireActionSelect0"); click(hud, "ActionOpt_Dire0_ability_1");
-assert(panel(hud, "DireActionAbility0").abilityname === "lion_impale" && latest(hud, lion).action_id === "lion_impale", "legacy ability slot resolves metadata");
+slots("Radiant", 1, lion, 201, "ability_1;attack", "lion_impale;attack");
+click(hud, "RadiantActionSelect0"); click(hud, "ActionOpt_Radiant0_ability_1");
+assert(panel(hud, "RadiantActionAbility0").abilityname === "lion_impale" && latest(hud, lion).action_id === "lion_impale", "legacy ability slot resolves metadata");
 
 // Malformed fields cannot emit NaN/Infinity; blank action references mean current action.
-click(hud, "DireRuleSettings0");
+click(hud, "RadiantRuleSettings0");
 input(hud, "V2_use1_value", "NaN"); input(hud, "V2_use1_radius", "Infinity");
 click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idCurrent"); input(hud, "V2_min_aoe_hits", 100);
 choice(hud, "V2_target0", "mana_pct_gte"); input(hud, "V2_target0_value", 800);
@@ -350,18 +357,18 @@ assert(Number.isFinite(malformed.use_condition_2_value) && Number.isFinite(malfo
 assert(malformed.target_filter_1_value === 1 && malformed.aoe_radius === undefined && malformed.min_aoe_hits === 20, "bounded inputs clamp consistently");
 assert(!Object.prototype.hasOwnProperty.call(malformed, "use_condition_4_action_id"), "blank action ID omitted");
 assert(malformed.desired_toggle_state === "1", "explicit on state");
-click(hud, "DireRuleSettings0"); choice(hud, "V2_use1", ""); choice(hud, "V2Toggle", "toggle_auto"); click(hud, "RuleSettingsApply");
+click(hud, "RadiantRuleSettings0"); choice(hud, "V2_use1", ""); choice(hud, "V2Toggle", "toggle_auto"); click(hud, "RuleSettingsApply");
 assert(latest(hud, lion).use_condition_2_type === "" && latest(hud, lion).use_condition_2_radius === undefined, "cleared slots remove stale parameters");
 assert(latest(hud, lion).desired_toggle_state === undefined, "default toggle omits desired state");
 
 // Target editing is exclusively inside the complete settings panel.
-assert(!panel(hud,"DireConditionEditor0") && !panel(hud,"DireForceToggle0"),"outer editing controls are absent");
-click(hud,"DireRuleSettings0");
+assert(!panel(hud,"RadiantConditionEditor0") && !panel(hud,"RadiantForceToggle0"),"outer editing controls are absent");
+click(hud,"RadiantRuleSettings0");
 choice(hud,"V2Team","team_ally"); choice(hud,"V2_priority0","farthest");
 choice(hud,"V2Approach","approach_chase"); click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).target_team === "ally" && latest(hud,lion).target_priority_1_type === "farthest"
     && latest(hud,lion).approach === "allow_approach", "complete settings own target and approach behavior");
-click(hud,"DireRuleSettings0");
+click(hud,"RadiantRuleSettings0");
 assert(panel(hud,"V2ApproachSelect").GetChild(0).text === "#dota2_rpg_v2_approach_chase","approach survives reopening");
 choice(hud,"V2Approach","approach_wait");click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).approach === "range_only","approach can be disabled in settings");
@@ -451,23 +458,25 @@ assert(panel(fresh,"V2_use0Select").GetChild(0).text === "#dota2_rpg_v2_none"
     && panel(fresh,"V2_min_aoe_hits").text === "0", "cleared editor reopens empty");
 click(fresh,"RuleSettingsClose");
 
-fresh.subscriptions.rpg_enemy_roster({units:[{id:702,name:lion}]});
-fresh.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:702,hero_name:lion,can_edit:0,rules_ready:1,
+var intelligenceHud = runHud();
+intelligenceHud.subscriptions.rpg_enemy_roster({units:[{id:702,name:lion}]});
+intelligenceHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:702,hero_name:lion,can_edit:0,rules_ready:1,
     actions_text:"lion_impale;attack",rules:[{action:"lion_impale",enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",value:12,seconds:12}]}]});
-var beforeReadOnly = fresh.sentEvents.length;
-click(fresh,"DireRuleSettings0");
-assert(panel(fresh,"V2_use0_seconds").text === "12" && !panel(fresh,"RuleSettingsBody").enabled && !panel(fresh,"RuleSettingsApply").enabled,"ordinary enemy intelligence shows real server conditions read-only");
-click(fresh,"RuleSettingsApply");
-assert(fresh.sentEvents.length === beforeReadOnly,"read-only enemy conditions cannot be sent");
+assert(!panel(intelligenceHud,"DireEditor") && !panel(intelligenceHud,"DireRuleSettings0"),"enemy intelligence has no editing entry");
+assert(!panel(intelligenceHud,"RuleSettingsApply").events.onactivate,"enemy intelligence never installs an Apply callback");
+assert(!intelligenceHud.sentEvents.some(function(e){return e.name === "rpg_update_rule";}),"enemy intelligence cannot send rule updates");
 
 // Removing a target condition inside settings clears the same wire slot.
-click(hud,"DireRuleSettings0");choice(hud,"V2_target0","is_casting");click(hud,"RuleSettingsApply");
-click(hud,"DireRuleSettings0");choice(hud,"V2_target0","");click(hud,"RuleSettingsApply");
+click(hud,"RadiantHeroDyn1");
+click(hud,"RadiantRuleSettings0");
+assert(panel(hud,"V2_use2_seconds").text === "57.5" && panel(hud,"V2_target1_modifier").text === "modifier_test", "reorder and respawn preserve the other hero's complex rule independently");
+choice(hud,"V2_target0","is_casting");click(hud,"RuleSettingsApply");
+click(hud,"RadiantRuleSettings0");choice(hud,"V2_target0","");click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the casting gate");
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 31], ["target", retiredTarget, 35], ["priority", [], 13]].forEach(function (spec) {
+[["use", retiredUse, 32], ["target", retiredTarget, 35], ["priority", [], 13]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -505,7 +514,8 @@ var catalog = catalogContext.RpgConditionCatalog;
 var docs = fs.readFileSync(path.join(repoRoot, "docs/CONDITION_LIST_ZH.md"), "utf8");
 Object.keys(catalog.groups).forEach(function (group) {
     catalog.groups[group].forEach(function (def) {
-        // F39 is the appended contract; the prior documented IDs must remain unchanged.
+        // Appended contracts must not renumber the prior documented IDs.
+        if (def.id === "action_succeeded_after") { assert(def.code === "U39", "successful action trigger appends U39"); return; }
         if (def.id === "specified_enemy") { assert(def.code === "F39", "new target filter appends F39"); return; }
         assert(docs.split("\n").some(function (line) { return line.indexOf("| " + def.code + " |") === 0 && line.indexOf("`" + def.id + "`") >= 0; }), "stable documented ID " + def.code);
     });
@@ -813,5 +823,5 @@ assert(!panel(livesHud,"StartBattleButton").enabled
 });
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39, U13/U14 selection, previews and stale field removal");
-console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and duplicate persistence");
+console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39/U39, U13/U14 selection, previews and stale field removal");
+console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and hero isolation");

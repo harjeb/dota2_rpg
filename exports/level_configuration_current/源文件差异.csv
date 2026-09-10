@@ -12,9 +12,6 @@ ch09,1,npc_dota_hero_sand_king,level,12,30
 ch09,2,npc_dota_hero_phantom_assassin,level,12,30
 ch09,3,npc_dota_hero_dazzle,level,12,30
 ch10,1,npc_dota_hero_centaur,level,14,30
-ch10,2,npc_dota_hero_riki,level,14,30
-ch10,3,npc_dota_hero_juggernaut,level,14,30
-ch10,4,npc_dota_hero_lich,level,14,30
 ch12,1,npc_dota_hero_tidehunter,level,16,30
 ch12,2,npc_dota_hero_sven,level,16,30
 ch12,3,npc_dota_hero_lina,level,16,30
@@ -48,11 +45,6 @@ ch19,3,npc_dota_hero_queenofpain,level,23,30
 ch19,4,npc_dota_hero_leshrac,level,23,30
 ch19,5,npc_dota_hero_venomancer,level,23,30
 ch20,1,npc_dota_hero_spirit_breaker,level,24,30
-ch20,2,npc_dota_hero_zuus,level,24,30
-ch20,3,npc_dota_hero_pugna,level,24,30
-ch20,4,npc_dota_hero_drow_ranger,level,24,30
-ch20,5,npc_dota_hero_skywrath_mage,level,24,30
-ch20,6,npc_dota_hero_ancient_apparition,level,24,30
 ch22,1,npc_dota_hero_abaddon,level,26,30
 ch22,2,npc_dota_hero_sniper,level,26,30
 ch22,3,npc_dota_hero_clinkz,level,26,30

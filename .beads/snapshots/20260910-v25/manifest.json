@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-10T03:34:08.626652+00:00",
+  "counts": {
+    "issues": 102,
+    "dependencies": 50,
+    "comments": 4,
+    "events": 245,
+    "labels": 0,
+    "config": 13
+  },
+  "dolt_log": [
+    {
+      "commit_hash": "5egu1bg3tiqjm2etgo6q8mmvpl8dmsqi",
+      "date": "2026-09-10 03:33:04.509",
+      "message": "bd: close dota2_rpg-4t8"
+    }
+  ],
+  "reason": "bd sync is a no-op; native table snapshot preserved in Git. Previous backups retained."
+}

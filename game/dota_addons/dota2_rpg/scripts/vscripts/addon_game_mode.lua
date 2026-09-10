@@ -265,7 +265,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v24-20260909") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v25-20260910") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -436,7 +436,7 @@ function CDota2RpgDemo:InitGameMode()
 	if not okInstall then
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
-	RuntimeLog.Write("BUILD rpg-runtime-v24-20260909 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v25-20260910 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -926,7 +926,7 @@ function CDota2RpgDemo:OnScrollUse(_, payload)
 	-- 经验卷轴不应为了更新等级而销毁/重建英雄；这样会使原版装备实体 ID、冷却和堆叠状态失效。
 	local hero = self:FindLineupUnit(heroName)
 	if hero ~= nil and hero.GetLevel ~= nil then
-		self:PrepareBattleHero(hero, data.level)
+		self:UpdateHeroLevel(hero, data.level)
 		self:SyncHeroInventoryFromUnit(hero)
 	end
 	self:BroadcastHeroInfo()
@@ -1350,7 +1350,7 @@ function CDota2RpgDemo:BuildRosterAbilitySnapshot()
 			or (hero.entindex ~= nil and hero:entindex() or 0)
 		local values = { tostring(heroName), tostring(entityId),
 			tostring(hero.GetAbilityPoints ~= nil and hero:GetAbilityPoints() or -1) }
-		for slot = 0, hero:GetAbilityCount() - 1 do
+		for slot = 0, HeroAbilityPolicy.GetSlotCount(hero) - 1 do
 			local ability = hero:GetAbilityByIndex(slot)
 			if ability ~= nil and (ability.IsNull == nil or not ability:IsNull()) then
 				local name = ability.GetAbilityName ~= nil and ability:GetAbilityName() or ""
@@ -2846,7 +2846,7 @@ function CDota2RpgDemo:CaptureHeroAbilities(hero)
 	local data = name ~= nil and self.heroData[name] or nil
 	if data == nil then return end
 	data.ability_levels = {}
-	for slot = 0, hero:GetAbilityCount() - 1 do
+	for slot = 0, HeroAbilityPolicy.GetSlotCount(hero) - 1 do
 		local ability = hero:GetAbilityByIndex(slot)
 		if ability ~= nil and not ability:IsNull() then
 			data.ability_levels[ability:GetAbilityName()] = ability:GetLevel()
@@ -2857,13 +2857,28 @@ function CDota2RpgDemo:CaptureHeroAbilities(hero)
 	data.skill_points = math.max(0, hero:GetAbilityPoints() + earned)
 end
 
+-- Updating an existing hero must not reapply preparation modifiers or reset
+-- acquisition, health, mana, cooldowns, or the live manual ability build.
+function CDota2RpgDemo:UpdateHeroLevel(hero, targetLevel)
+	self:CaptureHeroAbilities(hero)
+	local wantedLevel = math.max(1, math.min(HERO_LEVEL, math.floor(tonumber(targetLevel) or HERO_LEVEL)))
+	while hero:GetLevel() < wantedLevel do
+		local before = hero:GetLevel()
+		hero:HeroLevelUp(false)
+		if hero:GetLevel() <= before then break end
+	end
+	local name = hero.lineupHeroName or hero.benchHeroName
+	local data = name ~= nil and self.heroData[name] or nil
+	if data ~= nil then
+		local pending = math.max(0, (tonumber(data.level) or hero:GetLevel()) - hero:GetLevel())
+		hero:SetAbilityPoints(math.max(0, (data.skill_points or data.level) - pending))
+	end
+	return wantedLevel
+end
+
 function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	HeroAbilityPolicy.Apply(hero)
-	self:CaptureHeroAbilities(hero)
-	local wantedLevel = tonumber(targetLevel) or HERO_LEVEL
-	while hero:GetLevel() < wantedLevel do
-		hero:HeroLevelUp(false)
-	end
+	local wantedLevel = self:UpdateHeroLevel(hero, targetLevel)
 
 	-- Only enemies auto-train; both player roster locations retain manual builds.
 	local autoAbilities = self.autoAbilityHeroes == nil or self.autoAbilityHeroes[hero:GetEntityIndex()] ~= nil
@@ -2895,7 +2910,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 	else
 		local heroName = hero.lineupHeroName or hero.benchHeroName
 		local data = heroName ~= nil and self.heroData[heroName] or nil
-		for slot = 0, hero:GetAbilityCount() - 1 do
+		for slot = 0, HeroAbilityPolicy.GetSlotCount(hero) - 1 do
 			local ability = hero:GetAbilityByIndex(slot)
 			local saved = ability ~= nil and data ~= nil and data.ability_levels
 				and data.ability_levels[ability:GetAbilityName()] or nil
@@ -3027,7 +3042,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 	-- A unitless training order is unambiguous only when it names a live ability
 	-- whose caster is in our roster. Never infer its source from UI selection.
 	if sourceCount == 0 and orderType == DOTA_UNIT_ORDER_TRAIN_ABILITY then
-		local abilityIndex = tonumber(filterTable.entindex_ability) or -1
+		local abilityIndex = tonumber(filterTable.entindex_ability or filterTable.ability_index) or -1
 		local ability = abilityIndex > 0 and EntIndexToHScript(abilityIndex) or nil
 		if ability ~= nil and not ability:IsNull() and ability.GetCaster ~= nil then
 			local caster = ability:GetCaster()
@@ -3053,7 +3068,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 	if orderType == DOTA_UNIT_ORDER_TRAIN_ABILITY then
 		if source == nil or not (self:IsLineupUnit(source) or self:IsBenchUnit(source)) then return false end
 		local abilityIndex = tonumber(filterTable.entindex_ability or filterTable.ability_index) or -1
-		for slot = 0, source:GetAbilityCount() - 1 do
+		for slot = 0, HeroAbilityPolicy.GetSlotCount(source) - 1 do
 			local ability = source:GetAbilityByIndex(slot)
 			if ability ~= nil and not ability:IsNull() then
 				local entityIndex = ability.entindex ~= nil and ability:entindex() or -1
@@ -3763,7 +3778,7 @@ function CDota2RpgDemo:BuildBattleState()
 		winner = self.winner,
 		hide_ui = self.phase ~= "setup",
 		battle_time = math.floor(self.battleManager:GetBattleTime()),
-		time_limit = tonumber(self.dataLoader:GetLevel(self.currentLevelId) ~= nil and self.dataLoader:GetLevel(self.currentLevelId).time_limit or 120) or 120,
+		time_limit = 120, -- Match BattleManager's hard deadline in every chapter.
 		level = self.currentLevelId,
 		gold = self:GetGoldBalance(),
 		player_level = self.playerLevel,
