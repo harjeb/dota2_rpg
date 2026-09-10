@@ -640,6 +640,29 @@
         ]
       }
     },
+    "charged_teammate_buff": {
+      "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing. Optional variant also requires at least one observed native charge.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "exclude_self"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": [
+          {
+            "type": "ability_charges_gte",
+            "value": 1
+          }
+        ]
+      }
+    },
     "charged_time_walk_recovery": {
       "rationale": "Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat. Optional variant also requires at least one observed native charge.",
       "rule": {
@@ -1031,6 +1054,24 @@
             "value": 1
           }
         ]
+      }
+    },
+    "teammate_buff": {
+      "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.",
+      "rule": {
+        "target": "ally_distance_nearest",
+        "target_filters": [
+          {
+            "type": "exclude_self"
+          }
+        ],
+        "target_priorities": [
+          {
+            "type": "nearest"
+          }
+        ],
+        "target_team": "ally",
+        "use_conditions": []
       }
     },
     "time_walk_recovery": {
@@ -96267,7 +96308,7 @@
         "Thresholds do not predict trajectories, lethal damage, safe landing or channel completion."
       ],
       "expression_covered": true,
-      "family": "ally_combat_buff",
+      "family": "teammate_buff",
       "hero": "npc_dota_hero_magnataur",
       "id": "magnataur_empower",
       "implementation_gaps": [],
@@ -96360,11 +96401,11 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "teammate_buff"
       ],
-      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
+      "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.",
       "review_note": "Ordinary generic partial mode only.",
-      "reviewed_family": "ally_combat_buff",
+      "reviewed_family": "teammate_buff",
       "unique_mechanism": {
         "basic_native_mode": null,
         "basic_native_note": null,
@@ -124720,7 +124761,7 @@
         "Thresholds do not predict trajectories, lethal damage, safe landing or channel completion."
       ],
       "expression_covered": true,
-      "family": "ally_combat_buff",
+      "family": "teammate_buff",
       "hero": "npc_dota_hero_marci",
       "id": "marci_bodyguard",
       "implementation_gaps": [],
@@ -124804,11 +124845,11 @@
         ]
       },
       "preset_variants": [
-        "ally_combat_buff"
+        "teammate_buff"
       ],
-      "rationale": "Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.",
+      "rationale": "Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.",
       "review_note": "Ordinary generic partial mode only.",
-      "reviewed_family": "ally_combat_buff",
+      "reviewed_family": "teammate_buff",
       "unique_mechanism": {
         "basic_native_mode": null,
         "basic_native_note": null,

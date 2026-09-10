@@ -26,7 +26,7 @@ UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、�
 
 | 模板族 | 主动定义数 |
 |---|---:|
-| ally_combat_buff | 8 |
+| ally_combat_buff | 6 |
 | aoe | 85 |
 | dispel_control | 2 |
 | execute | 3 |
@@ -46,6 +46,7 @@ UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、�
 | protection_self | 25 |
 | self_combat_buff | 50 |
 | summon | 18 |
+| teammate_buff | 2 |
 | time_walk_recovery | 1 |
 | toggle_combat_on | 4 |
 | toggle_on | 1 |

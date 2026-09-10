@@ -37,6 +37,7 @@ FAMILIES = {
     'protection_ally': (rule('ally', filters=[condition('recently_damaged', seconds=2)], priority='lowest_hp_pct'), 'Reviewed protection mode and native friendly/both target: protect the selected recently damaged ally, not an unrelated damaged ally.'),
     'protection_self': (rule('self', use=[condition('self_recently_damaged', seconds=2)]), 'Reviewed self-protection: activate after actual recent damage, without predicting incoming projectiles or lethal damage.'),
     'ally_combat_buff': (rule('ally', filters=[condition('nearby_enemies_gte', value=1, radius=700)]), 'Native friendly unit buff: select an ally with an enemy nearby. Proximity counts are relative to the caster team, not the target team.'),
+    'teammate_buff': (rule('ally', filters=[condition('exclude_self')]), 'Native friendly buff: select the nearest legal teammate, excluding the caster. Native range and target validation remain authoritative; no enemy proximity gate prevents pre-combat buffing.'),
     'self_combat_buff': (rule('self', use=[NEAR]), 'Reviewed ordinary self combat buff: activate only when an enemy is within 800 units; no stance selection or form-specific follow-up actions.'),
     'gapclose': (rule(use=[condition('self_hp_pct_gte', value=60)], filters=[condition('distance_gte', value=350), condition('distance_lte', value=900)]), 'Reviewed offensive movement mode: close a meaningful gap (350–900 units) only with at least 60% self HP. This is not safe-landing/path/terrain prediction.'),
     'summon': (rule(use=[NEAR]), 'Reviewed summon/deploy action with ordinary native casting: summon when an enemy is nearby. Does not issue orders to spawned units or guarantee summon placement.'),
@@ -93,7 +94,8 @@ assign('protection_self', 'obsidian_destroyer_objurgation')
 assign('toggle_combat_on', 'pudge_rot medusa_split_shot bloodseeker_blood_mist zuus_lightning_hands')
 assign('protection_ally', 'spirit_breaker_planar_pocket')
 assign('offensive_unit', 'mirana_celestial_quiver')
-assign('ally_combat_buff', '''dark_seer_surge dark_seer_ion_shell bounty_hunter_wind_walk_ally chen_divine_favor alchemist_berserk_potion invoker_alacrity invoker_alacrity_ad lycan_wolf_bite ogre_magi_bloodlust magnataur_empower grimstroke_spirit_walk marci_bodyguard largo_croak_of_genius''')
+assign('ally_combat_buff', '''dark_seer_surge dark_seer_ion_shell bounty_hunter_wind_walk_ally chen_divine_favor alchemist_berserk_potion invoker_alacrity invoker_alacrity_ad lycan_wolf_bite ogre_magi_bloodlust grimstroke_spirit_walk largo_croak_of_genius''')
+assign('teammate_buff', '''magnataur_empower marci_bodyguard''')
 assign('protection_ally', '''omniknight_martyr ogre_magi_smash centaur_mount techies_reactive_tazer''')
 assign('healing_ally', 'chen_test_of_faith')
 assign('protection_self', '''nyx_assassin_burrow rubick_null_field naga_siren_song_of_the_siren phoenix_supernova ringmaster_funhouse_mirror hoodwink_decoy''')

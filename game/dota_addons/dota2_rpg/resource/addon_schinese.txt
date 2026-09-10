@@ -58,7 +58,7 @@
 		"dota2_rpg_v2_approach_title" "目标在射程外时"
 		"dota2_rpg_v2_approach_wait" "等待进入射程"
 		"dota2_rpg_v2_approach_chase" "自动接近目标"
-		"dota2_rpg_build_tag"			"界面版本 25"
+		"dota2_rpg_build_tag"			"界面版本 26"
 		"dota2_rpg_lives_title" "剩余生命"
 		"dota2_rpg_lives_hint" "剩 3 命：2000 金　剩 1 命：可转交的不朽盾 + 奶酪"
 		"dota2_rpg_run_failed" "生命耗尽，本次挑战结束"

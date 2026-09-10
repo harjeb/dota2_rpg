@@ -704,8 +704,8 @@ var beforeFightSales=saleEvents().length;
 click(saleHud,"Sell_Stock1");
 assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFightSales,"combat cannot emit sale requests");
 
-["marci_companion_run", "marci_bodyguard"].forEach(function (ability) {
-    var targetHud=runHud(), hero="npc_dota_hero_marci";
+["marci_companion_run", "marci_bodyguard", "magnataur_empower"].forEach(function (ability) {
+    var targetHud=runHud(), hero=ability === "magnataur_empower" ? "npc_dota_hero_magnataur" : "npc_dota_hero_marci";
     targetHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
     targetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:960,hero_name:hero,rule_key:hero,
         can_edit:1,rules_ready:1,actions_text:ability+";attack",rules:[{action:ability,enabled:1,target_team:"enemy"}]});
@@ -719,6 +719,19 @@ assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFigh
     assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally","ally selection survives reopen");
     choice(targetHud,"V2Team","team_self"); click(targetHud,"RuleSettingsApply");
     assert(latest(targetHud,hero).target_team==="self","self is selectable independently of hero/creep filters");
+    if (ability !== "marci_companion_run") {
+        click(targetHud,"RadiantRuleSettings0");
+        click(targetHud,"V2Preset0");
+        click(targetHud,"RuleSettingsApply");
+        var buffWire=latest(targetHud,hero);
+        assert(buffWire.target_team==="ally" && buffWire.target_filter_1_type==="exclude_self",
+            ability+" teammate preset replaces stale self targeting and excludes caster on wire");
+        assert(!buffWire.target_filter_2_type && !buffWire.use_condition_1_type,
+            ability+" buff needs no unrelated enemy proximity gate");
+        click(targetHud,"RadiantRuleSettings0");
+        assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally",
+            ability+" teammate preset survives reopen");
+    }
 });
 
 var livesHud = runHud();

@@ -68,4 +68,34 @@ for _,name in ipairs({"marci_companion_run","marci_bodyguard","marci_guardian"})
         else assert(not ok and #orders==0,"illegal team or self must fail native targeting") end
     end
 end
-print("PASS: Marci ally defaults, authored team, Rebound vector pair and native buff targets (mocked natives)")
+-- Exercise the real generated rules with self accepted by native targeting,
+-- then with no custom CastFilter (the engine's UnitFilter-only fallback).
+-- The earlier authored-rule checks deliberately reject self in their mock and
+-- cannot expose nearest selecting the caster from an otherwise friendly pool.
+for _, customFilter in ipairs({true, false}) do
+    spell.CastFilterResultTarget = customFilter and function(_, t)
+        return t:GetTeamNumber() == caster:GetTeamNumber() and 0 or 1
+    end or nil
+    for _, name in ipairs({"magnataur_empower", "marci_bodyguard", "marci_guardian"}) do
+        spell.name=name; spell.behavior=8; spell.range=600
+        rule=Defaults.CreateForHero(caster)[1]
+        orders={}; engine:Reset()
+        local ctx=engine:BuildContext(caster,1)
+        local ok,reason=engine:TryRule(caster,engine:GetState(caster),ctx,rule,1)
+        assert(ok and #orders==1 and orders[1].TargetIndex==2,
+            "generated partner buff must select teammate even when self is legal: "..name.." "..tostring(reason))
+        orders={}; engine:Reset()
+        ctx.get_candidates=function() return {caster} end
+        assert(not engine:TryRule(caster,engine:GetState(caster),ctx,rule,1) and #orders==0,
+            "partner default must not fall back to self without a teammate")
+        orders={}; engine:Reset()
+        ctx.get_candidates=function() return {caster,ally} end
+        spell.range=100
+        assert(not engine:TryRule(caster,engine:GetState(caster),ctx,rule,1) and #orders==0,
+            "partner default must retain native range limits")
+        local authored={action={kind="ability",logical_id=name},target={team="self"}}
+        assert(Defaults.Normalize({authored},caster)[1]==authored,
+            "partner default policy must preserve authored rules")
+    end
+end
+print("PASS: Marci native target/vector mocks and Marci/Magnus generated teammate defaults (self legal, UnitFilter fallback, solo, range, authored preservation)")

@@ -138,7 +138,7 @@ class ConditionCoverage(unittest.TestCase):
         self.assertNotRegex(unique_doc, r'- \[ \]|- \[x\]')
 
     def test_generic_only_and_all_unique_excluded(self):
-        allowed = {'nearby_enemies_gte', 'distance_lte', 'distance_gte',
+        allowed = {'exclude_self', 'nearby_enemies_gte', 'distance_lte', 'distance_gte',
             'hp_pct_lte', 'self_hp_pct_lte', 'self_hp_pct_gte', 'recently_damaged',
             'self_recently_damaged', 'mana_pct_lte', 'mana_pct_gte', 'is_controlled',
             'self_mana_pct_gte', 'self_mana_pct_lte', 'no_enemy_within', 'ability_charges_gte',

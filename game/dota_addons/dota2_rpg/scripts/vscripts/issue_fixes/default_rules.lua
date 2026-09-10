@@ -3,6 +3,16 @@
 local Behavior = require("tactics/ability_behavior")
 local DefaultRules = {}
 
+-- Native Empower is always on its caster (always_on=1, should_self_cast=0).
+-- Marci's partner buffs likewise provide her own passive benefits. An ally pool
+-- includes the caster, so nearest alone otherwise continually selects self when
+-- the native filter permits it. Keep this policy in generated defaults only.
+local partner_buffs = {
+    magnataur_empower = true,
+    marci_bodyguard = true,
+    marci_guardian = true,
+}
+
 local function has_action(rule)
     if type(rule) ~= "table" then return false end
     local action = rule.action
@@ -68,6 +78,9 @@ function DefaultRules.CreateForHero(hero)
             rule.id = "default_ability_" .. name
             rule.action = { kind = "ability", logical_id = name }
             rule.target.team = team
+            if team == "ally" and partner_buffs[name] then
+                rule.target_filters = { { type = "exclude_self" } }
+            end
             -- Native action validation supplies mana/cooldown/range checks.
             -- No arbitrary HP threshold or delayed ultimate usage is needed.
             result[#result + 1] = rule
