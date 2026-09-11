@@ -1,0 +1,16 @@
+{
+  "source": "beads_dota2_rpg",
+  "tables": {
+    "issues": 128,
+    "dependencies": 69,
+    "comments": 4,
+    "events": 304,
+    "labels": 0,
+    "config": 13
+  },
+  "followup": [
+    "dota2_rpg-6yk",
+    "dota2_rpg-9qe"
+  ],
+  "validation": "Read-only VConsole history; v32/v33 offline channel/window reproduction passed; no runtime code or live rules changed"
+}
