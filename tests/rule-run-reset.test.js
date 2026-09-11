@@ -119,4 +119,19 @@ for (const firstEvent of ["rpg_battle_state", "rpg_enemy_roster"]) {
     assert.strictEqual(edit(h, 0).hero_index, 600);
     assert.strictEqual(updates(h).at(-1).action_id, ULT);
 }
+// A fresh replay generation must clear equipment selection, warehouse rows and
+// result notices immediately, even when the battle snapshot precedes the shop.
+{
+    const h = authored();
+    panel(h, "ItemSellNotice").text = "Old sale";
+    panel(h, "ItemTransferNotice").text = "Old transfer";
+    h.subscriptions.rpg_battle_state({rule_generation:2, phase:"setup", ready:0, settlement_generation:9});
+    assert.strictEqual(panel(h, "ItemSellNotice").text, "");
+    assert.strictEqual(panel(h, "ItemTransferNotice").text, "");
+    assert(panel(h, "RadiantRule0").BHasClass("Hidden"));
+    h.subscriptions.rpg_shop_state({rule_generation:2, gold:500, owned_text:"", lineup_text:"", free_recruit_choices:2});
+    assert(panel(h, "WalletBalance").text.includes("500"));
+    slots(h, 1, 346, WK, {1:attack, 2:timedUltimate});
+    assert(panel(h, "RadiantRule0").BHasClass("Hidden"), "old hero snapshots cannot repopulate a fresh run");
+}
 console.log("PASS: fresh test/exit clear authored rules, draft controls, menus and pending results; same-run respawns preserve edits; reordered snapshots and reused entities stay consistent");

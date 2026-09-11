@@ -15,6 +15,7 @@ local EnemyScaling = require("battle.enemy_scaling")
 local BossScaling = require("battle.boss_scaling")
 local StagePrecache = require("battle.stage_precache")
 local RunLives = require("battle.run_lives")
+local CampaignLoot = require("battle.campaign_loot")
 local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
 local SummonBehavior = require("battle/summon_behavior")
@@ -223,7 +224,7 @@ function Precache(context)
 	local started = RealTime and RealTime() or 0
 	local levels = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
 	local startup = StagePrecache.Startup(context, levels)
-	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v41-20260912 level=%s units=%d items=%d elapsed=%.3f",
+	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v42-20260912 level=%s units=%d items=%d elapsed=%.3f",
 		tostring(startup.levelId), #startup.units, #startup.items, RealTime and (RealTime() - started) or 0))
 end
 
@@ -233,7 +234,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v41-20260912") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v42-20260912") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -424,7 +425,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v41-20260912 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v42-20260912 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3581,14 +3582,16 @@ function CDota2RpgDemo:OnReplayRun(_, payload)
 		or (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending)) then return false end
 	self.settlementGeneration = self.settlementGeneration + 1
 	self.phase = "restarting" -- claim before native callbacks/reentrant events
-	self.runComplete, self.runFailed, self.winner = false, false, ""
-	RespawnPolicy.SetBattleActive(self, false)
-	self.currentLevelId = self.orderedLevels[1] or "ch01"
-	self.refreshCount = 0
-	self.scrollPurchases = { low = 0, high = 0 }
-	-- Retain the build, wallet, authored rules, and undelivered native items.
-	RunLives.Ensure(self).remaining = RunLives.MAX_LIVES
-	self.nextLifeRewardAttempt = 0
+	local resetOk, resetError = xpcall(function() require("battle.fresh_run").Reset(self) end, debug.traceback)
+	if not resetOk then
+		-- Destructive cleanup is intentionally not rolled back. Keep combat
+		-- locked and offer a new-generation retry instead of stranding restarting.
+		self.phase, self.runComplete = "result", true
+		RuntimeLog.Write("[FreshRun] reset_failed " .. tostring(resetError))
+		self:BroadcastBattleState()
+		return false
+	end
+	self.currentLevelId = "ch01"
 	self.phase = "setup"
 	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
 		self.placeholderHero:RemoveModifierByName("modifier_invulnerable")
@@ -3599,6 +3602,9 @@ function CDota2RpgDemo:OnReplayRun(_, payload)
 	self:RollShop()
 	self:BroadcastLevelInfo()
 	self:BroadcastBattleState()
+	self:BroadcastHeroInfo()
+	self:BroadcastShopState()
+	self:BroadcastDamageStats()
 	return true
 end
 
@@ -3663,16 +3669,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		local lootId = level ~= nil and level.loot or nil
 		local lootTable = lootId ~= nil and self.dataLoader:GetLoot(lootId) or nil
 		if lootTable ~= nil then
-			for _, lootEntry in pairs(lootTable.items or {}) do
-				if type(lootEntry) == "table" and lootEntry.item ~= nil then
-					local chance = tonumber(lootEntry.chance) or 0
-					if math.random() < chance then
-						if self:StashAddItem(lootEntry.item) then
-							table.insert(lootDrops, lootEntry.item)
-						end
-					end
-				end
-			end
+			lootDrops = CampaignLoot.Award(self, lootTable)
 		end
 	end
 

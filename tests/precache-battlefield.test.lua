@@ -45,7 +45,8 @@ require = function(moduleName)
         or moduleName == "issue_fixes/item_sales"
         or moduleName == "issue_fixes/hero_precache" or moduleName == "tactics/special_targets"
         or moduleName == "battle.enemy_diagnostics" or moduleName == "battle.respawn_policy"
-        or moduleName == "battle.item_cooldowns"
+        or moduleName == "battle.item_cooldowns" or moduleName == "battle.campaign_loot"
+        or moduleName == "data.campaign_loot_catalog"
         or moduleName == "issue_fixes.runtime_log"
         or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")

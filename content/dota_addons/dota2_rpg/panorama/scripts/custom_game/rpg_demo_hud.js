@@ -255,6 +255,25 @@
         HEROES.Dire = [];
         enemyRosterSignature = null;
         selectedHeroIndex.Radiant = 0;
+        selectedEquipmentHeroName = "";
+        heroEntityIndices = {};
+        lastNativePurchaseTarget = -1;
+        lastNativePurchaseHero = "";
+        saveData = loadSave();
+        shopState.owned = [];
+        shopState.lineup = [];
+        shopState.offers = [];
+        damageState = { elapsed: 0, units: [] };
+        selectedDamageUnit = null;
+        selectedDamageSource = null;
+        closeLootPopup();
+        ["ItemSellNotice", "ItemTransferNotice"].forEach(function (id) {
+            var notice = $("#" + id);
+            if (notice) { notice.text = ""; }
+        });
+        renderDamage();
+        renderShop();
+        renderItemShop();
         rowPanels.Radiant.forEach(function (panels) {
             panels.actionMenu.RemoveAndDeleteChildren();
             panels.diagnosticLabel.text = "";

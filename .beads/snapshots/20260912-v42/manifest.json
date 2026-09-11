@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-09-12T00:56:45.903987+08:00",
+  "source": "bd sql / local Dolt",
+  "counts": {
+    "issues": 157,
+    "dependencies": 88,
+    "comments": 4,
+    "events": 372,
+    "labels": 0,
+    "config": 13
+  },
+  "completed_issues": [
+    "dota2_rpg-hx8"
+  ],
+  "native_followup": "dota2_rpg-ig5",
+  "evidence": "UI42:76/76 automated suites; verify-addon; HUDJS native compiled;127 installedsource byte-equal;map/loading hashespreserved. No native gameplay validation. docs/RUNTIME_FIXES_V42.md"
+}

@@ -1,33 +1,37 @@
 "loot"
 {
-	"loot_basic"
-{
-		"name" "野怪关掉落"
-		"items"
-{
-			"1" { "item" "item_magic_wand" "chance" "0.35" }
-			"2" { "item" "item_glimmer_cape" "chance" "0.3" }
-			"3" { "item" "item_mask_of_madness" "chance" "0.2" }
-		}
-	}
-	"loot_hero"
-{
-		"name" "英雄关掉落"
-		"items"
-{
-			"1" { "item" "item_desolator" "chance" "0.3" }
-			"2" { "item" "item_black_king_bar" "chance" "0.2" }
-			"3" { "item" "item_force_staff" "chance" "0.35" }
-		}
-	}
-	"loot_boss"
-{
-		"name" "Boss 掉落"
-		"items"
-{
-			"1" { "item" "item_black_king_bar" "chance" "0.6" }
-			"2" { "item" "item_ultimate_scepter" "chance" "0.5" }
-			"3" { "item" "item_sheepstick" "chance" "0.25" }
-		}
-	}
+    // Three bounded gates; every successful gate samples the full campaign pool.
+    "loot_basic"
+    {
+        "name" "野怪关全物品掉落"
+        "pool" "all_items"
+        "items"
+        {
+            "1" { "chance" "0.35" }
+            "2" { "chance" "0.30" }
+            "3" { "chance" "0.20" }
+        }
+    }
+    "loot_hero"
+    {
+        "name" "英雄关全物品掉落"
+        "pool" "all_items"
+        "items"
+        {
+            "1" { "chance" "0.30" }
+            "2" { "chance" "0.20" }
+            "3" { "chance" "0.35" }
+        }
+    }
+    "loot_boss"
+    {
+        "name" "Boss 全物品掉落"
+        "pool" "all_items"
+        "items"
+        {
+            "1" { "chance" "0.60" }
+            "2" { "chance" "0.50" }
+            "3" { "chance" "0.25" }
+        }
+    }
 }

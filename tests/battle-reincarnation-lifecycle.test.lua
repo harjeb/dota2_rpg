@@ -12,12 +12,19 @@ local hooks = { OnThink = function() end, Clear = function() end }
 require = function(name)
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
         or name == "battle.item_cooldowns"
-        or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end
+        or name == "battle.fresh_run" or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end
+    if name == "battle.campaign_loot" then return {Award=function() return {} end} end
     if name == "battle.tempest_double" then return hooks end
+    if name == "issue_fixes.hero_lifecycle_log" then return {Event=function() end,
+        Remove=function(g,u) assert(g.ruleGeneration > 0); u.removed=true end} end
     return { Install=function() end, OnThink=function() end, Clear=function() end,
         Write=function(message) logs[#logs+1]=message end, Event=function() end }
 end
 dofile(modules .. "addon_game_mode.lua")
+-- Install the real fresh-start recruitment defaults (not a duplicated constant).
+local savedRequire=require; require=nativeRequire
+nativeRequire("patches.recruitment_patch").Install(CDota2RpgDemo)
+require=savedRequire
 local now, callback, events, payload, orders, aiTicks
 GameRules = { GetGameTime=function() return now end,
     GetGameModeEntity=function() return { SetContextThink=function(_,name,fn,delay)
@@ -40,7 +47,10 @@ local function fixture()
     local g=setmetatable({phase="fight", teamsSpawned=true, currentLevelId="ch01",
         orderedLevels={"ch01","ch02"}, lineup={"wk"}, runLives={remaining=5,pendingItems={}},
         dataLoader={GetLevel=function() return {reward={gold=0,xp_per_active_hero=0}} end},
-        tacticBridge={OnThink=function() aiTicks=aiTicks+1 end},
+        tacticBridge={OnThink=function() aiTicks=aiTicks+1 end, ResetState=function() end,
+            ruleService={state={rules={old=true}}}},
+        GetStashUnit=function(s) return s.stash end,
+        BroadcastHeroInfo=function() end,
         BroadcastDamageStats=function() end, BroadcastBattleState=function() end,
         BroadcastShopState=function() end, BroadcastLevelInfo=function() end,
         SpawnLevelEnemies=function() end, RespawnPlayerRoster=function(self) self.rebuilt=true end,
@@ -140,6 +150,43 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
     g.heroRulesByName={wk={{action="attack"}}}; local rules=g.heroRulesByName
     g.gold=1234; g.GetGoldBalance=function(s) return s.gold end
     g.refreshCount=7; g.scrollPurchases={low=3,high=2}
+    local function item() return {IsNull=function(s) return s.removed==true end,
+        RemoveSelf=function(s) s.removed=true end} end
+    local stashItem, groundItem, orphanItem, heroItem = item(), item(), item(), item()
+    local drop=item(); drop.GetContainedItem=function() return groundItem end
+    Entities={FindAllByClassname=function() return {drop} end}
+    g.stash={GetItemInSlot=function(_,slot) if slot==16 then return stashItem end end,
+        permanent={moon=true,shard=true,blessing=true},xp=5000}
+    g.placeholderHero=g.stash
+    g.OnNpcSpawned=function(s) s.placeholderHero.rpgPlaceholderReady=true end
+    local commanderReplacements=0
+    PlayerResource={ReplaceHeroWith=function(_,id,name,gold,xp)
+        assert(id==0 and name=="npc_dota_hero_wisp" and gold==0 and xp==0)
+        commanderReplacements=commanderReplacements+1
+        local fresh={permanent={},xp=0,IsNull=function() return false end,
+            RemoveModifierByName=function() end,entindex=function() return 900 end,GetItemInSlot=function() end}
+        g.stash=fresh
+        return fresh
+    end}
+    bm.teamHeroes[2][1].GetItemInSlot=function(_,slot) if slot==0 then return heroItem end end
+    g.runLives.pendingItems={{item=orphanItem}}
+    local bench=unit(true,false); g.benchUnits={bench}; g.pendingEnemyCleanup={bench}
+    g.ownedHeroes={"wk"}; g.benchSlots=4; g.heroData.wk.purchased_shard=true
+    g.scrollStock={low=9,high=8}; g.scrollBought={low=7,high=6}
+    local tableFields={"heroInventories","autoAbilityHeroes","placedPositions","pendingNativePurchases",
+        "nativePurchaseOrderContexts","nativePurchaseClaimedIds","nativeOrderSignatures",
+        "nativePurchaseBaseline","nativePurchaseObservedStates"}
+    local nilFields={"nativePurchaseSelectionHero","nativeShopTransactionPending","rosterAbilitySnapshot",
+        "equipmentSnapshot","lastBroadcastGold","encounterSeed","shardPurchaseBusy","shardRestockAt"}
+    for _,f in ipairs(tableFields) do g[f]={old=true} end
+    for _,f in ipairs(nilFields) do g[f]="old" end
+    local cache={ready=true}; g.stagePrecache=cache
+    local stalePurchase, purchased = nil, 0
+    g.recruitPrecache={cached="ready"}
+    PrecacheUnitByNameAsync=function(_, cb) stalePurchase=cb end
+    local heroCache=nativeRequire("issue_fixes.hero_precache")
+    assert(not heroCache.Request(g,"pending_hero",function() purchased=purchased+1 end))
+    g.enemySpawnRequest={old=true}; g.stageLoading=true
     local setupStates,rebuilt,enemies,barriers,rolls=0,0,0,0,0
     g.BroadcastBattleState=function(s)
         local data=s:BuildBattleState()
@@ -152,7 +199,7 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
         assert(s.phase=="setup" and not s.runComplete and s.runLives.remaining==5)
         assert(not s:OnReplayRun(0,request), "reentrant replay cannot rebuild twice")
     end
-    g.SpawnLevelEnemies=function(s,id) enemies=enemies+1; assert(id==s.currentLevelId) end
+    g.SpawnLevelEnemies=function(s,id) enemies=enemies+1; assert(id==s.currentLevelId); s.preparedEnemyLevel=id end
     g.SpawnBattleBarrier=function() barriers=barriers+1 end
     g.RollShop=function(s) rolls=rolls+1; s.shopOffers={} end
     g:EndBattle(winner,winner=="radiant" and 2 or 3)
@@ -167,7 +214,22 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
     assert(rebuilt==1 and enemies==1 and barriers==1 and rolls==1 and setupStates==1)
     assert(g.currentLevelId=="ch01", "all terminal replays restart chapter one")
     assert(g.refreshCount==0 and g.scrollPurchases.low==0 and g.scrollPurchases.high==0)
-    assert(g.heroData.wk==build and g.heroRulesByName==rules and g.gold==1234)
+    assert(next(g.heroData)==nil and next(g.heroRulesByName)==nil and g.heroRulesByName~=rules)
+    assert(g.gold==500 and g.freeRecruitChoices==2 and g.benchSlots==0)
+    assert(commanderReplacements==1 and g.placeholderHero==g.stash and g.stash.rpgPlaceholderReady)
+    assert(next(g.stash.permanent)==nil and g.stash.xp==0, "commander native consumable flags/XP are not retained")
+    assert(stashItem.removed and groundItem.removed and orphanItem.removed and heroItem.removed and drop.removed and bench.removed)
+    for _,f in ipairs(tableFields) do assert(next(g[f])==nil, f) end
+    for _,f in ipairs(nilFields) do assert(g[f]==nil, f) end
+    assert(g.stagePrecache==cache and g.enemySpawnRequest==nil and not g.stageLoading)
+    stalePurchase()
+    assert(purchased==0 and g.recruitPrecache.pending_hero==nil, "old captured precache table cannot purchase into a fresh run")
+    assert(g.recruitPrecache.cached=="ready", "completed asset knowledge is not progression")
+    assert(#g.runLives.pendingItems==0 and g.scrollStock.low==0 and g.scrollBought.high==0)
+    assert(g.nativePurchaseTransactionId==0 and g.nativePurchaseTick==0)
+    assert(bm.battleStartedAt==nil and bm.phase=="prepare")
+    assert(next(g.lineup)==nil and next(g.ownedHeroes)==nil)
+    assert(next(g.tacticBridge.ruleService.state.rules)==nil and g.ruleGeneration==1)
     g.phase="fight"; bm:StartBattle({}); assert(bm:GetTimeLeft()==120)
     g.runLives.remaining=1; g:EndBattle("dire",3)
     assert(not g:OnReplayRun(0,request), "old result request rejected at later terminal")
@@ -184,4 +246,12 @@ do
     g.rebuilt=false; g.phase="result"; oldSetup()
     assert(not g.rebuilt and g.phase=="result", "old delayed setup cannot reset a replay")
 end
-print("PASS real EndBattle/replay: all terminal outcomes, owner/generation gates, reentrancy, retained build, five lives, unit rebuild, fresh deadline, old timer invalidation")
+do
+    local g=fixture(); g.playerId=0; g.phase="result";g.runComplete=true;g.settlementGeneration=10
+    g.placeholderHero={IsNull=function() return false end}
+    PlayerResource={ReplaceHeroWith=function() return nil end}
+    assert(not g:OnReplayRun(0,{PlayerID=0,settlement_generation=10}))
+    assert(g.phase=="result" and g.runComplete and g.settlementGeneration==11,
+        "native reset failure remains locked and can be retried with a new result generation")
+end
+print("PASS real EndBattle/replay: all terminal outcomes, owner/generation gates, reentrancy, fresh empty build/wallet/rules, five lives, unit rebuild, fresh deadline, old timer invalidation")
