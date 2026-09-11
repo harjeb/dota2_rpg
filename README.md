@@ -2,6 +2,14 @@
 
 这是一个 Lua + Panorama 的 Dota 2 Workshop Tools 单人 PVE 自定义游戏 addon：玩家在准备阶段招募英雄、配置规则和装备，战斗阶段由服务端自动执行。
 
+## 技能条件可靠性更新
+
+本版新增 UI 按技能自动限制、服务端兼容性复验、条件冲突检测、独立 Autocast / Toggle 状态控制、持续施法对应释放保护，以及每条规则的失败诊断。技能命中人数条件已从配置、预设和执行链路移除，旧字段不再影响施法；附近敌人数等观察条件保留。修复首次编辑刷新能力后无法保存的回归，草稿冲突时保留窗口并提示。完整实现、安装和验证边界见 [RELIABILITY_UPDATE_ZH.md](RELIABILITY_UPDATE_ZH.md)。
+
+离线检查 **63 / 63 通过**；矩阵覆盖 **439 个技能、505 个预设变体、11,546 个配置组合**，UI 与服务端判断不一致为 0。这不是原生施法成功率；本次未执行 Dota/Workshop 原生验收，仍保留 `native_execution_validated = 0`。
+
+运行全部检查：`python scripts/test-all.py`。需要 Python、Node 和 Lua 命令行运行时，非标准 Lua 路径通过 `LUA_BIN` 指定；后端检查不再因缺少 Lupa 而跳过。
+
 ## 当前玩法边界
 
 - 每局 Run 只保存在服务端内存；不使用 Panorama `LocalStorage`、跨局存档、存档码、每日重置或迁移。第 30 关胜利后当前 Run 进入终局，不会重复发放终局奖励。
@@ -44,7 +52,7 @@ node --check .\content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panora
 node .\tests\panorama-save.test.js
 ```
 
-`tests/shop-state.test.lua` 和 `tests/precache-battlefield.test.lua` 需要 Lua/Lupa 环境。上述检查只验证源码契约、数据和 UI 静态结构，不等同于原版 Dota 商店在干净地图中的实机购买/出售/合成验收。
+`tests/shop-state.test.lua` 和 `tests/precache-battlefield.test.lua` 需要 Lua 运行时；统一测试入口通过 Lua 命令行执行，不要求 Lupa。上述检查只验证源码契约、数据和 UI 静态结构，不等同于原版 Dota 商店在干净地图中的实机购买/出售/合成验收。
 
 ## 部署
 

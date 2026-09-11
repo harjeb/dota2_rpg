@@ -162,9 +162,8 @@
       }
     },
     "aoe": {
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "rule": {
-        "min_aoe_hits": 2,
         "target": "enemy_distance_nearest",
         "target_filters": [],
         "target_priorities": [
@@ -261,9 +260,8 @@
       }
     },
     "charged_aoe": {
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast. Optional variant also requires at least one observed native charge.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits. Optional variant also requires at least one observed native charge.",
       "rule": {
-        "min_aoe_hits": 2,
         "target": "enemy_distance_nearest",
         "target_filters": [],
         "target_priorities": [
@@ -4312,7 +4310,7 @@
       "description_en": "Bloodseeker baptizes an area in sacred blood. After %delay_plus_castpoint_tooltip% seconds the ritual completes, causing any enemies caught in the area to take damage and become silenced.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -4392,7 +4390,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -4949,7 +4947,7 @@
       "description_en": "A burst of damaging frost slows enemy movement in the targeted area.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -5038,7 +5036,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -6696,7 +6694,7 @@
       "description_en": "",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -6748,7 +6746,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -8560,7 +8558,7 @@
       "description_en": "",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -8639,7 +8637,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -12869,7 +12867,7 @@
       "description_en": "Puck teleports to the target location and releases a burst of faerie dust that deals damage and silences enemy units nearby.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -12967,7 +12965,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -13307,7 +13305,7 @@
       "description_en": "Creates a coil of volatile magic that latches onto enemy Heroes, damaging and leashing them.  If the enemy hero stretches the coil by moving too far away, it snaps, stunning and dealing additional damage.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -13408,7 +13406,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -15040,7 +15038,7 @@
       "description_en": "Sand King strikes an area, performing an attack on all enemies in the area of effect, dealing extra damage to each. Enemies within an innermost radius of %inner_radius% take %inner_radius_bonus_damage_pct%%% extra damage. Applies Caustic Finale and a slow to all enemies hit.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -15130,7 +15128,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -16166,7 +16164,7 @@
       "description_en": "Sven unleashes his magical gauntlet that deals damage and stuns enemy units in a small area around the target.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -16264,7 +16262,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -16839,7 +16837,7 @@
       "description_en": "Bombards an area with rocks, continously doing small intervals of damage and stun to enemy units.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -16918,7 +16916,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -20497,7 +20495,7 @@
       "description_en": "Summons a rising torrent that, after a short delay, hurls enemy units into the sky, stunning, dealing damage and slowing movement speed.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -20579,7 +20577,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -21684,7 +21682,7 @@
       "description_en": "Summons a column of flames that damages and stuns enemies.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -21753,7 +21751,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -22817,7 +22815,7 @@
       "description_en": "Rips at an enemy unit, trying to turn it inside-out, dealing massive damage to the target.<br><br>After using Finger of Death, Lion's hand becomes empowered, allowing him to use a cleaving melee attack with %punch_attack_range% range with bonus movement speed.<br><br>Finger of Death gains permanent bonus damage for it and the fist for each enemy Hero it or the fist kills. <br><br>The melee attack may be disabled by setting the ability to Alt Cast.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -22936,7 +22934,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -25867,7 +25865,7 @@
       "description_en": "Curses all enemy Heroes and player-controlled targets in a small area, causing them to take a set amount of damage each second, as well as bursts of damage every 4 seconds based on how much health they have lost since the curse began.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -25954,7 +25952,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -26419,7 +26417,7 @@
       "description_en": "Blasts the target enemy unit with damaging frost, dealing area damage and slowing movement and attack rates for %abilityduration% seconds.  The primary target receives both base and area damage.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -26498,7 +26496,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -27552,7 +27550,7 @@
       "description_en": "Throws down a smoke bomb, silencing enemies and causing them to miss attacks.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -27629,7 +27627,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -27788,7 +27786,7 @@
       "description_en": "CHANNELED - Riki phases out of the world and periodically strikes %interval_targets% random enemy units from behind in an area around him. He has fixed attack damage while phased out.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -27908,7 +27906,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -28640,7 +28638,7 @@
       "description_en": "Steeps an area in dark resonance, dealing %base_damage% + a percentage of the enemies current HP as damage.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -28708,7 +28706,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -28847,7 +28845,7 @@
       "description_en": "CHANNELED - Summons a vortex that sucks in nearby enemy units.  Enemies affected by Black Hole cannot move, attack, or cast spells.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -28943,7 +28941,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -29316,7 +29314,7 @@
       "description_en": "Enlists an army of robotic minions to destroy enemy units in an area around Tinker.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -29397,7 +29395,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -30674,7 +30672,7 @@
       "description_en": "Consumes a charge to launch a ball of shrapnel that showers the target area in explosive pellets. Enemies are subject to damage and slowed movement. Reveals the targeted area. Shrapnel charges restore every %abilitychargerestoretime% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -30772,7 +30770,7 @@
         "aoe",
         "charged_aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -31055,7 +31053,7 @@
       "description_en": "Launches a grenade at the target area, dealing damage to enemies and knocking them and Sniper back. Enemies affected are disarmed and have their movement slowed after the knockback.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -31142,7 +31140,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -32494,7 +32492,7 @@
       "description_en": "CHANNELED - A powerful slowing and damaging current that grows stronger as it's channeled. Lasts up to %abilitychanneltime% seconds. Enemies are slowed for %duration% second after leaving the area or the spell ends.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -32585,7 +32583,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -35714,7 +35712,7 @@
       "description_en": "Launches a ball of venom in a line, poisoning enemy units so that they take both initial damage and damage over time, as well as suffering slowed movement.  Venomous Gale deals damage every 3 seconds over its duration.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -35828,7 +35826,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -37357,7 +37355,7 @@
       "description_en": "Creates a blister in spacetime, trapping all units caught in its sphere of influence and causes you to move very quickly inside it. Only Faceless Void and any units he controls are unaffected. Invisible enemies in the sphere will be revealed.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -37429,7 +37427,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -38587,7 +38585,7 @@
       "description_en": "Fires a projectile that prevents enemy units in a target area from casting spells.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -38657,7 +38655,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -40040,7 +40038,7 @@
       "description_en": "An exploding pulse deals damage to enemies and structures in the area.  Deals %structure_damage_mod%%% damage to structures.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -40109,7 +40107,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -42084,7 +42082,7 @@
       "description_en": "Viper releases a Nethertoxin at the targeted area. Units in that area take an increasing damage over time based on how long they remain in it. Units in it have their attack speed slowed.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -42170,7 +42168,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -42336,7 +42334,7 @@
       "description_en": "Viper slams into the ground, releasing a Nethertoxin and splattering each enemy in a %corrosive_radius% AoE for %effect_duration% seconds with the effect of Corrosive Skin.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -42407,7 +42405,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -45219,7 +45217,7 @@
       "description_en": "",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -45286,7 +45284,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -45559,7 +45557,7 @@
       "description_en": "Fires a global range flare that explodes over a given area. Upon impact, enemies in the area take damage and are briefly slowed. Rocket flare provides vision over the impact area for %duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -45655,7 +45653,7 @@
         "aoe",
         "charged_aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -46293,7 +46291,7 @@
       "description_en": "Splits the earth under enemies. Deals damage and stuns for a short duration.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -46373,7 +46371,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -50003,7 +50001,7 @@
       "description_en": "Dark Seer creates a vacuum over the target area that sucks in enemy units, disrupting them and dealing damage.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -50066,7 +50064,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -52192,7 +52190,7 @@
       "description_en": "Clinkz throws a projectile filled with tar at the target enemy, dealing Magic damage on impact. After impact, the tar spills onto the ground and stays there for %ground_duration% seconds. Any enemy that walks across it gets slowed, and attacks from Clinkz or his Skeleton Archers will deal bonus physical damage.<br><br> When the Tar Bomb hits, any Skeleton Archers within attack range will attack the target. If autocast is activated, Clinkz will throw a tar bomb when attacking the target, if it is available.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -52276,7 +52274,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -53145,7 +53143,7 @@
       "description_en": "",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -53209,7 +53207,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -53872,7 +53870,7 @@
       "description_en": "Enchantress roots an enemy unit. All creeps, ally, enemy and neutral within a radius will gain bonus movement and attack speed and attack the chosen target for %duration% seconds.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -53947,7 +53945,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -59349,7 +59347,7 @@
       "description_en": "Drenches an area in sticky oil, amplifying damage from Batrider's attacks and abilities and slowing the movement speed and turn rate of enemies. Additional casts of Sticky Napalm continue to increase damage, up to %max_stacks% stacks. Applies a small amount of damage with each cast.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -59471,7 +59469,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -59519,7 +59517,7 @@
       "description_en": "Hurls an explosive cocktail that explodes when it reaches the target location, knocking back, slowing and dealing damage over time to enemies in the area.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -59621,7 +59619,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -62270,7 +62268,7 @@
       "description_en": "Creates a vortex of icy energy that slows, deals damage, and increases magic damage done to enemies in its range.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -62359,7 +62357,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -63015,7 +63013,7 @@
       "description_en": "",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -63078,7 +63076,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -66232,7 +66230,7 @@
       "description_en": "Call down %total_strikes% aerial missile strikes that slow and damage enemy units in a target area. Each strike is %strike_separation% distance from the previous one.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -66328,7 +66326,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -66528,7 +66526,7 @@
       "description_en": "Sprays high-pressure acid across a target area. Enemy units who step across the contaminated terrain take damage per second and have their armor reduced.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -66601,7 +66599,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -71222,7 +71220,7 @@
       "description_en": "Curses the target area, dealing damage and causing enemies to take damage over time and slowing their movement speed.<br><br>Anytime affected enemies cast a spell, the duration is increased. The duration is paused as long as the target is silenced.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -71317,7 +71315,7 @@
         "aoe",
         "charged_aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -72112,7 +72110,7 @@
       "description_en": "Steals a percentage of the target's max mana and places them into an astral prison. The hidden unit is invulnerable and disabled. When the astral prison implodes, it deals damage to the target.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -72223,7 +72221,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -72496,7 +72494,7 @@
       "description_en": "Unleashes a psychic blast that deals damage to enemies based on the difference between your max mana and the target's max mana. Sanity's Eclipse can hit units trapped by Astral Imprisonment.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -72582,7 +72580,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -74048,7 +74046,7 @@
       "description_en": "Rolls a barrel of ale at enemies that damages enemies along its path and spills out at the target location.<br><br>Any enemy in the path or the spill area is drenched in cinder brew, becoming slowed.  If the enemy receives Magic or Pure damage, they will be ignited, extending the duration by %extra_duration%s and causing them to take damage over time.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -74152,7 +74150,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -75707,7 +75705,7 @@
       "description_en": "Damages summoned units in an area and dispels most buffs or debuffs.\\n\\nDISPEL TYPE: Basic Dispel",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -75764,7 +75762,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -76185,7 +76183,7 @@
       "description_en": "Whenever the target takes damage, all enemies, including the target itself if it is an enemy, within %radius% range of the target also receive a portion of that damage. Can target enemy and allied units. Effect is paused if the target is hidden by Disruption.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -76254,7 +76252,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -76992,7 +76990,7 @@
       "description_en": "",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -77065,7 +77063,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -77109,7 +77107,7 @@
       "description_en": "Allows Lone Druid to Entangle enemies once they gain %hits_required% stacks. Entangled enemies are rooted and take damage over time.<br><br>When cast, applies %hits_incremented_on_active% stacks to each enemy hero in the area and %hits_required% stacks to enemy creeps. Also empowers Lone Druid for %lone_druid_buff_duration%s, making him apply %lone_druid_counters_applied_tooltip% stack with each attack on enemy heroes. Enemies cannot gain stacks while Entangled.<br><br>Leveling this ability also levels Spirit Bear's Entangling Claws ability.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -77210,7 +77208,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -79836,7 +79834,7 @@
       "description_en": "Tosses a net at the target point, rooting down all enemy units in an area around it.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -79909,7 +79907,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -82410,7 +82408,7 @@
       "description_en": "Drenches the target and another random unit in volatile chemicals, causing it to burst into flames. The target is in immense pain, taking damage and moving more slowly.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -82487,7 +82485,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -83325,7 +83323,7 @@
       "description_en": "Undying steals strength from all enemy heroes in an area, dealing base damage as he claims the enemy's strength for himself. Deals %creep_damage_multiplier%x damage to creeps.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -83413,7 +83411,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -86223,7 +86221,7 @@
       "description_en": "After a short formation time, creates a circular barrier of kinetic energy that enemies can't pass.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -86316,7 +86314,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -86598,7 +86596,7 @@
       "description_en": "Creates a damaging static storm that also silences all enemy units in the area for the duration.  The damage starts off weak, but increases in power over the duration.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -86672,7 +86670,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -86898,7 +86896,7 @@
       "description_en": "Deals damage equal to a percentage of the target's Max Mana and burns part of it away. Deals additional damage equal to a percentage of the damage the target has taken from Nyx Assassin in the last %damage_echo_duration%s. Resets accumulated damage before applying damage.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -86977,7 +86975,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -89252,7 +89250,7 @@
       "description_en": "A blinding light flashes over the targeted area, knocking back units to the edge of the area and blinding them, causing them to miss some attacks. Minimum knockback distance is %knockback_distance% range over %knockback_duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -89332,7 +89330,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -93902,7 +93900,7 @@
       "description_en": "Medusa fires arrows in a line that land in %volley_count% groups, with each grouping larger than the previous. Enemies struck by a volley of arrows take an initial burst of damage and then are rooted, cannot turn, are revealed to the enemy, and take damage per second.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -93984,7 +93982,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -95869,7 +95867,7 @@
       "description_en": "Centaur strikes a mighty blow at melee range, damaging both himself and a small area around the target. Deals extra damage based on your strength. Centaur cannot die from Double Edge.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -95960,7 +95958,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -98934,7 +98932,7 @@
       "description_en": "Launches a second independent Chakram that follows a curved path and returns to Timbersaw, damaging and slowing enemies it passes through. Enemies caught in the saw blade will move more slowly for every %slow_health_percentage%%% of health missing.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -99019,7 +99017,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -101501,7 +101499,7 @@
       "description_en": "Skywrath Mage uses his ultimate magical ability to conjure a precise and violent mystical field that lays waste to his adversaries. Deals massive damage distributed evenly among any Heroes in the area over %duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -101576,7 +101574,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -102543,7 +102541,7 @@
       "description_en": "Elder Titan sends forth his Astral Spirit, damaging any units it passes through.  When the spirit rejoins the Titan, it grants bonus damage and movement speed for each unit it passed through.\\n\\nThe Astral Spirit possesses the Echo Stomp, Return Spirit, and Natural Order abilities.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -102655,7 +102653,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -103786,7 +103784,7 @@
       "description_en": "Turns the foes' numbers against them, dealing a %movement_slow%%% impact slow for %slow_duration%s and damage to all enemies in the area. Damage increases with each enemy unit or hero in the area, and grants Legion Commander bonus attack speed.",
       "evidence": [
         "Native no-target damage keys.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -103882,7 +103880,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -104536,7 +104534,7 @@
       "description_en": "Lobs a Sticky Bomb towards the target area. If it lands next to an enemy hero, the bomb will stick to it, slowing its movement speed. After a few seconds the bomb will explode, dealing damage in an area around the detonation and applying a secondary slow for %secondary_slow_duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -104630,7 +104628,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -104788,7 +104786,7 @@
       "description_en": "Techies hurtle themselves into the enemy's midst, detonating charges upon impact which deal massive area of effect damage and stun enemies. Upon landing, the assault deals Techies non-lethal damage equal to a percentage of their current health.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -104873,7 +104871,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -105191,7 +105189,7 @@
       "description_en": "Plant an invisible mine that cannot be detected by True Sight, but is visible if an enemy is within the active %radius% AoE of the mine. Mines detonate if an enemy is standing within the active AoE for %proximity_threshold% seconds dealing damage and temporarily reducing the enemy's Magic Resistance. The explosion deals full damage if the target is within %min_distance% radius and decreases down to %outer_damage%%% on the edge. Deals %building_damage_pct%%% damage to buildings.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -105288,7 +105286,7 @@
         "aoe",
         "charged_aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -106137,7 +106135,7 @@
       "description_en": "Plant an invisible trap that roots nearby enemy units instantly when triggered.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -106219,7 +106217,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -106372,7 +106370,7 @@
       "description_en": "Ember Spirit dashes around with blazing speed, attacking all enemies in the targeted area of effect, then returning to his start location.  Deals bonus damage to heroes.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -106462,7 +106460,7 @@
         "aoe",
         "charged_aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -108023,7 +108021,7 @@
       "description_en": "Calls down waves of fire that damage enemy units in the target area, burning for additional damage over time.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -108117,7 +108115,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -108158,7 +108156,7 @@
       "description_en": "A deadly pit is conjured at the target location; any unit that enters will be damaged and rooted. Each enemy unit within the pit are affected by the root only every %pit_interval% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -108232,7 +108230,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -109390,7 +109388,7 @@
       "description_en": "Terrorblade brings forth an invulnerable dark reflection of all enemy heroes in a target area. Affected enemy heroes have movement and attack speeds slowed and attacked by their reflection.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -109484,7 +109482,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -111382,7 +111380,7 @@
       "description_en": "CHANNELED - Gathers Oracle's power into a bolt of scouring energy that, when released, damages, roots, and dispels enemies of buffs in an area around the target. If target is an ally it will only dispel debuffs. The root duration increases with channeling time.\\n\\nDISPEL TYPE: Basic Dispel",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -111478,7 +111476,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -112457,7 +112455,7 @@
       "description_en": "Launches a ball of brittle ice toward a unit. The ice shatters on impact, leaving the primary target completely unaffected, while hurling damaging splinters into nearby enemies in a %split_radius% base radius. Enemies struck by these splinters are slowed by %movespeed_slow_tooltip%%%.",
       "evidence": [
         "Explicit ordinary semantic review; generic conditions only.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -112540,7 +112538,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": "Ordinary generic partial mode only.",
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -112790,7 +112788,7 @@
       "description_en": "Winter Wyvern dispells then freezes an enemy in place while striking those nearby with a maddening curse which causes them to attack their frozen ally with increased attack speed. The frozen ally and those cursed to attack their ally are immune to all damage from their enemies with the exception of damage from Winter Wyvern or her controlled units. Enemy heroes which enter the cursed area after the cast add to the duration of the curse.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -112877,7 +112875,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -113553,7 +113551,7 @@
       "description_en": "Summons a Spark Wraith that slowly materializes and patrols a targeted area until an enemy comes within its range. Once a target has been found the wraith fuses with them, dealing magical damage and slowing the unit.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -113655,7 +113653,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -114486,7 +114484,7 @@
       "description_en": "CHANNELED - Monkey King springs out from his tree perch, damaging and slowing enemies in the area where he lands. Damage and slow amounts are in proportion to channel duration.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -114560,7 +114558,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -114841,7 +114839,7 @@
       "description_en": "Monkey King creates a circular formation of soldiers that spread out from his position. If Monkey King leaves the area his soldiers disperse. The soldiers have Monkey King's attack that attacks at a fixed rate of %attack_speed%s, and only targets enemy Heroes. Monkey King is granted bonus armor for the spell's duration.<br><br>Monkey King can transform into any one of his soldiers during Wukong's command, taking its place for a short duration, becoming indistinguishable from other soldiers, and leaving another soldier in his stead.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -114964,7 +114962,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -115287,7 +115285,7 @@
       "description_en": "Dark Willow creates a %placement_range% AoE maze of %placement_count% brambles that grow in the target area after %initial_creation_delay% seconds. Enemies that walk into a bramble are rooted and take damage over time. Lasts %placement_duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -115377,7 +115375,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -118321,7 +118319,7 @@
       "description_en": "Tosses a net trap that stuns enemies if they are near a tree in the area.  Affected enemies take damage over time and are pulled towards the tree nearest to them within the target area, and have their vision reduced to 0 for the duration of the stun.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -118396,7 +118394,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -121003,7 +121001,7 @@
       "description_en": "Snapfire's friend launches a barrage of firespit globs over %duration_tooltip% seconds. Globs cause impact damage and create pools of firespit, which slow and apply damage over time. Snapfire has a reduced turn rate for the duration and a minimum launch range of %min_range%. Each glob can be targeted with a right click.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -121126,7 +121124,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -121863,7 +121861,7 @@
       "description_en": "After a short formation time, Mars summons an arena lined with the undead warriors of the Ash Legion, who block enemy attacks and movement. Enemy heroes near the inside edge of the arena will be attacked by spears, dealing damage and knocking them back.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -121988,7 +121986,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -122112,7 +122110,7 @@
       "description_en": "CHANNELED - Ringmaster twirls his whip for up to %abilitychanneltime% second then cracks it. Whipped enemies are damaged and flee in fear from Ringmaster. Channel time exponentially increases damage and extends the fear duration, but reduces the radius.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -122215,7 +122213,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -122640,7 +122638,7 @@
       "description_en": "Ringmaster shines %spotlight_count% spotlights that sweep over an area. Enemies in the light have a chance to miss their attacks and are revealed if invisible. Illusions hit by the beam fade away, losing a percentage of their maximum health each second. These effects linger for %linger_duration% seconds after leaving the light.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -122719,7 +122717,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -122775,7 +122773,7 @@
       "description_en": "Ringmaster rolls the Wheel of Wonder to the targeted location, knocking aside enemies along the way. After it reaches its target, enemies in range of the wheel take damage over time and are slowed by %aura_slow%%%.<br><br>Enemy heroes who face the wheel for more than %face_duration% seconds are mesmerized and drawn towards it. The first enemy to be mesmerized triggers a timer for the wheel to explode. If the timer is not triggered, it will automatically explode after %trap_duration% seconds.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -122877,7 +122875,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -126566,7 +126564,7 @@
       "description_en": "CHANNELED - Primal Beast channels his rage, grabbing the target enemy and slamming them into the ground repeatedly, damaging and mini-stunning any enemies caught in the AoE. Each consecutive hit deals bonus damage. Lasts %channel_time% seconds.",
       "evidence": [
         "Native hostile ordinary unit target.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -126657,7 +126655,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {
@@ -127157,7 +127155,7 @@
       "description_en": "Summons a group of %num_revenants% revenants that slowly circle the targeted location. Enemies within the area are slowed. Revenants deal damage and silence enemies as they pass through them.",
       "evidence": [
         "Native point order and hostile team or damage metadata.",
-        "Native AOE radius required; circular approximation only."
+        "Native AOE flag groups the preset; no spell-hit-count gate."
       ],
       "execution_caveats": [
         "Generic expression coverage only; native execution validated: 0.",
@@ -127261,7 +127259,7 @@
       "preset_variants": [
         "aoe"
       ],
-      "rationale": "Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.",
+      "rationale": "Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.",
       "review_note": null,
       "reviewed_family": "aoe",
       "unique_mechanism": {

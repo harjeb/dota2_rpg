@@ -1,5 +1,7 @@
 local Context = require("tactics/condition_context")
 local SpecialTargets = require("tactics/special_targets")
+local Lifecycle = require("tactics/action_lifecycle")
+local Observation = require("tactics/condition_observation")
 local ConditionRegistry = {
     use_conditions = {},
     target_filters = {},
@@ -98,6 +100,7 @@ function ConditionRegistry:EvaluateUseConditions(conditions, ctx)
         end
 
         local passed, err = safe_boolean_call(evaluator, ctx, condition)
+        Observation.Record(ctx, "use", index, condition, ctx.caster, passed, err)
         if err ~= nil then
             return false, "use_condition_error:" .. tostring(condition.type), index
         end
@@ -116,6 +119,7 @@ function ConditionRegistry:EvaluateTargetFilters(filters, ctx, target)
         end
 
         local passed, err = safe_boolean_call(evaluator, ctx, target, condition)
+        Observation.Record(ctx, "target", index, condition, target, passed, err)
         if err ~= nil then
             return false, "target_filter_error:" .. tostring(condition.type), index
         end
@@ -461,6 +465,33 @@ end)
 ConditionRegistry:RegisterUseCondition("tiny_grab_hp_pct_gte", function(ctx,c)
     local unit = SpecialTargets.GrabTarget(ctx)
     return unit ~= nil and health_pct(unit) >= tonumber(c.value)
+end)
+
+local function observed_action(ctx, c, actor)
+    local name = c.action_id
+    if name and ctx.resolve_action_name then name = ctx.resolve_action_name(actor, name) end
+    if not name then
+        local spec = ctx.current_action_spec or {}
+        local own = Context.Call(spec.source, "GetAbilityName") or ctx.current_action_id
+        name = Lifecycle.release_parents[own] or own
+    end
+    return name
+end
+for _, direction in ipairs({"gte", "lte"}) do
+    ConditionRegistry:RegisterUseCondition("channel_elapsed_" .. direction, function(ctx, c)
+        local actor = action_actor(ctx, c)
+        if not actor then return false end
+        local elapsed = Lifecycle.ChannelElapsed(actor, observed_action(ctx,c,actor), ctx.now)
+        return measured_compare(elapsed, c.seconds or c.value, direction)
+    end)
+end
+ConditionRegistry:RegisterUseCondition("action_phase_is", function(ctx,c)
+    local actor = action_actor(ctx,c)
+    if not actor then return false end
+    return Lifecycle.Phase(actor,observed_action(ctx,c,actor),ctx.now) == c.value
+end)
+ConditionRegistry:RegisterUseCondition("release_action_available", function(ctx)
+    return Lifecycle.CanRelease(ctx.caster,ctx.current_action_spec)
 end)
 
 return ConditionRegistry

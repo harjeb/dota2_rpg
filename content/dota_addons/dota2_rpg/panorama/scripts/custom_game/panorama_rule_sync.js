@@ -19,7 +19,7 @@ var RpgRuleSync = (function () {
             var category = failure.reason === "wrong_phase" ? "rule_wrong_phase"
                 : failure.reason === "invalid_hero" ? "rule_invalid_hero"
                 : failure.reason === "action_not_allowed_for_hero" ? "rule_invalid_action" : "rule_invalid_conditions";
-            notice.text = $.Localize("#dota2_rpg_v2_rule_failed") + " " + $.Localize("#"+failure.hero) + " / " + failure.slot + ": " + $.Localize("#dota2_rpg_v2_"+category);
+            notice.text = $.Localize("#dota2_rpg_v2_rule_failed") + " " + $.Localize("#"+failure.hero) + " / " + failure.slot + ": " + $.Localize("#dota2_rpg_v2_"+category) + " / " + (typeof RpgAbilityCapabilities!=="undefined" ? RpgAbilityCapabilities.message(failure.reason) : failure.reason);
         }
     }
     function onResult(result) {
@@ -209,8 +209,8 @@ var RpgRuleSync = (function () {
             action_kind: actionKind(action),
             action_id: action === "attack" ? "basic_attack" : String(args.actionName || action),
             action_name: action === "attack" ? "" : String(args.actionName || ""),
-            target_team: targetTeam(target),
-            target_types: targetTypes(target),
+            target_team: rule.target_team || targetTeam(target),
+            target_types: Array.isArray(rule.target_types) ? rule.target_types.join(",") : rule.target_types || targetTypes(target),
             approach: rule.forced ? "allow_approach" : "range_only"
         };
 
@@ -243,11 +243,17 @@ var RpgRuleSync = (function () {
         payload.target_attr = String(rule.target_attr || "");
         // A zero/absent hit count disables spatial AoE gating. Radius always
         // comes from the native spell; UI cannot enlarge its real effect.
-        if (numberValue(rule.min_aoe_hits, 0) > 0) { payload.min_aoe_hits = Math.max(1, Math.min(20, Math.floor(numberValue(rule.min_aoe_hits, 1)))); }
         if (rule.destination && rule.destination !== "target") { payload.destination = rule.destination; }
         if (rule.cast_preference === "unit" || rule.cast_preference === "point") { payload.cast_preference = rule.cast_preference; }
         if (rule.desired_toggle_state === true || rule.desired_toggle_state === "1" || rule.desired_toggle_state === 1) { payload.desired_toggle_state = "1"; }
         if (rule.desired_toggle_state === false || rule.desired_toggle_state === "0" || rule.desired_toggle_state === 0) { payload.desired_toggle_state = "0"; }
+        ["cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds"].forEach(function(key) {
+            if (rule[key] !== undefined && rule[key] !== null && rule[key] !== "") { payload[key]=rule[key]; }
+        });
+        if (rule.desired_autocast_state !== undefined && rule.desired_autocast_state !== null && rule.desired_autocast_state !== "") {
+            payload.desired_autocast_state=bool(rule.desired_autocast_state,false) ? "1" : "0";
+        }
+        payload.allow_unverified_modifiers=bool(rule.allow_unverified_modifiers,false) ? 1 : 0;
         var settings = actionSettings(rule, action);
         Object.keys(settings).forEach(function (key) { payload[key] = typeof settings[key] === "boolean" ? (settings[key] ? 1 : 0) : settings[key]; });
         if (action === "sustained_move") { payload.action_id = "sustained_move"; payload.action_name = ""; }
@@ -290,7 +296,7 @@ var RpgRuleSync = (function () {
             target:team === "self" ? "self" : team+"_"+suffix,target_attr:attr,target_side:side,
             destination:source.destination || "target",
             cast_preference:source.cast_preference || "auto",
-            min_aoe_hits:numberValue(source.min_aoe_hits,0),desired_toggle_state:source.desired_toggle_state === "0" ? false : source.desired_toggle_state === "1" ? true : null };
+            desired_toggle_state:source.desired_toggle_state === "0" ? false : source.desired_toggle_state === "1" ? true : null };
         ["use_conditions","target_filters","target_priorities"].forEach(function(key) {
             rule[key] = list(source[key]).map(function(item) {
                 var copy = JSON.parse(JSON.stringify(item));
@@ -300,6 +306,10 @@ var RpgRuleSync = (function () {
         });
         var first = rule.use_conditions[0] || {type:"always"};
         rule.condition = first.type; rule.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
+        rule.target_team=team; rule.target_types=source.target_types || targetTypes(rule.target);
+        ["cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds"].forEach(function(key) { if (source[key]!==undefined && source[key]!=="") { rule[key]=source[key]; } });
+        rule.desired_autocast_state=bool(source.desired_autocast_state,null);
+        rule.allow_unverified_modifiers=bool(source.allow_unverified_modifiers,false);
         var settings = actionSettings(source, rule.action);
         Object.keys(settings).forEach(function (key) { rule[key] = settings[key]; });
         return rule;
@@ -317,15 +327,18 @@ var RpgRuleSync = (function () {
             var use = useCondition(rule);
             if (use.type.indexOf("_pct_") >= 0) { use.value *= 100; }
             var settings = {
+                target_team:rule.target_team || targetTeam(rule.target),
+                target_types:rule.target_types || targetTypes(rule.target),
+                target:rule.target,
                 use_conditions: rule.use_conditions || [use],
                 target_filters: rule.target_filters || [targetFilter(rule) || { type: "" }],
                 target_priorities: rule.target_priorities || [{ type: targetPriority(rule.target) }],
                 forced: bool(rule.forced, false),
                 destination: rule.destination || "target",
                 cast_preference: rule.cast_preference || "auto",
-                min_aoe_hits: rule.min_aoe_hits || 0,
                 desired_toggle_state: rule.desired_toggle_state === undefined ? null : rule.desired_toggle_state
             };
+            ["desired_autocast_state","cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds","allow_unverified_modifiers"].forEach(function(key) { if (rule[key]!==undefined) { settings[key]=rule[key]; } });
             var extra = actionSettings(rule, rule.action);
             Object.keys(extra).forEach(function (key) { settings[key] = extra[key]; });
             return JSON.parse(JSON.stringify(settings));

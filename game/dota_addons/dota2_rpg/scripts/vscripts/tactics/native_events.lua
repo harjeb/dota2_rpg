@@ -8,6 +8,7 @@ function M.RecordSuccess(unit, name, now)
     sequence = sequence + 1
     events.casts[name] = (events.casts[name] or 0) + 1
     events.successes[name] = {sequence=sequence, time=now}
+    require("tactics/action_lifecycle").Executed(unit,name,now)
 end
 function M.SucceededAfter(actor, prerequisite, caster, action, seconds, now)
     local before = actor and actor.rpgTacticsEvents and actor.rpgTacticsEvents.successes

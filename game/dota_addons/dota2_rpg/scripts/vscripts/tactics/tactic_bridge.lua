@@ -152,19 +152,19 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
         is_default = legacy.is_default == true,
 		enabled = legacy.enabled ~= false and legacy.enabled ~= 0 and legacy.enabled ~= "0",
-		action = require("tactics/movement_contract").Copy(decoded.action, {
+		action = require("tactics/action_options").Copy(decoded.action, require("tactics/movement_contract").Copy(decoded.action, {
 			kind = actionKind,
 			logical_id = logicalId,
             destination = decoded.action.destination,
             cast_preference = decoded.action.cast_preference,
             desired_toggle_state = decoded.action.desired_toggle_state,
 			target_team = target.team or "enemy",
-		}),
+		})),
+        allow_unverified_modifiers = decoded.allow_unverified_modifiers,
 		target = target,
 		target_filters = filters,
 		target_priorities = priorities,
 		use_conditions = useConditions,
-        min_aoe_hits = decoded.min_aoe_hits,
 		approach = (legacy.forced == true or legacy.forced == 1 or legacy.forced == "1") and "allow_approach" or "range_only",
 	})
 end
@@ -555,6 +555,19 @@ function TacticBridge:Install()
         is_target_actor_allowed = function(_player_id, hero, key)
             return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, hero, key) ~= nil
         end,
+        validate_action_reference = function(hero, actorKey, actionId)
+            local actor=hero
+            if actorKey and actorKey~="" then actor=buildContext(hero).get_action_actor(actorKey) end
+            if not actor then return false,"condition_actor_not_in_current_roster" end
+            if actionId=="attack" or actionId=="basic_attack" then return true end
+            local name=resolveActionName(actor,actionId)
+            if not name then return false,"condition_action_not_owned" end
+            if Context.Call(actor,"FindAbilityByName",name) then return true end
+            for slot=0,8 do
+                if Context.Call(Context.Call(actor,"GetItemInSlot",slot),"GetAbilityName")==name then return true end
+            end
+            return false,"condition_action_not_owned"
+        end,
 		is_action_allowed = is_action_allowed_for_hero,
         get_initial_rules = function(hero)
             return manager.getRules(hero)
@@ -580,7 +593,7 @@ function TacticBridge:Install()
 		selector = TargetSelector.new(conditionsRegistry),
 		actions = ActionAdapter.new(orderGate),
 		on_debug = function(unit, event, detail)
-			print(string.format("[TacticDebug] %s %s %s", unit:GetUnitName(), event, detail.reason or detail.target_index or ""))
+            require("tactics/rule_diagnostics").Publish(unit, Snapshot.HeroKey(gameMode.battleManager,unit), event, detail, GameRules:GetGameTime())
 		end,
 	})
 
@@ -612,6 +625,7 @@ function TacticBridge:OnThink()
 end
 
 function TacticBridge:ResetState()
+    require("tactics/rule_diagnostics").Reset()
     self.unitObservation = nil
 	self.tacticEngine:Reset()
 	self.combatMemory:Reset()

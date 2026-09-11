@@ -1,7 +1,7 @@
 """Audit baseline, reproducibility and the real preset -> JS wire -> Lua contract.
 Run: python tests/condition-coverage.test.py
-Node is required. Lua validation uses the optional lupa package (or is explicitly
-reported skipped); it never loads Dota or starts/stops a game.
+Node and a Lua CLI runtime are required. No backend validation is silently skipped;
+this suite never loads Dota or starts/stops a game.
 """
 import copy
 import importlib.util
@@ -45,7 +45,8 @@ for (const row of data.rows) {
     for (const variant of api.variants(row.id)) {
         const preset = api.get(row.id, variant);
         assert.deepStrictEqual(JSON.parse(JSON.stringify(preset)), data.families[variant].rule, row.id);
-        let nontrivial = preset.min_aoe_hits > 1 || variant === 'teammate_buff_allow_self';
+        let nontrivial = variant === 'teammate_buff_allow_self';
+        assert.strictEqual(preset.min_aoe_hits, undefined, 'retired hit-count condition cannot return in presets');
         [['use_conditions', 'use', 4], ['target_filters', 'target', 4], ['target_priorities', 'priority', 2]].forEach(([key, group, max]) => {
             assert(Array.isArray(preset[key]));
             assert(preset[key].length <= max);
@@ -69,7 +70,7 @@ for (const row of data.rows) {
         assert.strictEqual(payload.target_team, preset.target_team, row.id + ' team changed in wire');
         assert.strictEqual(payload.rule_count, 32);
         assert.strictEqual(payload.action_id, row.id);
-        if (preset.min_aoe_hits !== undefined) assert.strictEqual(payload.min_aoe_hits, preset.min_aoe_hits);
+        assert.strictEqual(payload.min_aoe_hits, undefined, 'retired hit-count field cannot be sent');
         if (preset.desired_toggle_state !== undefined) assert.strictEqual(payload.desired_toggle_state, preset.desired_toggle_state);
         for (const value of Object.values(payload)) assert(['string', 'number', 'boolean'].includes(typeof value));
         assert(!Object.keys(preset).some(key => /vector|channel|release|phase/.test(key)), row.id);
@@ -280,39 +281,34 @@ class ConditionCoverage(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         records = json.loads(result.stdout)
         self.assertEqual(len(records), sum(len(r['preset_variants']) for r in self.rows))
-        try:
-            from lupa import LuaRuntime
-        except ImportError:
-            self.skipTest('Frontend passed; Lua decode/validation requires optional lupa')
-        lua = LuaRuntime(unpack_returned_tuples=True)
-        lua.globals().coverage_script_root = str(ROOT / 'game/dota_addons/dota2_rpg/scripts/vscripts').replace('\\', '/')
-        lua.execute("package.path = coverage_script_root .. '/?.lua;' .. package.path")
-        validate = lua.eval('''function(flat)
-            local Service = require('tactics/rule_service')
-            local service = Service.new({ get_phase = function() return 'PREPARE' end,
-                is_roster_hero = function() return true end,
-                is_action_allowed = function() return true end, state = {rules={}} })
-            local decoded = service:DecodeFlat(flat)
-            local ok, reason = service:ValidateRule(0, {}, decoded)
-            return ok, reason, decoded
-        end''')
-        for record in records:
-            ok, reason, decoded = validate(lua.table_from(record['payload']))
-            self.assertTrue(ok, f"{record['id']}/{record['variant']}: {reason}")
-            preset = record['rule']
-            self.assertEqual(decoded['target']['team'], preset['target_team'])
-            for key in ['use_conditions', 'target_filters', 'target_priorities']:
-                self.assertEqual(len(decoded[key]), len(preset[key]), record['id'])
-                for i, expected in enumerate(preset[key], 1):
-                    actual = decoded[key][i]
-                    self.assertEqual(actual['type'], expected['type'])
-                    if '_pct_' in expected['type']:
-                        self.assertAlmostEqual(actual['value'], expected['value'] / 100)
-                    for field in ['radius', 'seconds', 'action_id']:
-                        if field in expected:
-                            self.assertEqual(actual[field], expected[field])
-            if 'desired_toggle_state' in preset:
-                self.assertEqual(decoded['action']['desired_toggle_state'], preset['desired_toggle_state'] == '1')
+        from lua_test_runtime import lua_literal, run_lua
+        source = "local records=" + lua_literal(records) + r'''
+local Service=require("tactics/rule_service")
+local service=Service.new({get_phase=function() return "PREPARE" end,
+    is_roster_hero=function() return true end,is_action_allowed=function() return true end,state={rules={}}})
+for _,record in ipairs(records) do
+    local decoded=service:DecodeFlat(record.payload)
+    local ok,reason=service:ValidateRule(0,{},decoded)
+    local label=record.id.."/"..record.variant
+    assert(ok,label..": "..tostring(reason))
+    local preset=record.rule
+    assert(decoded.target.team==preset.target_team,label.." target team")
+    for _,key in ipairs({"use_conditions","target_filters","target_priorities"}) do
+        assert(#decoded[key]==#preset[key],label.." condition length")
+        for index,expected in ipairs(preset[key]) do
+            local actual=decoded[key][index]
+            assert(actual.type==expected.type,label.." condition type")
+            if expected.type:find("_pct_",1,true) then assert(math.abs(actual.value-expected.value/100)<1e-9,label.." percent") end
+            for _,field in ipairs({"radius","seconds","action_id"}) do
+                if expected[field]~=nil then assert(actual[field]==expected[field],label.." "..field) end
+            end
+        end
+    end
+    if preset.desired_toggle_state~=nil then assert(decoded.action.desired_toggle_state==(preset.desired_toggle_state=="1"),label.." toggle") end
+end
+print("PASS: real JavaScript -> Lua serialization for "..#records.." preset variants")
+'''
+        self.assertIn("PASS: real JavaScript -> Lua", run_lua(source))
 
 
 if __name__ == '__main__':

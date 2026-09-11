@@ -1524,3 +1524,14 @@
 #RightSidebar .SidePanelMinimized { height: 44px; }
 #BattleCountdown { horizontal-align: center; color: #e8dba0; font-size: 24px; font-weight: bold; }
 #BattleCountdown.CountdownUrgent { color: #ff7777; }
+
+/* Capability-aware editor and the bounded last-evaluation badge. */
+.RuleSettingsButton { height: 52px; flow-children: down; padding: 3px; }
+.RuleSettingsButton Label { vertical-align: top; }
+.RuleSettingsButton .RuleDiagnostic { width: 100%; height: 20px; font-size: 11px; color: #a4cbb1; text-overflow: ellipsis; }
+.RuleSettingsButton .RuleDiagnosticWarning { color: #e3bd83; }
+.V2Button:disabled { opacity: 0.38; saturation: 0; }
+#RuleSettingsError { white-space: normal; max-height: 110px; overflow: squish scroll; }
+#V2CapabilitySummary { width: 100%; color: #b8d6e1; }
+#V2ModifierAckRow { width: 100%; }
+#V2StatePolicyRow, #V2AutocastRow, #V2VariantRow { margin-top: 7px; }

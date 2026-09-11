@@ -19,6 +19,7 @@ local source = {
     GetAbilityTargetType=function() return target_type end,
     GetCastRange=function() return 300 end,
     GetLevel=function() return 1 end,
+    GetToggleState=function() return false end,
     entindex=function() return 99 end,
 }
 local caster = {

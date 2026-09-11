@@ -266,6 +266,8 @@ local actorArgs={action_kind="ability",action_id="native_active",
     use_condition_1_action_id="native_active",use_condition_1_action_actor=actorKey,
     use_condition_2_type="action_use_count_lt",use_condition_2_value=2,
     use_condition_2_action_id="native_active",use_condition_2_action_actor=actorKey}
+-- A reference must be owned at save time, not injected only after validation.
+far.FindAbilityByName=caster.FindAbilityByName
 local actorRule=bridge.ruleService:DecodeFlat(actorArgs)
 check(bridge.ruleService:ValidateRule(0,caster,actorRule),"actor flat payload validates")
 gm.battleManager.getRules=function() return {actorRule} end
@@ -382,7 +384,8 @@ local destinationSnapshot=Snapshot.ForHero(gm.battleManager,caster)[1]
 local destinationRestored=Bridge.ConvertLegacyRule(1,destinationSnapshot)
 check(bridge.ruleService:ValidateRule(0,caster,destinationRestored)
     and destinationRestored.action.destination=="remnant_safe" and destinationRestored.action.cast_preference=="point"
-    and destinationRestored.min_aoe_hits==2,"snapshot and legacy restore retain destination, cast choice and hit gate")
+    and destinationRestored.min_aoe_hits==nil and destinationSnapshot.min_aoe_hits==nil,
+    "snapshot and legacy restore retain destination and cast choice while discarding hit count")
 local controlled=unit(99,2,100)
 check(not filterOptions.is_battle_unit(controlled),"unrelated unit is not order-managed")
 for _,field in ipairs({"managedSummons","tempestDoubles","specialObjects"}) do

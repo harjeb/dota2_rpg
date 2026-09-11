@@ -97,7 +97,7 @@ enemy.x=350;attempt(nil,"use_condition_failed:tiny_grab_is_enemy");enemy.x=190
 ally.x=190;attempt(nil,"use_condition_failed:tiny_grab_is_enemy");ally.x=400
 enemy.ancient=true;attempt(nil,"use_condition_failed:tiny_grab_is_enemy");enemy.ancient=false
 -- Landing filters and range remain independent of the valid grab.
-candidates={landing};landing.x=1100;attempt(nil,"no_target_in_range_or_aoe_min_hits");landing.x=700
+candidates={landing};landing.x=1100;attempt(nil,"no_target_in_range");landing.x=700
 for _,field in ipairs({"invalid","dead","invulnerable","outOfGame"})do
     landing[field]=true;attempt(nil,"no_legal_target");landing[field]=nil
 end

@@ -108,7 +108,7 @@ local events={}
 local addon={battleManager=manager,currentLevelId="ch05"}
 local compile=loadstring or load
 local install=assert(compile("return function(RuleSnapshot, AbilityCatalog, TacticEngine, BuildHeroActionSlots, DescribeAction, CDota2RpgDemo, CustomGameEventManager) "..body.." end"))()
-install(Snapshot,{ListAbilities=function() return {} end},{IsValidUnit=function(u) return not u:IsNull() end},
+install(Snapshot,{ListAbilities=function() return {} end,PublishCapabilities=function() return 1 end},{IsValidUnit=function(u) return not u:IsNull() end},
     function() return {} end,function() return "","" end,addon,
     {Send_ServerToAllClients=function(_,event,data) events[#events+1]={event=event,data=data} end})
 second.team=3

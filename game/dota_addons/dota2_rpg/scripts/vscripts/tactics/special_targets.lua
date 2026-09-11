@@ -59,18 +59,6 @@ function Special.SelectDestination(rule, spec, ctx, conditions)
         return true, nil, nil, "invalid_destination"
     end
     local function result(unit)
-        local minimum = tonumber(rule.min_aoe_hits) or 0
-        if minimum > 0 then
-            local radius = tonumber(call(spec.source or spec.ability,"GetAOERadius")) or 0
-            local count = 0
-            if radius > 0 then
-                for _, enemy in ipairs(ctx.enemies or {}) do
-                    if valid(enemy) and call(enemy,"IsAlive") ~= false and call(enemy,"IsOutOfGame") ~= true
-                        and call(enemy,"IsInvulnerable") ~= true and distance(unit,enemy) <= radius then count=count+1 end
-                end
-            end
-            if count < minimum then return true,nil,nil,"not_enough_destination_hits" end
-        end
         return true,unit:GetAbsOrigin(),unit
     end
     if mode == "self" then

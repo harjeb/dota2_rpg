@@ -23,6 +23,7 @@ local phase_groups = {
     {"hoodwink_sharpshooter", "hoodwink_sharpshooter_release"},
     {"primal_beast_onslaught", "primal_beast_onslaught_release"},
     {"monkey_king_mischief", "monkey_king_untransform"},
+    {"monkey_king_primal_spring", "monkey_king_primal_spring_early"},
     {"naga_siren_song_of_the_siren", "naga_siren_song_of_the_siren_cancel"},
     {"life_stealer_infest", "life_stealer_consume"},
     {"rubick_telekinesis", "rubick_telekinesis_land"},
@@ -121,4 +122,21 @@ function Catalog.DescribeAction(hero, action)
     return "ability", action
 end
 
+local capabilityRevision=0
+function Catalog.PublishCapabilities(hero,actions,heroKey)
+    capabilityRevision=capabilityRevision+1
+    local A=require("tactics/ability_capability")
+    for _,id in ipairs(actions or {}) do
+        local kind,name=Catalog.DescribeAction(hero,id)
+        local action={kind=kind,name=name,logical_id=id}
+        local cap=A.ForAction(hero,action)
+        if cap then
+            cap.source_index=require("tactics/condition_context").Call(A.Source(hero,action),"entindex") or -1
+            CustomGameEventManager:Send_ServerToAllClients("rpg_action_capability",{
+                hero_index=hero:entindex(),rule_key=heroKey or "",action_id=id,
+                revision=capabilityRevision,capability=cap})
+        end
+    end
+    return capabilityRevision
+end
 return Catalog

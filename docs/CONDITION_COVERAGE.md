@@ -18,7 +18,7 @@
 
 `RpgSkillPresets.get(id[, variant])` 返回独立草稿；不支持时返回 `null`，`variants` 返回空数组。`unsupportedReason` 只返回通用提示；详细排除原因仅在文档/JSON。JS仅包含通用模板族与支持映射，不包含待实现规则。
 
-UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、距离为世界单位。开关开启/关闭分别配置规则。圆形AOE使用原生半径，未知半径不能宣称命中。条件表达不保证施法成功、击杀、位移安全或引导完成。UI实现说明由独立主文档负责。
+UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、距离为世界单位。开关开启/关闭分别配置规则。不提供技能命中人数条件；附近敌人数仅观察指定半径内的单位，不估算技能命中。条件表达不保证施法成功、击杀、位移安全或引导完成。UI实现说明由独立主文档负责。
 
 复现：`python scripts/build-condition-coverage.py --check`；验证：`python tests/condition-coverage.test.py`。默认只读取入库快照；`--source-dir`以大小写不敏感的路径/token读取原始两份提取JSON，保留所有原生定义并合并入库机制库存。
 

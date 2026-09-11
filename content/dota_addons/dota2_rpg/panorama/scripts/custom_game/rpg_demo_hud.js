@@ -271,6 +271,32 @@
         GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", { hero: heroName });
     }
 
+    // CEM object keys can arrive in any order; rule/condition/priority arrays keep their order.
+    function ruleSnapshot(value) {
+        return JSON.stringify(value, function (key, child) {
+            if (!child || typeof child !== "object" || Array.isArray(child)) { return child; }
+            var ordered = {};
+            Object.keys(child).sort().forEach(function (name) { ordered[name] = child[name]; });
+            return ordered;
+        });
+    }
+
+    // Bind to one hero, row and action. Identical refresh snapshots retain row objects;
+    // actual replacement, reordering or concurrent edits invalidate this binding.
+    function bindRuleEdit(side, heroIndex, index) {
+        var entry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
+        var rule = getRules(side, heroIndex)[index];
+        var snapshot = ruleSnapshot(rule);
+        var actionDetail = rule && getActionDetail(side, heroIndex, rule.action);
+        return function () {
+            var live = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
+            return canEditHeroRules(side, heroIndex) && entry && live && rule
+                && live.name === entry.name && live.rule_key === entry.rule_key && live.hero_index === entry.hero_index
+                && getRules(side, heroIndex)[index] === rule && ruleSnapshot(rule) === snapshot
+                && getActionDetail(side, heroIndex, rule.action) === actionDetail;
+        };
+    }
+
     function getSelectedRules(side) {
         return getRules(side, selectedHeroIndex[side]);
     }
@@ -318,6 +344,12 @@
         return button;
     }
 
+    function getRuleCapability(side, heroIndex, action) {
+        if (typeof RpgAbilityCapabilities === "undefined") { return null; }
+        var entry=heroSlots[side.toLowerCase()+"_"+(heroIndex+1)];
+        return entry ? RpgAbilityCapabilities.get(entry.hero_index,action,entry.rule_key,entry.capability_revision) : null;
+    }
+
     function createRuleRows(side) {
         var container = $("#" + side + "Rules");
         for (var index = rowPanels[side].length; index < getSelectedRules(side).length; index++) {
@@ -339,18 +371,18 @@
                 var settingsButton = $.CreatePanel("Button", row, side + "RuleSettings" + idx);
                 settingsButton.AddClass("RuleSettingsButton");
                 createLabel(settingsButton, "", $.Localize("#dota2_rpg_v2_settings"));
+                var diagnosticLabel=createLabel(settingsButton,"RuleDiagnostic","");
+                diagnosticLabel.AddClass("RuleDiagnostic");
                 settingsButton.SetPanelEvent("onactivate", function () {
                     if (phase !== "setup") { return; }
 
                     closeEditorMenus();
                     var editingHeroIndex = selectedHeroIndex[side];
-                    var editingEntry = heroSlots[side.toLowerCase() + "_" + (editingHeroIndex + 1)];
+                    var editIsCurrent = bindRuleEdit(side, editingHeroIndex, idx);
                     var authored = getRules(side, editingHeroIndex)[idx];
                     RpgConditionCatalog.open(authored, RpgRuleSync.initialSettings(authored), function (draft) {
-                        var currentEntry = heroSlots[side.toLowerCase() + "_" + (editingHeroIndex + 1)];
-                        if (!canEditHeroRules(side, editingHeroIndex) || !editingEntry || !currentEntry
-                            || currentEntry.rule_key !== editingEntry.rule_key || currentEntry.hero_index !== editingEntry.hero_index
-                            || getRules(side, editingHeroIndex)[idx] !== authored) { return; }
+                        if (!editIsCurrent()) { return false; }
+                        delete authored.min_aoe_hits;
                         Object.keys(draft).forEach(function (key) { authored[key] = draft[key]; });
                         if (draft.target !== undefined) {
                             authored.target_attr = "distance";
@@ -361,7 +393,7 @@
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
-                    }, {abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
+                    }, {getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -388,6 +420,7 @@
                 actionMenu.AddClass("Hidden");
                 rowPanels[side].push({
                     settingsButton: settingsButton,
+                    diagnosticLabel:diagnosticLabel,
                     actionSelect: actionIcon,
                     actionMenu: actionMenu,
                     actionAbilityImage: abilityImage,
@@ -501,11 +534,35 @@
         if (!rules[index]) {
             return;
         }
-        if (rules[index].action !== actionKey) { rules[index].destination = "target"; }
-        rules[index].action = actionKey;
+        if (typeof RpgAbilityCapabilities === "undefined") {
+            if (rules[index].action !== actionKey) { rules[index].destination = "target"; }
+            rules[index].action=actionKey; closeEditorMenus();
+            sendRuleToServer(side,selectedHeroIndex[side],index); renderSide(side); return;
+        }
+        var heroIndex=selectedHeroIndex[side], original=rules[index];
+        var editIsCurrent=bindRuleEdit(side,heroIndex,index);
+        var chosenActionDetail=getActionDetail(side,heroIndex,actionKey);
+        var next=JSON.parse(JSON.stringify(original)); next.action=actionKey; next.destination="target";
+        delete next.min_aoe_hits;
         closeEditorMenus();
-        sendRuleToServer(side, selectedHeroIndex[side], index);
-        renderSide(side);
+        // A skill switch is a draft, not a saved mutation. Cancelling preserves the old rule.
+        RpgConditionCatalog.open(next,RpgRuleSync.initialSettings(next),function(draft) {
+            if (!editIsCurrent() || getActionDetail(side,heroIndex,actionKey)!==chosenActionDetail) { return false; }
+            Object.keys(draft).forEach(function(key) { next[key]=draft[key]; });
+            // Persist a native ability identity, not a slot which can later be replaced.
+            var chosenCapability=getRuleCapability(side,heroIndex,actionKey);
+            if (/^ability_\d+$/.test(actionKey) || actionKey==="ultimate") {
+                if (chosenCapability && chosenCapability.name) { next.action=chosenCapability.name; }
+            }
+            var first=next.use_conditions[0] || {type:"always"}; next.condition=first.type || "always";
+            next.value=first.seconds!==undefined ? first.seconds : first.value!==undefined ? first.value : 50;
+            Object.keys(original).forEach(function(key) { delete original[key]; });
+            Object.keys(next).forEach(function(key) { original[key]=next[key]; });
+            renderSide(side); sendRuleToServer(side,heroIndex,index);
+        },{abilityName:getActionDetail(side,heroIndex,actionKey),
+            getCapability:function() { return getRuleCapability(side,heroIndex,actionKey); },
+            actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function() { return targetActors(side,heroIndex); },
+            readOnly:!canEditHeroRules(side,heroIndex)});
     }
 
     function deleteRule(side, index) {
@@ -641,6 +698,10 @@
             panels.settingsButton.enabled = !hidePanels;
             panels.actionSelect.enabled = !locked;
             panels.settingsButton.SetHasClass("HasAdvancedSettings", Array.isArray(definition.use_conditions));
+            if (typeof RpgRuleDiagnostics!=="undefined") {
+                var diagEntry=heroSlots[side.toLowerCase()+"_"+(heroIndex+1)];
+                if (diagEntry) { RpgRuleDiagnostics.bind(panels.diagnosticLabel,diagEntry.hero_index,diagEntry.rule_key,index+1,detailName || definition.action); }
+            }
 
 
             panels.upButton.enabled = !locked && index > 0;
@@ -1776,6 +1837,7 @@
             actions_text: String(data.actions_text || ""),
             abilities_text: data.abilities_text === undefined ? undefined : String(data.abilities_text),
             details_text: String(data.details_text || ""),
+            capability_revision:data.capability_revision===undefined ? undefined : Number(data.capability_revision),
             can_edit: data.can_edit === undefined || Number(data.can_edit) === 1,
             rules_ready: data.rules_ready === undefined || Number(data.rules_ready) === 1
         };
@@ -1787,8 +1849,15 @@
             if (Number(data.rules_ready) === 1 && (!current._serverHydrated || !current._authored || heroSlots[slotKey].can_edit === false)) {
                 var restored = RpgRuleSync.list(data.rules).map(RpgRuleSync.fromServer);
                 if (!restored.length) { restored = buildRulesForHero(side,heroIndex); }
-                current.splice(0,current.length);
-                restored.forEach(function(rule) { current.push(rule); });
+                // A capability refresh sends the same rules again. Preserve their edit
+                // identities only when the entire ordered snapshot and hero still match.
+                var sameHero = previousSlot && previousSlot.name === heroSlots[slotKey].name
+                    && previousSlot.hero_index === heroSlots[slotKey].hero_index
+                    && previousSlot.rule_key === heroSlots[slotKey].rule_key;
+                if (!sameHero || ruleSnapshot(current) !== ruleSnapshot(restored)) {
+                    current.splice(0,current.length);
+                    restored.forEach(function(rule) { current.push(rule); });
+                }
                 current._serverHydrated = true;
             } else if (!current._serverHydrated && !current._authored) {
                 current.splice(0,current.length);

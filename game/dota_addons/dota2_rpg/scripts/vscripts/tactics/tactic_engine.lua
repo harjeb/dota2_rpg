@@ -6,6 +6,9 @@ local Movement = require("tactics/persistent_movement")
 local Positioning = require("tactics/positioning")
 local NativeEvents = require("tactics/native_events")
 local NeutralAttack = require("tactics/neutral_attack")
+local Compatibility = require("tactics/rule_compatibility")
+local Lifecycle = require("tactics/action_lifecycle")
+local StateControl = require("tactics/state_controller")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -94,6 +97,8 @@ function TacticEngine:GetState(unit)
     if state ~= nil and state.unit ~= unit then
         Movement.Release(self, state.unit, state, {}, false)
         pcall(NativeEvents.Detach, state.unit)
+        Lifecycle.Reset(state.unit)
+        StateControl.Reset(state.unit)
         state = nil
     end
     if state == nil then
@@ -131,6 +136,8 @@ function TacticEngine:Reset()
         if state.movement then Movement.Release(self, state.unit, state, {}, true)
         else Movement.StopOrder(self, state.unit, state.posture_order, {}) end
         pcall(NativeEvents.Detach, state.unit)
+        Lifecycle.Reset(state.unit)
+        StateControl.Reset(state.unit)
     end
     self.states = {}
 end
@@ -167,6 +174,8 @@ function TacticEngine:Think()
         if not is_alive(state.unit) then
             Movement.Release(self, state.unit, state, {}, true)
             pcall(NativeEvents.Detach, state.unit)
+        Lifecycle.Reset(state.unit)
+        StateControl.Reset(state.unit)
             self.states[id] = nil
         end
     end
@@ -213,6 +222,7 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         return
     end
 
+    Lifecycle.Observe(unit, current_time)
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
     state.events = state.events or NativeEvents.Attach(unit)
@@ -227,7 +237,24 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         end
         if Movement.Continue(self, unit, state, ctx) then return end
     end
-    if self:IsBusy(unit) then return end
+    local busy, busy_reason = self:IsBusy(unit)
+    if busy then
+        -- Only the reviewed release belonging to the active channel may pass.
+        -- Never let an attack/move/fallback cancel an unrelated channel.
+        if busy_reason == "channeling" then
+            for index, rule in ipairs(rules) do
+                if rule.enabled ~= false and rule.action then
+                    local spec = self.actions:Resolve(unit, rule.action, ctx)
+                    if spec and Lifecycle.CanRelease(unit, spec) then
+                        local done, why = self:TryRule(unit, state, ctx, rule, index)
+                        if done then return end
+                        self:Debug(unit, "rule_skipped", {rule_index=index, action_id=spec.logical_id, reason=why, conditions=ctx.condition_trace})
+                    end
+                end
+            end
+        end
+        return
+    end
 
     -- A higher-priority emergency rule may interrupt a movement chase.
     if state.chase ~= nil then
@@ -272,6 +299,8 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
                 rule_index = index,
                 action_id = rule.action and (rule.action.name or rule.action.logical_id or rule.action.kind),
                 reason = reason,
+                conditions = ctx.condition_trace,
+                native_targets = ctx.native_target_trace,
             })
         end
     end
@@ -286,7 +315,7 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
     elseif spec.target_mode == "point" then
         local point, anchor, reason = self.selector:SelectPoint(rule, spec, ctx)
         return point, anchor, reason
-    elseif spec.target_mode == "none" or spec.cast_type == "toggle" then
+    elseif spec.target_mode == "none" or spec.cast_type == "toggle" or spec.cast_type == "autocast" then
         local passed, reason = self.selector:CheckNoTarget(rule, spec, ctx)
         if not passed then
             return nil, nil, reason
@@ -300,6 +329,8 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
 end
 
 function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
+    ctx.condition_trace = {}
+    ctx.native_target_trace = {accepted=0, rejected=0}
     local spec, resolve_reason = self.actions:Resolve(unit, rule.action, ctx)
     if spec == nil then
         return false, resolve_reason
@@ -307,6 +338,8 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
 
     ctx.current_action_id = spec.logical_id
     ctx.current_action_spec = spec
+    local compatible, why = Compatibility.Validate(unit, rule, {runtime=true, capability=spec.capability})
+    if not compatible then return false, why end
     local can_execute, action_reason = self.actions:CanExecute(unit, spec, ctx)
     if not can_execute then
         return false, action_reason
@@ -399,6 +432,11 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
 
     ctx.current_action_id = spec.logical_id
     ctx.current_action_spec = spec
+    local compatible, why = Compatibility.Validate(unit, rule, {runtime=true, capability=spec.capability})
+    if not compatible then
+        self:Debug(unit, "chase_cancelled", {reason=why, rule_index=chase.rule_index})
+        state.chase=nil; return false
+    end
     local can_execute = self.actions:CanExecute(unit, spec, ctx)
     local use_ok = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx)
     if not can_execute or not use_ok then
@@ -448,6 +486,11 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
 end
 
 function TacticEngine:OrderSignature(spec, target_or_point)
+    if StateControl.IsManaged(spec) then
+        local desired=spec.desired_toggle_state
+        if spec.cast_type=="autocast" then desired=spec.desired_autocast_state end
+        return spec.logical_id .. ":" .. spec.cast_type .. ":" .. tostring(desired)
+    end
     if spec.target_mode == "vector" then
         return spec.logical_id .. ":vector:" .. tostring(entity_index(target_or_point.primary))
             .. ":" .. round_position(target_or_point.start) .. ":" .. round_position(target_or_point.finish)
@@ -469,6 +512,9 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
         return false, reason
     end
     if reason == "attack_persisted" then return true, nil end
+    if spec.source and not StateControl.IsManaged(spec) then
+        Lifecycle.Requested(unit, Context.Call(spec.source,"GetAbilityName") or spec.logical_id, ctx.now)
+    end
 
     state.posture_order = nil
     state.last_order_signature = signature
@@ -486,6 +532,8 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
         rule_id = rule.id or rule_index,
         rule_index = rule_index,
         action_id = spec.logical_id,
+        reason = "order_submitted_not_native_confirmation",
+        conditions = ctx.condition_trace,
         target_index = anchor ~= nil and entity_index(anchor) or -1,
     })
     return true, nil

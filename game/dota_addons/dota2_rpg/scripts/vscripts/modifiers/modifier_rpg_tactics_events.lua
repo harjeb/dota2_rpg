@@ -6,7 +6,9 @@ function modifier_rpg_tactics_events:IsPurgable() return false end
 -- explicitly detach it; removing a hero destroys the modifier with that hero.
 function modifier_rpg_tactics_events:RemoveOnDeath() return false end
 function modifier_rpg_tactics_events:DeclareFunctions()
-    return {MODIFIER_EVENT_ON_ATTACK, MODIFIER_EVENT_ON_ATTACK_START, MODIFIER_EVENT_ON_ABILITY_EXECUTED}
+    local events={MODIFIER_EVENT_ON_ATTACK, MODIFIER_EVENT_ON_ATTACK_START, MODIFIER_EVENT_ON_ABILITY_EXECUTED}
+    if MODIFIER_EVENT_ON_ABILITY_END_CHANNEL then events[#events+1]=MODIFIER_EVENT_ON_ABILITY_END_CHANNEL end
+    return events
 end
 function modifier_rpg_tactics_events:OnAttackStart(event)
     if not IsServer() or event.attacker ~= self:GetParent() then return end
@@ -23,4 +25,12 @@ end
 function modifier_rpg_tactics_events:OnAbilityExecuted(event)
     if not IsServer() or event.unit ~= self:GetParent() or not event.ability then return end
     require("tactics/native_events").RecordSuccess(self:GetParent(), event.ability:GetAbilityName(), GameRules:GetGameTime())
+end
+
+function modifier_rpg_tactics_events:OnAbilityEndChannel(event)
+    if not IsServer() or event.unit ~= self:GetParent() or not event.ability then return end
+    local interrupted = type(event.interrupted)=="boolean" and event.interrupted or nil
+    -- Explicit false cannot use Lua's and/or shortcut.
+    if event.interrupted==false then interrupted=false end
+    require("tactics/action_lifecycle").ChannelEnded(self:GetParent(),event.ability:GetAbilityName(),GameRules:GetGameTime(),interrupted)
 end

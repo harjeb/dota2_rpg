@@ -3,6 +3,9 @@ local VectorTarget = require("tactics/vector_target")
 local Behavior = require("tactics/ability_behavior")
 local NativeTargeting = require("tactics/native_targeting")
 local NeutralAttack = require("tactics/neutral_attack")
+local Capability = require("tactics/ability_capability")
+local Lifecycle = require("tactics/action_lifecycle")
+local State = require("tactics/state_controller")
 local ActionAdapter = {}
 ActionAdapter.__index = ActionAdapter
 
@@ -170,8 +173,7 @@ local function ability_aoe_radius(ability)
         local ok, radius = pcall(ability.GetAOERadius, ability)
         if ok and tonumber(radius) ~= nil and radius > 0 then return radius end
     end
-    -- Do not guess a circle from damage_radius/width specials: line and cone
-    -- spells must not be counted as circular AoEs.
+    -- Preserve native radius semantics without guessing from width/damage specials.
     return 0
 end
 
@@ -271,6 +273,15 @@ function ActionAdapter:Resolve(caster, action, ctx)
         and DOTA_UNIT_TARGET_TREE ~= nil and source:GetAbilityTargetType() == DOTA_UNIT_TARGET_TREE then
         return nil, "special_adapter_required"
     end
+    if action.cast_variant ~= nil and action.cast_variant ~= "default" then
+        return nil, "alternate_adapter_unavailable"
+    end
+    if action.desired_autocast_state ~= nil then
+        if not has_flag(get_behavior(source), DOTA_ABILITY_BEHAVIOR_AUTOCAST) then
+            return nil, "autocast_not_supported"
+        end
+        native_cast_type = "autocast"
+    end
     local cast_type = action.cast_type or native_cast_type
     if cast_type ~= native_cast_type then return nil, "unsupported_cast_type" end
     local target_mode = action.target_mode or cast_type
@@ -286,6 +297,12 @@ function ActionAdapter:Resolve(caster, action, ctx)
         cast_type = cast_type,
         vector_mode = cast_type == "vector" and VectorTarget.NativeMode(source) or nil,
         desired_toggle_state = action.desired_toggle_state ~= false,
+        desired_autocast_state = action.desired_autocast_state,
+        state_policy = action.state_policy,
+        state_mana_on = action.state_mana_on,
+        state_mana_off = action.state_mana_off,
+        state_hold_seconds = action.state_hold_seconds,
+        capability = Capability.Describe(caster, source, action, {runtime=true}),
         aoe_radius = ability_aoe_radius(source),
         cast_range_override = tonumber(action.cast_range_override),
         cast_range = tonumber(action.cast_range_override) or ability_cast_range(caster, source, nil),
@@ -336,7 +353,7 @@ local function native_control(caster, spec, approaching)
     local function state(method)
         return caster[method] ~= nil and caster[method](caster)
     end
-    if state("IsChanneling") then return false, "channeling" end
+    if state("IsChanneling") and (approaching or not Lifecycle.CanRelease(caster, spec)) then return false, "channeling" end
     local active = caster.GetCurrentActiveAbility and caster:GetCurrentActiveAbility()
     if state("IsInAbilityPhase") or (active and active.IsInAbilityPhase and active:IsInAbilityPhase()) then
         return false, "ability_phase"
@@ -400,6 +417,15 @@ function ActionAdapter:CanExecute(caster, spec, ctx)
     if source.IsActivated ~= nil and not source:IsActivated() then
         return false, "action_deactivated"
     end
+    if State.IsManaged(spec) then
+        local change, why = State.CanChange(caster, spec, ctx)
+        if not change then return false, why end
+        -- Autocast state orders do not cast the spell or consume a charge.
+        if spec.cast_type == "autocast" then
+            if DOTA_UNIT_ORDER_CAST_TOGGLE_AUTO == nil then return false, "native_autocast_order_unavailable" end
+            return true
+        end
+    end
     local turning_off = spec.cast_type == "toggle" and spec.desired_toggle_state == false
         and source.GetToggleState ~= nil and source:GetToggleState()
     local maxCharges = spec.kind == "ability" and source.GetMaxAbilityCharges ~= nil
@@ -444,7 +470,7 @@ end
 
 function ActionAdapter:IsInRange(caster, spec, target_or_point)
     if spec.kind == "move" and spec.logical_id == "sustained_move" then return true end
-    if spec.cast_type == "toggle" or spec.target_mode == "none" or spec.target_mode == "self" or spec.kind == "wait" then
+    if spec.cast_type == "toggle" or spec.cast_type == "autocast" or spec.target_mode == "none" or spec.target_mode == "self" or spec.kind == "wait" then
         return true
     end
 
@@ -511,8 +537,8 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         local cast = {UnitIndex=unit_index, AbilityIndex=ability_index, OrderType=second, Queue=false}
         if mode == "point" then cast.Position = target.start else cast.TargetIndex = target_index end
         release_fallback_target(caster)
-        self.order_gate:Execute(setup)
-        self.order_gate:Execute(cast)
+        if self.order_gate:Execute(setup) == false then return false, "vector_setup_rejected" end
+        if self.order_gate:Execute(cast) == false then return false, "vector_cast_rejected" end
         return true, nil
     end
     if (spec.cast_type == "unit" or spec.kind == "attack") and not self:IsValidTarget(caster, spec, target_or_point) then
@@ -560,6 +586,10 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
     elseif spec.cast_type == "none" then
         order.OrderType = DOTA_UNIT_ORDER_CAST_NO_TARGET
         order.AbilityIndex = spec.source:entindex()
+    elseif spec.cast_type == "autocast" then
+        if DOTA_UNIT_ORDER_CAST_TOGGLE_AUTO == nil then return false, "native_autocast_order_unavailable" end
+        order.OrderType = DOTA_UNIT_ORDER_CAST_TOGGLE_AUTO
+        order.AbilityIndex = spec.source:entindex()
     elseif spec.cast_type == "toggle" then
         order.OrderType = DOTA_UNIT_ORDER_CAST_TOGGLE
         order.AbilityIndex = spec.source:entindex()
@@ -567,7 +597,14 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         return false, "unsupported_cast_type:" .. tostring(spec.cast_type)
     end
 
-    return submit_order(caster, spec, target_or_point, self.order_gate, order)
+    if State.IsManaged(spec) then
+        -- Recheck at submission: another controller may have already changed it.
+        local change, why = State.CanChange(caster, spec, ctx)
+        if not change then return false, why end
+    end
+    local ok, why = submit_order(caster, spec, target_or_point, self.order_gate, order)
+    if ok and State.IsManaged(spec) then State.Issued(caster, spec, ctx) end
+    return ok, why
 end
 
 function ActionAdapter:IssueApproach(caster, spec, target_or_point)

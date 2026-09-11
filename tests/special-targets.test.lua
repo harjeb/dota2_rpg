@@ -68,8 +68,8 @@ assert(selected("remnant_near_enemy")==far)
 assert(selected("remnant_safe")==near)
 rule.target_filters={{type="distance_lte",value=300}}
 assert(selected("remnant_farthest")==near,"existing target filters constrain destinations")
-rule.target_filters={}; rule.min_aoe_hits=2
-assert(selected("remnant_near_enemy")==nil,"destination cannot bypass explicit AoE hit gate")
+rule.target_filters={}; rule.min_aoe_hits=999
+assert(selected("remnant_near_enemy")==far,"legacy hit count does not block native remnant destination")
 rule.min_aoe_hits=nil
 far.removed=true
 assert(selected("remnant_farthest")==near,"expired remnant handle excluded")

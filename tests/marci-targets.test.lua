@@ -56,7 +56,9 @@ for _,name in ipairs({"marci_companion_run","marci_bodyguard","marci_guardian"})
     assert(Defaults.CreateForHero(caster)[1].target.team=="ally","native Marci defaults must select allies")
     for _,team in ipairs({"enemy","self","ally"}) do
         rule=service:DecodeFlat({action_kind="ability",action_id=name,target_team=team,target_types="hero"})
-        assert(service:ValidateRule(0,caster,rule))
+        local saved,saveReason=service:ValidateRule(0,caster,rule)
+        if team=="enemy" then assert(not saved and saveReason=="target_team_incompatible","reject impossible team at save time")
+        else assert(saved,saveReason) end
         orders={}; engine:Reset()
         local ok,reason=engine:TryRule(caster,engine:GetState(caster),engine:BuildContext(caster,1),rule,1)
         if team=="ally" then
@@ -107,7 +109,9 @@ for _, customFilter in ipairs({true,false}) do
         spell.name=name; spell.behavior=8; spell.range=600
         rule=service:DecodeFlat({action_kind="ability",action_id=name,target_team="ally",target_types="hero",
             target_priority_1_type="prefer_teammate",target_priority_2_type="nearest"})
-        assert(service:ValidateRule(0,caster,rule))
+        local saved,saveReason=service:ValidateRule(0,caster,rule)
+        if team=="enemy" then assert(not saved and saveReason=="target_team_incompatible","reject impossible team at save time")
+        else assert(saved,saveReason) end
         for _,scenario in ipairs({"teammate","solo","range"}) do
             orders={}; engine:Reset()
             local ctx=engine:BuildContext(caster,1)

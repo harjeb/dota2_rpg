@@ -88,8 +88,8 @@ target.finish=target.start; rejected(); target=Targets.Build(caster,near)
 near.x=290; rejected(); near.x=300
 caster.channeling=true; rejected(); assert(not adapter:IssueApproach(caster,spec,target)); caster.channeling=false
 near.x=0; assert(Targets.Build(caster,near)==nil,"zero direction fails closed"); near.x=300
-rule.min_aoe_hits=1
-assert(selector:SelectVector(rule,spec,ctx)==nil,"explicit positive min AoE rejects unknown geometry")
+rule.min_aoe_hits=999
+assert(selector:SelectVector(rule,spec,ctx),"legacy hit count does not block native vector targeting")
 rule.min_aoe_hits=0
 assert(selector:SelectVector(rule,spec,ctx))
 rule.min_aoe_hits=nil

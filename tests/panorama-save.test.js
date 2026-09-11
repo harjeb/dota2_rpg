@@ -146,6 +146,8 @@ function runHud(options) {
         vm.runInNewContext(fs.readFileSync(scriptPath, "utf8"), context, { filename: scriptPath });
     }
 
+    require("./ui-capability-fixtures").attach(context,subscriptions);
+
     return {
         panels: panels,
         createdPanels: createdPanels,
@@ -255,6 +257,7 @@ function chooseAction(hud, side, row, action) {
     var option = created(hud, "ActionOpt_" + side + row + "_" + action);
     assert(option && option.events.onactivate, "selected hero action must be available on every authored row");
     option.events.onactivate();
+    hud.panels["#RuleSettingsApply"].events.onactivate();
 }
 
 ["Radiant"].forEach(function (side) {

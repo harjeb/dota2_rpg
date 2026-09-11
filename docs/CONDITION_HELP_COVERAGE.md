@@ -35,7 +35,7 @@ G09说明有无/层数/剩余时间及OR拆行；G11用存活敌人数代替附�
 
 ## Per-ID audit / 逐技能审查口径
 
-Source: `data/native_skill_conditions.json`. SHA-256: `ae5fbdf964b472ab1248d8159f380dfcc9e0179371161ad09ddf93bd7f4d683b`.
+Source: `data/native_skill_conditions.json`. SHA-256: `4f0eb846b552edd8d82083d7e44b72d1a17990933154ec4ea6d02e1ef5d367c1`.
 
 原始 1095 行；主动分母 **755**；排除被动 340。按 `active` 保留旧版、升级、隐藏与子技能，不以常用程度缩小分母。
 

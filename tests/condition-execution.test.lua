@@ -92,13 +92,13 @@ assert(state.chase and state.chase.target_index==far.id)
 far.hp=100;near.hp=100;caster.x=350;orders={}
 assert(not engine:ContinueChase(caster,state,engine:BuildContext(caster,10.5),10.5) and #orders==0,
     "healed targets stop satisfying HP filter during chase; no stale cast")
--- Unit-target circular AoE uses the same minimum-hit gate as point/no-target.
-caster.x=0;far.x=500;far.hp=30;near.hp=70;rule.approach="range_only";rule.min_aoe_hits=2;engine:Reset()
-assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_TARGET,"clustered unit AoE may cast")
+-- Legacy hit counts no longer constrain native unit targeting.
+caster.x=0;far.x=500;far.hp=30;near.hp=70;rule.approach="range_only";rule.min_aoe_hits=999;engine:Reset()
+assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_TARGET,"legacy high hit count permits unit cast")
 far.x=900;engine:Reset()
-assert(not attempt() and #orders==0,"isolated unit AoE waits for its configured hit count")
+assert(attempt() and orders[1].TargetIndex==near.id,"isolated unit target still casts with legacy high count")
 -- Point spells honour priority ties, not an unrelated implicit nearest rank.
-far.x=550;near.x=200;spell.behavior=16;spell.radius=0;rule.min_aoe_hits=1;engine:Reset()
+far.x=550;near.x=200;spell.behavior=16;spell.radius=0;rule.min_aoe_hits=999;engine:Reset()
 assert(attempt() and orders[1].Position.x==550,"point spell ties honour lowest HP priority")
 print("condition-execution tests passed")
 

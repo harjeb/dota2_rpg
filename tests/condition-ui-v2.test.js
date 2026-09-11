@@ -146,6 +146,8 @@ function runHud() {
         vm.runInNewContext(fs.readFileSync(scriptPath, "utf8"), context, { filename: scriptPath });
     }
 
+    require("./ui-capability-fixtures").attach(context,subscriptions);
+
     return {
         context: context,
         panels: panels,
@@ -178,6 +180,8 @@ function input(hud, id, value) { var p = panel(hud, id); assert(p, "real input "
 function latest(hud, hero, slot) {
     return hud.sentEvents.filter(function (event) { return event.name === "rpg_update_rule" && event.payload.hero_name === hero && event.payload.slot === (slot || 1); }).slice(-1)[0].payload;
 }
+// Reuse the actual layout harness without executing this legacy regression body.
+if (require.main !== module) { module.exports={runHud:runHud,click:click,panel:panel,choice:choice,input:input}; return; }
 // Battlefield action references use icons and stable actor keys, including duplicate enemies.
 var lion = "npc_dota_hero_lion", axe = "npc_dota_hero_axe";
 var pickerHud = runHud();
@@ -295,6 +299,8 @@ function slots(side, index, name, entity, actions, details) {
 }
 hud.subscriptions.rpg_shop_state({lineup_text:lion + ";" + axe,owned_text:lion + ";" + axe});
 slots("Radiant", 1, lion, 101); slots("Radiant", 2, axe, 102);
+// Spatial configuration belongs to a point spell, never the default attack.
+click(hud,"RadiantActionSelect0"); click(hud,"ActionOpt_Radiant0_lion_impale"); click(hud,"RuleSettingsApply");
 click(hud, "RadiantRuleSettings0");
 assert(!panel(hud, "RuleSettings").BHasClass("Hidden"), "XML settings panel opens from compact row");
 assert(panel(hud, "V2_use3Select") && panel(hud, "V2_target3Select") && panel(hud, "V2_priority1Select"), "actual UI renders 4/4/2 slots");
@@ -307,7 +313,8 @@ choice(hud, "V2_target1", "modifier_stacks_gte"); input(hud, "V2_target1_modifie
 choice(hud, "V2_target2", "modifier_remaining_lte"); input(hud, "V2_target2_modifier", "modifier_test"); input(hud, "V2_target2_seconds", 1.75);
 choice(hud, "V2_target3", "exclude_self");
 choice(hud, "V2_priority0", "lowest_attack_damage"); choice(hud, "V2_priority1", "highest_magic_resistance");
-input(hud, "V2_min_aoe_hits", 3); choice(hud, "V2Toggle", "toggle_off");
+assert(!panel(hud,"V2_min_aoe_hits"), "hit-count control is removed");
+assert(!panel(hud,"V2ToggleSelectOption_toggle_off").enabled,"non-toggle ability rejects explicit off");
 click(hud, "RuleSettingsApply");
 var saved = latest(hud, lion);
 assert(saved.use_condition_1_value === 0.675 && saved.target_filter_1_value === 0.35, "percentages serialize as fractions");
@@ -318,7 +325,7 @@ assert(saved.target_filter_2_modifier === "modifier_test" && saved.target_filter
 assert(saved.target_filter_3_seconds === 1.75 && saved.target_filter_3_modifier === "modifier_test", "modifier expiry serialized");
 assert(saved.target_filter_4_type === "exclude_self", "fourth filter serialized");
 assert(saved.target_priority_1_type === "lowest_attack_damage" && saved.target_priority_2_type === "highest_magic_resistance", "two explicit priorities");
-assert(saved.aoe_radius === undefined && saved.min_aoe_hits === 3 && saved.desired_toggle_state === "0", "native radius cannot be overridden; hit gate and false toggle survive serialization");
+assert(saved.aoe_radius === undefined && saved.min_aoe_hits === undefined && saved.desired_toggle_state === undefined, "native radius cannot be overridden; hit gate is absent and unsupported toggle is absent");
 assert(saved.condition === "self_hp_pct_gte", "compact condition summary follows the first advanced condition");
 click(hud, "RadiantRuleSettings0");
 assert(panel(hud, "V2_use2_seconds").text === "57.5", "reopening does not clamp advanced time to legacy 30 seconds");
@@ -342,24 +349,24 @@ click(hud, "RadiantHeroDyn1");
 slots("Radiant", 1, lion, 201, "lion_impale;lion_voodoo;lion_mana_drain;lion_finger_of_death;lion_extra_action;attack");
 click(hud, "RadiantActionSelect0");
 assert(panel(hud, "ActionOpt_Radiant0_lion_extra_action"), "extra native skill appears without hardcoded slot cap");
-click(hud, "ActionOpt_Radiant0_lion_extra_action");
+click(hud, "ActionOpt_Radiant0_lion_extra_action"); click(hud,"RuleSettingsApply");
 assert(panel(hud, "RadiantActionAbility0").abilityname === "lion_extra_action", "native name supplies icon without details");
 assert(latest(hud, lion).action_id === "lion_extra_action" && latest(hud, lion).action_name === "lion_extra_action", "native name reaches server");
 slots("Radiant", 1, lion, 201, "ability_1;attack", "lion_impale;attack");
-click(hud, "RadiantActionSelect0"); click(hud, "ActionOpt_Radiant0_ability_1");
+click(hud, "RadiantActionSelect0"); click(hud, "ActionOpt_Radiant0_ability_1"); click(hud,"RuleSettingsApply");
 assert(panel(hud, "RadiantActionAbility0").abilityname === "lion_impale" && latest(hud, lion).action_id === "lion_impale", "legacy ability slot resolves metadata");
 
 // Malformed fields cannot emit NaN/Infinity; blank action references mean current action.
 click(hud, "RadiantRuleSettings0");
 input(hud, "V2_use1_value", "NaN"); input(hud, "V2_use1_radius", "Infinity");
-click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idCurrent"); input(hud, "V2_min_aoe_hits", 100);
+click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idCurrent");
 choice(hud, "V2_target0", "mana_pct_gte"); input(hud, "V2_target0_value", 800);
-choice(hud, "V2Toggle", "toggle_on"); click(hud, "RuleSettingsApply");
+click(hud, "RuleSettingsApply");
 var malformed = latest(hud, lion);
 assert(Number.isFinite(malformed.use_condition_2_value) && Number.isFinite(malformed.use_condition_2_radius), "malformed numeric inputs become finite");
-assert(malformed.target_filter_1_value === 1 && malformed.aoe_radius === undefined && malformed.min_aoe_hits === 20, "bounded inputs clamp consistently");
+assert(malformed.target_filter_1_value === 1 && malformed.aoe_radius === undefined && malformed.min_aoe_hits === undefined, "bounded inputs clamp consistently");
 assert(!Object.prototype.hasOwnProperty.call(malformed, "use_condition_4_action_id"), "blank action ID omitted");
-assert(malformed.desired_toggle_state === "1", "explicit on state");
+assert(malformed.desired_toggle_state === undefined, "non-toggle action never acquires a switch intent");
 click(hud, "RadiantRuleSettings0"); choice(hud, "V2_use1", ""); choice(hud, "V2Toggle", "toggle_auto"); click(hud, "RuleSettingsApply");
 assert(latest(hud, lion).use_condition_2_type === "" && latest(hud, lion).use_condition_2_radius === undefined, "cleared slots remove stale parameters");
 assert(latest(hud, lion).desired_toggle_state === undefined, "default toggle omits desired state");
@@ -430,19 +437,21 @@ input(fresh,"V2_target0_value",72.5);
 choice(fresh,"V2_use0","elapsed_lte"); input(fresh,"V2_use0_seconds",17.25);
 choice(fresh,"V2_use1","nearby_enemies_gte"); input(fresh,"V2_use1_value",2); input(fresh,"V2_use1_radius",875);
 choice(fresh,"V2_target1","has_modifier"); input(fresh,"V2_target1_modifier","modifier_test");
-choice(fresh,"V2Toggle","toggle_off"); input(fresh,"V2_min_aoe_hits",3);
+assert(!panel(fresh,"V2ToggleSelectOption_toggle_off").enabled,"healing spell cannot be configured as a toggle");
+assert(!panel(fresh,"V2AoeSelectOption_3"),"mixed heal/splash cannot accept an unproven three-hit gate");
 click(fresh,"RuleSettingsApply");
 var editedPreset = latest(fresh,omni);
 assert(editedPreset.target_filter_1_value === 0.725 && editedPreset.use_condition_1_type === "elapsed_lte"
     && editedPreset.use_condition_1_seconds === 17.25 && editedPreset.use_condition_1_value === 17.25
     && editedPreset.use_condition_2_radius === 875 && editedPreset.use_condition_2_value === 2
-    && editedPreset.target_filter_2_modifier === "modifier_test" && editedPreset.desired_toggle_state === "0"
-    && editedPreset.min_aoe_hits === 3, "edited preset parameters reach flat server payload");
+    && editedPreset.target_filter_2_modifier === "modifier_test" && editedPreset.desired_toggle_state === undefined
+    && editedPreset.min_aoe_hits === undefined, "edited preset parameters reach flat server payload");
 click(fresh,"RadiantRuleSettings0");
 assert(panel(fresh,"V2_target0_value").text === "72.5" && panel(fresh,"V2_use0_seconds").text === "17.25"
     && panel(fresh,"V2_use1_radius").text === "875" && panel(fresh,"V2_target1_modifier").text === "modifier_test"
-    && panel(fresh,"V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_off", "edited preset and U14 reopen without loss");
-["enemy","self","ally"].forEach(function(team) {
+    && panel(fresh,"V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_auto", "legal preset and U14 reopen without loss");
+assert(!panel(fresh,"V2TeamSelectOption_team_enemy").enabled,"friendly native spell disables enemies");
+["self","ally"].forEach(function(team) {
     choice(fresh,"V2Team","team_"+team); click(fresh,"RuleSettingsApply");
     assert(latest(fresh,omni).target_team === team && latest(fresh,omni).target_priority_1_type === "prefer_teammate"
         && latest(fresh,omni).target_priority_2_type === "lowest_hp_pct", "team change preserves explicit ranking on wire");
@@ -459,7 +468,7 @@ assert(!cleared.min_aoe_hits && cleared.desired_toggle_state === undefined, "cle
 click(fresh,"RadiantRuleSettings0");
 assert(panel(fresh,"V2_use0Select").GetChild(0).text === "#dota2_rpg_v2_none"
     && panel(fresh,"V2_target0Select").GetChild(0).text === "#dota2_rpg_v2_none"
-    && panel(fresh,"V2_min_aoe_hits").text === "0", "cleared editor reopens empty");
+    && !panel(fresh,"V2_min_aoe_hits"), "cleared editor reopens empty");
 click(fresh,"RuleSettingsClose");
 
 var intelligenceHud = runHud();
@@ -480,7 +489,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 32], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
+[["use", retiredUse, 36], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -565,7 +574,7 @@ Object.keys(mapping).forEach(function (ability) {
         });
         assert(!catalogUI("#V2_use0_modifier"), "template switch deletes stale modifier input");
         assert(catalogUI("#V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_" + preset.target_team, "template team rendered");
-        assert(catalogUI("#V2_min_aoe_hits").text === String(preset.min_aoe_hits || 0), "template hit gate rendered");
+        assert(!catalogUI("#V2_min_aoe_hits"), "templates never render the removed hit gate");
         assert(catalogUI("#V2CastSelect").GetChild(0).text === "#dota2_rpg_v2_cast_" + (preset.cast_preference || "auto"), "template cast preference rendered");
         assert(catalogUI("#V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_" + (preset.desired_toggle_state === "0" ? "off" : preset.desired_toggle_state === "1" ? "on" : "auto"), "template toggle rendered");
         catalogClick("RuleSettingsApply");
@@ -598,7 +607,7 @@ Object.keys(mapping).forEach(function (ability) {
     });
 });
 catalogClick("V2ClearConditions"); catalogClick("RuleSettingsApply");
-assert(applied.use_conditions.concat(applied.target_filters, applied.target_priorities).every(function (condition) { return !condition.type; }) && applied.min_aoe_hits === 0 && applied.desired_toggle_state === null, "clear removes all conditions and gates");
+assert(applied.use_conditions.concat(applied.target_filters, applied.target_priorities).every(function (condition) { return !condition.type; }) && applied.min_aoe_hits === undefined && applied.desired_toggle_state === null, "clear removes all conditions and gates");
 assert(/\.V2Condition\s*\{[^}]*height: fit-children/.test(cssSource) && /\.V2Selector\s*\{[^}]*height: fit-children/.test(cssSource), "rows and selectors expand around menus");
 assert(/\.V2Choices\s*\{[^}]*height: 280px;[^}]*overflow: squish scroll/.test(cssSource), "bounded menu is vertically scrollable");
 assert(/\.RuleSettingsBody\s*\{[^}]*overflow: squish scroll/.test(cssSource), "all condition rows reachable by body scroll");
@@ -624,7 +633,7 @@ assert(applied.target_team === "ally" && applied.target === "ally_distance_neare
         var option = panel(phaseHud,"ActionOpt_Radiant1_"+name);
         assert(option && option.GetChild(0).abilityname===name,"both native phase icons are selectable: "+name);
     });
-    click(phaseHud,"ActionOpt_Radiant1_"+pair[2]);
+    click(phaseHud,"ActionOpt_Radiant1_"+pair[2]); click(phaseHud,"RuleSettingsApply");
     click(phaseHud,"RadiantRuleSettings1");
     choice(phaseHud,"V2_use0","action_elapsed_gte"); input(phaseHud,"V2_use0_seconds",1.25);
     click(phaseHud,"V2_use0_action_id"); click(phaseHud,"V2_use0_action_idOption_0_0");
@@ -787,7 +796,7 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     moveHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:981,hero_name:lion,rule_key:"enemy:lion",target_actor:"level:enemy:lion",actions_text:"attack;lion_impale",abilities_text:"lion_impale"});
     click(moveHud,"RadiantAddRule0"); click(moveHud,"RadiantActionSelect1");
     assert(panel(moveHud,"ActionOpt_Radiant1_sustained_move").GetChild(0).text === "#dota2_rpg_action_sustained_move", "unknown movement metadata displays localized action, not ability tooltip");
-    click(moveHud,"ActionOpt_Radiant1_sustained_move"); click(moveHud,"RadiantRuleSettings1");
+    click(moveHud,"ActionOpt_Radiant1_sustained_move"); click(moveHud,"RuleSettingsApply"); click(moveHud,"RadiantRuleSettings1");
     choice(moveHud,"V2_target0","specified_enemy"); click(moveHud,"V2_target0_target_actorOption_0");
     choice(moveHud,"V2_priority0","farthest");
     click(moveHud,"V2MovementPreset_"+presetName);
@@ -834,7 +843,7 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     assert(item.movement_buff === undefined && item.positioning_mode === undefined, "unsupported item strips movement and positioning");
     var spell = sync.fromServer({action:ability,positioning_mode:"cast_range",positioning_distance:300,positioning_tolerance:25});
     assert(sync.serialize({rule:spell}).positioning_mode === "cast_range", "ability cast range roundtrips");
-    click(moveHud,"RadiantActionSelect1"); click(moveHud,"ActionOpt_Radiant1_"+ability); click(moveHud,"RadiantRuleSettings1");
+    click(moveHud,"RadiantActionSelect1"); click(moveHud,"ActionOpt_Radiant1_"+ability); click(moveHud,"RuleSettingsApply"); click(moveHud,"RadiantRuleSettings1");
     assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_movement_buff"), "changing to an ability hides stale movement settings");
     click(moveHud,"V2_positioning_modeOption_positioning_mode_cast_range"); input(moveHud,"V2_positioning_distance",320); input(moveHud,"V2_positioning_tolerance",30); click(moveHud,"RuleSettingsApply");
     var spellWire = latest(moveHud,hero,2);
@@ -849,5 +858,5 @@ assert(!panel(livesHud,"StartBattleButton").enabled
 });
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, 78 unchanged documented menu IDs plus F39/U39/P14, U13/U14 selection, previews and stale field removal");
-console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, toggles, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and hero isolation");
+console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, previews and stale field removal");
+console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and hero isolation");

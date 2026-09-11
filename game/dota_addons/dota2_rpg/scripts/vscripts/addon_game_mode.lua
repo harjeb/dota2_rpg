@@ -3680,7 +3680,9 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 					local _, detail = DescribeAction(hero, action)
 					table.insert(descriptions, detail ~= "" and detail or action)
 				end
+				local capRevision = AbilityCatalog.PublishCapabilities(hero, slots, RuleSnapshot.HeroKey(self.battleManager,hero))
 				CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
+                    capability_revision = capRevision,
 					slot_key = side.key .. "_" .. index,
 					hero_index = hero:entindex(),
 					hero_name = hero:GetUnitName(),

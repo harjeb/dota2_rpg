@@ -6,11 +6,13 @@
 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
 	</styles>
 	<scripts>
-		<include src="file://{resources}/scripts/custom_game/condition_catalog.js" />
+		<include src="file://{resources}/scripts/custom_game/ability_capabilities.js" />
+        <include src="file://{resources}/scripts/custom_game/condition_catalog.js" />
         <include src="file://{resources}/scripts/custom_game/skill_condition_presets.js" />
 		<include src="file://{resources}/scripts/custom_game/panorama_rule_sync.js" />
 		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
-		<include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
+		<include src="file://{resources}/scripts/custom_game/rule_diagnostics.js" />
+        <include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
 		<include src="file://{resources}/scripts/custom_game/skill_debug.js" />

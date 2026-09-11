@@ -1,4 +1,6 @@
 local Conditions = require("tactics/condition_registry")
+local Compatibility = require("tactics/rule_compatibility")
+local Options = require("tactics/action_options")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -46,6 +48,8 @@ local VALID_APPROACH = { range_only = true, allow_approach = true }
 local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = true, wait = true }
 
 local NUMERIC_LIMITS = {
+    channel_elapsed_gte = { 0, 86400 },
+    channel_elapsed_lte = { 0, 86400 },
     action_elapsed_gte = { 0, 86400 },
     action_elapsed_lte = { 0, 86400 },
     tiny_grab_hp_pct_lte = { 0, 1 },
@@ -166,6 +170,7 @@ function RuleService.new(options)
         find_roster_hero = options.find_roster_hero,
         get_initial_rules = options.get_initial_rules,
         is_target_actor_allowed = options.is_target_actor_allowed,
+        validate_action_reference = options.validate_action_reference,
         get_hero_key = options.get_hero_key or function(hero)
             if hero == nil then return nil end
             if hero.lineupHeroName ~= nil and hero.lineupHeroName ~= "" then
@@ -209,7 +214,6 @@ function RuleService:DecodeFlat(args)
         approach = tostring(args.approach or "range_only"),
         chase_timeout = args.chase_timeout,
         max_chase_distance = args.max_chase_distance,
-        min_aoe_hits = args.min_aoe_hits,
         aoe_prefer_tag = args.aoe_prefer_tag ~= "" and args.aoe_prefer_tag or nil,
     }
 
@@ -226,6 +230,8 @@ function RuleService:DecodeFlat(args)
     end
 
     require("tactics/movement_contract").Copy(args, rule.action)
+    Options.Copy(args, rule.action)
+    rule.allow_unverified_modifiers = args.allow_unverified_modifiers == true or args.allow_unverified_modifiers == 1 or args.allow_unverified_modifiers == "1"
     return rule
 end
 
@@ -260,13 +266,19 @@ function RuleService:ValidateCondition(condition, registry)
         end
         if condition.type ~= "action_elapsed_gte" and condition.type ~= "action_elapsed_lte"
             and condition.type ~= "action_succeeded_after"
+            and condition.type ~= "channel_elapsed_gte" and condition.type ~= "channel_elapsed_lte"
+            and condition.type ~= "action_phase_is"
             and condition.type ~= "action_use_count_lt" and condition.type ~= "ability_charges_gte" then
             return false, "unexpected_condition_action_actor"
         end
     end
+    if condition.type == "action_phase_is" then
+        local phases = {IDLE=true,REQUESTED=true,CASTING=true,EXECUTED=true,CHANNELING=true,FINISHED=true,INTERRUPTED=true,ENDED=true,UNCONFIRMED=true}
+        if not phases[condition.value] then return false, "invalid_action_phase" end
+    end
     local limits = NUMERIC_LIMITS[condition.type]
     if limits then
-        local isTimer = condition.type:find("action_elapsed_", 1, true)
+        local isTimer = condition.type:find("action_elapsed_", 1, true) or condition.type:find("channel_elapsed_", 1, true)
         local value = finite(condition.value or (isTimer and condition.seconds) or (condition.type == "no_enemy_within" and condition.radius))
         if value == nil or value < limits[1] or value > limits[2] then
             return false, "invalid_numeric_value:" .. condition.type
@@ -310,6 +322,9 @@ function RuleService:ValidateRule(player_id, hero, rule)
     end
     local movement_ok, movement_reason = require("tactics/movement_contract").Validate(rule.action)
     if not movement_ok then return false, movement_reason end
+    local options_ok, options_reason = Options.Validate(rule.action)
+    if not options_ok then return false, options_reason end
+    if rule.allow_unverified_modifiers ~= nil and type(rule.allow_unverified_modifiers) ~= "boolean" then return false,"invalid_modifier_ack" end
     local preference = rule.action.cast_preference
     if preference ~= nil and preference ~= "auto" and preference ~= "unit" and preference ~= "point" then
         return false, "invalid_cast_preference"
@@ -321,7 +336,7 @@ function RuleService:ValidateRule(player_id, hero, rule)
         if rule.action[key] ~= nil and type(rule.action[key]) ~= "string" then return false, "invalid_action_" .. key end
     end
     for _, pair in ipairs({ { rule, "chase_timeout" }, { rule, "max_chase_distance" },
-        { rule, "min_aoe_hits" }, { rule.action, "aoe_radius" } }) do
+        { rule.action, "aoe_radius" } }) do
         local object, key = pair[1], pair[2]
         if object[key] == "" then object[key] = nil end
         if object[key] ~= nil then
@@ -393,9 +408,11 @@ function RuleService:ValidateRule(player_id, hero, rule)
     if rule.max_chase_distance ~= nil then
         rule.max_chase_distance = clamp(rule.max_chase_distance, 100, 2000)
     end
-    if rule.min_aoe_hits ~= nil then
-        rule.min_aoe_hits = math.floor(clamp(rule.min_aoe_hits, 1, 20))
-    end
+    -- Discard the retired field from legacy in-memory rules before persistence.
+    rule.min_aoe_hits = nil
+    local compatible, why, detail = Compatibility.Validate(hero, rule, {validate_reference=self.validate_action_reference})
+    self.last_compatibility = detail
+    if not compatible then return false, why end
     return true, nil
 end
 
@@ -412,6 +429,7 @@ function RuleService:GetHeroRules(hero)
 end
 
 function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
+    self.last_compatibility = nil
     if type(flat_args) ~= "table" then return false, "invalid_payload" end
     for key, value in pairs(flat_args) do
         if type(key) ~= "string" or (type(value) ~= "string" and type(value) ~= "number" and type(value) ~= "boolean") then
@@ -540,6 +558,8 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
         end
     end
     require("tactics/movement_contract").Copy(rule.action, payload)
+    Options.Copy(rule.action, payload)
+    payload.allow_unverified_modifiers = rule.allow_unverified_modifiers and 1 or 0
     CustomNetTables:SetTableValue("rpg_rules", key, payload)
 end
 
@@ -550,6 +570,7 @@ function RuleService:SendResult(player_id, request_id, ok, reason)
         request_id = tostring(request_id or ""),
         ok = ok and 1 or 0,
         reason = reason or "",
+        compatibility = self.last_compatibility and {errors=self.last_compatibility.errors, warnings=self.last_compatibility.warnings} or {},
     })
 end
 

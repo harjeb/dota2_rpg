@@ -95,11 +95,13 @@ function Snapshot.ForHero(manager, hero)
             target_types=table.concat(rule.target and rule.target.types or {"hero","monster","summon"}, ","),
             forced=rule.approach == "allow_approach" and 1 or 0,
             use_conditions=list(rule.use_conditions), target_filters=list(rule.target_filters),
-            target_priorities=list(rule.target_priorities), min_aoe_hits=rule.min_aoe_hits or 0,
+            target_priorities=list(rule.target_priorities),
             destination=action.destination or "target",
             cast_preference=action.cast_preference or "auto",
             desired_toggle_state=action.desired_toggle_state == nil and "" or (action.desired_toggle_state and "1" or "0") }
         require("tactics/movement_contract").Copy(action, result[#result])
+        require("tactics/action_options").Copy(action, result[#result])
+        result[#result].allow_unverified_modifiers = rule.allow_unverified_modifiers and 1 or 0
     end
     return result
 end

@@ -19,7 +19,7 @@ var RpgConditionHelpData = {
     "target_met": true,
     "uncovered_active": 316,
     "source": "data/native_skill_conditions.json",
-    "source_sha256": "ae5fbdf964b472ab1248d8159f380dfcc9e0179371161ad09ddf93bd7f4d683b",
+    "source_sha256": "4f0eb846b552edd8d82083d7e44b72d1a17990933154ec4ea6d02e1ef5d367c1",
     "title": {
       "zh": "技能条件教程覆盖",
       "en": "Ability condition tutorial coverage"
@@ -512,8 +512,8 @@ var RpgConditionHelpData = {
           "en": "Existing skill presets are available; choose the matching variant, then check thresholds."
         },
         {
-          "zh": "不预测弹道、目标移动或落点安全；线形技能不要直接套圆形范围人数。",
-          "en": "No projectile, movement or safe-landing prediction; do not apply circular hit counts to line spells."
+          "zh": "不预测弹道、目标移动或落点安全。",
+          "en": "No projectile, movement or safe-landing prediction."
         }
       ],
       "covered_ability_ids": [
@@ -612,8 +612,8 @@ var RpgConditionHelpData = {
         "en": "Area damage and control"
       },
       "description": {
-        "zh": "已审查的普通范围技能，按原生范围半径估计候选人数。",
-        "en": "Reviewed ordinary area spells using native radius to estimate candidate count."
+        "zh": "已审查的普通范围技能，在附近有敌人时按目标排序施放。",
+        "en": "Reviewed ordinary area spells use target priorities when enemies are nearby."
       },
       "examples": [
         {
@@ -665,8 +665,8 @@ var RpgConditionHelpData = {
             "en": "UI target and ordering"
           },
           "value": {
-            "zh": "敌方；最近；最少范围命中=2",
-            "en": "Enemy; nearest; minimum AOE hits=2"
+            "zh": "敌方；最近",
+            "en": "Enemy; nearest"
           }
         },
         {
@@ -696,8 +696,8 @@ var RpgConditionHelpData = {
           "en": "Existing skill presets are available; choose the matching variant, then check thresholds."
         },
         {
-          "zh": "范围计数不是实际命中承诺。原生半径未知或为0时，不使用人数门槛；环形、直线、矢量和延迟命中需单独审查。",
-          "en": "Counts do not guarantee hits. Avoid hit-count gates with unknown/zero radius; rings, lines, vectors and delayed hits require separate review."
+          "zh": "附近敌人数以自身为中心观察，不表示技能作用范围或实际命中人数。技能仍受原生施法距离和目标限制。",
+          "en": "Nearby enemies are observed around the caster; this is neither spell coverage nor a hit estimate. Native cast range and targeting checks still apply."
         }
       ],
       "covered_ability_ids": [

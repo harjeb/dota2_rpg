@@ -29,7 +29,7 @@ FAMILIES = {
     'offensive_unit': (rule(filters=[condition('distance_lte', value=900)]), 'Native hostile unit targeting: select a nearby opponent rather than spending the action without combat context. Native target flags and runtime legality determine invulnerability eligibility.'),
     'offensive_point': (rule(use=[NEAR], filters=[condition('distance_lte', value=900)]), 'Native point order with hostile team or damage metadata: require an enemy near the caster and anchor the point to a nearby opponent. No trajectory prediction is claimed.'),
     'offensive_no_target': (rule(use=[condition('nearby_enemies_gte', value=1, radius=450)]), 'Native no-target combat action with damage metadata or reviewed offensive purpose: only activate with an opponent nearby. The 450-unit tactical threshold is editable, not an asserted ability radius.'),
-    'aoe': (rule(use=[NEAR], min_aoe_hits=2), 'Native AOE combat action: require at least two candidate enemies inside the runtime native GetAOERadius circle. Unknown/zero radius must not be treated as coverage of geometry or a successful cast.'),
+    'aoe': (rule(use=[NEAR]), 'Native area combat action: require an enemy within the editable 800-unit observation radius, then use normal target priorities and native casting checks. Nearby enemy count does not estimate spell hits.'),
     'healing_ally': (rule('ally', filters=[condition('hp_pct_lte', value=80)], priority='lowest_hp_pct'), 'Reviewed healing mode plus native friendly/both unit targeting: choose an ally at or below 80% HP to avoid full-health healing.'),
     'time_walk_recovery': (rule('self', use=[condition('self_hp_pct_lte', value=60)]), 'Time Walk recovery mode: at or below 60% self HP, cast at the caster position without an enemy-distance filter. Native Time Walk only restores damage within its backtrack window; this is not a guarantee of healing all missing HP or a safe retreat.'),
     'healing_self': (rule('self', use=[condition('self_hp_pct_lte', value=80)]), 'Reviewed self or caster-area healing: activate when the caster is at or below 80% HP. This does not optimize healing of the entire team.'),
@@ -222,7 +222,7 @@ def classify(row):
         reason = 'semantic_review_needed'
     if family in {'offensive_point', 'offensive_unit', 'offensive_no_target'} and 'AOE' in flags and 'DIRECTIONAL' not in flags:
         family = 'aoe'
-        evidence.append('Native AOE radius required; circular approximation only.')
+        evidence.append('Native AOE flag groups the preset; no spell-hit-count gate.')
     variants = ([family + '_prefer_teammate', family + '_allow_self']
                 if family in SUPPORT_FAMILIES else [family] if family else [])
     if name == 'faceless_void_time_walk' and family == 'time_walk_recovery':
@@ -328,7 +328,7 @@ def render(snapshot, mapping):
         '**native vector基础已实现**：普通最近合法敌方锚点，点矢量起点取锚点位置，单位矢量主目标取该单位；终点沿施法者到锚点方向延长150，零长度失败。运行时按原生范围/过滤器检查并发送两条原生命令；预设不含矢量参数。仅逐ID确认描述适合此模式的定义计入覆盖，复杂落点、观察方向、布线和原型继续延期。', '',
         '**普通CHANNELLED启动已实现**：单位、点或无目标技能使用通用条件与原生启动检查；引导期间busy阻止新指令。原生技能负责持续和结束，无释放计时器或提前取消预设；特殊资源/阶段依赖仍延期。上述为代码契约，游戏内实测仍为0。', '',
         '`RpgSkillPresets.get(id[, variant])` 返回独立草稿；不支持时返回 `null`，`variants` 返回空数组。`unsupportedReason` 只返回通用提示；详细排除原因仅在文档/JSON。JS仅包含通用模板族与支持映射，不包含待实现规则。', '',
-        'UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、距离为世界单位。开关开启/关闭分别配置规则。圆形AOE使用原生半径，未知半径不能宣称命中。条件表达不保证施法成功、击杀、位移安全或引导完成。UI实现说明由独立主文档负责。', '',
+        'UI百分比0—100经实际JS wire转换一次为Lua的0—1；时间为秒、距离为世界单位。开关开启/关闭分别配置规则。不提供技能命中人数条件；附近敌人数仅观察指定半径内的单位，不估算技能命中。条件表达不保证施法成功、击杀、位移安全或引导完成。UI实现说明由独立主文档负责。', '',
         '复现：`python scripts/build-condition-coverage.py --check`；验证：`python tests/condition-coverage.test.py`。默认只读取入库快照；`--source-dir`以大小写不敏感的路径/token读取原始两份提取JSON，保留所有原生定义并合并入库机制库存。', '',
         '## 通用默认模板统计', '', '| 模板族 | 主动定义数 |', '|---|---:|']
     for family, count in sorted(Counter(r['family'] for r in rows if r['family']).items()):
