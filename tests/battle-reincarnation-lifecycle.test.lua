@@ -11,6 +11,7 @@ local logs = {}
 local hooks = { OnThink = function() end, Clear = function() end }
 require = function(name)
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
+        or name == "battle.item_cooldowns"
         or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end
     if name == "battle.tempest_double" then return hooks end
     return { Install=function() end, OnThink=function() end, Clear=function() end,
@@ -44,13 +45,24 @@ local function fixture()
         BroadcastShopState=function() end, BroadcastLevelInfo=function() end,
         SpawnLevelEnemies=function() end, RespawnPlayerRoster=function(self) self.rebuilt=true end,
         SpawnBattleBarrier=function() end, RollShop=function(self) self.shopOffers={} end,
-        refreshCount=0, AwardStageXp=function() end, AddGold=function() end,
+        refreshCount=0, AwardStageXp=function() end, AddGold=function() end, CalculateTimeBonus=function() return 0 end,
     },CDota2RpgDemo)
     local bm=setmetatable({},BattleManager); bm:constructor(g); g.battleManager=bm
     local wk,enemy=unit(true,false),unit(true,false)
     bm.teamHeroes={[2]={wk},[3]={enemy}}; bm:StartBattle({})
     return g,bm,wk,enemy
 end
+for _,winner in ipairs({"radiant", "dire", "draw", "timeout"}) do
+    local g,bm,wk=fixture()
+    local item={remaining=40,charges=2,custom={used=true},EndCooldown=function(s) s.remaining=0 end}
+    wk.GetItemInSlot=function(_,slot) if slot==8 then return item end end
+    wk.alive=winner=="radiant"
+    g:EndBattle(winner,winner=="radiant" and 2 or 3)
+    assert(item.remaining==0 and item.charges==2 and item.custom.used,
+        "all settlement outcomes refresh dead/live inventory before delayed setup")
+    assert(callback and not g.rebuilt)
+end
+print("PASS: immediate item cooldown refresh across victory, defeat, draw and timeout")
 for _,rebornAtDeadline in ipairs({false,true}) do
     local g,bm,wk=fixture()
     assert(g:OnThink()==0.1 and aiTicks==1)

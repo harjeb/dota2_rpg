@@ -63,7 +63,10 @@ var RpgConditionCatalog = (function () {
             var items = (settings[spec[1]] || []).filter(function (condition) { return condition && condition.type; }).map(function (condition) {
                 var def = definitions[spec[0] + ":" + condition.type];
                 var values = Object.keys(condition).filter(function (key) { return key !== "type" && condition[key] !== undefined && condition[key] !== ""; }).map(function (key) {
-                    return text(key === "value" && condition.type.indexOf("_pct_") >= 0 ? "percent" : key) + "=" + String(condition[key]);
+                    var value = condition[key];
+                    if (key === "modifier" || key === "value" && condition.type.indexOf("has_modifier") >= 0) { value = modifierOption(String(value)).label + " [" + value + "]"; }
+                    if (key === "value" && condition.type === "action_phase_is") { value = phaseLabel(value); }
+                    return text(key === "value" && condition.type.indexOf("_pct_") >= 0 ? "percent" : key) + "=" + String(value);
                 });
                 return (def ? entryLabel(def) : condition.type) + (values.length ? " (" + values.join(", ") + ")" : "");
             });
@@ -131,10 +134,25 @@ var RpgConditionCatalog = (function () {
         var panel = $.CreatePanel("Button", parent, id || ""); panel.AddClass("V2Button");
         label(panel, "", value).hittest = false; panel.SetPanelEvent("onactivate", click); return panel;
     }
+    var phases = ["IDLE", "REQUESTED", "CASTING", "EXECUTED", "CHANNELING", "FINISHED", "INTERRUPTED", "ENDED", "UNCONFIRMED"];
+    function localizedToken(token) {
+        var value = $.Localize(token);
+        return value && value.charAt(0) !== "#" && value.toLowerCase() !== token.slice(1).toLowerCase() ? value : "";
+    }
     function abilityLabel(name) {
-        var token = "#DOTA_Tooltip_Ability_" + name, localized = $.Localize(token);
-        return localized && localized.charAt(0) !== "#" && localized.toLowerCase() !== token.slice(1).toLowerCase()
-            ? localized : String(name || "").replace(/_/g, " ");
+        return localizedToken("#DOTA_Tooltip_Ability_" + name) || String(name || "").replace(/_/g, " ");
+    }
+    function phaseLabel(value) { return phases.indexOf(value) >= 0 ? text("phase_" + value) : value; }
+    function modifierOption(name, metadata) {
+        if (!name) { return {id:"", label:text("observed_modifiers")}; }
+        metadata = metadata || {};
+        var source = /^[A-Za-z0-9_]+$/.test(metadata.ability || "") ? metadata.ability : "";
+        var caption = localizedToken("#DOTA_Tooltip_" + name);
+        if (!caption && source) {
+            var sourceName = localizedToken("#DOTA_Tooltip_Ability_" + source);
+            if (sourceName) { caption = sourceName + " · " + text(metadata.debuff === 1 ? "status_debuff" : "status_effect"); }
+        }
+        return {id:name, label:caption || text("status_unnamed"), icon:source, hint:name};
     }
     function movementPreset(name) {
         return {movement_mode:name === "shukuchi" ? "cycle" : "orbit",
@@ -175,7 +193,7 @@ var RpgConditionCatalog = (function () {
             panel.SetPanelEvent("onmouseout",function() { $.DispatchEvent("DOTAHideTextTooltip",panel); });
         }
         if (cap) {
-            label(body,"V2CapabilitySummary",text("capability_title")+": "+cap.name+" / "+text("role_"+cap.role)+" / "+text("support_"+cap.support)).AddClass("V2Hint");
+            label(body,"V2CapabilitySummary",text("capability_title")+": "+abilityLabel(cap.name)+" / "+text("role_"+cap.role)+" / "+text("support_"+cap.support)).AddClass("V2Hint");
             if (cap.alternate_native===1) { label(body,"V2AlternateWarning",explain("alternate_adapter_unavailable")).AddClass("V2Hint"); }
             var initialCheck=capAPI.validate(draft,baseCap,{requireCapability:strict});
             if (!initialCheck.ok) { $("#RuleSettingsError").text=capAPI.describe(initialCheck); }
@@ -197,17 +215,30 @@ var RpgConditionCatalog = (function () {
                 if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
                 menu.SetHasClass("Hidden", false); activeMenu = menu;
             });
+            function draw(panel, option) {
+                panel.RemoveAndDeleteChildren();
+                panel.SetHasClass("V2StatusChoice", !!option.icon);
+                if (option.icon) {
+                    var item = option.icon.indexOf("item_") === 0;
+                    var icon = $.CreatePanel(item ? "DOTAItemImage" : "DOTAAbilityImage", panel, "");
+                    icon.AddClass("V2AbilityIcon"); icon.hittest = false;
+                    if (item) { icon.itemname = option.icon; } else { icon.abilityname = option.icon; }
+                }
+                label(panel, "", entryLabel(option)).hittest = false;
+                tooltip(panel, option.reason ? explain(option.reason) : option.hint || entryLabel(option));
+            }
             var menu = $.CreatePanel("Panel", parent, id + "Menu"); menu.AddClass("V2Choices"); menu.AddClass("Hidden");
             var category = "";
             options.forEach(function (option) {
                 if (option.category && category !== option.category) { category = option.category; label(menu, "", text("category_" + category)).AddClass("V2Category"); }
-                var item=button(menu, id + "Option_" + (option.id || "none"), entryLabel(option), function () {
+                var item=button(menu, id + "Option_" + (option.id || "none"), "", function () {
                     if (option.disabled) { return; }
-                    trigger.GetChild(0).text = entryLabel(option); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id);
+                    draw(trigger, option); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id);
                 });
-                item.enabled=!option.disabled;
-                if (option.reason) { tooltip(item,explain(option.reason)); }
+                item.enabled=!option.disabled; draw(item, option);
             });
+            draw(trigger, selectedEntry);
+            return function (option) { draw(trigger, option); };
         }
         function actionPicker(parent, id, current, selfOnly) {
             parent.AddClass("V2ActionField");
@@ -318,7 +349,7 @@ var RpgConditionCatalog = (function () {
                         fields.forEach(function (field) {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
                             var wrap = $.CreatePanel("Panel", params, ""); wrap.AddClass("V2Field");
-                            label(wrap, "", text(field === "value" && current.type.indexOf("_pct_") >= 0 ? "percent" : field));
+                            label(wrap, "", text(field === "value" && current.type.indexOf("_pct_") >= 0 ? "percent" : field === "value_text" && current.type === "action_phase_is" ? "phase_selection" : field));
                             if (field === "target_actor") {
                                 targetPicker(wrap, "V2_" + group + index + "_" + field, current, function () {
                                     current = {type: ""}; draft[key][index] = current;
@@ -332,7 +363,8 @@ var RpgConditionCatalog = (function () {
                             }
                             if (field === "value_text" && current.type === "action_phase_is") {
                                 current.value=current.value || "CHANNELING";
-                                choose(wrap,"V2_"+group+index+"Phase",["IDLE","REQUESTED","CASTING","EXECUTED","CHANNELING","FINISHED","INTERRUPTED","ENDED","UNCONFIRMED"].map(function(value) { return {id:value,label:value}; }),current.value,function(value) { current.value=value; });
+                                wrap.AddClass("V2PhaseField");
+                                choose(wrap,"V2_"+group+index+"Phase",phases.map(function(value) { return {id:value,label:phaseLabel(value),hint:text("phase_"+value+"_hint")}; }),current.value,function(value) { current.value=value; });
                                 return;
                             }
                             if (field === "modifier" || field === "value_text") { wrap.AddClass("V2WideField"); }
@@ -340,9 +372,23 @@ var RpgConditionCatalog = (function () {
                             entry.AddClass("V2Input");
                             entry.text = String(current[keyName] === undefined ? "" : current[keyName]); entry.maxchars = 128;
                             if (field === "modifier" || field === "action_id" || field === "value_text") { entry.AddClass("V2TextInput"); }
-                            if (field === "modifier" && cap) {
-                                var names=Object.keys(cap.modifiers || {}).sort();
-                                choose(wrap,"V2_"+group+index+"Modifier",[{id:"",label:text("observed_modifiers")}].concat(names.map(function(name) { return {id:name,label:name}; })),"",function(name) { if (name) { entry.text=name; } });
+                            if (field === "modifier") {
+                                var details = cap && cap.modifier_details || {};
+                                var names = Object.keys(cap && cap.modifiers || {}).sort();
+                                // A saved/manual value remains visible even if it is no longer observed.
+                                if (entry.text && names.indexOf(entry.text) < 0) { names.push(entry.text); }
+                                var choices = names.map(function(name) { return modifierOption(name, details[name]); });
+                                var counts = {}, seen = {};
+                                choices.forEach(function(option) { counts[option.label] = (counts[option.label] || 0) + 1; });
+                                choices.forEach(function(option) {
+                                    var caption = option.label;
+                                    if (counts[caption] > 1) { seen[caption] = (seen[caption] || 0) + 1; option.label += " · " + seen[caption]; }
+                                });
+                                function selectedOption(name) { return choices.filter(function(option) { return option.id === name; })[0] || modifierOption(name, details[name]); }
+                                var showModifier = choose(wrap,"V2_"+group+index+"Modifier",[modifierOption("")].concat(choices),entry.text,function(name) { entry.text=name; });
+                                label(wrap,"",text("modifier_code")).AddClass("V2ModifierCodeLabel");
+                                entry.SetParent(wrap); entry.AddClass("V2ModifierCode");
+                                entry.SetPanelEvent("ontextentrychange",function() { showModifier(selectedOption(entry.text)); });
                                 tooltip(entry,text("modifier_ack_hint"));
                             }
                             entries.push({ panel: entry, key: keyName });

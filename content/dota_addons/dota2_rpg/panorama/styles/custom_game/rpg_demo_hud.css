@@ -1488,6 +1488,13 @@
 .V2Parameters.V2ActionOptions { width: 100%; }
 .V2Field { width: 110px; min-width: 110px; height: fit-children; flow-children: down; margin-left: 10px; margin-bottom: 6px; }
 .V2Field.V2WideField { width: 240px; min-width: 240px; }
+.V2Field.V2PhaseField { width: 160px; min-width: 160px; }
+.V2WideField > .V2Choices, .V2PhaseField > .V2Choices { width: 100%; }
+.V2StatusChoice { flow-children: right; }
+.V2Field .V2StatusChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
+.V2Field .V2ModifierCodeLabel { margin-top: 5px; font-size: 12px; }
+.V2Field .V2Input.V2ModifierCode { height: 30px; font-size: 13px; color: #a9bbc5; }
+.V2Field .V2Input.V2ModifierCode Label { font-size: 13px; color: #a9bbc5; }
 /* Movement and positioning stay in the scrollable condition modal. */
 .RuleSettingsBody .V2MotionField { width: 440px; min-width: 340px; margin-left: 0px; }
 .RuleSettingsBody .V2MotionField > Label { width: 100%; white-space: normal; }

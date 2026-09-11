@@ -92,16 +92,19 @@ def main():
     source_path, runtime_path = DATA / 'levels_v07.json', DATA / 'levels.kv'
     source_text = source_path.read_text(encoding='utf-8')
     source = json.loads(source_text)
-    loadout = runpy.run_path(str(ROOT / 'scripts/author-enemy-equipment.py'))['loadout']
+    equipment = runpy.run_path(str(ROOT / 'scripts/author-enemy-equipment.py'))
     changes = []
     teams = roster(source)
     for stage_id, team in teams.items():
         for original, (hero, profile) in zip(source[stage_id]['enemies'], team):
-            items = loadout(hero, int(stage_id[2:]), len(original['items']))
+            # Preserve blocks during roster replacement; re-author inventories
+            # below using each actual runtime level and the new hero identity.
+            items = original['items']
             changes.append((original['unit'], 'npc_dota_hero_' + hero, profile, items))
     # Validate both complete transformations before writing either file.
     updated_source = update_text(source_text, changes, True)
     updated_runtime = update_text(runtime_path.read_text(encoding='utf-8'), changes, False)
+    updated_source, updated_runtime = equipment['update_equipment'](updated_source, updated_runtime)
     source_path.write_text(updated_source, encoding='utf-8', newline='\n')
     runtime_path.write_text(updated_runtime, encoding='utf-8', newline='\n')
     counts = Counter(change[1] for change in changes)

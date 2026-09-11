@@ -29,19 +29,20 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual(manifest["runtime_source"], "game/dota_addons/dota2_rpg/scripts/data/levels.kv")
             self.assertEqual(manifest["stage_count"], 30)
             self.assertEqual(manifest["unit_configuration_rows"], 125)
-            self.assertEqual(manifest["equipment_rows"], 290)
+            self.assertEqual(manifest["equipment_rows"], 448)
             self.assertEqual(manifest["unique_units"], 69)
-            self.assertEqual(manifest["item_name_count"], 61)
+            self.assertEqual(manifest["item_name_count"], 67)
             self.assertEqual(manifest["untranslated_item_ids"], [])
-            # The old JSON currently stores level 30 for hero rows while the
-            # runtime KV stores their actual stage levels. This is report-only:
-            # the export must never use the JSON level instead.
-            self.assertEqual(manifest["maintenance_source_difference_rows"], 85)
+            # Equipment authoring synchronizes actual hero levels from KV.
+            self.assertEqual(manifest["maintenance_source_difference_rows"], 0)
 
             book = load_workbook(files["excel"], data_only=True)
             self.assertEqual(book.sheetnames, ["说明", "关卡总览", "单位明细", "装备明细", "单位出现汇总", "源文件差异"])
             for name in book.sheetnames[1:]:
                 sheet = book[name]
+                if name == "源文件差异":
+                    self.assertEqual(sheet.cell(1, 1).value, "无数据")
+                    continue
                 self.assertTrue(sheet.auto_filter.ref)
                 self.assertTrue(sheet.tables, name + " must be filterable")
                 self.assertEqual(sheet.freeze_panes, "A2")
@@ -52,7 +53,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             axe = next(row for row in records if row["关卡"] == "ch05" and row["单位原生ID"] == "npc_dota_hero_axe")
             self.assertEqual((axe["单位名称"], axe["数量"], axe["等级"], axe["AI类型"],
                               axe["装备1（中文）"], axe["装备1（原生ID）"], axe["装备2（中文）"], axe["装备2（原生ID）"]),
-                             ("斧王", 1, 8, "aggro_front", "速度之靴", "item_boots", "护腕", "item_bracer"))
+                             ("斧王", 1, 8, "aggro_front", "相位鞋", "item_phase_boots", "护腕", "item_bracer"))
             for chapter, unit, health, attack, spell, cooldown in [
                 ("ch10", "npc_dota_hero_centaur", 6000, 16.666667, 16.666667, 4.166667),
                 ("ch20", "npc_dota_hero_spirit_breaker", 10000, 33.333333, 25, 6.666667),
@@ -68,20 +69,28 @@ class LevelConfigurationExportTests(unittest.TestCase):
             difference_sheet = book["源文件差异"]
             difference_headers = [cell.value for cell in difference_sheet[1]]
             differences = [dict(zip(difference_headers, values)) for values in difference_sheet.iter_rows(min_row=2, values_only=True)]
-            self.assertEqual(len(differences), 85)
-            self.assertEqual({row["字段"] for row in differences}, {"level"})
-            first = differences[0]
-            self.assertEqual((first["关卡"], first["单位原生ID"], first["运行时 levels.kv"], first["维护 levels_v07.json"]),
-                             ("ch05", "npc_dota_hero_axe", "8", "30"))
+            self.assertEqual(differences, [])
+            # Reporting still detects stale JSON without changing live values.
+            with tempfile.TemporaryDirectory() as stale_dir:
+                stale = json.loads(EXPORT.SOURCE_PATH.read_text(encoding="utf-8"))
+                stale["ch05"]["enemies"][0]["level"] = 30
+                stale_path = Path(stale_dir) / "stale.json"
+                stale_path.write_text(json.dumps(stale), encoding="utf-8")
+                levels = EXPORT.read_kv(EXPORT.RUNTIME_PATH.read_text(encoding="utf-8"))["levels"]
+                delta = EXPORT.compare_maintenance_source(levels, stale_path)
+                self.assertEqual(len(delta), 1)
+                self.assertEqual((delta[0]["运行时 levels.kv"], delta[0]["维护 levels_v07.json"]), ("8", "30"))
 
             equipment_sheet = book["装备明细"]
             equipment_headers = [cell.value for cell in equipment_sheet[1]]
             equipment = [dict(zip(equipment_headers, values)) for values in equipment_sheet.iter_rows(min_row=2, values_only=True)]
             self.assertTrue(all(row["装备中文名"] and row["装备原生ID"] for row in equipment))
-            self.assertEqual({row["装备原生ID"] for row in equipment}, set(EXPORT.ITEM_NAMES) - {
-                "item_sange_and_yasha", "item_phylactery", "item_bloodthorn", "item_rod_of_atos"})
+            self.assertTrue({row["装备原生ID"] for row in equipment} <= set(EXPORT.ITEM_NAMES))
+            self.assertEqual(len(equipment), sum(row["装备数量"] for row in records))
+            self.assertTrue(any(row["装备槽"] == 6 for row in equipment))
+            self.assertTrue(any(row["装备6（原生ID）"] for row in records))
             self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_blink"), "闪烁匕首")
-            self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_halberd"), "天堂之戟（兼容旧 ID）")
+            self.assertEqual(next(row["装备中文名"] for row in equipment if row["装备原生ID"] == "item_heavens_halberd"), "天堂之戟")
 
             raw = files["units_csv"].read_bytes()
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"), "CSV needs an Excel-friendly UTF-8 BOM")

@@ -1,16 +1,14 @@
-"""Explicit enemy hero builds, keyed by progression tier and inventory size.
+"""Deterministic enemy equipment from actual configured level and hero role.
 
-Tiers: chapters 5-9, 10-14, 15-19, 20-24, 25-29, 30.
-Each row is authored for its hero, never selected by enemy position. Item counts
-stay unchanged. Early builds use boots/stats, then role cores, then protection
-and luxury upgrades. Strength carries (Huskar/Sven) are not aura supports;
-Sand King is a spell initiator, Lina a spell core, Dazzle a support.
-
-Run from the repository root to update only hero item blocks in both data files.
+These are authored arena balance curves, not measured public-match net worth.
+Existing hero cores define identity; level determines boots, utility and luxury
+progression. Runtime levels.kv is authoritative, including when maintenance
+JSON has stale levels. Run this tool after changing enemy levels or roster.
 """
 import json
 from pathlib import Path
 import re
+import runpy
 
 # Six complete builds per hero; names below are native IDs without item_.
 BUILDS = {
@@ -26,9 +24,9 @@ BUILDS = {
         'blink assault black_king_bar satanic greater_crit'],
     'huskar': [
         'boots bracer', 'power_treads bracer magic_wand',
-        'power_treads armlet halberd', 'armlet halberd black_king_bar',
-        'armlet halberd black_king_bar satanic',
-        'armlet halberd black_king_bar satanic assault'],
+        'power_treads armlet heavens_halberd', 'armlet heavens_halberd black_king_bar',
+        'armlet heavens_halberd black_king_bar satanic',
+        'armlet heavens_halberd black_king_bar satanic assault'],
     'sand_king': [
         'boots bracer', 'arcane_boots bracer magic_wand',
         'arcane_boots blink veil_of_discord', 'blink shivas_guard black_king_bar',
@@ -182,97 +180,122 @@ BUILDS['luna'][4:] = [
     'power_treads manta butterfly black_king_bar satanic',
 ]
 
-# Every hero has an intentional boots/core pair for the two-slot stages.
-# Support pairs retain their defining utility; selection never uses roster slot.
-TWO_SLOT_BUILDS = {
-    (tier, hero): ' '.join(rows[tier - 1].split()[:2])
-    for hero, rows in BUILDS.items()
-    for tier in range(2, 7)
-}
-TWO_SLOT_BUILDS.update({
-    (3, hero): 'force_staff glimmer_cape'
-    for hero in ('crystal_maiden', 'witch_doctor', 'oracle', 'dazzle')
-})
-TWO_SLOT_BUILDS.update({
-    (3, 'sniper'): 'power_treads maelstrom',
-    (3, 'clinkz'): 'power_treads phylactery',
-    (3, 'lina'): 'arcane_boots kaya',
-    (4, 'dazzle'): 'guardian_greaves glimmer_cape',
-    (5, 'dazzle'): 'guardian_greaves glimmer_cape',
-    (6, 'dazzle'): 'guardian_greaves glimmer_cape',
-})
-# Preserve the original authored two-slot alternatives.
-TWO_SLOT_BUILDS.update({
-    (2, 'sven'): 'power_treads echo_sabre',
-    (2, 'phantom_assassin'): 'power_treads orb_of_corrosion',
-    (2, 'riki'): 'power_treads orb_of_corrosion',
-    (3, 'sven'): 'echo_sabre black_king_bar',
-    (3, 'riki'): 'diffusal_blade black_king_bar',
-    (3, 'juggernaut'): 'phase_boots manta',
-})
-
-
 BOOT_ITEMS = {'boots', 'phase_boots', 'power_treads', 'arcane_boots', 'guardian_greaves'}
+LEGACY_ROLES = {
+    'axe': 'strength', 'dragon_knight': 'strength', 'huskar': 'strength',
+    'sand_king': 'strength', 'sven': 'strength', 'lina': 'caster',
+    'drow_ranger': 'agility', 'sniper': 'agility', 'clinkz': 'agility',
+    'phantom_assassin': 'agility', 'riki': 'agility', 'juggernaut': 'agility',
+    'crystal_maiden': 'support', 'witch_doctor': 'support',
+    'oracle': 'support', 'dazzle': 'support',
+}
+ROLES = {**LEGACY_ROLES, **{hero: row.split()[0] for hero, row in HERO_PROFILES.items()}}
+# Supports finish with boots plus four utility items; cores gain a sixth slot.
+# A passive final item remains useful even when the native AI cannot activate
+# an earlier item. Do not add consumables, neutral items or economy items.
+FINAL_ITEMS = {'strength': 'assault', 'agility': 'butterfly', 'caster': 'shivas_guard'}
 
 
-def loadout(hero, chapter, count):
-    if not 5 <= chapter <= 30:
-        raise ValueError(f'No hero equipment tier for chapter {chapter}')
-    if count not in (2, 3, 4, 5):
-        raise ValueError(f'Unsupported inventory size: {count}')
-    tier = min(chapter // 5, 6)
-    names = (TWO_SLOT_BUILDS[(tier, hero)] if count == 2 and tier > 1
-             else BUILDS[hero][tier - 1]).split()
-    # Unusual inventory sizes draw additional items from the same hero's
-    # progression. The standard 2/3/3/3/4/5 schedule preserves authored rows.
-    for row in BUILDS[hero][tier:] + list(reversed(BUILDS[hero][:tier - 1])):
-        if len(names) >= count:
-            break
-        for name in row.split():
-            if name in BOOT_ITEMS and set(names) & BOOT_ITEMS:
-                continue
-            if name not in names:
-                names.append(name)
-    return ['item_' + name for name in names[:count]]
+def loadout(hero, level):
+    """Return one complete inventory; never borrow expensive future-tier items."""
+    numeric = float(level)
+    if not numeric.is_integer() or not 1 <= numeric <= 30:
+        raise ValueError(f'Enemy level must be an integer in 1..30: {level}')
+    level = int(numeric)
+    role = ROLES[hero]
+    rows = [row.split() for row in BUILDS[hero]]
+    stat = {'strength': 'bracer', 'agility': 'wraith_band',
+            'caster': 'null_talisman', 'support': 'magic_wand'}[role]
+    boots = next(item for item in rows[2] if item in BOOT_ITEMS)
+    if level <= 3:
+        names = [stat]
+    elif level <= 6:
+        names = ['boots', stat]
+    elif level <= 9:
+        names = [boots, stat, 'wind_lace' if role == 'support' else 'magic_wand']
+    elif level <= 13:
+        core = next(item for item in rows[2] if item not in BOOT_ITEMS)
+        names = [boots, core, 'magic_wand']
+    elif level <= 17:
+        names = [*rows[2], 'magic_wand']
+    elif level <= 21:
+        names = [boots, *rows[3]]
+    elif level <= 25:
+        names = [boots, *rows[3], 'magic_wand'] if role == 'support' else [boots, *rows[4]]
+    else:
+        names = [boots, *rows[5]]
+        if role != 'support':
+            # Keep the hero's authored luxury first, then fill its sixth slot.
+            for item in [FINAL_ITEMS[role], 'heart' if role == 'strength' else 'skadi']:
+                if len(set(names)) >= 6:
+                    break
+                if item not in names:
+                    names.append(item)
+    # Greaves replace other boots; upgraded items replace their components.
+    if 'guardian_greaves' in names:
+        names = [item for item in names if item not in BOOT_ITEMS or item == 'guardian_greaves']
+    replacements = {**UPGRADES, 'vanguard': 'crimson_guard', 'veil_of_discord': 'shivas_guard'}
+    result = []
+    for item in names:
+        if item not in result and replacements.get(item) not in names:
+            result.append(item)
+    if role == 'support':
+        result = result[:5]
+    if len(result) > 6:
+        raise ValueError(f'Inventory overflow: {hero} level {level}: {result}')
+    return ['item_' + item for item in result]
+
+
+def update_equipment(source_text, runtime_text):
+    """Validate both files before touching disk; preserve all non-equipment KV."""
+    read_kv = runpy.run_path(str(Path(__file__).with_name('export-level-configuration.py')))['read_kv']
+    runtime = read_kv(runtime_text)['levels']
+    source = json.loads(source_text)
+    builds = []
+    for stage_id, stage in source.items():
+        actual = list(runtime[stage_id]['enemies'].values())
+        if len(actual) != len(stage['enemies']):
+            raise ValueError(f'Roster count mismatch in {stage_id}')
+        for entry, live in zip(stage['enemies'], actual):
+            if entry['unit'] != live['unit']:
+                raise ValueError(f'Roster ordering mismatch in {stage_id}')
+            if entry['unit'].startswith('npc_dota_hero_'):
+                hero = entry['unit'].removeprefix('npc_dota_hero_')
+                builds.append((entry['unit'], int(live['level']), loadout(hero, live['level'])))
+    patterns = [
+        r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])',
+        r'("unit"\s+"(npc_dota_hero_[^"]+)"[^{}]*?"items"\s*\{)([^{}]*)(\})',
+    ]
+    outputs = []
+    for text, pattern, is_json in zip((source_text, runtime_text), patterns, (True, False)):
+        remaining = iter(builds)
+        def replace(match):
+            unit, level, items = next(remaining)
+            if unit != match[2]:
+                raise ValueError(f'Hero ordering mismatch: {unit}, {match[2]}')
+            prefix = match[1]
+            if is_json:
+                prefix = re.sub(r'("level": )\d+', lambda m: m[1] + str(level), prefix)
+                body = '\n' + ',\n'.join('          ' + json.dumps(item) for item in items) + '\n        '
+            else:
+                indent = re.search(r'\n([ \t]*)"1"', match[3]).group(1)
+                closing_indent = match[3].rsplit('\n', 1)[-1]
+                body = '\n' + '\n'.join(f'{indent}"{i}" "{item}"' for i, item in enumerate(items, 1)) + '\n' + closing_indent
+            return prefix + body + match[4]
+        updated, count = re.subn(pattern, replace, text, flags=re.S)
+        if count != len(builds):
+            raise ValueError(f'Expected {len(builds)} hero blocks, got {count}')
+        outputs.append(updated)
+    return outputs
 
 
 def main():
     data = Path(__file__).resolve().parents[1] / 'game/dota_addons/dota2_rpg/scripts/data'
-    source_path, runtime_path = data / 'levels_v07.json', data / 'levels.kv'
-    source_text = source_path.read_text(encoding='utf-8')
-    runtime_text = runtime_path.read_text(encoding='utf-8')
-    source = json.loads(source_text)
-    builds = []
-    for stage_id, stage in source.items():
-        for entry in stage['enemies']:
-            if entry['unit'].startswith('npc_dota_hero_'):
-                hero = entry['unit'].removeprefix('npc_dota_hero_')
-                builds.append((entry['unit'], loadout(hero, int(stage_id[2:]), len(entry['items']))))
-    # Only substitute item arrays/blocks; runtime rewards and other fields are
-    # independently authored and must not be regenerated from this source.
-    source_pattern = r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])'
-    runtime_pattern = r'("unit"\s+"(npc_dota_hero_[^"]+)"[^{}]*?"items"\s*\{)([^{}]*)(\})'
-    for path, text, pattern, is_json in [
-        (source_path, source_text, source_pattern, True),
-        (runtime_path, runtime_text, runtime_pattern, False),
-    ]:
-        remaining = iter(builds)
-        def replace(match):
-            unit, items = next(remaining)
-            if unit != match[2]:
-                raise ValueError(f'Hero ordering mismatch: {unit}, {match[2]}')
-            old = match[3]
-            old_items = re.findall(r'"item_[^"]+"', old)
-            if len(old_items) != len(items):
-                raise ValueError(f'Inventory count mismatch for {unit}')
-            item_iter = iter(items)
-            new = re.sub(r'"item_[^"]+"', lambda _: json.dumps(next(item_iter)), old)
-            return match[1] + new + match[4]
-        updated, count = re.subn(pattern, replace, text, flags=re.S)
-        if count != len(builds):
-            raise ValueError(f'{path}: expected {len(builds)} blocks, got {count}')
-        path.write_text(updated, encoding='utf-8', newline='\n')
-    print(f'Authored {len(builds)} hero entries across {len(BUILDS)} heroes; preserved item counts.')
+    paths = [data / 'levels_v07.json', data / 'levels.kv']
+    outputs = update_equipment(*(path.read_text(encoding='utf-8') for path in paths))
+    for path, text in zip(paths, outputs):
+        path.write_text(text, encoding='utf-8', newline='\n')
+    print('Authored level-based enemy equipment; synchronized hero levels from runtime KV.')
 
 
 if __name__ == '__main__':

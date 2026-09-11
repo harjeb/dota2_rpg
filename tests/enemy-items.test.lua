@@ -25,4 +25,14 @@ end
 assert(Items.EquipConfiguredItems({ AddItem = function(_, item) added = item; return item end },
     { items = { "item_boots" } }) == 1)
 assert(added == created, "fallback adds the original native item entity")
+-- High-level cores now use all six active slots. Native item identity and
+-- ordering must survive the larger KV inventory without touching economy APIs.
+calls = {}
+local lateCarry = {
+    ["6"] = "item_satanic", ["2"] = "item_hurricane_pike", ["4"] = "item_butterfly",
+    ["1"] = "item_power_treads", ["5"] = "item_black_king_bar", ["3"] = "item_manta",
+}
+assert(Items.EquipConfiguredItems(unit, {unit = "npc_dota_hero_drow_ranger", level = "30", items = lateCarry}) == 6)
+assert(table.concat(calls, ",") == "item_power_treads,item_hurricane_pike,item_manta,item_butterfly,item_black_king_bar,item_satanic")
+assert(lateCarry["6"] == "item_satanic", "equipping does not rewrite the configured build")
 print("enemy-items.test.lua: passed")

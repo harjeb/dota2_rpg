@@ -268,7 +268,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v36-20260911") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v37-20260911") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -441,7 +441,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v36-20260911 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v37-20260911 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2705,6 +2705,8 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		end
 	end
 	self:SpawnBenchHeroes()
+	-- Restored native handles can retain battle/backpack cooldowns under prepare modifiers.
+	require("battle.item_cooldowns").Refresh(self)
 	RuntimeLog.Write(string.format("Wallet roster_after player=%s native=%s mirror=%s initialized=%s",
 		tostring(self.playerId), tostring(self:ReadNativeGold()), tostring(self.gold), tostring(self.goldWalletInitialized)))
 	self.equipmentSnapshot = nil
@@ -3489,6 +3491,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 	-- Claim settlement before any wallet/item/event callback can re-enter.
 	self.phase = "result"
+	self:RunLifecycleStep("item_cooldowns", function() require("battle.item_cooldowns").Refresh(self) end)
 	RespawnPolicy.SetBattleActive(self, false)
 	self.settlementGeneration = (self.settlementGeneration or 0) + 1
 	local settlementGeneration = self.settlementGeneration

@@ -81,7 +81,7 @@ ITEM_NAMES = {
     "item_desolator": "黯灭", "item_diffusal_blade": "净魂之刃", "item_disperser": "散魂剑",
     "item_dragon_lance": "魔龙枪", "item_echo_sabre": "回音战刃", "item_eternal_shroud": "永世法衣",
     "item_force_staff": "原力法杖", "item_glimmer_cape": "微光披风", "item_greater_crit": "代达罗斯之殇",
-    "item_guardian_greaves": "卫士胫甲", "item_halberd": "天堂之戟（兼容旧 ID）", "item_harpoon": "鱼叉",
+    "item_guardian_greaves": "卫士胫甲", "item_heavens_halberd": "天堂之戟", "item_harpoon": "鱼叉",
     "item_heart": "恐鳌之心", "item_hurricane_pike": "飓风长戟", "item_invis_sword": "影刃",
     "item_kaya_and_sange": "散慧对剑", "item_lotus_orb": "清莲宝珠", "item_maelstrom": "漩涡",
     "item_magic_wand": "魔杖", "item_manta": "幻影斧", "item_mekansm": "梅肯斯姆",
@@ -92,6 +92,10 @@ ITEM_NAMES = {
     "item_satanic": "撒旦之邪力", "item_sheepstick": "邪恶镰刀", "item_shivas_guard": "希瓦的守护",
     "item_skadi": "斯嘉蒂之眼", "item_spirit_vessel": "魂之灵瓮", "item_ultimate_scepter": "阿哈利姆神杖",
     "item_wind_lace": "风灵之纹", "item_wind_waker": "风之杖", "item_wraith_band": "怨灵系带",
+    "item_kaya": "慧光", "item_mask_of_madness": "疯狂面具",
+    "item_orb_of_corrosion": "腐蚀之球", "item_vanguard": "先锋盾",
+    "item_veil_of_discord": "纷争面纱",
+    "item_silver_edge": "白银之锋",
     "item_yasha": "夜叉",
 }
 
@@ -201,7 +205,7 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
                 "装备数量": len(items), "装备合计（中文）": "；".join(item_name(item) for item in items),
                 "装备合计（原生ID）": "；".join(items), "配置路径": f"levels/{stage_id}/enemies/{config_index}",
             }
-            for item_index in range(1, 6):
+            for item_index in range(1, 7):
                 item = items[item_index - 1] if item_index <= len(items) else ""
                 row[f"装备{item_index}（中文）"] = item_name(item) if item else ""
                 row[f"装备{item_index}（原生ID）"] = item
@@ -212,7 +216,7 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
 def equipment_rows(units: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for unit in units:
-        for item_index in range(1, 6):
+        for item_index in range(1, 7):
             item = unit[f"装备{item_index}（原生ID）"]
             if item:
                 rows.append({
@@ -289,6 +293,7 @@ def compare_maintenance_source(levels: dict[str, Any], source_path: Path) -> lis
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
+        path.write_text('\ufeff无数据\n', encoding='utf-8')
         return
     with path.open("w", encoding="utf-8-sig", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
@@ -351,8 +356,8 @@ def write_workbook(path: Path, sheets: list[tuple[str, list[dict[str, Any]]]], m
         ("运行时优先", "游戏实际读取 levels.kv。本表绝不使用 levels_v07.json 覆盖运行时数值。若存在差异，请看“源文件差异”表。"),
         ("如何手动调整", "不要编辑本 Excel/CSV 让游戏生效；请编辑 levels.kv，并按需要同步更新 levels_v07.json，再运行本导出工具复查。"),
         ("关卡总览", "每关一行：奖励、推荐等级、限时、总数量、倍率与战利品表。"),
-        ("装备中文名", "中文名来自当前 Dota 简体中文物品本地化快照；“原生ID”仍是手动改 KV 时必须使用的名称。item_halberd 是兼容旧 ID，特别标注。"),
-        ("单位明细", "每关每个 enemies 配置一行。配置路径直接对应 levels.kv 的 enemies/N。装备1–5按原生槽位导出中文名及原生ID。"),
+        ("装备中文名", "中文名来自当前 Dota 简体中文物品本地化快照；“原生ID”仍是手动改 KV 时必须使用的名称。天堂之戟使用原生 ID item_heavens_halberd。"),
+        ("单位明细", "每关每个 enemies 配置一行。配置路径直接对应 levels.kv 的 enemies/N。装备1–6按原生槽位导出中文名及原生ID。"),
         ("装备明细", "每件装备一行，便于按中文名、原生ID或关卡筛选。"),
         ("单位出现汇总", "按单位汇总当前所有关卡的配置次数、实际累计刷出数量、等级范围与 Boss 出现关卡。"),
         ("AI说明", "simple_nearest=野怪最近目标；aggro_front=前排近距攻击；focus_lowest_hp=优先最低生命；ai_healer_protect=治疗/保护友军。"),

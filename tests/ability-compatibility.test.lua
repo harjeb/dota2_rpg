@@ -46,4 +46,26 @@ local decoded=service:DecodeFlat({action_kind='ability',action_id=a.name,action_
 assert(decoded.action.desired_autocast_state==false);a.behavior=8+4096;assert(service:ValidateRule(0,hero,decoded));assert(decoded.min_aoe_hits==nil)
 local sync;CustomNetTables={SetTableValue=function(_,_,_,v) sync=v end};service.get_hero_key=function() return 'test' end
 service:SyncRule(0,hero,1,decoded);assert(sync.desired_autocast_state==false and sync.min_aoe_hits==nil)
-print('PASS ability compatibility: native roles, contradictions, modifiers, references, live refresh, switch false, builtin parity')
+-- Display metadata comes from real observed/intrinsic sources, without changing membership.
+M.Reset()
+local displayHero=H.unit()
+local source=H.ability(displayHero,'weaver_shukuchi',4)
+local observed={GetName=function() return 'modifier_weaver_shukuchi' end,
+ GetAbility=function() return source end,IsDebuff=function() return false end}
+displayHero.modifiers.effect=observed
+local named=A.ForAction(displayHero,{kind='attack',logical_id='basic_attack'})
+assert(named.modifiers.modifier_weaver_shukuchi==1)
+assert(named.modifier_details.modifier_weaver_shukuchi.ability=='weaver_shukuchi')
+assert(named.modifier_details.modifier_weaver_shukuchi.debuff==0)
+source.GetIntrinsicModifierName=function() return 'modifier_intrinsic_source' end
+local nativeCap=A.Describe(displayHero,source,{kind='ability',name=source.name})
+assert(nativeCap.modifiers.modifier_intrinsic_source==1 and nativeCap.modifier_details.modifier_intrinsic_source.ability==source.name)
+named.modifier_details.modifier_weaver_shukuchi.ability='mutated_client_copy'
+local _,details=M.List(displayHero,nil);assert(details.modifier_weaver_shukuchi.ability==source.name,'snapshots do not mutate catalog')
+observed.GetAbility=function() error('expired source') end
+local safe=A.ForAction(displayHero,{kind='attack',logical_id='basic_attack'})
+assert(safe.modifiers.modifier_weaver_shukuchi==1,'unavailable metadata preserves observed identity')
+local runtime=A.ForAction(displayHero,{kind='attack',logical_id='basic_attack'},{runtime=true})
+assert(next(runtime.modifiers)==nil and next(runtime.modifier_details)==nil,'runtime hot path omits display data')
+M.Reset();displayHero.modifiers={};local empty=M.List(displayHero,nil);assert(next(empty)==nil)
+print('PASS ability compatibility: native roles, contradictions, modifiers with source metadata, references, live refresh, switch false, builtin parity')

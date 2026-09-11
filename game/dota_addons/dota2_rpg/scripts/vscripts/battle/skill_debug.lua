@@ -4,6 +4,7 @@ local Log = require("issue_fixes.runtime_log")
 local Lifecycle = require("issue_fixes.hero_lifecycle_log")
 local Policy = require("issue_fixes.hero_ability_policy")
 local RespawnPolicy = require("battle.respawn_policy")
+local ItemCooldowns = require("battle.item_cooldowns")
 local cleanup = { require("battle.tempest_double"), require("tactics.special_targets"),
     require("battle.summon_behavior"), require("issue_fixes.tiny_tree") }
 local function valid(unit) return unit ~= nil and (not unit.IsNull or not unit:IsNull()) end
@@ -71,6 +72,7 @@ end
 local function stop(game)
     -- Claim before native cleanup; callbacks cannot settle this fight twice.
     game.phase = "result"
+    safe(game, "item_cooldowns", function() ItemCooldowns.Refresh(game) end)
     RespawnPolicy.SetBattleActive(game, false)
     for i, module in ipairs(cleanup) do safe(game, "clear_" .. i, function() module.Clear(game) end) end
     safe(game, "stop", function() game.battleManager:StopBattle() end)
@@ -154,13 +156,8 @@ local function ready(game)
             local ability = unit:GetAbilityByIndex(slot)
             if valid(ability) and ability.EndCooldown then ability:EndCooldown() end
         end
-        if unit.GetItemInSlot then
-            for slot = 0, 16 do
-                local item = unit:GetItemInSlot(slot)
-                if valid(item) and item.EndCooldown then item:EndCooldown() end
-            end
-        end
     end
+    ItemCooldowns.Refresh(game)
     game:SetGoldBalance(Debug.GOLD)
     game.teamsSpawned = true
     game:SpawnBattleBarrier()

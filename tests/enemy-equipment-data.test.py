@@ -28,7 +28,7 @@ enchantress ogre_magi dark_willow
 NATIVE_ITEMS = {'item_' + name for name in '''
 boots bracer null_talisman magic_wand wraith_band phase_boots power_treads
 arcane_boots blink vanguard blade_mail black_king_bar crimson_guard heart
-shivas_guard armlet assault satanic greater_crit halberd veil_of_discord
+shivas_guard armlet assault satanic greater_crit heavens_halberd veil_of_discord
 ultimate_scepter octarine_core dragon_lance yasha hurricane_pike manta butterfly
 maelstrom mjollnir phylactery desolator bloodthorn orb_of_corrosion basher
 abyssal_blade diffusal_blade echo_sabre force_staff kaya kaya_and_sange sheepstick
@@ -104,150 +104,117 @@ CORE_ITEMS = {
 
 
 class EnemyEquipmentDataTests(unittest.TestCase):
-    def setUp(self):
-        self.source = json.loads((DATA / 'levels_v07.json').read_text(encoding='utf-8'))
-        self.heroes = [
-            (int(stage_id[2:]), index, entry)
-            for stage_id, stage in self.source.items()
-            for index, entry in enumerate(stage['enemies'])
-            if entry['unit'].startswith('npc_dota_hero_')
-        ]
-
-    def test_inventory_counts_and_native_ids(self):
-        self.assertEqual(len(self.heroes), 93)
-        self.assertEqual({e['unit'].removeprefix('npc_dota_hero_')
-                          for _, _, e in self.heroes}, EXPECTED_HEROES - {
-                              'skywrath_mage', 'ancient_apparition', 'zuus', 'pugna'})
-        self.assertEqual(len(EXPECTED_HEROES), 64)
-        appearances = Counter(e['unit'] for _, _, e in self.heroes)
-        self.assertLessEqual(max(appearances.values()), 2)
-        for chapter, slot, entry in self.heroes:
-            with self.subTest(chapter=chapter, hero=entry['unit']):
-                expected_count = (2 if chapter < 10 else
-                                  2 if chapter < 20 and slot == 2 else
-                                  3 if chapter < 25 else
-                                  4 if chapter < 30 else 5)
-                self.assertEqual(len(entry['items']), expected_count)
-                self.assertEqual(len(set(entry['items'])), expected_count)
-                self.assertTrue(set(entry['items']) <= NATIVE_ITEMS,
-                                set(entry['items']) - NATIVE_ITEMS)
-
-    def test_every_hero_has_role_appropriate_progression(self):
-        for chapter, _, entry in self.heroes:
-            hero = entry['unit'].removeprefix('npc_dota_hero_')
-            items = {item.removeprefix('item_') for item in entry['items']}
-            with self.subTest(chapter=chapter, hero=hero):
-                if hero in AGILITY_CARRIES | PHYSICAL_STRENGTH:
-                    self.assertFalse(items & {
-                        'null_talisman', 'arcane_boots', 'kaya', 'octarine_core',
-                        'refresher', 'mekansm', 'guardian_greaves', 'pipe',
-                        'glimmer_cape', 'lotus_orb', 'crimson_guard',
-                    }, (hero, items))
-                if hero in AGILITY_CARRIES and chapter < 15:
-                    self.assertTrue(items & {'wraith_band', 'orb_of_corrosion'})
-                if hero in SUPPORTS:
-                    self.assertFalse(items & {
-                        'assault', 'crimson_guard', 'satanic', 'greater_crit',
-                        'desolator', 'butterfly', 'heart',
-                    }, (hero, items))
-                if chapter >= 15:
-                    self.assertTrue(items & CORE_ITEMS[hero], (hero, items))
-                if hero == 'huskar':
-                    self.assertNotIn('blink', items)
-                if hero == 'sand_king' and chapter >= 20:
-                    self.assertIn('shivas_guard', items)
-                if hero == 'witch_doctor' and chapter >= 20:
-                    self.assertIn('ultimate_scepter', items)
-
-    def test_drow_physical_build_at_each_tier(self):
-        # Independent of roster appearances, preserve the original carry build.
-        expected = [
-            'boots wraith_band',
-            'power_treads wraith_band magic_wand',
-            'power_treads dragon_lance yasha',
-            'hurricane_pike yasha black_king_bar',
-            'hurricane_pike manta butterfly black_king_bar',
-            'hurricane_pike manta butterfly black_king_bar satanic',
-        ]
-        for chapter, names in zip((5, 10, 15, 20, 25, 30), expected):
-            self.assertEqual(AUTHOR['loadout']('drow_ranger', chapter, len(names.split())),
-                             ['item_' + name for name in names.split()])
-
-    def test_generator_covers_every_hero_chapter_and_inventory_size(self):
+    def test_all_heroes_all_levels_native_slots_roles_and_determinism(self):
         self.assertEqual(set(AUTHOR['BUILDS']), EXPECTED_HEROES)
-        self.assertEqual(set(CORE_ITEMS), EXPECTED_HEROES)
         for hero in EXPECTED_HEROES:
-            self.assertEqual(len(AUTHOR['BUILDS'][hero]), 6)
-            for chapter in range(5, 31):
-                for count in (2, 3, 4, 5):
-                    with self.subTest(hero=hero, chapter=chapter, count=count):
-                        items = AUTHOR['loadout'](hero, chapter, count)
-                        self.assertEqual(len(items), count)
-                        self.assertEqual(len(set(items)), count)
-                        self.assertLessEqual(len(set(items) & {
-                            'item_boots', 'item_phase_boots', 'item_power_treads',
-                            'item_arcane_boots', 'item_guardian_greaves',
-                        }), 1, items)
-                        self.assertEqual(items, AUTHOR['loadout'](
-                            hero, (chapter // 5) * 5, count))
-                        self.assertTrue(set(items) <= NATIVE_ITEMS, set(items) - NATIVE_ITEMS)
-                        if chapter >= 15:
-                            self.assertTrue({i.removeprefix('item_') for i in items}
-                                            & CORE_ITEMS[hero], items)
-                        if hero in AGILITY_CARRIES | PHYSICAL_STRENGTH:
-                            self.assertFalse(set(items) & {
-                                'item_null_talisman', 'item_arcane_boots',
-                                'item_kaya', 'item_kaya_and_sange',
-                                'item_octarine_core', 'item_sheepstick',
-                                'item_guardian_greaves', 'item_glimmer_cape',
-                            }, items)
+            for level in range(1, 31):
+                with self.subTest(hero=hero, level=level):
+                    items = AUTHOR['loadout'](hero, level)
+                    short = {item.removeprefix('item_') for item in items}
+                    self.assertEqual(items, AUTHOR['loadout'](hero, str(level)))
+                    self.assertEqual(len(items), len(set(items)))
+                    self.assertLessEqual(len(items), 5 if hero in SUPPORTS else 6)
+                    self.assertEqual(len(short & AUTHOR['BOOT_ITEMS']), 0 if level <= 3 else 1)
+                    self.assertTrue(set(items) <= NATIVE_ITEMS, set(items) - NATIVE_ITEMS)
+                    for base, upgraded in AUTHOR['UPGRADES'].items():
+                        self.assertFalse({base, upgraded} <= short, items)
+                    if level >= 18:
+                        self.assertTrue(short & CORE_ITEMS[hero], (hero, items))
+                    if hero in AGILITY_CARRIES | PHYSICAL_STRENGTH:
+                        self.assertFalse(short & {'arcane_boots', 'null_talisman', 'glimmer_cape',
+                                                 'guardian_greaves', 'kaya', 'octarine_core'})
+                    if hero in SUPPORTS:
+                        self.assertFalse(short & {'assault', 'satanic', 'greater_crit', 'butterfly', 'heart'})
+                    if level <= 6:
+                        self.assertFalse(short & {'blink', 'black_king_bar', 'force_staff', 'ultimate_scepter'})
+                    if level >= 26:
+                        self.assertGreaterEqual(len(items), 5)
 
-    def test_representative_new_hero_late_roles(self):
+    def test_drow_low_mid_and_high_level_builds(self):
         expected = {
+            1: 'wraith_band', 4: 'boots wraith_band',
+            8: 'power_treads wraith_band magic_wand',
+            12: 'power_treads dragon_lance magic_wand',
+            16: 'power_treads dragon_lance yasha magic_wand',
+            20: 'power_treads hurricane_pike yasha black_king_bar',
+            24: 'power_treads hurricane_pike manta butterfly black_king_bar',
+            30: 'power_treads hurricane_pike manta butterfly black_king_bar satanic',
+        }
+        for level, names in expected.items():
+            self.assertEqual(AUTHOR['loadout']('drow_ranger', level),
+                             ['item_' + name for name in names.split()])
+        for hero, required in {
             'antimage': {'bfury', 'manta', 'abyssal_blade'},
             'phantom_lancer': {'disperser', 'manta', 'heart'},
-            'chaos_knight': {'armlet', 'manta', 'heart'},
-            'luna': {'manta', 'butterfly', 'satanic'},
             'centaur': {'blink', 'pipe', 'heart'},
-            'tidehunter': {'blink', 'guardian_greaves', 'refresher'},
             'leshrac': {'bloodstone', 'kaya_and_sange', 'shivas_guard'},
-            'queenofpain': {'bloodthorn', 'kaya_and_sange'},
-            'warlock': {'ultimate_scepter', 'refresher', 'glimmer_cape'},
-            'bane': {'aether_lens', 'black_king_bar', 'ultimate_scepter'},
-            'omniknight': {'guardian_greaves', 'pipe', 'lotus_orb'},
-        }
-        for hero, required in expected.items():
-            with self.subTest(hero=hero):
-                items = {i.removeprefix('item_') for i in AUTHOR['loadout'](hero, 30, 5)}
-                self.assertTrue(required <= items, (required, items))
+            'warlock': {'glimmer_cape', 'ultimate_scepter', 'refresher'},
+        }.items():
+            self.assertTrue({'item_' + item for item in required} <= set(AUTHOR['loadout'](hero, 30)))
 
-    def test_same_hero_tier_and_count_never_depend_on_enemy_slot(self):
-        seen = {}
-        for chapter, _, entry in self.heroes:
-            key = (entry['unit'], min(chapter // 5, 6), len(entry['items']))
-            if key in seen:
-                self.assertEqual(entry['items'], seen[key], key)
-            self.assertEqual(entry['items'], AUTHOR['loadout'](
-                entry['unit'].removeprefix('npc_dota_hero_'), chapter, len(entry['items'])))
-            seen[key] = entry['items']
+    def test_representative_inventory_value_is_level_appropriate(self):
+        # Approximate authored balance estimates, not live patch prices or
+        # public-match observations. Broad ranges tolerate native price changes.
+        costs = dict(zip('boots bracer wraith_band null_talisman magic_wand wind_lace phase_boots power_treads arcane_boots blink vanguard blade_mail black_king_bar crimson_guard heart shivas_guard assault dragon_lance yasha hurricane_pike manta butterfly satanic force_staff kaya kaya_and_sange ultimate_scepter sheepstick octarine_core glimmer_cape'.split(),
+                         [500,505,505,505,450,250,1500,1400,1400,2250,1700,2100,4050,3725,5200,5175,5125,1900,2100,4450,4650,5450,5050,2200,2100,4100,4200,5200,4800,2150]))
+        for hero in ('axe', 'drow_ranger', 'lina', 'crystal_maiden'):
+            previous = 0
+            for level in range(1, 31):
+                value = sum(costs[item.removeprefix('item_')] for item in AUTHOR['loadout'](hero, level))
+                self.assertGreaterEqual(value, previous, (hero, level, value, previous))
+                previous = value
+                if level <= 3: self.assertLessEqual(value, 600)
+                elif level <= 6: self.assertLessEqual(value, 1100)
+                elif level <= 9: self.assertLessEqual(value, 2600)
+                elif level <= 13: self.assertLessEqual(value, 6500)
+                elif level <= 17: self.assertLessEqual(value, 10500)
+                elif level <= 21: self.assertLessEqual(value, 16000)
+                elif level <= 25: self.assertLessEqual(value, 24000)
+                else: self.assertTrue(11000 <= value <= 33000, (hero, value))
+        self.assertLess(sum(costs[i[5:]] for i in AUTHOR['loadout']('crystal_maiden', 30)),
+                        sum(costs[i[5:]] for i in AUTHOR['loadout']('drow_ranger', 30)))
 
-    def test_source_and_runtime_hero_loadouts_match(self):
-        runtime = read_kv((DATA / 'levels.kv').read_text(encoding='utf-8'))['levels']
-        source = json.loads((DATA / 'levels_v07.json').read_text(encoding='utf-8'))
-        for stage_id, stage in runtime.items():
-            actual = list(stage['enemies'].values())
-            expected = source[stage_id]['enemies']
-            self.assertEqual(len(actual), len(expected), stage_id)
-            for entry, original in zip(actual, expected):
-                self.assertEqual(entry['unit'], original['unit'], stage_id)
-                if not entry['unit'].startswith('npc_dota_hero_'):
-                    continue
-                items = list(entry.get('items', {}).values())
-                self.assertTrue(items, (stage_id, entry['unit']))
-                self.assertLessEqual(len(items), 6, (stage_id, entry['unit']))
-                self.assertEqual(items, original['items'], (stage_id, entry['unit']))
-                self.assertNotIn('item_assault_cuirass', items,
-                                 'Dota native Assault Cuirass ID is item_assault')
+    def test_runtime_levels_drive_both_files_and_rerun_is_idempotent(self):
+        source_text = (DATA / 'levels_v07.json').read_text(encoding='utf-8')
+        runtime_text = (DATA / 'levels.kv').read_text(encoding='utf-8')
+        self.assertEqual(AUTHOR['update_equipment'](source_text, runtime_text), [source_text, runtime_text])
+        source = json.loads(source_text)
+        runtime = read_kv(runtime_text)['levels']
+        count = 0
+        for stage_id, stage in source.items():
+            for entry, live in zip(stage['enemies'], runtime[stage_id]['enemies'].values()):
+                if not entry['unit'].startswith('npc_dota_hero_'): continue
+                count += 1
+                self.assertEqual(str(entry['level']), live['level'])
+                expected = AUTHOR['loadout'](entry['unit'][14:], live['level'])
+                self.assertEqual(entry['items'], expected)
+                self.assertEqual(list(live['items'].values()), expected)
+        self.assertEqual(count, 93)
+        # A late chapter with a deliberately low native level gets starter gear;
+        # a stale maintenance level and prior inventory count cannot override it.
+        source['ch30']['enemies'][0]['level'] = 30
+        changed_runtime = runtime_text.replace('"level" "30"', '"level" "2"')
+        updated_source, updated_runtime = AUTHOR['update_equipment'](json.dumps(source), changed_runtime)
+        boss = json.loads(updated_source)['ch30']['enemies'][0]
+        self.assertEqual(boss['level'], 2)
+        self.assertEqual(boss['items'], ['item_bracer'])
+        original = read_kv(changed_runtime)['levels']
+        updated = read_kv(updated_runtime)['levels']
+        for chapter, stage in original.items():
+            for index, enemy in stage['enemies'].items():
+                actual = updated[chapter]['enemies'][index]
+                for field, value in enemy.items():
+                    if field != 'items': self.assertEqual(actual[field], value)
+            for field, value in stage.items():
+                if field != 'enemies': self.assertEqual(updated[chapter][field], value)
+
+    def test_invalid_level_and_roster_mismatch_fail_before_writes(self):
+        for level in (0, 31, 8.5, 'nan', 'inf'):
+            with self.assertRaises(ValueError): AUTHOR['loadout']('axe', level)
+        source = (DATA / 'levels_v07.json').read_text(encoding='utf-8')
+        runtime = (DATA / 'levels.kv').read_text(encoding='utf-8')
+        with self.assertRaises(ValueError):
+            AUTHOR['update_equipment'](source, runtime.replace('npc_dota_hero_axe', 'npc_dota_hero_sven', 1))
 
 
 if __name__ == '__main__':

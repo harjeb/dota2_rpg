@@ -48,6 +48,8 @@ function A.Describe(hero,source,action,options)
     local nativeTeam,nativeTypes=Native.ResolveMasks(source,C.Call(source,"GetAbilityTargetTeam"),C.Call(source,"GetAbilityTargetType"))
     local targetFlags=C.Number(C.Call(source,"GetAbilityTargetFlags"))
     local nativeUnit=mode=="unit" or (mode=="vector" and unit and not point)
+    local modifiers,modifierDetails={},{}
+    if not options.runtime then modifiers,modifierDetails=Modifiers.List(hero,source) end
     local cap={version=A.VERSION,name=name,mode=mode,
         role=nativeUnit and "native_unit" or (mode=="point" or mode=="vector") and "anchor" or "trigger",
         teams={self=1,ally=1,enemy=1},types={hero=1,monster=1,summon=1},
@@ -58,7 +60,7 @@ function A.Describe(hero,source,action,options)
         channelled=yes(flag(mask,"DOTA_ABILITY_BEHAVIOR_CHANNELLED")),
         release_parent=L.release_parents[name] or "",
         magic_immune_enemy=-1,magic_immune_ally=-1,
-        modifiers=options.runtime and {} or Modifiers.List(hero,source),modifiers_omitted=options.runtime and 1 or 0,support="generic_unreviewed",
+        modifiers=modifiers,modifier_details=modifierDetails,modifiers_omitted=options.runtime and 1 or 0,support="generic_unreviewed",
         supported_expression=yes((Profiles[name] or {}).supported_expression),
         requires_runtime_validation=1}
     if nativeUnit then
@@ -106,10 +108,12 @@ function A.ForAction(hero,action,options)
     options=options or {}
     local kind=action and action.kind
     if kind=="attack" or kind=="move" or kind=="wait" then
+        local modifiers,modifierDetails={},{}
+        if not options.runtime then modifiers,modifierDetails=Modifiers.List(hero,nil) end
         return {version=A.VERSION,name=action.logical_id or kind,mode=kind,role="trigger",support="builtin",
             teams={self=1,ally=1,enemy=1},types={hero=1,monster=1,summon=1},cast={},cast_preferences={auto=1},
             variants={default=1},
-            modifiers=options.runtime and {} or Modifiers.List(hero,nil),modifiers_omitted=options.runtime and 1 or 0,magic_immune_enemy=-1,magic_immune_ally=-1,release_parent=""}
+            modifiers=modifiers,modifier_details=modifierDetails,modifiers_omitted=options.runtime and 1 or 0,magic_immune_enemy=-1,magic_immune_ally=-1,release_parent=""}
     end
     return A.Describe(hero,A.Source(hero,action),action,options)
 end

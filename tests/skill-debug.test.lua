@@ -271,7 +271,14 @@ end)
 test("win death and timeout settle once with no normal awards lives or progression",function()
     for _,winner in ipairs({"good","bad","timeout"}) do
         local f,g=fixture(); f:enter(); g.runLives=4; g:OnStartBattle(nil,{})
+        local item=cooldown("item_blink"); item.charges=3
+        g.battleManager.teamHeroes[2][1].items[8]=item
+        local stored=cooldown("item_refresher"); g.stash.items[14]=stored
+        eq(item.remaining,20,"combat cooldown remains active")
         g:EndBattle(winner,3); g:EndBattle(winner,3)
+        eq(item.remaining,0,"refresh before delayed debug rebuild")
+        eq(stored.remaining,0,"debug warehouse refresh")
+        eq(item.charges,3,"native charges preserved")
         eq(g.phase,"result"); eq(g.normalAwards,0); eq(g.runLives,4); eq(g.currentLevelId,Debug.LEVEL)
         local count=0
         for _,event in ipairs(f.events) do if event.name=="rpg_settlement" then
