@@ -17,6 +17,7 @@ local nova = ability("crystal_maiden_crystal_nova", 16, 2, 425)
 local frostbite = ability("crystal_maiden_frostbite", 8, 2)
 local aura = ability("crystal_maiden_brilliance_aura", 2, 1, 0, true)
 local field = ability("crystal_maiden_freezing_field", 4, 2, 810)
+field.GetAbilityType = function() return 1 end
 local list = { nova, frostbite, aura, field }
 local unit = { GetAbilityCount = function() return #list end,
     GetAbilityByIndex = function(_, slot) return list[slot + 1] end,
@@ -30,11 +31,13 @@ local rules = EnemyRules.CreateForUnit(unit, {
     { action = { kind = "ability", logical_id = "ultimate" }, target = { team = "self" } }, attack,
 })
 assert(#rules == 4, "all learned active native spells and one attack, no passive")
-assert(rules[1].action.logical_id == "crystal_maiden_crystal_nova" and rules[1].target.team == "enemy",
+assert(rules[1].action.logical_id == "crystal_maiden_freezing_field" and rules[1].target.team == "self"
+    and rules[1].use_conditions[1].radius == 810, "native ultimate precedes basics with its original range condition")
+assert(rules[2].action.logical_id == "crystal_maiden_crystal_nova" and rules[2].target.team == "enemy",
     "harmful native point spell must never inherit healer profile's ally/self target")
-assert(rules[2].action.logical_id == "crystal_maiden_frostbite" and rules[2].target.team == "enemy")
-assert(rules[3].target.team == "self" and rules[3].use_conditions[1].radius == 810,
-    "native no-target AoE requires an enemy inside its native radius")
+assert(rules[3].action.logical_id == "crystal_maiden_frostbite" and rules[3].target.team == "enemy")
+local playerRules = require("issue_fixes.default_rules").CreateForHero(unit)
+assert(playerRules[1].action.logical_id == "crystal_maiden_crystal_nova", "enemy priority never reorders player defaults")
 assert(rules[4] == attack, "preserve profile attack priorities and chase policy")
 list = { ability("omniknight_purification", 8, 1) }
 rules = EnemyRules.CreateForUnit(unit, {})

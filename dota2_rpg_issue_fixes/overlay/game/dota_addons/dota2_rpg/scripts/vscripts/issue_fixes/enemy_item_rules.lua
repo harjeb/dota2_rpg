@@ -17,7 +17,7 @@ end
 
 -- Reviewed against installed scripts/npc/items.txt and runtime levels.kv.
 -- Attribute cycling and tree cutting do not receive combat actions. Unknown
--- items, including teleports and Radiance (absent from loadouts), have no fallback.
+-- items, including teleports, have no fallback.
 Items.Excluded = {
     item_power_treads="attribute cycling is not a combat cast",
     item_bfury="tree cutting is not an enemy combat action",
@@ -25,10 +25,11 @@ Items.Excluded = {
 local defensive = {
     item_black_king_bar=true, item_blade_mail=true, item_pipe=true, item_crimson_guard=true,
 }
-local buffs = {item_manta=true,item_phase_boots=true,item_silver_edge=true}
+local buffs = {item_manta=true,item_phase_boots=true,item_silver_edge=true,item_boots_of_bearing=true}
+local blinks = {item_blink=true,item_overwhelming_blink=true,item_swift_blink=true,item_arcane_blink=true}
 local controls = {
     item_sheepstick=true,item_bloodthorn=true,item_orchid=true,item_abyssal_blade=true,
-    item_diffusal_blade=true,item_disperser=true,item_heavens_halberd=true,
+    item_diffusal_blade=true,item_disperser=true,item_heavens_halberd=true,item_nullifier=true,item_rod_of_atos=true,
 }
 local function cooling_spells(unit)
     local count=0
@@ -190,6 +191,9 @@ function Items.CreateForUnit(unit, opponents)
                 add(item,name,2,"self",{nearby(special(item,"blast_radius",825))})
             elseif name=="item_mjollnir" then
                 add(item,name,2,"self",{nearby(600)})
+            elseif name=="item_radiance" then
+                local rule=add(item,name,2,"self",{nearby(special(item,"aura_radius",650))})
+                rule.action.desired_toggle_state=true
             elseif name=="item_armlet" then
                 -- Native toggle state is checked by the adapter, so once on this
                 -- rule yields to spells/attack. Never implement health toggling.
@@ -203,11 +207,11 @@ function Items.CreateForUnit(unit, opponents)
                 if not spells_recover_during(unit,special(item,"berserk_duration",6)) then
                     add(item,name,2,"self",{nearby(600)})
                 end
-            elseif name=="item_blink" then
+            elseif blinks[name] then
                 local range=tonumber(call(item,"GetCastRange",call(unit,"GetAbsOrigin"),nil)) or 0
                 range=math.min(range>0 and range or 1200,special(item,"blink_range",1200))
                 add(item,name,3,"enemy",{},{{type="distance_gte",value=600},{type="distance_lte",value=range}})
-            elseif name=="item_meteor_hammer" then
+            elseif name=="item_meteor_hammer" or name=="item_gungir" then
                 add(item,name,2,"enemy")
             elseif name=="item_refresher" and cooling_spells(unit) then
                 add(item,name,2,"self",{{type="self_mana_pct_gte",value=0.60},nearby()})

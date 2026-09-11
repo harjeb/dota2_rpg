@@ -11,6 +11,32 @@ EXPORT = runpy.run_path(str(ROOT / 'scripts/export-level-configuration.py'))
 
 
 class LateCampaignBalanceTests(unittest.TestCase):
+    def test_ui40_values_and_surgical_transformation(self):
+        expected_stats = {11: (4.5, 2.5, 20, 55), 16: (6, 3.5, 30, 62),
+                          21: (8.5, 4.5, 42, 70), 26: (11, 6, 56, 75)}
+        for chapter, stats in expected_stats.items():
+            self.assertEqual(tuple(AUTHOR['NEUTRALS'][chapter][1:]), stats)
+        self.assertEqual(AUTHOR['BOSSES'][20], dict(boss_max_health=20000,
+                         boss_attack_damage_pct=75, boss_bonus_armor=15,
+                         boss_magic_resistance_bonus_pct=0, boss_magic_resistance_pct=80))
+        for filename in ('levels.kv', 'levels_v07.json'):
+            text = (AUTHOR['DATA'] / filename).read_text(encoding='utf-8')
+            is_json = filename.endswith('json')
+            parse = json.loads if is_json else lambda value: EXPORT['normalize'](EXPORT['read_kv'](value)['levels'])
+            before = parse(text)
+            updated = AUTHOR['update_text'](text, is_json)
+            self.assertEqual(AUTHOR['update_text'](updated, is_json), updated)
+            expected = copy.deepcopy(before)
+            for chapter, stats in expected_stats.items():
+                for entry in expected[f'ch{chapter}']['enemies']:
+                    entry.update(zip(('hp_multiplier', 'attack_multiplier', 'bonus_armor', 'magic_resistance'),
+                                     stats if is_json else map(str, stats)))
+            for chapter, changes in AUTHOR['BOSSES'].items():
+                expected[f'ch{chapter}']['enemies'][0].update(
+                    changes if is_json else {key: str(value) for key, value in changes.items()})
+            # Exact parsed equality protects types, counts, attacks, items and all unrelated fields.
+            self.assertEqual(parse(updated), expected)
+
     def test_both_files_and_authoring_preserve_independent_fields(self):
         for filename in ('levels.kv', 'levels_v07.json'):
             text = (AUTHOR['DATA'] / filename).read_text(encoding='utf-8')
@@ -46,6 +72,7 @@ class LateCampaignBalanceTests(unittest.TestCase):
                 entry.update(boss_max_health=10000, boss_attack_damage_pct=1)
                 entry.pop('boss_bonus_armor')
                 entry.pop('boss_magic_resistance_bonus_pct')
+                entry.pop('boss_magic_resistance_pct', None)
             # JSON fixture exercises both insertion and existing replacements.
             fixture = json.dumps(previous, ensure_ascii=False, indent='\t') + '\n'
             actual = json.loads(AUTHOR['update_text'](fixture, True))

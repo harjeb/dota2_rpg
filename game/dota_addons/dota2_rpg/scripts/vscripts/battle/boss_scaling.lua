@@ -28,6 +28,20 @@ local function eligible(unit, entry)
     return false
 end
 
+-- A final target is a minimum after native stats/equipment, never a cap.
+-- Remove our existing multiplicative factor before recalibrating on refresh.
+local function targetResistance(unit, previous, target)
+    local old = valid(previous) and bounded(previous:GetModifierMagicalResistanceBonus(), 0, 0, 100) or 0
+    if unit.GetMagicalArmorValue == nil then return old end
+    local ok, total = pcall(unit.GetMagicalArmorValue, unit)
+    if not ok or type(total) ~= "number" or total ~= total or total < 0 or total > 1 or old >= 100 then
+        return old -- A bad native reading must not break HP/attack or discard existing MR.
+    end
+    local baseline = 1 - (1 - total) / (1 - old / 100)
+    if baseline >= target / 100 then return 0 end
+    return math.max(0, math.min(100, 100 * (1 - (1 - target / 100) / (1 - baseline))))
+end
+
 -- Called during enemy preparation AFTER native leveling and equipment. All
 -- damage/cooldown changes remain native modifier properties, not replayed orders.
 function BossScaling.Apply(unit, entry)
@@ -42,11 +56,13 @@ function BossScaling.Apply(unit, entry)
     local cooldown = bounded(entry.boss_cooldown_reduction_pct, 0, 0, 80)
     local armor = bounded(entry.boss_bonus_armor, 0, 0, 1000)
     local resistance = bounded(entry.boss_magic_resistance_bonus_pct, 0, 0, 80)
+    local targetMR = bounded(entry.boss_magic_resistance_pct, nil, 0, 100)
     local previous = unit:FindModifierByName(MODIFIER)
-    if targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and armor == 0 and resistance == 0 and not valid(previous) then
+    if targetMR == nil and targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and armor == 0 and resistance == 0 and not valid(previous) then
         return nil
     end
     unit:CalculateStatBonus(true)
+    if targetMR ~= nil then resistance = targetResistance(unit, previous, targetMR) end
     -- The old flat bonus is already part of GetMaxHealth on reapplication.
     local oldBonus = valid(previous) and previous:GetModifierHealthBonus() or 0
     local baseline = unit:GetMaxHealth() - oldBonus

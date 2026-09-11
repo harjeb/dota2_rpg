@@ -1,0 +1,22 @@
+{
+  "created_at": "2026-09-11T23:46:15.959260+08:00",
+  "source": "bd sql / local Dolt",
+  "counts": {
+    "issues": 152,
+    "dependencies": 84,
+    "comments": 4,
+    "events": 361,
+    "labels": 0,
+    "config": 13
+  },
+  "completed_issues": [
+    "dota2_rpg-6jo",
+    "dota2_rpg-bve",
+    "dota2_rpg-0ra",
+    "dota2_rpg-kek",
+    "dota2_rpg-8o4",
+    "dota2_rpg-rw5"
+  ],
+  "native_followup": "dota2_rpg-xyi",
+  "evidence": "UI40:73/73 automated suites; verify-addon; six native resources compiled;122 installed source files byte-equal; source artwork SHA256 preserved and compiled texture1672x941; native gameplay not validated. docs/RUNTIME_FIXES_V40.md"
+}

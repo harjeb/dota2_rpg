@@ -104,14 +104,15 @@ class EnemyRosterTests(unittest.TestCase):
                         if chapter in expected and slot == 0:
                             self.assertEqual(tuple(float(entry[field]) for field in fields), expected[chapter])
                             defenses = (float(entry.get('boss_bonus_armor', 0)),
-                                        float(entry.get('boss_magic_resistance_bonus_pct', 0)))
-                            self.assertEqual(defenses, {10: (0, 0), 20: (15, 20), 30: (25, 30)}[chapter])
+                                        float(entry.get('boss_magic_resistance_bonus_pct', 0)),
+                                        float(entry.get('boss_magic_resistance_pct', 0)))
+                            self.assertEqual(defenses, {10: (0, 0, 0), 20: (15, 0, 80), 30: (25, 30, 0)}[chapter])
                             tags = entry['tags']
                             if isinstance(tags, dict):
                                 tags = list(tags.values())
                             self.assertIn('boss', tags)
                         else:
-                            self.assertFalse(set(fields + ['boss_bonus_armor', 'boss_magic_resistance_bonus_pct']).intersection(entry), entry['unit'])
+                            self.assertFalse(set(fields + ['boss_bonus_armor', 'boss_magic_resistance_bonus_pct', 'boss_magic_resistance_pct']).intersection(entry), entry['unit'])
 
     def test_authored_roster_matches_both_files_and_reauthoring_is_stable(self):
         intended = author['roster'](self.source)

@@ -224,7 +224,7 @@
 				"level": 8,
 				"items": [
           "item_phase_boots",
-          "item_bracer",
+          "item_blink",
           "item_magic_wand"
         ],
 				"tags": [
@@ -237,7 +237,7 @@
 				"level": 8,
 				"items": [
           "item_power_treads",
-          "item_wraith_band",
+          "item_dragon_lance",
           "item_magic_wand"
         ],
 				"tags": [
@@ -250,8 +250,8 @@
 				"level": 8,
 				"items": [
           "item_arcane_boots",
-          "item_magic_wand",
-          "item_wind_lace"
+          "item_glimmer_cape",
+          "item_magic_wand"
         ],
 				"tags": [
 					"hero"
@@ -330,6 +330,7 @@
 				"items": [
           "item_power_treads",
           "item_blink",
+          "item_armlet",
           "item_magic_wand"
         ],
 				"tags": [
@@ -342,6 +343,7 @@
 				"level": 10,
 				"items": [
           "item_power_treads",
+          "item_maelstrom",
           "item_dragon_lance",
           "item_magic_wand"
         ],
@@ -355,7 +357,8 @@
 				"level": 10,
 				"items": [
           "item_arcane_boots",
-          "item_force_staff",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
           "item_magic_wand"
         ],
 				"tags": [
@@ -384,6 +387,7 @@
 				"items": [
           "item_power_treads",
           "item_armlet",
+          "item_heavens_halberd",
           "item_magic_wand"
         ],
 				"tags": [
@@ -396,6 +400,7 @@
 				"level": 11,
 				"items": [
           "item_power_treads",
+          "item_desolator",
           "item_dragon_lance",
           "item_magic_wand"
         ],
@@ -409,7 +414,8 @@
 				"level": 11,
 				"items": [
           "item_arcane_boots",
-          "item_force_staff",
+          "item_glimmer_cape",
+          "item_blink",
           "item_magic_wand"
         ],
 				"tags": [
@@ -438,6 +444,7 @@
 				"items": [
           "item_arcane_boots",
           "item_blink",
+          "item_ultimate_scepter",
           "item_magic_wand"
         ],
 				"tags": [
@@ -451,6 +458,7 @@
 				"items": [
           "item_power_treads",
           "item_desolator",
+          "item_basher",
           "item_magic_wand"
         ],
 				"tags": [
@@ -463,6 +471,7 @@
 				"level": 12,
 				"items": [
           "item_arcane_boots",
+          "item_glimmer_cape",
           "item_force_staff",
           "item_magic_wand"
         ],
@@ -492,8 +501,8 @@
 				"items": [
           "item_phase_boots",
           "item_blink",
-          "item_blade_mail",
-          "item_magic_wand"
+          "item_heart",
+          "item_pipe"
         ],
 				"tags": [
 					"boss"
@@ -525,10 +534,10 @@
 				"count": 3,
 				"template": "standard",
 				"ai": "simple_nearest",
-				"hp_multiplier": 3,
+				"hp_multiplier": 4.5,
 				"attack_multiplier": 2.5,
-				"bonus_armor": 12,
-				"magic_resistance": 45,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
 				"status_resistance": 10
 			},
 			{
@@ -537,10 +546,10 @@
 				"count": 2,
 				"template": "specialist",
 				"ai": "focus_lowest_hp",
-				"hp_multiplier": 3,
+				"hp_multiplier": 4.5,
 				"attack_multiplier": 2.5,
-				"bonus_armor": 12,
-				"magic_resistance": 45,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
 				"status_resistance": 10
 			},
 			{
@@ -549,10 +558,10 @@
 				"count": 1,
 				"template": "elite",
 				"ai": "aggro_front",
-				"hp_multiplier": 3,
+				"hp_multiplier": 4.5,
 				"attack_multiplier": 2.5,
-				"bonus_armor": 12,
-				"magic_resistance": 45,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
 				"status_resistance": 10
 			},
 			{
@@ -561,10 +570,10 @@
 				"count": 1,
 				"template": "minion",
 				"ai": "simple_nearest",
-				"hp_multiplier": 3,
+				"hp_multiplier": 4.5,
 				"attack_multiplier": 2.5,
-				"bonus_armor": 12,
-				"magic_resistance": 45,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
 				"status_resistance": 10
 			}
 		],
@@ -588,8 +597,8 @@
 				"items": [
           "item_arcane_boots",
           "item_blink",
-          "item_pipe",
-          "item_magic_wand"
+          "item_ultimate_scepter",
+          "item_pipe"
         ],
 				"tags": [
 					"hero"
@@ -603,7 +612,7 @@
           "item_power_treads",
           "item_echo_sabre",
           "item_blink",
-          "item_magic_wand"
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -615,9 +624,9 @@
 				"level": 16,
 				"items": [
           "item_arcane_boots",
-          "item_force_staff",
-          "item_kaya",
-          "item_magic_wand"
+          "item_kaya_and_sange",
+          "item_ultimate_scepter",
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -631,7 +640,7 @@
           "item_arcane_boots",
           "item_blink",
           "item_force_staff",
-          "item_magic_wand"
+          "item_glimmer_cape"
         ],
 				"tags": [
 					"hero"
@@ -659,8 +668,8 @@
 				"items": [
           "item_phase_boots",
           "item_bloodstone",
-          "item_eternal_shroud",
-          "item_magic_wand"
+          "item_sange_and_yasha",
+          "item_lotus_orb"
         ],
 				"tags": [
 					"hero"
@@ -673,8 +682,8 @@
 				"items": [
           "item_power_treads",
           "item_yasha",
-          "item_maelstrom",
-          "item_magic_wand"
+          "item_black_king_bar",
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -688,7 +697,7 @@
           "item_power_treads",
           "item_dragon_lance",
           "item_yasha",
-          "item_magic_wand"
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -702,7 +711,7 @@
           "item_arcane_boots",
           "item_blink",
           "item_aether_lens",
-          "item_magic_wand"
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -731,7 +740,8 @@
           "item_power_treads",
           "item_blink",
           "item_echo_sabre",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_ultimate_scepter"
         ],
 				"tags": [
 					"hero"
@@ -744,8 +754,9 @@
 				"items": [
           "item_power_treads",
           "item_yasha",
-          "item_mask_of_madness",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_butterfly",
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -757,9 +768,10 @@
 				"level": 18,
 				"items": [
           "item_power_treads",
-          "item_maelstrom",
           "item_ultimate_scepter",
-          "item_black_king_bar"
+          "item_maelstrom",
+          "item_black_king_bar",
+          "item_greater_crit"
         ],
 				"tags": [
 					"hero"
@@ -773,7 +785,8 @@
           "item_arcane_boots",
           "item_glimmer_cape",
           "item_ultimate_scepter",
-          "item_aeon_disk"
+          "item_force_staff",
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -801,7 +814,8 @@
 				"items": [
           "item_phase_boots",
           "item_armlet",
-          "item_desolator",
+          "item_radiance",
+          "item_blink",
           "item_black_king_bar"
         ],
 				"tags": [
@@ -816,7 +830,8 @@
           "item_power_treads",
           "item_maelstrom",
           "item_basher",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_butterfly"
         ],
 				"tags": [
 					"hero"
@@ -830,7 +845,8 @@
           "item_power_treads",
           "item_diffusal_blade",
           "item_ultimate_scepter",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_skadi"
         ],
 				"tags": [
 					"hero"
@@ -844,7 +860,8 @@
           "item_power_treads",
           "item_bfury",
           "item_yasha",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -858,7 +875,8 @@
           "item_arcane_boots",
           "item_force_staff",
           "item_glimmer_cape",
-          "item_cyclone"
+          "item_cyclone",
+          "item_ultimate_scepter"
         ],
 				"tags": [
 					"hero"
@@ -886,10 +904,10 @@
 				"count": 3,
 				"template": "standard",
 				"ai": "simple_nearest",
-				"hp_multiplier": 4,
+				"hp_multiplier": 6,
 				"attack_multiplier": 3.5,
-				"bonus_armor": 18,
-				"magic_resistance": 50,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
 				"status_resistance": 15
 			},
 			{
@@ -898,10 +916,10 @@
 				"count": 2,
 				"template": "specialist",
 				"ai": "focus_lowest_hp",
-				"hp_multiplier": 4,
+				"hp_multiplier": 6,
 				"attack_multiplier": 3.5,
-				"bonus_armor": 18,
-				"magic_resistance": 50,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
 				"status_resistance": 15
 			},
 			{
@@ -910,10 +928,10 @@
 				"count": 2,
 				"template": "elite",
 				"ai": "aggro_front",
-				"hp_multiplier": 4,
+				"hp_multiplier": 6,
 				"attack_multiplier": 3.5,
-				"bonus_armor": 18,
-				"magic_resistance": 50,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
 				"status_resistance": 15
 			}
 		],
@@ -937,8 +955,9 @@
 				"items": [
           "item_phase_boots",
           "item_armlet",
-          "item_basher",
-          "item_sange_and_yasha"
+          "item_radiance",
+          "item_sange_and_yasha",
+          "item_basher"
         ],
 				"tags": [
 					"hero"
@@ -952,7 +971,8 @@
           "item_phase_boots",
           "item_bfury",
           "item_blink",
-          "item_black_king_bar"
+          "item_black_king_bar",
+          "item_basher"
         ],
 				"tags": [
 					"hero"
@@ -966,7 +986,8 @@
           "item_power_treads",
           "item_bfury",
           "item_yasha",
-          "item_basher"
+          "item_basher",
+          "item_skadi"
         ],
 				"tags": [
 					"hero"
@@ -979,8 +1000,9 @@
 				"items": [
           "item_power_treads",
           "item_diffusal_blade",
+          "item_ultimate_scepter",
           "item_yasha",
-          "item_heart"
+          "item_skadi"
         ],
 				"tags": [
 					"hero"
@@ -992,9 +1014,10 @@
 				"level": 21,
 				"items": [
           "item_arcane_boots",
+          "item_blink",
           "item_glimmer_cape",
-          "item_force_staff",
-          "item_aeon_disk"
+          "item_ultimate_scepter",
+          "item_force_staff"
         ],
 				"tags": [
 					"hero"
@@ -1022,6 +1045,7 @@
 				"items": [
           "item_power_treads",
           "item_armlet",
+          "item_blink",
           "item_manta",
           "item_black_king_bar",
           "item_heart"
@@ -1039,7 +1063,8 @@
           "item_desolator",
           "item_blink",
           "item_black_king_bar",
-          "item_greater_crit"
+          "item_greater_crit",
+          "item_hurricane_pike"
         ],
 				"tags": [
 					"hero"
@@ -1052,8 +1077,9 @@
 				"items": [
           "item_power_treads",
           "item_hurricane_pike",
-          "item_greater_crit",
+          "item_manta",
           "item_black_king_bar",
+          "item_greater_crit",
           "item_satanic"
         ],
 				"tags": [
@@ -1067,9 +1093,10 @@
 				"items": [
           "item_arcane_boots",
           "item_wind_waker",
-          "item_kaya_and_sange",
           "item_black_king_bar",
-          "item_shivas_guard"
+          "item_kaya_and_sange",
+          "item_shivas_guard",
+          "item_octarine_core"
         ],
 				"tags": [
 					"hero"
@@ -1084,7 +1111,8 @@
           "item_force_staff",
           "item_glimmer_cape",
           "item_lotus_orb",
-          "item_magic_wand"
+          "item_ultimate_scepter",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -1111,9 +1139,10 @@
 				"level": 23,
 				"items": [
           "item_phase_boots",
-          "item_harpoon",
           "item_blink",
+          "item_harpoon",
           "item_black_king_bar",
+          "item_nullifier",
           "item_assault"
         ],
 				"tags": [
@@ -1126,10 +1155,11 @@
 				"level": 23,
 				"items": [
           "item_arcane_boots",
+          "item_radiance",
           "item_kaya_and_sange",
-          "item_eternal_shroud",
-          "item_shivas_guard",
-          "item_heart"
+          "item_black_king_bar",
+          "item_heart",
+          "item_shivas_guard"
         ],
 				"tags": [
 					"hero"
@@ -1141,10 +1171,11 @@
 				"level": 23,
 				"items": [
           "item_power_treads",
-          "item_bloodthorn",
           "item_kaya_and_sange",
+          "item_ultimate_scepter",
           "item_black_king_bar",
-          "item_shivas_guard"
+          "item_shivas_guard",
+          "item_octarine_core"
         ],
 				"tags": [
 					"hero"
@@ -1157,6 +1188,7 @@
 				"items": [
           "item_arcane_boots",
           "item_bloodstone",
+          "item_blink",
           "item_kaya_and_sange",
           "item_black_king_bar",
           "item_shivas_guard"
@@ -1172,9 +1204,10 @@
 				"items": [
           "item_arcane_boots",
           "item_spirit_vessel",
-          "item_glimmer_cape",
           "item_force_staff",
-          "item_magic_wand"
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_shivas_guard"
         ],
 				"tags": [
 					"hero"
@@ -1200,18 +1233,20 @@
 				"unit": "npc_dota_hero_spirit_breaker",
 				"level": 24,
 				"items": [
-          "item_phase_boots",
           "item_silver_edge",
           "item_ultimate_scepter",
           "item_black_king_bar",
-          "item_octarine_core"
+          "item_octarine_core",
+          "item_moon_shard",
+          "item_moon_shard"
         ],
 				"tags": [
 					"boss"
 				],
 				"ai": "aggro_front",
 				"boss_max_health": 20000,
-				"boss_magic_resistance_bonus_pct": 20,
+				"boss_magic_resistance_pct": 80,
+				"boss_magic_resistance_bonus_pct": 0,
 				"boss_bonus_armor": 15,
 				"boss_attack_damage_pct": 75,
 				"boss_spell_amp_pct": 25.0,
@@ -1238,10 +1273,10 @@
 				"count": 3,
 				"template": "standard",
 				"ai": "simple_nearest",
-				"hp_multiplier": 5.5,
+				"hp_multiplier": 8.5,
 				"attack_multiplier": 4.5,
-				"bonus_armor": 24,
-				"magic_resistance": 55,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
 				"status_resistance": 20
 			},
 			{
@@ -1250,10 +1285,10 @@
 				"count": 2,
 				"template": "specialist",
 				"ai": "focus_lowest_hp",
-				"hp_multiplier": 5.5,
+				"hp_multiplier": 8.5,
 				"attack_multiplier": 4.5,
-				"bonus_armor": 24,
-				"magic_resistance": 55,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
 				"status_resistance": 20
 			},
 			{
@@ -1262,10 +1297,10 @@
 				"count": 2,
 				"template": "elite",
 				"ai": "aggro_front",
-				"hp_multiplier": 5.5,
+				"hp_multiplier": 8.5,
 				"attack_multiplier": 4.5,
-				"bonus_armor": 24,
-				"magic_resistance": 55,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
 				"status_resistance": 20
 			},
 			{
@@ -1274,10 +1309,10 @@
 				"count": 1,
 				"template": "minion",
 				"ai": "simple_nearest",
-				"hp_multiplier": 5.5,
+				"hp_multiplier": 8.5,
 				"attack_multiplier": 4.5,
-				"bonus_armor": 24,
-				"magic_resistance": 55,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
 				"status_resistance": 20
 			}
 		],
@@ -1299,12 +1334,12 @@
 				"unit": "npc_dota_hero_abaddon",
 				"level": 26,
 				"items": [
-          "item_phase_boots",
-          "item_harpoon",
+          "item_overwhelming_blink",
+          "item_radiance",
           "item_manta",
           "item_abyssal_blade",
           "item_assault",
-          "item_heart"
+          "item_harpoon"
         ],
 				"tags": [
 					"hero"
@@ -1315,11 +1350,11 @@
 				"unit": "npc_dota_hero_sniper",
 				"level": 26,
 				"items": [
-          "item_power_treads",
-          "item_hurricane_pike",
+          "item_swift_blink",
           "item_mjollnir",
-          "item_greater_crit",
+          "item_hurricane_pike",
           "item_black_king_bar",
+          "item_greater_crit",
           "item_satanic"
         ],
 				"tags": [
@@ -1331,12 +1366,12 @@
 				"unit": "npc_dota_hero_clinkz",
 				"level": 26,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_desolator",
           "item_hurricane_pike",
-          "item_greater_crit",
           "item_black_king_bar",
-          "item_bloodthorn"
+          "item_greater_crit",
+          "item_ultimate_scepter"
         ],
 				"tags": [
 					"hero"
@@ -1347,12 +1382,12 @@
 				"unit": "npc_dota_hero_phantom_assassin",
 				"level": 26,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_desolator",
           "item_abyssal_blade",
           "item_black_king_bar",
           "item_satanic",
-          "item_butterfly"
+          "item_nullifier"
         ],
 				"tags": [
 					"hero"
@@ -1363,8 +1398,9 @@
 				"unit": "npc_dota_hero_grimstroke",
 				"level": 26,
 				"items": [
-          "item_arcane_boots",
-          "item_aether_lens",
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_octarine_core",
           "item_glimmer_cape",
           "item_ultimate_scepter",
           "item_sheepstick"
@@ -1378,11 +1414,12 @@
 				"unit": "npc_dota_hero_shadow_demon",
 				"level": 26,
 				"items": [
-          "item_arcane_boots",
-          "item_aether_lens",
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_octarine_core",
           "item_glimmer_cape",
-          "item_aeon_disk",
-          "item_ultimate_scepter"
+          "item_ultimate_scepter",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -1412,7 +1449,8 @@
           "item_lotus_orb",
           "item_pipe",
           "item_ultimate_scepter",
-          "item_aeon_disk"
+          "item_octarine_core",
+          "item_sheepstick"
         ],
 				"tags": [
 					"hero"
@@ -1423,11 +1461,11 @@
 				"unit": "npc_dota_hero_riki",
 				"level": 27,
 				"items": [
-          "item_power_treads",
-          "item_diffusal_blade",
+          "item_swift_blink",
+          "item_disperser",
           "item_manta",
-          "item_abyssal_blade",
           "item_black_king_bar",
+          "item_abyssal_blade",
           "item_butterfly"
         ],
 				"tags": [
@@ -1439,7 +1477,7 @@
 				"unit": "npc_dota_hero_juggernaut",
 				"level": 27,
 				"items": [
-          "item_phase_boots",
+          "item_swift_blink",
           "item_mjollnir",
           "item_manta",
           "item_abyssal_blade",
@@ -1455,10 +1493,10 @@
 				"unit": "npc_dota_hero_sven",
 				"level": 27,
 				"items": [
-          "item_power_treads",
-          "item_blink",
-          "item_greater_crit",
+          "item_overwhelming_blink",
+          "item_harpoon",
           "item_black_king_bar",
+          "item_greater_crit",
           "item_satanic",
           "item_assault"
         ],
@@ -1471,11 +1509,12 @@
 				"unit": "npc_dota_hero_bane",
 				"level": 27,
 				"items": [
-          "item_arcane_boots",
-          "item_aether_lens",
-          "item_glimmer_cape",
+          "item_boots_of_bearing",
+          "item_octarine_core",
+          "item_ultimate_scepter",
+          "item_arcane_blink",
           "item_black_king_bar",
-          "item_ultimate_scepter"
+          "item_glimmer_cape"
         ],
 				"tags": [
 					"hero"
@@ -1486,11 +1525,12 @@
 				"unit": "npc_dota_hero_silencer",
 				"level": 27,
 				"items": [
-          "item_arcane_boots",
-          "item_force_staff",
+          "item_boots_of_bearing",
+          "item_wind_waker",
           "item_glimmer_cape",
-          "item_aeon_disk",
-          "item_refresher"
+          "item_ultimate_scepter",
+          "item_refresher",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -1516,11 +1556,12 @@
 				"unit": "npc_dota_hero_undying",
 				"level": 28,
 				"items": [
-          "item_guardian_greaves",
+          "item_boots_of_bearing",
+          "item_arcane_blink",
           "item_glimmer_cape",
-          "item_pipe",
-          "item_lotus_orb",
-          "item_aeon_disk"
+          "item_black_king_bar",
+          "item_octarine_core",
+          "item_ultimate_scepter"
         ],
 				"tags": [
 					"hero"
@@ -1531,12 +1572,12 @@
 				"unit": "npc_dota_hero_lina",
 				"level": 28,
 				"items": [
-          "item_arcane_boots",
-          "item_kaya_and_sange",
+          "item_arcane_blink",
+          "item_yasha_and_kaya",
           "item_ultimate_scepter",
           "item_black_king_bar",
           "item_sheepstick",
-          "item_octarine_core"
+          "item_shivas_guard"
         ],
 				"tags": [
 					"hero"
@@ -1547,12 +1588,12 @@
 				"unit": "npc_dota_hero_razor",
 				"level": 28,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_sange_and_yasha",
-          "item_mjollnir",
           "item_black_king_bar",
           "item_satanic",
-          "item_butterfly"
+          "item_butterfly",
+          "item_shivas_guard"
         ],
 				"tags": [
 					"hero"
@@ -1563,7 +1604,7 @@
 				"unit": "npc_dota_hero_viper",
 				"level": 28,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_hurricane_pike",
           "item_manta",
           "item_black_king_bar",
@@ -1579,11 +1620,12 @@
 				"unit": "npc_dota_hero_treant",
 				"level": 28,
 				"items": [
-          "item_arcane_boots",
-          "item_blink",
-          "item_meteor_hammer",
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_wind_waker",
           "item_lotus_orb",
-          "item_ultimate_scepter"
+          "item_ultimate_scepter",
+          "item_refresher"
         ],
 				"tags": [
 					"hero"
@@ -1594,11 +1636,12 @@
 				"unit": "npc_dota_hero_enchantress",
 				"level": 28,
 				"items": [
-          "item_power_treads",
+          "item_boots_of_bearing",
           "item_hurricane_pike",
-          "item_glimmer_cape",
+          "item_wind_waker",
           "item_lotus_orb",
-          "item_ultimate_scepter"
+          "item_ultimate_scepter",
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -1624,11 +1667,11 @@
 				"unit": "npc_dota_hero_axe",
 				"level": 28,
 				"items": [
-          "item_phase_boots",
-          "item_blink",
-          "item_crimson_guard",
-          "item_heart",
+          "item_assault",
+          "item_overwhelming_blink",
+          "item_blade_mail",
           "item_black_king_bar",
+          "item_heart",
           "item_shivas_guard"
         ],
 				"tags": [
@@ -1640,12 +1683,12 @@
 				"unit": "npc_dota_hero_luna",
 				"level": 28,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_manta",
-          "item_butterfly",
           "item_black_king_bar",
+          "item_butterfly",
           "item_satanic",
-          "item_skadi"
+          "item_greater_crit"
         ],
 				"tags": [
 					"hero"
@@ -1656,12 +1699,12 @@
 				"unit": "npc_dota_hero_gyrocopter",
 				"level": 28,
 				"items": [
-          "item_power_treads",
-          "item_mjollnir",
+          "item_swift_blink",
           "item_ultimate_scepter",
+          "item_mjollnir",
           "item_black_king_bar",
-          "item_satanic",
-          "item_butterfly"
+          "item_greater_crit",
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -1672,12 +1715,12 @@
 				"unit": "npc_dota_hero_bloodseeker",
 				"level": 28,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_mjollnir",
           "item_abyssal_blade",
           "item_black_king_bar",
           "item_butterfly",
-          "item_skadi"
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -1688,10 +1731,11 @@
 				"unit": "npc_dota_hero_ogre_magi",
 				"level": 28,
 				"items": [
-          "item_arcane_boots",
-          "item_force_staff",
-          "item_aether_lens",
+          "item_boots_of_bearing",
           "item_glimmer_cape",
+          "item_octarine_core",
+          "item_wind_waker",
+          "item_ultimate_scepter",
           "item_sheepstick"
         ],
 				"tags": [
@@ -1703,12 +1747,12 @@
 				"unit": "npc_dota_hero_dragon_knight",
 				"level": 28,
 				"items": [
-          "item_power_treads",
-          "item_blink",
+          "item_overwhelming_blink",
           "item_assault",
           "item_black_king_bar",
           "item_satanic",
-          "item_greater_crit"
+          "item_greater_crit",
+          "item_heart"
         ],
 				"tags": [
 					"hero"
@@ -1719,11 +1763,12 @@
 				"unit": "npc_dota_hero_dark_willow",
 				"level": 28,
 				"items": [
-          "item_arcane_boots",
+          "item_boots_of_bearing",
           "item_wind_waker",
+          "item_arcane_blink",
           "item_glimmer_cape",
-          "item_blink",
-          "item_ultimate_scepter"
+          "item_ultimate_scepter",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -1751,10 +1796,10 @@
 				"count": 2,
 				"template": "standard",
 				"ai": "simple_nearest",
-				"hp_multiplier": 7,
+				"hp_multiplier": 11,
 				"attack_multiplier": 6,
-				"bonus_armor": 30,
-				"magic_resistance": 60,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
 				"status_resistance": 25
 			},
 			{
@@ -1763,10 +1808,10 @@
 				"count": 2,
 				"template": "specialist",
 				"ai": "focus_lowest_hp",
-				"hp_multiplier": 7,
+				"hp_multiplier": 11,
 				"attack_multiplier": 6,
-				"bonus_armor": 30,
-				"magic_resistance": 60,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
 				"status_resistance": 25
 			},
 			{
@@ -1775,10 +1820,10 @@
 				"count": 2,
 				"template": "elite",
 				"ai": "aggro_front",
-				"hp_multiplier": 7,
+				"hp_multiplier": 11,
 				"attack_multiplier": 6,
-				"bonus_armor": 30,
-				"magic_resistance": 60,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
 				"status_resistance": 25
 			},
 			{
@@ -1787,10 +1832,10 @@
 				"count": 1,
 				"template": "beast",
 				"ai": "focus_lowest_hp",
-				"hp_multiplier": 7,
+				"hp_multiplier": 11,
 				"attack_multiplier": 6,
-				"bonus_armor": 30,
-				"magic_resistance": 60,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
 				"status_resistance": 25
 			},
 			{
@@ -1799,10 +1844,10 @@
 				"count": 1,
 				"template": "minion",
 				"ai": "simple_nearest",
-				"hp_multiplier": 7,
+				"hp_multiplier": 11,
 				"attack_multiplier": 6,
-				"bonus_armor": 30,
-				"magic_resistance": 60,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
 				"status_resistance": 25
 			}
 		],
@@ -1824,10 +1869,10 @@
 				"unit": "npc_dota_hero_huskar",
 				"level": 29,
 				"items": [
-          "item_power_treads",
-          "item_armlet",
+          "item_overwhelming_blink",
           "item_heavens_halberd",
           "item_black_king_bar",
+          "item_ultimate_scepter",
           "item_satanic",
           "item_assault"
         ],
@@ -1840,7 +1885,7 @@
 				"unit": "npc_dota_hero_slark",
 				"level": 29,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_disperser",
           "item_ultimate_scepter",
           "item_black_king_bar",
@@ -1856,11 +1901,11 @@
 				"unit": "npc_dota_hero_troll_warlord",
 				"level": 29,
 				"items": [
-          "item_power_treads",
-          "item_bfury",
-          "item_manta",
+          "item_swift_blink",
+          "item_sange_and_yasha",
           "item_black_king_bar",
           "item_satanic",
+          "item_abyssal_blade",
           "item_butterfly"
         ],
 				"tags": [
@@ -1872,12 +1917,12 @@
 				"unit": "npc_dota_hero_ursa",
 				"level": 29,
 				"items": [
-          "item_phase_boots",
-          "item_bfury",
-          "item_blink",
-          "item_black_king_bar",
+          "item_swift_blink",
           "item_abyssal_blade",
-          "item_butterfly"
+          "item_black_king_bar",
+          "item_satanic",
+          "item_butterfly",
+          "item_nullifier"
         ],
 				"tags": [
 					"hero"
@@ -1888,11 +1933,12 @@
 				"unit": "npc_dota_hero_crystal_maiden",
 				"level": 29,
 				"items": [
-          "item_arcane_boots",
+          "item_boots_of_bearing",
           "item_glimmer_cape",
-          "item_blink",
+          "item_arcane_blink",
           "item_black_king_bar",
-          "item_ultimate_scepter"
+          "item_ultimate_scepter",
+          "item_sheepstick"
         ],
 				"tags": [
 					"hero"
@@ -1903,11 +1949,11 @@
 				"unit": "npc_dota_hero_sand_king",
 				"level": 29,
 				"items": [
-          "item_arcane_boots",
-          "item_blink",
-          "item_shivas_guard",
-          "item_black_king_bar",
+          "item_assault",
+          "item_overwhelming_blink",
           "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_shivas_guard",
           "item_octarine_core"
         ],
 				"tags": [
@@ -1919,11 +1965,12 @@
 				"unit": "npc_dota_hero_witch_doctor",
 				"level": 29,
 				"items": [
-          "item_arcane_boots",
+          "item_boots_of_bearing",
           "item_glimmer_cape",
           "item_ultimate_scepter",
           "item_black_king_bar",
-          "item_octarine_core"
+          "item_octarine_core",
+          "item_sheepstick"
         ],
 				"tags": [
 					"hero"
@@ -1949,12 +1996,12 @@
 				"unit": "npc_dota_hero_centaur",
 				"level": 29,
 				"items": [
-          "item_phase_boots",
-          "item_blink",
-          "item_blade_mail",
-          "item_pipe",
+          "item_assault",
+          "item_overwhelming_blink",
           "item_heart",
-          "item_assault"
+          "item_pipe",
+          "item_ultimate_scepter",
+          "item_black_king_bar"
         ],
 				"tags": [
 					"hero"
@@ -1965,12 +2012,12 @@
 				"unit": "npc_dota_hero_antimage",
 				"level": 29,
 				"items": [
-          "item_power_treads",
-          "item_bfury",
+          "item_swift_blink",
           "item_manta",
           "item_abyssal_blade",
           "item_skadi",
-          "item_butterfly"
+          "item_butterfly",
+          "item_bloodthorn"
         ],
 				"tags": [
 					"hero"
@@ -1981,12 +2028,12 @@
 				"unit": "npc_dota_hero_phantom_lancer",
 				"level": 29,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_disperser",
+          "item_ultimate_scepter",
           "item_manta",
-          "item_heart",
-          "item_butterfly",
-          "item_skadi"
+          "item_skadi",
+          "item_heart"
         ],
 				"tags": [
 					"hero"
@@ -1997,12 +2044,12 @@
 				"unit": "npc_dota_hero_templar_assassin",
 				"level": 29,
 				"items": [
-          "item_power_treads",
+          "item_butterfly",
           "item_desolator",
-          "item_blink",
+          "item_swift_blink",
           "item_black_king_bar",
           "item_greater_crit",
-          "item_butterfly"
+          "item_hurricane_pike"
         ],
 				"tags": [
 					"hero"
@@ -2013,9 +2060,10 @@
 				"unit": "npc_dota_hero_oracle",
 				"level": 29,
 				"items": [
-          "item_glimmer_cape",
-          "item_lotus_orb",
           "item_guardian_greaves",
+          "item_glimmer_cape",
+          "item_arcane_blink",
+          "item_ultimate_scepter",
           "item_aeon_disk",
           "item_sheepstick"
         ],
@@ -2028,11 +2076,12 @@
 				"unit": "npc_dota_hero_tidehunter",
 				"level": 29,
 				"items": [
-          "item_blink",
+          "item_overwhelming_blink",
+          "item_ultimate_scepter",
           "item_pipe",
-          "item_guardian_greaves",
+          "item_shivas_guard",
           "item_refresher",
-          "item_shivas_guard"
+          "item_guardian_greaves"
         ],
 				"tags": [
 					"hero"
@@ -2044,10 +2093,11 @@
 				"level": 29,
 				"items": [
           "item_guardian_greaves",
-          "item_lotus_orb",
           "item_glimmer_cape",
+          "item_lotus_orb",
           "item_sheepstick",
-          "item_octarine_core"
+          "item_octarine_core",
+          "item_arcane_blink"
         ],
 				"tags": [
 					"hero"
@@ -2073,12 +2123,12 @@
 				"unit": "npc_dota_hero_bristleback",
 				"level": 30,
 				"items": [
-          "item_phase_boots",
+          "item_overwhelming_blink",
           "item_bloodstone",
-          "item_eternal_shroud",
+          "item_sange_and_yasha",
+          "item_lotus_orb",
           "item_shivas_guard",
-          "item_ultimate_scepter",
-          "item_assault"
+          "item_ultimate_scepter"
         ],
 				"tags": [
 					"hero"
@@ -2089,12 +2139,12 @@
 				"unit": "npc_dota_hero_nevermore",
 				"level": 30,
 				"items": [
-          "item_power_treads",
+          "item_swift_blink",
           "item_hurricane_pike",
-          "item_greater_crit",
+          "item_manta",
           "item_black_king_bar",
-          "item_satanic",
-          "item_butterfly"
+          "item_greater_crit",
+          "item_satanic"
         ],
 				"tags": [
 					"hero"
@@ -2105,12 +2155,12 @@
 				"unit": "npc_dota_hero_death_prophet",
 				"level": 30,
 				"items": [
-          "item_arcane_boots",
+          "item_arcane_blink",
           "item_wind_waker",
-          "item_kaya_and_sange",
           "item_black_king_bar",
+          "item_kaya_and_sange",
           "item_shivas_guard",
-          "item_skadi"
+          "item_octarine_core"
         ],
 				"tags": [
 					"hero"
@@ -2121,12 +2171,12 @@
 				"unit": "npc_dota_hero_necrolyte",
 				"level": 30,
 				"items": [
-          "item_arcane_boots",
+          "item_arcane_blink",
+          "item_radiance",
           "item_kaya_and_sange",
-          "item_eternal_shroud",
-          "item_shivas_guard",
+          "item_black_king_bar",
           "item_heart",
-          "item_skadi"
+          "item_shivas_guard"
         ],
 				"tags": [
 					"hero"
@@ -2137,11 +2187,12 @@
 				"unit": "npc_dota_hero_lich",
 				"level": 30,
 				"items": [
-          "item_arcane_boots",
+          "item_boots_of_bearing",
           "item_glimmer_cape",
-          "item_force_staff",
-          "item_aeon_disk",
-          "item_ultimate_scepter"
+          "item_arcane_blink",
+          "item_ultimate_scepter",
+          "item_wind_waker",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -2152,12 +2203,12 @@
 				"unit": "npc_dota_hero_slardar",
 				"level": 30,
 				"items": [
-          "item_power_treads",
-          "item_blink",
+          "item_overwhelming_blink",
           "item_harpoon",
           "item_black_king_bar",
-          "item_assault",
-          "item_heart"
+          "item_ultimate_scepter",
+          "item_nullifier",
+          "item_assault"
         ],
 				"tags": [
 					"hero"
@@ -2168,11 +2219,12 @@
 				"unit": "npc_dota_hero_lion",
 				"level": 30,
 				"items": [
-          "item_arcane_boots",
-          "item_blink",
-          "item_force_staff",
-          "item_aeon_disk",
-          "item_ultimate_scepter"
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_wind_waker",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_aeon_disk"
         ],
 				"tags": [
 					"hero"
@@ -2198,12 +2250,12 @@
 				"unit": "npc_dota_hero_skeleton_king",
 				"level": 30,
 				"items": [
-          "item_phase_boots",
-          "item_armlet",
-          "item_desolator",
+          "item_overwhelming_blink",
+          "item_radiance",
           "item_black_king_bar",
           "item_assault",
-          "item_heart"
+          "item_abyssal_blade",
+          "item_satanic"
         ],
 				"tags": [
 					"boss"

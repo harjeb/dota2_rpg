@@ -22,6 +22,7 @@ local EnemyDiagnostics = require("battle.enemy_diagnostics")
 local SkillDebug = require("battle.skill_debug")
 local RespawnPolicy = require("battle.respawn_policy")
 local ItemSales = require("issue_fixes/item_sales")
+local ShardPurchase = require("issue_fixes/shard_purchase")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -123,9 +124,9 @@ QUALITY_ANCHORS = {
 	{ stage = 30, weights = { common = 580, fine = 250, epic = 150, legendary = 20 } },
 }
 QUALITY_CONSUMED_MODIFIERS = {
-	fine = { "modifier_item_aghanims_shard_consumed" },
+	fine = { "modifier_item_aghanims_shard" },
 	epic = { "modifier_item_ultimate_scepter_consumed" },
-	legendary = { "modifier_item_aghanims_shard_consumed", "modifier_item_ultimate_scepter_consumed" },
+	legendary = { "modifier_item_aghanims_shard", "modifier_item_ultimate_scepter_consumed" },
 }
 REFRESH_BASE = 20
 REFRESH_STEP = 20
@@ -268,7 +269,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v39-20260911") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v40-20260911") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -386,6 +387,9 @@ function CDota2RpgDemo:InitGameMode()
 	ListenToGameEvent("dota_item_purchased", Dynamic_Wrap(CDota2RpgDemo, "OnNativeItemPurchased"), self)
 	ListenToGameEvent("dota_player_update_selected_unit", Dynamic_Wrap(CDota2RpgDemo, "OnPlayerSelectedUnit"), self)
 
+	CustomGameEventManager:RegisterListener("rpg_replay_run", function(eventSourceIndex, payload)
+		return self:OnReplayRun(eventSourceIndex, payload)
+	end)
 	CustomGameEventManager:RegisterListener("rpg_start_battle", function(eventSourceIndex, payload)
 		return self:OnStartBattle(eventSourceIndex, payload)
 	end)
@@ -441,7 +445,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v39-20260911 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v40-20260911 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2511,6 +2515,7 @@ function CDota2RpgDemo:RestoreHeroInventoryToUnit(heroName, hero)
 	if heroData == nil or hero == nil then
 		return
 	end
+	ShardPurchase.Restore(self, heroName, hero)
 	local priorInventory = heroData.inventory or {}
 	local priorStates = heroData.inventory_states or {}
 	local priorEntities = heroData.inventory_entities or {}
@@ -2775,7 +2780,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 				-- 敌方品质/内置升级：魔晶/神杖
 				for _, upgrade in ipairs(entry.quality_upgrades or {}) do
 					if upgrade == "shard" then
-						unit:AddNewModifier(unit, nil, "modifier_item_aghanims_shard_consumed", {})
+						unit:AddNewModifier(unit, nil, "modifier_item_aghanims_shard", {})
 					elseif upgrade == "scepter" then
 						unit:AddNewModifier(unit, nil, "modifier_item_ultimate_scepter_consumed", {})
 					end
@@ -3115,6 +3120,14 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		self.nativePurchaseOrderContexts = self.nativePurchaseOrderContexts or {}
 		local itemName = self:GetNativePurchaseItemName(filterTable)
 		if itemName == "" then return false end
+		if itemName == "item_aghanims_shard" then
+			local bought, message = ShardPurchase.Purchase(self, issuerPlayerId, recipientKey)
+			ShardPurchase.Notify(self, message)
+			if bought then self:SyncLiveEquipmentState(true) end
+			-- Always suppress native execution: Shard auto-consumes on Wisp
+			-- before the ordinary post-purchase inventory router can see it.
+			return false
+		end
 		local affordable, itemCost = self:CanAffordNativePurchase(itemName, filterTable)
 		if not affordable then
 			print(string.format("[Dota2Rpg] Native purchase rejected: item=%s cost=%s balance=%d.",
@@ -3485,6 +3498,40 @@ function CDota2RpgDemo:OnThink()
 	return THINK_INTERVAL
 end
 
+function CDota2RpgDemo:OnReplayRun(_, payload)
+	-- PlayerID is engine metadata. Never accept a client-selected owner or a
+	-- request from an earlier result screen, even after another run finishes.
+	if type(payload) ~= "table" or self.playerId == nil
+		or tonumber(payload.PlayerID) ~= self.playerId
+		or tonumber(payload.settlement_generation) ~= self.settlementGeneration
+		or self.phase ~= "result" or not self.runComplete
+		or (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending)) then return false end
+	local failed = self.runFailed
+	self.settlementGeneration = self.settlementGeneration + 1
+	self.phase = "restarting" -- claim before native callbacks/reentrant events
+	self.runComplete, self.runFailed, self.winner = false, false, ""
+	RespawnPolicy.SetBattleActive(self, false)
+	if not failed then
+		self.currentLevelId = self.orderedLevels[1] or "ch01"
+		self.refreshCount = 0
+		self.scrollPurchases = { low = 0, high = 0 }
+	end
+	-- Retain the build, wallet, authored rules, and undelivered native items.
+	RunLives.Ensure(self).remaining = RunLives.MAX_LIVES
+	self.nextLifeRewardAttempt = 0
+	self.phase = "setup"
+	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
+		self.placeholderHero:RemoveModifierByName("modifier_invulnerable")
+	end
+	self:SpawnLevelEnemies(self.currentLevelId)
+	self:RespawnPlayerRoster()
+	self:SpawnBattleBarrier()
+	self:RollShop()
+	self:BroadcastLevelInfo()
+	self:BroadcastBattleState()
+	return true
+end
+
 function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	if self.phase ~= "fight" then
 		return
@@ -3560,6 +3607,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end
 
 	local settlement = {
+		settlement_generation = settlementGeneration,
 		level = self.currentLevelId,
 		winner = winner,
 		gold = winner == "radiant" and (baseGold + timeBonus) or 0,
@@ -3588,6 +3636,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		and #self.orderedLevels > 0
 		and self.currentLevelId == self.orderedLevels[#self.orderedLevels]
 
+	-- Keep campaign terminals inside the custom result phase: an official
+	-- SetGameWinner would irreversibly prevent replay in this match.
+	self.runComplete = isFinalWin or self.runFailed
 	self.phase = "result"
 	self.winner = winner
 	self:RunLifecycleStep("battle_stop", function() self.battleManager:StopBattle() end)
@@ -3597,7 +3648,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	end)
 
 	-- 闯关推进：胜利指向下一关（进入下一关时重置刷新费用与卷轴限购）。
-	-- 第 30 关胜利后结束当前 Run，不能再次进入 setup 重复领取终局奖励。
+	-- Terminal replay is explicit; ordinary stage transitions stay automatic.
 	if isFinalWin or self.runFailed then
 		self.runComplete = true
 		self:BroadcastShopState()
@@ -3804,6 +3855,10 @@ function CDota2RpgDemo:BuildBattleState()
 		rule_generation = self.ruleGeneration or 0,
 		phase = self.phase,
 		ready = (self.teamsSpawned and not self.runComplete) and 1 or 0,
+		replay_available = (self.phase == "result" and self.runComplete
+			and not (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending))) and 1 or 0,
+		settlement_generation = self.settlementGeneration or 0,
+		owner_player_id = self.playerId,
 		run_complete = self.runComplete and 1 or 0,
 		run_failed = self.runFailed and 1 or 0,
 		lives_remaining = RunLives.Ensure(self).remaining,

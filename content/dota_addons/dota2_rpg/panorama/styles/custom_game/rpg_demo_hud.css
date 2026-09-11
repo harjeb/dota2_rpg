@@ -998,6 +998,20 @@
 	box-shadow: #000000dd 0px 5px 20px 0px;
 }
 
+.ReplayRunButton
+{
+	width: 100%;
+	min-height: 44px;
+	margin-top: 12px;
+	padding: 10px;
+	background-color: #31594b;
+	border: 1px solid #8cba95;
+}
+.ReplayRunButton Label { horizontal-align: center; color: #ffffff; font-size: 20px; }
+.ReplayRunButton:hover { brightness: 1.4; }
+.ReplayRunButton:disabled { saturation: 0; brightness: 0.6; }
+.ReplayRunHint { width: 100%; color: #bac4ca; font-size: 16px; margin-top: 6px; text-align: center; }
+
 .BattleResult.RadiantVictory
 {
 	border-color: #61d0b5;

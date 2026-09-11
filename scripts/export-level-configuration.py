@@ -100,7 +100,10 @@ ITEM_NAMES = {
     "item_orb_of_corrosion": "腐蚀之球", "item_vanguard": "先锋盾",
     "item_veil_of_discord": "纷争面纱",
     "item_silver_edge": "白银之锋",
-    "item_yasha": "夜叉",
+    "item_yasha": "夜叉", "item_yasha_and_kaya": "慧夜对剑",
+    "item_overwhelming_blink": "盛势闪光", "item_swift_blink": "迅疾闪光",
+    "item_arcane_blink": "秘奥闪光", "item_radiance": "辉耀", "item_nullifier": "否决坠饰",
+    "item_gungir": "缚灵索", "item_boots_of_bearing": "宽容之靴", "item_moon_shard": "银月之晶",
 }
 
 
@@ -205,6 +208,7 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
                 "Boss生命倍率": as_number(enemy.get("boss_health_multiplier", "")),
                 "Boss攻击伤害+%": as_number(enemy.get("boss_attack_damage_pct", "")),
                 "Boss额外护甲": as_number(enemy.get("boss_bonus_armor", "")),
+                "Boss最终魔抗目标%": as_number(enemy.get("boss_magic_resistance_pct", "")),
                 "Boss魔抗乘算加成%": as_number(enemy.get("boss_magic_resistance_bonus_pct", "")),
                 "Boss法术增幅+%": as_number(enemy.get("boss_spell_amp_pct", "")),
                 "Boss冷却减少%": as_number(enemy.get("boss_cooldown_reduction_pct", "")),
@@ -367,7 +371,7 @@ def write_workbook(path: Path, sheets: list[tuple[str, list[dict[str, Any]]]], m
         ("装备明细", "每件装备一行，便于按中文名、原生ID或关卡筛选。"),
         ("单位出现汇总", "按单位汇总当前所有关卡的配置次数、实际累计刷出数量、等级范围与 Boss 出现关卡。"),
         ("AI说明", "simple_nearest=野怪最近目标；aggro_front=前排近距攻击；focus_lowest_hp=优先最低生命；ai_healer_protect=治疗/保护友军。"),
-        ("Boss列", "仅 Boss 行有 Boss最大生命（优先于生命倍率）、攻击伤害、额外护甲、魔抗乘算加成、法术增幅、冷却减少数值；由 modifier_rpg_boss_power 生效。魔抗加成保留原生/装备魔抗：最终魔抗=1-(1-原魔抗)×(1-加成)，并非最终绝对魔抗。"),
+        ("Boss列", "仅 Boss 行有 Boss最大生命（优先于生命倍率）、攻击伤害、额外护甲、魔抗乘算加成、法术增幅、冷却减少数值；由 modifier_rpg_boss_power 生效。魔抗加成保留原生/装备魔抗：最终魔抗=1-(1-原魔抗)×(1-加成)。Boss最终魔抗目标%优先于乘算加成，以装备后原生魔抗计算所需加成；80表示常态最终魔抗至少80%，原生魔抗更高时不降低，BKB等临时效果仍可进一步提高。刷新时排除已有Boss加成后重新计算；应在常态装备完成后应用，避免将临时效果计入基线。"),
         ("野怪成长", "生命/攻击倍率在关卡倍率后生效；额外护甲加到关卡缩放后的原生基础护甲；魔法抗性%设置基础魔抗。第11关起所有野怪均使用已验证 IsAncient=1 的原生远古单位。"),
     ]
     for key, value in notes:

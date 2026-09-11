@@ -1,248 +1,71 @@
-"""Deterministic enemy equipment from actual configured level and hero role.
+"""Author stronger enemy gear from reviewed, attributable player-build profiles.
 
-These are authored arena balance curves, not measured public-match net worth.
-Existing hero cores define identity; level determines boots, utility and luxury
-progression. Runtime levels.kv is authoritative, including when maintenance
-JSON has stale levels. Run this tool after changing enemy levels or roster.
+The OpenDota snapshot provides hero purchase frequencies and observed match-end
+inventories. Profiles choose compatible combat cores; the level curve deliberately
+adds RPG difficulty. It is not a claim of population-average gold at each level.
+Runtime levels.kv is authoritative; no network is used when generating equipment.
 """
 import json
 from pathlib import Path
 import re
 import runpy
 
-# Six complete builds per hero; names below are native IDs without item_.
-BUILDS = {
-    'axe': [
-        'boots bracer', 'phase_boots bracer magic_wand',
-        'phase_boots blink vanguard', 'blink blade_mail black_king_bar',
-        'blink crimson_guard heart phase_boots',
-        'blink crimson_guard heart black_king_bar shivas_guard'],
-    'dragon_knight': [
-        'boots bracer', 'power_treads bracer magic_wand',
-        'power_treads blink armlet', 'blink armlet black_king_bar',
-        'blink assault black_king_bar power_treads',
-        'blink assault black_king_bar satanic greater_crit'],
-    'huskar': [
-        'boots bracer', 'power_treads bracer magic_wand',
-        'power_treads armlet heavens_halberd', 'armlet heavens_halberd black_king_bar',
-        'armlet heavens_halberd black_king_bar satanic',
-        'armlet heavens_halberd black_king_bar satanic assault'],
-    'sand_king': [
-        'boots bracer', 'arcane_boots bracer magic_wand',
-        'arcane_boots blink veil_of_discord', 'blink shivas_guard black_king_bar',
-        'blink shivas_guard black_king_bar ultimate_scepter',
-        'blink shivas_guard black_king_bar ultimate_scepter octarine_core'],
-    'drow_ranger': [
-        'boots wraith_band', 'power_treads wraith_band magic_wand',
-        'power_treads dragon_lance yasha', 'hurricane_pike yasha black_king_bar',
-        'hurricane_pike manta butterfly black_king_bar',
-        'hurricane_pike manta butterfly black_king_bar satanic'],
-    'sniper': [
-        'boots wraith_band', 'power_treads wraith_band magic_wand',
-        'power_treads dragon_lance maelstrom', 'hurricane_pike maelstrom black_king_bar',
-        'hurricane_pike mjollnir greater_crit black_king_bar',
-        'hurricane_pike mjollnir greater_crit black_king_bar satanic'],
-    'clinkz': [
-        'boots wraith_band', 'power_treads wraith_band magic_wand',
-        'power_treads dragon_lance phylactery', 'desolator dragon_lance black_king_bar',
-        'desolator hurricane_pike greater_crit black_king_bar',
-        'desolator hurricane_pike greater_crit black_king_bar bloodthorn'],
-    'phantom_assassin': [
-        'boots wraith_band', 'power_treads wraith_band magic_wand',
-        'power_treads desolator orb_of_corrosion', 'desolator basher black_king_bar',
-        'desolator abyssal_blade black_king_bar satanic',
-        'desolator abyssal_blade black_king_bar satanic butterfly'],
-    'riki': [
-        'boots wraith_band', 'power_treads wraith_band magic_wand',
-        'power_treads diffusal_blade orb_of_corrosion', 'diffusal_blade manta black_king_bar',
-        'diffusal_blade manta abyssal_blade black_king_bar',
-        'diffusal_blade manta abyssal_blade black_king_bar butterfly'],
-    'juggernaut': [
-        'boots wraith_band', 'phase_boots wraith_band magic_wand',
-        'phase_boots maelstrom yasha', 'maelstrom manta basher',
-        'mjollnir manta abyssal_blade butterfly',
-        'mjollnir manta abyssal_blade butterfly satanic'],
-    'sven': [
-        'boots bracer', 'power_treads bracer magic_wand',
-        'power_treads echo_sabre blink', 'echo_sabre blink black_king_bar',
-        'blink greater_crit black_king_bar satanic',
-        'blink greater_crit black_king_bar satanic assault'],
-    'lina': [
-        'boots null_talisman', 'arcane_boots null_talisman magic_wand',
-        'arcane_boots force_staff kaya', 'kaya_and_sange blink black_king_bar',
-        'kaya_and_sange ultimate_scepter black_king_bar sheepstick',
-        'kaya_and_sange ultimate_scepter black_king_bar sheepstick octarine_core'],
-    'crystal_maiden': [
-        'boots magic_wand', 'boots force_staff magic_wand',
-        'arcane_boots force_staff glimmer_cape', 'glimmer_cape force_staff black_king_bar',
-        'glimmer_cape blink black_king_bar ultimate_scepter',
-        'glimmer_cape blink black_king_bar ultimate_scepter sheepstick'],
-    'witch_doctor': [
-        'boots magic_wand', 'boots force_staff magic_wand',
-        'arcane_boots force_staff glimmer_cape', 'glimmer_cape ultimate_scepter black_king_bar',
-        'glimmer_cape ultimate_scepter black_king_bar octarine_core',
-        'glimmer_cape ultimate_scepter black_king_bar octarine_core sheepstick'],
-    'oracle': [
-        'boots magic_wand', 'arcane_boots magic_wand wind_lace',
-        'arcane_boots force_staff glimmer_cape', 'glimmer_cape force_staff lotus_orb',
-        'glimmer_cape lotus_orb guardian_greaves aeon_disk',
-        'glimmer_cape lotus_orb guardian_greaves aeon_disk sheepstick'],
-    'dazzle': [
-        'boots magic_wand', 'boots force_staff magic_wand',
-        'arcane_boots force_staff glimmer_cape', 'guardian_greaves force_staff glimmer_cape',
-        'guardian_greaves lotus_orb glimmer_cape sheepstick',
-        'guardian_greaves lotus_orb glimmer_cape sheepstick octarine_core'],
-}
-
-# Shared openings reduce repetition; midgame cores and late upgrades are
-# chosen for each hero. Tuple: role, boots, core, utility, protection, luxury.
-ROLE_OPENINGS = {
-    'strength': ('boots bracer', 'power_treads bracer magic_wand'),
-    'agility': ('boots wraith_band', 'power_treads wraith_band magic_wand'),
-    'caster': ('boots null_talisman', 'arcane_boots null_talisman magic_wand'),
-    'support': ('boots magic_wand', 'arcane_boots magic_wand wind_lace'),
-}
-HERO_PROFILES = {
-    'centaur': 'strength phase_boots blink blade_mail pipe heart',
-    'tidehunter': 'strength arcane_boots blink pipe guardian_greaves refresher',
-    'bristleback': 'strength phase_boots bloodstone eternal_shroud shivas_guard ultimate_scepter',
-    'slardar': 'strength power_treads blink echo_sabre black_king_bar assault',
-    'skeleton_king': 'strength phase_boots armlet desolator black_king_bar assault',
-    'life_stealer': 'strength phase_boots armlet basher sange_and_yasha assault',
-    'chaos_knight': 'strength power_treads armlet manta black_king_bar heart',
-    'night_stalker': 'strength phase_boots echo_sabre blink black_king_bar assault',
-    'spirit_breaker': 'strength phase_boots invis_sword ultimate_scepter black_king_bar octarine_core',
-    'abaddon': 'strength phase_boots echo_sabre manta basher assault',
-    'omniknight': 'support arcane_boots mekansm lotus_orb pipe ultimate_scepter',
-    'undying': 'support arcane_boots mekansm glimmer_cape pipe lotus_orb',
-    'razor': 'agility power_treads yasha maelstrom black_king_bar satanic',
-    'viper': 'agility power_treads dragon_lance yasha black_king_bar skadi',
-    'luna': 'agility power_treads yasha mask_of_madness black_king_bar satanic',
-    'gyrocopter': 'agility power_treads maelstrom ultimate_scepter black_king_bar satanic',
-    'bloodseeker': 'agility power_treads maelstrom basher black_king_bar butterfly',
-    'slark': 'agility power_treads diffusal_blade ultimate_scepter black_king_bar skadi',
-    'troll_warlord': 'agility power_treads bfury yasha black_king_bar satanic',
-    'ursa': 'agility phase_boots bfury blink black_king_bar basher',
-    'antimage': 'agility power_treads bfury yasha basher skadi',
-    'phantom_lancer': 'agility power_treads diffusal_blade yasha heart butterfly',
-    'templar_assassin': 'agility power_treads desolator blink black_king_bar greater_crit',
-    'nevermore': 'agility power_treads dragon_lance greater_crit black_king_bar satanic',
-    'lich': 'support arcane_boots glimmer_cape force_staff aeon_disk ultimate_scepter',
-    'lion': 'support arcane_boots blink force_staff aeon_disk ultimate_scepter',
-    'shadow_shaman': 'support arcane_boots blink aether_lens black_king_bar ultimate_scepter',
-    'warlock': 'support arcane_boots glimmer_cape ultimate_scepter aeon_disk refresher',
-    'jakiro': 'support arcane_boots force_staff glimmer_cape cyclone ultimate_scepter',
-    'disruptor': 'support arcane_boots glimmer_cape force_staff aeon_disk ultimate_scepter',
-    'death_prophet': 'caster arcane_boots cyclone kaya_and_sange black_king_bar shivas_guard',
-    'necrolyte': 'caster arcane_boots kaya_and_sange eternal_shroud shivas_guard heart',
-    'queenofpain': 'caster power_treads orchid kaya_and_sange black_king_bar shivas_guard',
-    'leshrac': 'caster arcane_boots bloodstone kaya_and_sange black_king_bar shivas_guard',
-    'zuus': 'caster arcane_boots phylactery ultimate_scepter kaya_and_sange refresher',
-    'pugna': 'caster arcane_boots aether_lens glimmer_cape ultimate_scepter octarine_core',
-    'vengefulspirit': 'support arcane_boots force_staff glimmer_cape lotus_orb ultimate_scepter',
-    'venomancer': 'support arcane_boots spirit_vessel glimmer_cape force_staff shivas_guard',
-    'skywrath_mage': 'caster arcane_boots rod_of_atos aether_lens black_king_bar ultimate_scepter',
-    'ancient_apparition': 'support arcane_boots glimmer_cape force_staff aether_lens ultimate_scepter',
-    'grimstroke': 'support arcane_boots aether_lens glimmer_cape ultimate_scepter sheepstick',
-    'shadow_demon': 'support arcane_boots aether_lens glimmer_cape aeon_disk ultimate_scepter',
-    'bane': 'support arcane_boots aether_lens glimmer_cape black_king_bar ultimate_scepter',
-    'silencer': 'support arcane_boots force_staff glimmer_cape aeon_disk refresher',
-    'treant': 'support arcane_boots blink meteor_hammer lotus_orb ultimate_scepter',
-    'enchantress': 'support power_treads dragon_lance glimmer_cape lotus_orb ultimate_scepter',
-    'ogre_magi': 'support arcane_boots force_staff aether_lens glimmer_cape sheepstick',
-    'dark_willow': 'support arcane_boots cyclone glimmer_cape blink ultimate_scepter',
-}
+ROOT = Path(__file__).resolve().parents[1]
+PROFILE_DATA = json.loads((ROOT / 'data/enemy_equipment_profiles.json').read_text(encoding='utf-8'))
+BUILDS = PROFILE_DATA['heroes']
+ROLES = {hero: row['role'] for hero, row in BUILDS.items()}
+RESEARCH = json.loads((ROOT / 'data' / PROFILE_DATA['research_snapshot']).read_text(encoding='utf-8'))
+ITEM_COSTS = RESEARCH['item_costs']
+BOOT_ITEMS = {'boots', 'phase_boots', 'power_treads', 'arcane_boots', 'guardian_greaves', 'boots_of_bearing'}
 UPGRADES = {
     'basher': 'abyssal_blade', 'dragon_lance': 'hurricane_pike',
     'yasha': 'manta', 'maelstrom': 'mjollnir', 'diffusal_blade': 'disperser',
     'mekansm': 'guardian_greaves', 'invis_sword': 'silver_edge',
     'echo_sabre': 'harpoon', 'orchid': 'bloodthorn', 'cyclone': 'wind_waker',
+    'rod_of_atos': 'gungir',
 }
-for hero, profile in HERO_PROFILES.items():
-    role, boots, core, utility, protection, luxury = profile.split()
-    late = [UPGRADES.get(item, item) for item in (core, utility, protection, luxury)]
-    final_slot = ('shivas_guard' if hero == 'tidehunter' else 'aeon_disk') \
-        if 'guardian_greaves' in late else boots
-    BUILDS[hero] = [
-        *ROLE_OPENINGS[role],
-        f'{boots} {core} {utility}',
-        f'{core} {utility} {protection}',
-        ' '.join(late),
-        ' '.join([*late, final_slot] if 'guardian_greaves' in late else [boots, *late]),
-    ]
-# Razor wants status resistance; Luna upgrades her early lifesteal into damage.
-BUILDS['razor'][4:] = [
-    'sange_and_yasha mjollnir black_king_bar satanic',
-    'power_treads sange_and_yasha mjollnir black_king_bar satanic',
-]
-BUILDS['luna'][4:] = [
-    'manta butterfly black_king_bar satanic',
-    'power_treads manta butterfly black_king_bar satanic',
-]
-
-BOOT_ITEMS = {'boots', 'phase_boots', 'power_treads', 'arcane_boots', 'guardian_greaves'}
-LEGACY_ROLES = {
-    'axe': 'strength', 'dragon_knight': 'strength', 'huskar': 'strength',
-    'sand_king': 'strength', 'sven': 'strength', 'lina': 'caster',
-    'drow_ranger': 'agility', 'sniper': 'agility', 'clinkz': 'agility',
-    'phantom_assassin': 'agility', 'riki': 'agility', 'juggernaut': 'agility',
-    'crystal_maiden': 'support', 'witch_doctor': 'support',
-    'oracle': 'support', 'dazzle': 'support',
-}
-ROLES = {**LEGACY_ROLES, **{hero: row.split()[0] for hero, row in HERO_PROFILES.items()}}
-# Supports finish with boots plus four utility items; cores gain a sixth slot.
-# A passive final item remains useful even when the native AI cannot activate
-# an earlier item. Do not add consumables, neutral items or economy items.
-FINAL_ITEMS = {'strength': 'assault', 'agility': 'butterfly', 'caster': 'shivas_guard'}
 
 
-def loadout(hero, level):
-    """Return one complete inventory; never borrow expensive future-tier items."""
+def loadout(hero, level, boss=False):
+    """Earlier completed cores, six slots from level 22, luxury upgrades at 26."""
     numeric = float(level)
     if not numeric.is_integer() or not 1 <= numeric <= 30:
         raise ValueError(f'Enemy level must be an integer in 1..30: {level}')
     level = int(numeric)
-    role = ROLES[hero]
-    rows = [row.split() for row in BUILDS[hero]]
+    if boss and hero in PROFILE_DATA.get('boss_loadouts', {}):
+        return ['item_' + item for item in PROFILE_DATA['boss_loadouts'][hero]]
+    profile = BUILDS[hero]
+    role = profile['role']
     stat = {'strength': 'bracer', 'agility': 'wraith_band',
             'caster': 'null_talisman', 'support': 'magic_wand'}[role]
-    boots = next(item for item in rows[2] if item in BOOT_ITEMS)
+    boots = profile['boots']
     if level <= 3:
         names = [stat]
     elif level <= 6:
-        names = ['boots', stat]
-    elif level <= 9:
         names = [boots, stat, 'wind_lace' if role == 'support' else 'magic_wand']
+    elif level <= 9:
+        names = [boots, profile['core'][0], 'magic_wand']
     elif level <= 13:
-        core = next(item for item in rows[2] if item not in BOOT_ITEMS)
-        names = [boots, core, 'magic_wand']
+        names = [boots, *profile['core'][:2], 'magic_wand']
     elif level <= 17:
-        names = [*rows[2], 'magic_wand']
+        names = [boots, *profile['core'][:3]]
     elif level <= 21:
-        names = [boots, *rows[3]]
+        names = [boots, *profile['core'][:4]]
     elif level <= 25:
-        names = [boots, *rows[3], 'magic_wand'] if role == 'support' else [boots, *rows[4]]
+        names = [boots, *profile['mid']]
     else:
-        names = [boots, *rows[5]]
-        if role != 'support':
-            # Keep the hero's authored luxury first, then fill its sixth slot.
-            for item in [FINAL_ITEMS[role], 'heart' if role == 'strength' else 'skadi']:
-                if len(set(names)) >= 6:
-                    break
-                if item not in names:
-                    names.append(item)
-    # Greaves replace other boots; upgraded items replace their components.
+        names = list(profile['late'])
     if 'guardian_greaves' in names:
         names = [item for item in names if item not in BOOT_ITEMS or item == 'guardian_greaves']
-    replacements = {**UPGRADES, 'vanguard': 'crimson_guard', 'veil_of_discord': 'shivas_guard'}
-    result = []
-    for item in names:
-        if item not in result and replacements.get(item) not in names:
-            result.append(item)
-    if role == 'support':
-        result = result[:5]
-    if len(result) > 6:
-        raise ValueError(f'Inventory overflow: {hero} level {level}: {result}')
+    result = list(dict.fromkeys(names))
+    if level >= 22:
+        for item in profile['late']:
+            if len(result) >= 6:
+                break
+            if item not in result and item not in BOOT_ITEMS:
+                result.append(item)
+    if len(result) > 6 or any(item not in ITEM_COSTS for item in result):
+        raise ValueError(f'Invalid inventory: {hero} level {level}: {result}')
     return ['item_' + item for item in result]
 
 
@@ -261,7 +84,9 @@ def update_equipment(source_text, runtime_text):
                 raise ValueError(f'Roster ordering mismatch in {stage_id}')
             if entry['unit'].startswith('npc_dota_hero_'):
                 hero = entry['unit'].removeprefix('npc_dota_hero_')
-                builds.append((entry['unit'], int(live['level']), loadout(hero, live['level'])))
+                tags = live.get('tags', {})
+                boss = 'boss' in (tags.values() if isinstance(tags, dict) else tags)
+                builds.append((entry['unit'], int(live['level']), loadout(hero, live['level'], boss)))
     patterns = [
         r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])',
         r'("unit"\s+"(npc_dota_hero_[^"]+)"[^{}]*?"items"\s*\{)([^{}]*)(\})',
@@ -290,12 +115,12 @@ def update_equipment(source_text, runtime_text):
 
 
 def main():
-    data = Path(__file__).resolve().parents[1] / 'game/dota_addons/dota2_rpg/scripts/data'
+    data = ROOT / 'game/dota_addons/dota2_rpg/scripts/data'
     paths = [data / 'levels_v07.json', data / 'levels.kv']
     outputs = update_equipment(*(path.read_text(encoding='utf-8') for path in paths))
     for path, text in zip(paths, outputs):
         path.write_text(text, encoding='utf-8', newline='\n')
-    print('Authored level-based enemy equipment; synchronized hero levels from runtime KV.')
+    print('Authored player-data-informed enemy equipment; synchronized hero levels from runtime KV.')
 
 
 if __name__ == '__main__':

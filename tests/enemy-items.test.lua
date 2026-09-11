@@ -35,4 +35,9 @@ local lateCarry = {
 assert(Items.EquipConfiguredItems(unit, {unit = "npc_dota_hero_drow_ranger", level = "30", items = lateCarry}) == 6)
 assert(table.concat(calls, ",") == "item_power_treads,item_hurricane_pike,item_manta,item_butterfly,item_black_king_bar,item_satanic")
 assert(lateCarry["6"] == "item_satanic", "equipping does not rewrite the configured build")
+calls = {}
+local spiritBoss = {"item_silver_edge", "item_ultimate_scepter", "item_black_king_bar", "item_octarine_core", "item_moon_shard", "item_moon_shard"}
+assert(Items.EquipConfiguredItems(unit, {unit="npc_dota_hero_spirit_breaker", items=spiritBoss}) == 6)
+assert(calls[5] == "item_moon_shard" and calls[6] == "item_moon_shard",
+    "two configured Moon Shards must create two native items, not deduplicate or consume one")
 print("enemy-items.test.lua: passed")

@@ -33,6 +33,11 @@ local function unit()
         local bonus = self.modifiers.modifier_rpg_boss_power
         return self.baseHealth + (bonus and bonus:GetModifierHealthBonus() or 0)
     end
+    function hero:GetMagicalArmorValue()
+        local power = self.modifiers.modifier_rpg_boss_power
+        local bonus = power and power:GetModifierMagicalResistanceBonus() / 100 or 0
+        return 1 - (1 - (self.baseMR or 0.25)) * (1 - bonus) * (1 - (self.temporaryMR or 0))
+    end
     function hero:SetHealth(amount) self.health = amount end
     function hero:AddNewModifier(caster, ability, name, kv)
         assert(caster == self and ability == nil and name == "modifier_rpg_boss_power")
@@ -187,4 +192,62 @@ for _, field in ipairs({"boss_bonus_armor", "boss_magic_resistance_bonus_pct"}) 
     assert(Scaling.Apply(unit(), {tags={"boss"}, [field]=10}) ~= nil,
         "defense-only boss config is not skipped")
 end
-print("PASS: Boss stat tiers, absolute HP, native properties, refresh, replication, death, eligibility and config bounds")
+local function near(actual, expected)
+    assert(math.abs(actual - expected) < 0.0000001, tostring(actual) .. " ~= " .. tostring(expected))
+end
+for _, baseline in ipairs({0, 0.25, 0.4, 0.79, 0.8, 0.9, 1}) do
+    local hero = unit()
+    hero.baseMR = baseline
+    local config = {tags = {"boss"}, boss_max_health = 20000, boss_attack_damage_pct = 75,
+        boss_bonus_armor = 15, boss_magic_resistance_bonus_pct = 20, boss_magic_resistance_pct = 80}
+    local power = Scaling.Apply(hero, config)
+    for refresh = 1, 4 do
+        Scaling.Apply(hero, config)
+        near(hero:GetMagicalArmorValue(), math.max(baseline, 0.8))
+        assert(hero:GetMaxHealth() == 20000 and power:GetModifierPhysicalArmorBonus() == 15)
+        assert(power:GetModifierTotalDamageOutgoing_Percentage({damage_category = 1}) == 75)
+    end
+    hero.baseMR = 0.5 -- Equipment changes; exclude the existing modifier factor.
+    Scaling.Apply(hero, config)
+    near(power:GetModifierMagicalResistanceBonus(), 60)
+    near(hero:GetMagicalArmorValue(), 0.8)
+    hero.temporaryMR = 0.6 -- Native BKB-like resistance may exceed the baseline target.
+    near(hero:GetMagicalArmorValue(), 0.92)
+    hero.temporaryMR = 0
+    near(hero:GetMagicalArmorValue(), 0.8)
+    hero.alive = false
+    assert(not power:RemoveOnDeath())
+    near(hero:GetMagicalArmorValue(), 0.8)
+    hero.alive = true
+    Scaling.Apply(hero, config)
+    near(hero:GetMagicalArmorValue(), 0.8)
+    server = false
+    local client = setmetatable({GetParent = function() return hero end}, Power)
+    client:OnCreated({})
+    client:HandleCustomTransmitterData(power:AddCustomTransmitterData())
+    near(client:GetModifierMagicalResistanceBonus(), 60)
+    server = true
+    config.boss_magic_resistance_pct = nil
+    Scaling.Apply(hero, config)
+    near(power:GetModifierMagicalResistanceBonus(), 20)
+end
+for _, getter in ipairs({false, function() error("native getter unavailable") end,
+    function() return nil end, function() return "0.25" end, function() return 0/0 end,
+    function() return math.huge end, function() return -0.1 end, function() return 1.1 end}) do
+    local hero = unit()
+    local config = {tags = {"boss"}, boss_max_health = 20000, boss_magic_resistance_pct = 80,
+        boss_magic_resistance_bonus_pct = 20}
+    local power = Scaling.Apply(hero, config)
+    local old = power:GetModifierMagicalResistanceBonus()
+    hero.GetMagicalArmorValue = getter or nil
+    config.boss_max_health = 21000
+    Scaling.Apply(hero, config)
+    near(power:GetModifierMagicalResistanceBonus(), old)
+    assert(hero:GetMaxHealth() == 21000)
+    local fresh = unit()
+    fresh.GetMagicalArmorValue = getter or nil
+    local freshPower = Scaling.Apply(fresh, config)
+    assert(fresh:GetMaxHealth() == 21000 and freshPower:GetModifierMagicalResistanceBonus() == 0)
+end
+assert(Scaling.Apply(unit(), {tags={"boss"}, boss_magic_resistance_pct=80}) ~= nil)
+print("PASS: Boss stat tiers, final MR target, native formula, refresh, equipment changes, temporary effects, replication, death and invalid getters")

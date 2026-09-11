@@ -46,6 +46,7 @@ require = function(name)
 		["battle.respawn_policy"] = moduleRoot .. "battle/respawn_policy.lua",
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",
+        ["issue_fixes/shard_purchase"] = moduleRoot .. "issue_fixes/shard_purchase.lua",
         ["issue_fixes/item_sales"] = moduleRoot .. "issue_fixes/item_sales.lua",
 		["issue_fixes/hero_precache"] = moduleRoot .. "issue_fixes/hero_precache.lua",
 		["tactics/special_targets"] = moduleRoot .. "tactics/special_targets.lua",

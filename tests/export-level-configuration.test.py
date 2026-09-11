@@ -20,6 +20,16 @@ spec.loader.exec_module(EXPORT)
 
 
 class LevelConfigurationExportTests(unittest.TestCase):
+    def test_final_mr_target_and_bonus_export_independently(self):
+        levels = EXPORT.read_kv(EXPORT.RUNTIME_PATH.read_text(encoding='utf-8'))['levels']
+        boss = next(iter(levels['ch20']['enemies'].values()))
+        boss['boss_magic_resistance_pct'] = '80'
+        boss['boss_magic_resistance_bonus_pct'] = '0'
+        row = next(row for row in EXPORT.unit_rows(levels) if row['关卡'] == 'ch20')
+        self.assertEqual((row['Boss最终魔抗目标%'], row['Boss魔抗乘算加成%']), (80, 0))
+        row = next(row for row in EXPORT.unit_rows(levels) if row['关卡'] == 'ch30')
+        self.assertEqual((row['Boss最终魔抗目标%'], row['Boss魔抗乘算加成%']), ('', 30))
+
     def test_live_kv_export_has_all_review_tables_and_real_values(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
@@ -29,9 +39,9 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual(manifest["runtime_source"], "game/dota_addons/dota2_rpg/scripts/data/levels.kv")
             self.assertEqual(manifest["stage_count"], 30)
             self.assertEqual(manifest["unit_configuration_rows"], 125)
-            self.assertEqual(manifest["equipment_rows"], 448)
+            self.assertEqual(manifest["equipment_rows"], 499)
             self.assertEqual(manifest["unique_units"], 75)
-            self.assertEqual(manifest["item_name_count"], 67)
+            self.assertEqual(manifest["item_name_count"], 76)
             self.assertEqual(manifest["untranslated_item_ids"], [])
             # Equipment authoring synchronizes actual hero levels from KV.
             self.assertEqual(manifest["maintenance_source_difference_rows"], 0)
@@ -53,7 +63,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             axe = next(row for row in records if row["关卡"] == "ch05" and row["单位原生ID"] == "npc_dota_hero_axe")
             self.assertEqual((axe["单位名称"], axe["数量"], axe["等级"], axe["AI类型"],
                               axe["装备1（中文）"], axe["装备1（原生ID）"], axe["装备2（中文）"], axe["装备2（原生ID）"]),
-                             ("斧王", 1, 8, "aggro_front", "相位鞋", "item_phase_boots", "护腕", "item_bracer"))
+                             ("斧王", 1, 8, "aggro_front", "相位鞋", "item_phase_boots", "闪烁匕首", "item_blink"))
             for chapter, unit, health, attack, spell, cooldown in [
                 ("ch10", "npc_dota_hero_centaur", 6000, 16.666667, 16.666667, 4.166667),
                 ("ch20", "npc_dota_hero_spirit_breaker", 20000, 75, 25, 6.666667),
@@ -64,11 +74,11 @@ class LevelConfigurationExportTests(unittest.TestCase):
                 boss = bosses[0]
                 self.assertEqual((boss["单位原生ID"], boss["数量"], boss["是否Boss"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
                                  (unit, 1, "是", health, None, attack, spell, cooldown))
-                self.assertEqual((boss['Boss额外护甲'], boss['Boss魔抗乘算加成%']),
-                                 {'ch10': (None, None), 'ch20': (15, 20), 'ch30': (25, 30)}[chapter])
+                self.assertEqual((boss['Boss额外护甲'], boss['Boss魔抗乘算加成%'], boss['Boss最终魔抗目标%']),
+                                 {'ch10': (None, None, None), 'ch20': (15, 0, 80), 'ch30': (25, 30, None)}[chapter])
             self.assertEqual(boss["等级"], 30)
-            for chapter, expected in {'ch11': (3, 2.5, 12, 45), 'ch16': (4, 3.5, 18, 50),
-                                      'ch21': (5.5, 4.5, 24, 55), 'ch26': (7, 6, 30, 60)}.items():
+            for chapter, expected in {'ch11': (4.5, 2.5, 20, 55), 'ch16': (6, 3.5, 30, 62),
+                                      'ch21': (8.5, 4.5, 42, 70), 'ch26': (11, 6, 56, 75)}.items():
                 for row in records:
                     if row['关卡'] == chapter:
                         self.assertEqual(tuple(row[key] for key in ('生命倍率', '攻击倍率', '额外护甲', '魔法抗性%')), expected)

@@ -148,6 +148,8 @@
 		<Panel id="BattleResult" class="BattleResult Hidden" hittest="true">
 			<Label id="BattleResultLabel" />
 			<Label id="RewardLabel" />
+			<Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
+			<Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
 			<Panel id="LootPopup" class="LootPopup Hidden" hittest="true">
 				<Label class="LootPopupTitle" text="#dota2_rpg_loot_title" />
 				<Panel id="LootPopupItems" class="LootPopupItems" />

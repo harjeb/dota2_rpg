@@ -1,0 +1,14 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/custom_loading_screen.css" />
+	</styles>
+	<Panel class="RpgLoadingRoot" hittest="false" hittestchildren="false">
+		<Image class="RpgLoadingBackdrop" src="file://{images}/custom_game/rpg_loading_art.png" scaling="stretch-to-cover-preserve-aspect" />
+		<Image id="RpgLoadingArtwork" class="RpgLoadingArtwork" src="file://{images}/custom_game/rpg_loading_art.png" scaling="stretch-to-fit-preserve-aspect" />
+		<Panel class="RpgLoadingShade" />
+		<Panel class="RpgLoadingFooter">
+			<Panel class="RpgLoadingPulse" />
+			<Label class="RpgLoadingStatus" text="#dota2_rpg_loading_battlefield" />
+		</Panel>
+	</Panel>
+</root>

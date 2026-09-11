@@ -1,4 +1,4 @@
-"""Surgically author UI38 late balance, preserving independent KV/JSON balances.
+"""Surgically author UI40 late balance, preserving independent KV/JSON balances.
 
 Native IDs verified in scripts/npc/npc_units.txt, SHA256
 cbffa0e75f7802bae9d6dccff7d06821588f38e9a51ad53d6a643d75385bb4f4.
@@ -14,14 +14,14 @@ DATA = ROOT / 'game/dota_addons/dota2_rpg/scripts/data'
 # HP/attack multiply the already chapter-scaled native stats; armor is additive,
 # neutral MR sets native base MR. Counts, AI, status resistance and items persist.
 NEUTRALS = {
-    11: (['rock_golem', 'ice_shaman', 'granite_golem', 'black_drake'], 3, 2.5, 12, 45),
-    16: (['frostbitten_golem', 'ice_shaman', 'granite_golem'], 4, 3.5, 18, 50),
-    21: (['frostbitten_golem', 'ice_shaman', 'granite_golem', 'small_thunder_lizard'], 5.5, 4.5, 24, 55),
-    26: (['big_thunder_lizard', 'ice_shaman', 'granite_golem', 'black_dragon', 'frostbitten_golem'], 7, 6, 30, 60),
+    11: (['rock_golem', 'ice_shaman', 'granite_golem', 'black_drake'], 4.5, 2.5, 20, 55),
+    16: (['frostbitten_golem', 'ice_shaman', 'granite_golem'], 6, 3.5, 30, 62),
+    21: (['frostbitten_golem', 'ice_shaman', 'granite_golem', 'small_thunder_lizard'], 8.5, 4.5, 42, 70),
+    26: (['big_thunder_lizard', 'ice_shaman', 'granite_golem', 'black_dragon', 'frostbitten_golem'], 11, 6, 56, 75),
 }
 BOSSES = {
     20: dict(boss_max_health=20000, boss_attack_damage_pct=75, boss_bonus_armor=15,
-             boss_magic_resistance_bonus_pct=20),
+             boss_magic_resistance_bonus_pct=0, boss_magic_resistance_pct=80),
     30: dict(boss_max_health=32000, boss_attack_damage_pct=100, boss_bonus_armor=25,
              boss_magic_resistance_bonus_pct=30),
 }

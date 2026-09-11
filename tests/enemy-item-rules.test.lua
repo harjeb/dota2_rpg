@@ -108,6 +108,25 @@ enemy.x=1500;assert(not attempt(),"satanic needs enemy and low HP")
 local blink=equip(item("item_blink",16,1200));enemy.x=300;assert(not attempt(),"no pointless short blink")
 enemy.x=900;assert(attempt() and orders[1].Position.x==900,"blink uses native point order toward enemy")
 enemy.x=1250;assert(not attempt(),"no overshoot blink")
+for _,name in ipairs({"item_overwhelming_blink","item_swift_blink","item_arcane_blink"}) do
+ local distance=name=="item_arcane_blink" and 1400 or 1200
+ local upgraded=equip(item(name,16,distance));upgraded.specials={blink_range=distance}
+ enemy.x=distance-1
+ assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_POSITION and orders[1].Position.x==enemy.x,name.." uses its native blink range")
+ enemy.x=distance+1;assert(not attempt(),name.." cannot overshoot")
+ enemy.x=900;upgraded.cooldown=true;assert(not attempt(),name.." preserves native damage cooldown")
+end
+local nullifier=equip(item("item_nullifier",8,900))
+assert(attempt() and orders[1].TargetIndex==enemy.id,"Nullifier targets a legal enemy")
+nullifier.CastFilterResultTarget=function() return 1 end;assert(not attempt(),"Nullifier respects native target rejection")
+local gleipnir=equip(item("item_gungir",16,1100));enemy.x=1000
+assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_POSITION,"Gleipnir uses a native point order")
+enemy.x=1200;assert(not attempt(),"Gleipnir respects cast range")
+local radiance=equip(item("item_radiance",516));caster.hp=10
+assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_TOGGLE,"Radiance burn can be enabled at low HP")
+radiance.on=true;assert(not attempt(),"Radiance is never toggled off")
+caster.spells={item("radiance_followup",8,600)}
+assert(attempt() and orders[1].AbilityIndex==caster.spells[1].id,"already active Radiance yields to spells")
 local shiva=equip(item("item_shivas_guard"));shiva.specials={blast_radius=825};enemy.x=826;assert(not attempt())
 enemy.x=825;assert(attempt() and orders[1].AbilityIndex==shiva.id,"Shiva uses blast radius")
 local greaves=equip(item("item_guardian_greaves"));caster.hp=60
@@ -118,6 +137,16 @@ armlet.on=true;assert(attempt() and orders[1].AbilityIndex==spell.id,"already-on
 spell.cooldown=true;enemy.x=100;assert(attempt() and orders[1].OrderType==DOTA_UNIT_ORDER_ATTACK_TARGET,"unavailable items/spells fall through to attack")
 local replacement=item("item_blade_mail");caster.items[0]=replacement;enemy.x=400
 assert(attempt() and orders[1].AbilityIndex==replacement.id,"current inventory replacement is reflected immediately")
+-- Native Warlock order: Chaotic Offering precedes a ready channelled Upheaval.
+local upheaval=equip(item("warlock_upheaval",16,900));caster.items={}
+local offering=item("warlock_rain_of_chaos",16,1200)
+offering.GetAbilityType=function() return 1 end
+caster.spells={upheaval,offering}
+assert(attempt() and orders[1].AbilityIndex==offering.id,"enemy ultimate precedes lower native slot/channel")
+offering.cooldown=true
+assert(attempt() and orders[1].AbilityIndex==upheaval.id,"unavailable ultimate yields to basic spell")
+offering.cooldown=false;offering.range=100
+assert(attempt() and orders[1].AbilityIndex==upheaval.id,"ultimate without legal target cannot starve basics")
 local reincarnation=equip(item("skeleton_king_reincarnation",8,600,1));caster.items={};caster.spells={reincarnation}
 assert(not attempt() and #orders==0,"full HP WK emits no active Reincarnation order")
 -- Model only the native lethal callback; this demonstrates no policy mutation,
@@ -126,7 +155,7 @@ local nativeRebirths=0
 function caster:NativeLethalDamage() self.hp=0;if self.spells[1]==reincarnation and not reincarnation.cooldown then nativeRebirths=nativeRebirths+1;self.hp=100 end end
 caster:NativeLethalDamage();assert(nativeRebirths==1 and reincarnation.level==1 and not reincarnation.cooldown,"native lethal callback remains available")
 -- Exercise each additional reviewed active policy through native order selection.
-for _,name in ipairs({"item_pipe","item_crimson_guard","item_blade_mail","item_manta","item_phase_boots","item_silver_edge","item_mjollnir"}) do
+for _,name in ipairs({"item_pipe","item_crimson_guard","item_blade_mail","item_manta","item_phase_boots","item_silver_edge","item_mjollnir","item_boots_of_bearing"}) do
  local a=equip(item(name,name=="item_mjollnir" and 8 or 4,800,1))
  assert(attempt() and orders[1].AbilityIndex==a.id,name.." casts near enemy")
  enemy.x=1500;assert(not attempt(),name.." rejects distant enemy")
@@ -181,7 +210,7 @@ assert(not attempt(),"Force Staff rejects escape toward another observed enemy b
 opponents={enemy};caster.facing=0
 assert(not attempt(),"missing usable facing cannot invent a displacement")
 caster.facing=nil
-for _,name in ipairs({"item_power_treads","item_bfury","item_tpscroll","item_radiance","item_unreviewed"}) do
+for _,name in ipairs({"item_power_treads","item_bfury","item_tpscroll","item_moon_shard","item_unreviewed"}) do
  equip(item(name));local _,rules=attempt();assert(#rules==1,name.." intentionally has no speculative action")
 end
 for _,name in ipairs({"item_aeon_disk","item_aether_lens","item_assault","item_basher","item_bracer","item_butterfly","item_desolator","item_dragon_lance","item_echo_sabre","item_eternal_shroud","item_greater_crit","item_heart","item_kaya","item_kaya_and_sange","item_maelstrom","item_octarine_core","item_sange_and_yasha","item_skadi","item_ultimate_scepter","item_wind_lace","item_wraith_band","item_yasha"}) do

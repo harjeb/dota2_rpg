@@ -136,6 +136,7 @@ function runHud() {
             }
         },
         Players: {
+            GetLocalPlayer: function () { return 0; },
             GetLocalPlayerPortraitUnit: function () { return 503; }
         }
     };
@@ -204,3 +205,35 @@ click(hud, "DamageEnemy");
 assert(panel(hud, "DamageUnits").children.length === 1, "enemy DPS remains available");
 assert(panel(hud, "DamageTargets").children[0].text.indexOf("601") >= 0, "enemy target breakdown remains available");
 console.log("HUD sidebar tests passed");
+
+// Execute actual XML controls and all shipped scripts across terminal replays.
+[0, 1].forEach(function (failed) {
+    var replayHud = runHud();
+    var state = {phase: "result", ready: 0, winner: failed ? "dire" : "radiant",
+        run_complete: 1, run_failed: failed, replay_available: 1,
+        owner_player_id: 0, settlement_generation: 11};
+    replayHud.subscriptions.rpg_battle_state(state);
+    assert(!panel(replayHud, "ReplayRunButton").BHasClass("Hidden"), "terminal replay visible");
+    assert(panel(replayHud, "ReplayRunLabel").text === (failed ? "#dota2_rpg_replay_retry" : "#dota2_rpg_replay_chapter_one"), "clear replay destination");
+    var before = replayHud.sentEvents.length;
+    click(replayHud, "ReplayRunButton"); click(replayHud, "ReplayRunButton");
+    replayHud.subscriptions.rpg_battle_state(state);
+    click(replayHud, "ReplayRunButton");
+    assert(replayHud.sentEvents.length === before + 1, "double click and duplicate result cannot replay twice");
+    assert(replayHud.sentEvents[before].name === "rpg_replay_run" && replayHud.sentEvents[before].payload.settlement_generation === 11, "server generation sent");
+    replayHud.subscriptions.rpg_battle_state({phase: "setup", ready: 1, settlement_generation: 12});
+    replayHud.subscriptions.rpg_battle_state(state);
+    replayHud.subscriptions.rpg_settlement({winner: "radiant", settlement_generation: 11});
+    assert(panel(replayHud, "BattleResult").BHasClass("Hidden") && panel(replayHud, "StartBattleButton").enabled, "setup restored and stale result/settlement ignored");
+    assert(panel(replayHud, "ReplayRunButton").BHasClass("Hidden"), "replay hidden during preparation");
+    state.settlement_generation = 13; state.owner_player_id = 1;
+    replayHud.subscriptions.rpg_battle_state(state);
+    assert(panel(replayHud, "ReplayRunButton").BHasClass("Hidden"), "nonowner cannot replay");
+    state.owner_player_id = 0;
+    replayHud.subscriptions.rpg_battle_state(state);
+    assert(panel(replayHud, "ReplayRunButton").enabled, "later terminal can replay again");
+    state.replay_available = 0;
+    replayHud.subscriptions.rpg_battle_state(state);
+    assert(panel(replayHud, "ReplayRunButton").BHasClass("Hidden"), "ordinary and debug results do not expose terminal replay");
+});
+console.log("PASS actual HUD replay lifecycle: victory/defeat, owner, duplicate clicks, stale events, setup and later replay");

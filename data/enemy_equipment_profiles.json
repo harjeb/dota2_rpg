@@ -1,0 +1,2995 @@
+{
+  "research_snapshot": "research/enemy_equipment_opendota_20260911.json",
+  "policy": "Completed combat items reviewed against OpenDota mid/late purchase counts; RPG progression and luxury substitutions are authored strength increases, not measured population averages. No economy/consumable items. Native slot cap six. Roles follow this RPG roster.",
+  "heroes": {
+    "axe": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "blink",
+        "blade_mail",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "mid": [
+        "blink",
+        "blade_mail",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "late": [
+        "assault",
+        "overwhelming_blink",
+        "blade_mail",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/2/itemPopularity",
+      "observed_purchases": {
+        "assault": 2,
+        "black_king_bar": 80,
+        "blade_mail": 78,
+        "blink": 98,
+        "heart": 10,
+        "overwhelming_blink": 4,
+        "shivas_guard": 24
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4160,
+        "17": 5860,
+        "21": 10150,
+        "25": 12625,
+        "30": 21175
+      }
+    },
+    "dragon_knight": {
+      "role": "strength",
+      "boots": "power_treads",
+      "core": [
+        "blink",
+        "armlet",
+        "black_king_bar",
+        "assault",
+        "greater_crit"
+      ],
+      "mid": [
+        "blink",
+        "armlet",
+        "black_king_bar",
+        "assault",
+        "greater_crit"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "assault",
+        "black_king_bar",
+        "satanic",
+        "greater_crit",
+        "heart"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/49/itemPopularity",
+      "observed_purchases": {
+        "armlet": 21,
+        "assault": 11,
+        "black_king_bar": 53,
+        "blink": 82,
+        "greater_crit": 24,
+        "heart": 2,
+        "overwhelming_blink": 10,
+        "satanic": 3
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4110,
+        "17": 6610,
+        "21": 10200,
+        "25": 12825,
+        "30": 22975
+      }
+    },
+    "huskar": {
+      "role": "strength",
+      "boots": "power_treads",
+      "core": [
+        "armlet",
+        "heavens_halberd",
+        "black_king_bar",
+        "ultimate_scepter",
+        "satanic"
+      ],
+      "mid": [
+        "armlet",
+        "heavens_halberd",
+        "black_king_bar",
+        "ultimate_scepter",
+        "satanic"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "heavens_halberd",
+        "black_king_bar",
+        "ultimate_scepter",
+        "satanic",
+        "assault"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/59/itemPopularity",
+      "observed_purchases": {
+        "armlet": 25,
+        "assault": 4,
+        "black_king_bar": 61,
+        "heavens_halberd": 2,
+        "overwhelming_blink": 2,
+        "satanic": 28,
+        "ultimate_scepter": 46
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4360,
+        "17": 7760,
+        "21": 11350,
+        "25": 16400,
+        "30": 21525
+      }
+    },
+    "sand_king": {
+      "role": "strength",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "mid": [
+        "blink",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "late": [
+        "assault",
+        "overwhelming_blink",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/16/itemPopularity",
+      "observed_purchases": {
+        "assault": 2,
+        "black_king_bar": 60,
+        "blink": 87,
+        "octarine_core": 0,
+        "overwhelming_blink": 5,
+        "shivas_guard": 33,
+        "ultimate_scepter": 85
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4210,
+        "17": 5910,
+        "21": 12300,
+        "25": 16500,
+        "30": 21400
+      }
+    },
+    "drow_ranger": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "dragon_lance",
+        "yasha",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "mid": [
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/6/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 68,
+        "butterfly": 39,
+        "dragon_lance": 91,
+        "hurricane_pike": 89,
+        "manta": 86,
+        "satanic": 30,
+        "swift_blink": 4,
+        "yasha": 92
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3760,
+        "17": 5860,
+        "21": 12000,
+        "25": 20000,
+        "30": 25050
+      }
+    },
+    "sniper": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "maelstrom",
+        "dragon_lance",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "mid": [
+        "mjollnir",
+        "hurricane_pike",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "mjollnir",
+        "hurricane_pike",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/35/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 28,
+        "dragon_lance": 77,
+        "greater_crit": 20,
+        "hurricane_pike": 49,
+        "maelstrom": 57,
+        "mjollnir": 43,
+        "satanic": 6,
+        "swift_blink": 2
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3760,
+        "17": 6710,
+        "21": 12850,
+        "25": 20500,
+        "30": 25550
+      }
+    },
+    "clinkz": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "desolator",
+        "dragon_lance",
+        "black_king_bar",
+        "greater_crit",
+        "ultimate_scepter"
+      ],
+      "mid": [
+        "desolator",
+        "hurricane_pike",
+        "black_king_bar",
+        "greater_crit",
+        "ultimate_scepter"
+      ],
+      "late": [
+        "swift_blink",
+        "desolator",
+        "hurricane_pike",
+        "black_king_bar",
+        "greater_crit",
+        "ultimate_scepter"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/56/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 51,
+        "desolator": 98,
+        "dragon_lance": 88,
+        "greater_crit": 61,
+        "hurricane_pike": 60,
+        "swift_blink": 0,
+        "ultimate_scepter": 60
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3760,
+        "17": 6360,
+        "21": 10850,
+        "25": 18500,
+        "30": 24900
+      }
+    },
+    "phantom_assassin": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "desolator",
+        "basher",
+        "black_king_bar",
+        "satanic",
+        "nullifier"
+      ],
+      "mid": [
+        "desolator",
+        "abyssal_blade",
+        "black_king_bar",
+        "satanic",
+        "nullifier"
+      ],
+      "late": [
+        "swift_blink",
+        "desolator",
+        "abyssal_blade",
+        "black_king_bar",
+        "satanic",
+        "nullifier"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/44/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 13,
+        "basher": 42,
+        "black_king_bar": 54,
+        "desolator": 71,
+        "nullifier": 7,
+        "satanic": 23,
+        "swift_blink": 0
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 5360,
+        "17": 6410,
+        "21": 11825,
+        "25": 20250,
+        "30": 25700
+      }
+    },
+    "riki": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "diffusal_blade",
+        "yasha",
+        "black_king_bar",
+        "basher",
+        "butterfly"
+      ],
+      "mid": [
+        "disperser",
+        "manta",
+        "black_king_bar",
+        "abyssal_blade",
+        "butterfly"
+      ],
+      "late": [
+        "swift_blink",
+        "disperser",
+        "manta",
+        "black_king_bar",
+        "abyssal_blade",
+        "butterfly"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/32/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 4,
+        "basher": 23,
+        "black_king_bar": 16,
+        "butterfly": 9,
+        "diffusal_blade": 91,
+        "disperser": 31,
+        "manta": 55,
+        "swift_blink": 0,
+        "yasha": 63
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4360,
+        "17": 5410,
+        "21": 12600,
+        "25": 18850,
+        "30": 24300
+      }
+    },
+    "juggernaut": {
+      "role": "agility",
+      "boots": "phase_boots",
+      "core": [
+        "maelstrom",
+        "yasha",
+        "basher",
+        "butterfly",
+        "satanic"
+      ],
+      "mid": [
+        "mjollnir",
+        "manta",
+        "abyssal_blade",
+        "butterfly",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "mjollnir",
+        "manta",
+        "abyssal_blade",
+        "butterfly",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/8/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 8,
+        "basher": 9,
+        "butterfly": 49,
+        "maelstrom": 6,
+        "manta": 78,
+        "mjollnir": 4,
+        "satanic": 0,
+        "swift_blink": 8,
+        "yasha": 94
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4860,
+        "17": 6960,
+        "21": 11925,
+        "25": 23300,
+        "30": 28350
+      }
+    },
+    "sven": {
+      "role": "strength",
+      "boots": "power_treads",
+      "core": [
+        "echo_sabre",
+        "blink",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "mid": [
+        "harpoon",
+        "blink",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "harpoon",
+        "black_king_bar",
+        "greater_crit",
+        "satanic",
+        "assault"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/18/itemPopularity",
+      "observed_purchases": {
+        "assault": 10,
+        "black_king_bar": 88,
+        "blink": 97,
+        "echo_sabre": 107,
+        "greater_crit": 67,
+        "harpoon": 79,
+        "overwhelming_blink": 2,
+        "satanic": 55
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4560,
+        "17": 6810,
+        "21": 10400,
+        "25": 17850,
+        "30": 22975
+      }
+    },
+    "lina": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "kaya_and_sange",
+        "ultimate_scepter",
+        "black_king_bar",
+        "sheepstick",
+        "shivas_guard"
+      ],
+      "mid": [
+        "kaya_and_sange",
+        "ultimate_scepter",
+        "black_king_bar",
+        "sheepstick",
+        "shivas_guard"
+      ],
+      "late": [
+        "arcane_blink",
+        "yasha_and_kaya",
+        "ultimate_scepter",
+        "black_king_bar",
+        "sheepstick",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/25/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 57,
+        "kaya_and_sange": 1,
+        "sheepstick": 16,
+        "shivas_guard": 18,
+        "ultimate_scepter": 63,
+        "yasha_and_kaya": 63
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4160,
+        "17": 6260,
+        "21": 12000,
+        "25": 19150,
+        "30": 24050
+      }
+    },
+    "crystal_maiden": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "blink",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "blink",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "arcane_blink",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/5/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 9,
+        "blink": 54,
+        "boots_of_bearing": 6,
+        "glimmer_cape": 39,
+        "sheepstick": 0,
+        "ultimate_scepter": 10
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 9900,
+        "25": 10360,
+        "30": 14150
+      }
+    },
+    "witch_doctor": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "ultimate_scepter",
+        "black_king_bar",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "ultimate_scepter",
+        "black_king_bar",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "black_king_bar",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/30/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 6,
+        "boots_of_bearing": 1,
+        "glimmer_cape": 37,
+        "octarine_core": 1,
+        "sheepstick": 1,
+        "ultimate_scepter": 9
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 11900,
+        "25": 12360,
+        "30": 16800
+      }
+    },
+    "oracle": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "blink",
+        "aether_lens",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "blink",
+        "aether_lens",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "late": [
+        "guardian_greaves",
+        "glimmer_cape",
+        "arcane_blink",
+        "ultimate_scepter",
+        "aeon_disk",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/111/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 8,
+        "aether_lens": 28,
+        "arcane_blink": 0,
+        "blink": 63,
+        "glimmer_cape": 22,
+        "guardian_greaves": 13,
+        "sheepstick": 0,
+        "ultimate_scepter": 4
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 9700,
+        "25": 10160,
+        "30": 18650
+      }
+    },
+    "dazzle": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "force_staff",
+        "lotus_orb",
+        "sheepstick",
+        "octarine_core"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "force_staff",
+        "lotus_orb",
+        "sheepstick",
+        "octarine_core"
+      ],
+      "late": [
+        "guardian_greaves",
+        "glimmer_cape",
+        "lotus_orb",
+        "sheepstick",
+        "octarine_core",
+        "arcane_blink"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/50/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "force_staff": 13,
+        "glimmer_cape": 25,
+        "guardian_greaves": 22,
+        "lotus_orb": 3,
+        "octarine_core": 0,
+        "sheepstick": 2
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 8800,
+        "25": 9260,
+        "30": 20550
+      }
+    },
+    "centaur": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "blink",
+        "heart",
+        "pipe",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "mid": [
+        "blink",
+        "heart",
+        "pipe",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "late": [
+        "assault",
+        "overwhelming_blink",
+        "heart",
+        "pipe",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/96/itemPopularity",
+      "observed_purchases": {
+        "assault": 0,
+        "black_king_bar": 45,
+        "blink": 96,
+        "heart": 65,
+        "overwhelming_blink": 5,
+        "pipe": 14,
+        "ultimate_scepter": 45
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4160,
+        "17": 6560,
+        "21": 9825,
+        "25": 15025,
+        "30": 20150
+      }
+    },
+    "tidehunter": {
+      "role": "strength",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "ultimate_scepter",
+        "pipe",
+        "shivas_guard",
+        "refresher"
+      ],
+      "mid": [
+        "blink",
+        "ultimate_scepter",
+        "pipe",
+        "shivas_guard",
+        "refresher"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "ultimate_scepter",
+        "pipe",
+        "shivas_guard",
+        "refresher",
+        "guardian_greaves"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/29/itemPopularity",
+      "observed_purchases": {
+        "blink": 91,
+        "guardian_greaves": 0,
+        "overwhelming_blink": 2,
+        "pipe": 12,
+        "refresher": 19,
+        "shivas_guard": 31,
+        "ultimate_scepter": 70
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4210,
+        "17": 7935,
+        "21": 10425,
+        "25": 15425,
+        "30": 19925
+      }
+    },
+    "bristleback": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "bloodstone",
+        "sange_and_yasha",
+        "lotus_orb",
+        "shivas_guard",
+        "ultimate_scepter"
+      ],
+      "mid": [
+        "bloodstone",
+        "sange_and_yasha",
+        "lotus_orb",
+        "shivas_guard",
+        "ultimate_scepter"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "bloodstone",
+        "sange_and_yasha",
+        "lotus_orb",
+        "shivas_guard",
+        "ultimate_scepter"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/99/itemPopularity",
+      "observed_purchases": {
+        "bloodstone": 0,
+        "lotus_orb": 45,
+        "overwhelming_blink": 0,
+        "sange_and_yasha": 57,
+        "shivas_guard": 1,
+        "ultimate_scepter": 12
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 6610,
+        "17": 10510,
+        "21": 14550,
+        "25": 18750,
+        "30": 23875
+      }
+    },
+    "slardar": {
+      "role": "strength",
+      "boots": "power_treads",
+      "core": [
+        "blink",
+        "echo_sabre",
+        "black_king_bar",
+        "ultimate_scepter",
+        "nullifier"
+      ],
+      "mid": [
+        "blink",
+        "harpoon",
+        "black_king_bar",
+        "ultimate_scepter",
+        "nullifier"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "harpoon",
+        "black_king_bar",
+        "ultimate_scepter",
+        "nullifier",
+        "assault"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/28/itemPopularity",
+      "observed_purchases": {
+        "assault": 20,
+        "black_king_bar": 81,
+        "blink": 96,
+        "echo_sabre": 17,
+        "harpoon": 8,
+        "nullifier": 41,
+        "overwhelming_blink": 2,
+        "ultimate_scepter": 33
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4110,
+        "17": 6810,
+        "21": 10400,
+        "25": 17525,
+        "30": 22725
+      }
+    },
+    "skeleton_king": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "armlet",
+        "radiance",
+        "blink",
+        "black_king_bar",
+        "assault"
+      ],
+      "mid": [
+        "armlet",
+        "radiance",
+        "blink",
+        "black_king_bar",
+        "assault"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "radiance",
+        "black_king_bar",
+        "assault",
+        "abyssal_blade",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/42/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 3,
+        "armlet": 43,
+        "assault": 15,
+        "black_king_bar": 18,
+        "blink": 70,
+        "overwhelming_blink": 3,
+        "radiance": 65,
+        "satanic": 0
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4410,
+        "17": 7910,
+        "21": 11500,
+        "25": 16625,
+        "30": 21825
+      }
+    },
+    "life_stealer": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "armlet",
+        "radiance",
+        "sange_and_yasha",
+        "basher",
+        "assault"
+      ],
+      "mid": [
+        "armlet",
+        "radiance",
+        "sange_and_yasha",
+        "abyssal_blade",
+        "assault"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "radiance",
+        "sange_and_yasha",
+        "abyssal_blade",
+        "assault",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/54/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 29,
+        "armlet": 64,
+        "assault": 27,
+        "basher": 48,
+        "overwhelming_blink": 0,
+        "radiance": 95,
+        "sange_and_yasha": 35,
+        "satanic": 1
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4410,
+        "17": 7285,
+        "21": 11025,
+        "25": 19525,
+        "30": 24725
+      }
+    },
+    "chaos_knight": {
+      "role": "strength",
+      "boots": "power_treads",
+      "core": [
+        "armlet",
+        "blink",
+        "manta",
+        "black_king_bar",
+        "heart"
+      ],
+      "mid": [
+        "armlet",
+        "blink",
+        "manta",
+        "black_king_bar",
+        "heart"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "manta",
+        "black_king_bar",
+        "heart",
+        "assault",
+        "bloodthorn"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/81/itemPopularity",
+      "observed_purchases": {
+        "armlet": 81,
+        "assault": 2,
+        "black_king_bar": 9,
+        "blink": 71,
+        "bloodthorn": 26,
+        "heart": 19,
+        "manta": 22,
+        "overwhelming_blink": 3
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4360,
+        "17": 9010,
+        "21": 12600,
+        "25": 17800,
+        "30": 22925
+      }
+    },
+    "night_stalker": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "blink",
+        "echo_sabre",
+        "black_king_bar",
+        "nullifier",
+        "assault"
+      ],
+      "mid": [
+        "blink",
+        "harpoon",
+        "black_king_bar",
+        "nullifier",
+        "assault"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "harpoon",
+        "black_king_bar",
+        "nullifier",
+        "assault",
+        "abyssal_blade"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/60/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 5,
+        "assault": 16,
+        "black_king_bar": 79,
+        "blink": 97,
+        "echo_sabre": 27,
+        "harpoon": 5,
+        "nullifier": 35,
+        "overwhelming_blink": 2
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4610,
+        "17": 6860,
+        "21": 10450,
+        "25": 17575,
+        "30": 22775
+      }
+    },
+    "spirit_breaker": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "invis_sword",
+        "ultimate_scepter",
+        "black_king_bar",
+        "cyclone",
+        "octarine_core"
+      ],
+      "mid": [
+        "silver_edge",
+        "ultimate_scepter",
+        "black_king_bar",
+        "wind_waker",
+        "octarine_core"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "silver_edge",
+        "ultimate_scepter",
+        "black_king_bar",
+        "wind_waker",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/71/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 21,
+        "boots_of_bearing": 1,
+        "cyclone": 16,
+        "invis_sword": 51,
+        "octarine_core": 5,
+        "silver_edge": 3,
+        "ultimate_scepter": 7,
+        "wind_waker": 4
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 5160,
+        "17": 9360,
+        "21": 12950,
+        "25": 20300,
+        "30": 25425
+      }
+    },
+    "abaddon": {
+      "role": "strength",
+      "boots": "phase_boots",
+      "core": [
+        "echo_sabre",
+        "radiance",
+        "yasha",
+        "basher",
+        "assault"
+      ],
+      "mid": [
+        "harpoon",
+        "radiance",
+        "manta",
+        "abyssal_blade",
+        "assault"
+      ],
+      "late": [
+        "overwhelming_blink",
+        "radiance",
+        "manta",
+        "abyssal_blade",
+        "assault",
+        "harpoon"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/102/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 8,
+        "assault": 0,
+        "basher": 19,
+        "echo_sabre": 28,
+        "harpoon": 17,
+        "manta": 38,
+        "overwhelming_blink": 4,
+        "radiance": 61,
+        "yasha": 49
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 4610,
+        "17": 9260,
+        "21": 11675,
+        "25": 22175,
+        "30": 27375
+      }
+    },
+    "omniknight": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "mekansm",
+        "lotus_orb",
+        "pipe",
+        "ultimate_scepter",
+        "octarine_core"
+      ],
+      "mid": [
+        "guardian_greaves",
+        "lotus_orb",
+        "pipe",
+        "ultimate_scepter",
+        "octarine_core"
+      ],
+      "late": [
+        "guardian_greaves",
+        "lotus_orb",
+        "pipe",
+        "ultimate_scepter",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/57/itemPopularity",
+      "observed_purchases": {
+        "guardian_greaves": 3,
+        "lotus_orb": 4,
+        "mekansm": 1,
+        "octarine_core": 9,
+        "pipe": 5,
+        "sheepstick": 3,
+        "ultimate_scepter": 12
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 3735,
+        "17": 7585,
+        "21": 10850,
+        "25": 11310,
+        "30": 19225
+      }
+    },
+    "undying": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "glimmer_cape",
+        "black_king_bar",
+        "octarine_core",
+        "ultimate_scepter"
+      ],
+      "mid": [
+        "blink",
+        "glimmer_cape",
+        "black_king_bar",
+        "octarine_core",
+        "ultimate_scepter"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "glimmer_cape",
+        "black_king_bar",
+        "octarine_core",
+        "ultimate_scepter"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/85/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 21,
+        "blink": 59,
+        "boots_of_bearing": 0,
+        "glimmer_cape": 16,
+        "octarine_core": 24,
+        "ultimate_scepter": 9
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 3735,
+        "17": 5885,
+        "21": 9150,
+        "25": 9610,
+        "30": 17175
+      }
+    },
+    "razor": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "yasha",
+        "black_king_bar",
+        "satanic",
+        "butterfly",
+        "shivas_guard"
+      ],
+      "mid": [
+        "sange_and_yasha",
+        "black_king_bar",
+        "satanic",
+        "butterfly",
+        "shivas_guard"
+      ],
+      "late": [
+        "swift_blink",
+        "sange_and_yasha",
+        "black_king_bar",
+        "satanic",
+        "butterfly",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/15/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 64,
+        "butterfly": 12,
+        "sange_and_yasha": 29,
+        "satanic": 32,
+        "shivas_guard": 2,
+        "swift_blink": 4,
+        "yasha": 83
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3960,
+        "17": 6910,
+        "21": 10500,
+        "25": 20200,
+        "30": 25650
+      }
+    },
+    "viper": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "dragon_lance",
+        "yasha",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "mid": [
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "late": [
+        "swift_blink",
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/47/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 52,
+        "butterfly": 9,
+        "dragon_lance": 77,
+        "hurricane_pike": 78,
+        "manta": 37,
+        "skadi": 30,
+        "swift_blink": 4,
+        "yasha": 49
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3760,
+        "17": 5860,
+        "21": 9450,
+        "25": 20450,
+        "30": 25900
+      }
+    },
+    "luna": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "yasha",
+        "black_king_bar",
+        "butterfly",
+        "satanic",
+        "greater_crit"
+      ],
+      "mid": [
+        "manta",
+        "black_king_bar",
+        "butterfly",
+        "satanic",
+        "greater_crit"
+      ],
+      "late": [
+        "swift_blink",
+        "manta",
+        "black_king_bar",
+        "butterfly",
+        "satanic",
+        "greater_crit"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/48/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 74,
+        "butterfly": 61,
+        "greater_crit": 28,
+        "manta": 99,
+        "satanic": 50,
+        "swift_blink": 38,
+        "yasha": 98
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3960,
+        "17": 5860,
+        "21": 9450,
+        "25": 20600,
+        "30": 26500
+      }
+    },
+    "gyrocopter": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "ultimate_scepter",
+        "maelstrom",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "mid": [
+        "ultimate_scepter",
+        "mjollnir",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "ultimate_scepter",
+        "mjollnir",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/72/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 52,
+        "greater_crit": 63,
+        "maelstrom": 4,
+        "mjollnir": 3,
+        "satanic": 48,
+        "swift_blink": 15,
+        "ultimate_scepter": 66
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4810,
+        "17": 9010,
+        "21": 12600,
+        "25": 20200,
+        "30": 25650
+      }
+    },
+    "bloodseeker": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "maelstrom",
+        "basher",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "mid": [
+        "mjollnir",
+        "abyssal_blade",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "mjollnir",
+        "abyssal_blade",
+        "black_king_bar",
+        "butterfly",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/4/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 11,
+        "basher": 24,
+        "black_king_bar": 60,
+        "butterfly": 16,
+        "maelstrom": 81,
+        "mjollnir": 71,
+        "satanic": 3,
+        "swift_blink": 9
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4810,
+        "17": 7685,
+        "21": 11275,
+        "25": 22650,
+        "30": 28550
+      }
+    },
+    "slark": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "diffusal_blade",
+        "ultimate_scepter",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "mid": [
+        "disperser",
+        "ultimate_scepter",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "late": [
+        "swift_blink",
+        "disperser",
+        "ultimate_scepter",
+        "black_king_bar",
+        "skadi",
+        "butterfly"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/93/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 36,
+        "butterfly": 2,
+        "diffusal_blade": 82,
+        "disperser": 29,
+        "skadi": 17,
+        "swift_blink": 4,
+        "ultimate_scepter": 62
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4360,
+        "17": 8560,
+        "21": 12150,
+        "25": 21650,
+        "30": 27100
+      }
+    },
+    "troll_warlord": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "bfury",
+        "yasha",
+        "black_king_bar",
+        "satanic",
+        "basher"
+      ],
+      "mid": [
+        "bfury",
+        "sange_and_yasha",
+        "black_king_bar",
+        "satanic",
+        "abyssal_blade"
+      ],
+      "late": [
+        "swift_blink",
+        "sange_and_yasha",
+        "black_king_bar",
+        "satanic",
+        "abyssal_blade",
+        "butterfly"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/95/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 9,
+        "basher": 32,
+        "bfury": 80,
+        "black_king_bar": 55,
+        "butterfly": 4,
+        "sange_and_yasha": 51,
+        "satanic": 10,
+        "swift_blink": 4,
+        "yasha": 79
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 5760,
+        "17": 7860,
+        "21": 11450,
+        "25": 19050,
+        "30": 24500
+      }
+    },
+    "ursa": {
+      "role": "agility",
+      "boots": "phase_boots",
+      "core": [
+        "bfury",
+        "blink",
+        "black_king_bar",
+        "basher",
+        "satanic"
+      ],
+      "mid": [
+        "bfury",
+        "blink",
+        "black_king_bar",
+        "abyssal_blade",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "abyssal_blade",
+        "black_king_bar",
+        "satanic",
+        "butterfly",
+        "nullifier"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/70/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 36,
+        "basher": 74,
+        "bfury": 94,
+        "black_king_bar": 51,
+        "blink": 95,
+        "butterfly": 0,
+        "nullifier": 9,
+        "satanic": 12,
+        "swift_blink": 10
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2415,
+        "13": 5810,
+        "17": 8060,
+        "21": 11650,
+        "25": 17900,
+        "30": 23350
+      }
+    },
+    "antimage": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "bfury",
+        "yasha",
+        "basher",
+        "skadi",
+        "butterfly"
+      ],
+      "mid": [
+        "bfury",
+        "manta",
+        "abyssal_blade",
+        "skadi",
+        "butterfly"
+      ],
+      "late": [
+        "swift_blink",
+        "manta",
+        "abyssal_blade",
+        "skadi",
+        "butterfly",
+        "bloodthorn"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/1/itemPopularity",
+      "observed_purchases": {
+        "abyssal_blade": 32,
+        "basher": 58,
+        "bfury": 94,
+        "bloodthorn": 1,
+        "butterfly": 48,
+        "manta": 98,
+        "skadi": 32,
+        "swift_blink": 2,
+        "yasha": 98
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 5760,
+        "17": 7860,
+        "21": 10275,
+        "25": 22100,
+        "30": 27550
+      }
+    },
+    "phantom_lancer": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "diffusal_blade",
+        "ultimate_scepter",
+        "yasha",
+        "skadi",
+        "heart"
+      ],
+      "mid": [
+        "disperser",
+        "ultimate_scepter",
+        "manta",
+        "skadi",
+        "heart"
+      ],
+      "late": [
+        "swift_blink",
+        "disperser",
+        "ultimate_scepter",
+        "manta",
+        "skadi",
+        "heart"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/12/itemPopularity",
+      "observed_purchases": {
+        "diffusal_blade": 8,
+        "disperser": 4,
+        "heart": 27,
+        "manta": 94,
+        "skadi": 62,
+        "swift_blink": 0,
+        "ultimate_scepter": 91,
+        "yasha": 76
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 4360,
+        "17": 6460,
+        "21": 11200,
+        "25": 22800,
+        "30": 28700
+      }
+    },
+    "templar_assassin": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "desolator",
+        "blink",
+        "black_king_bar",
+        "greater_crit",
+        "hurricane_pike"
+      ],
+      "mid": [
+        "desolator",
+        "blink",
+        "black_king_bar",
+        "greater_crit",
+        "hurricane_pike"
+      ],
+      "late": [
+        "butterfly",
+        "desolator",
+        "swift_blink",
+        "black_king_bar",
+        "greater_crit",
+        "hurricane_pike"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/46/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 52,
+        "blink": 94,
+        "butterfly": 16,
+        "desolator": 91,
+        "greater_crit": 51,
+        "hurricane_pike": 57,
+        "swift_blink": 38
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 5360,
+        "17": 7610,
+        "21": 11200,
+        "25": 16300,
+        "30": 21750
+      }
+    },
+    "nevermore": {
+      "role": "agility",
+      "boots": "power_treads",
+      "core": [
+        "dragon_lance",
+        "yasha",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "mid": [
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "late": [
+        "swift_blink",
+        "hurricane_pike",
+        "manta",
+        "black_king_bar",
+        "greater_crit",
+        "satanic"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/11/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 52,
+        "dragon_lance": 87,
+        "greater_crit": 35,
+        "hurricane_pike": 65,
+        "manta": 56,
+        "satanic": 34,
+        "swift_blink": 10,
+        "yasha": 63
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 3760,
+        "17": 8860,
+        "21": 12450,
+        "25": 20050,
+        "30": 25500
+      }
+    },
+    "lich": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "blink",
+        "ultimate_scepter",
+        "force_staff",
+        "aeon_disk"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "blink",
+        "ultimate_scepter",
+        "force_staff",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "arcane_blink",
+        "ultimate_scepter",
+        "wind_waker",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/31/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 7,
+        "arcane_blink": 0,
+        "blink": 70,
+        "boots_of_bearing": 1,
+        "force_staff": 23,
+        "glimmer_cape": 37,
+        "ultimate_scepter": 39,
+        "wind_waker": 1
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4110,
+        "17": 6310,
+        "21": 8850,
+        "25": 9310,
+        "30": 13050
+      }
+    },
+    "lion": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "mid": [
+        "blink",
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "wind_waker",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/26/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 3,
+        "arcane_blink": 0,
+        "blink": 79,
+        "boots_of_bearing": 1,
+        "force_staff": 35,
+        "glimmer_cape": 27,
+        "ultimate_scepter": 4,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4210,
+        "17": 6410,
+        "21": 8950,
+        "25": 9410,
+        "30": 13150
+      }
+    },
+    "shadow_shaman": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "aether_lens",
+        "black_king_bar",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "mid": [
+        "blink",
+        "aether_lens",
+        "black_king_bar",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "octarine_core",
+        "black_king_bar",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/27/itemPopularity",
+      "observed_purchases": {
+        "aether_lens": 46,
+        "arcane_blink": 0,
+        "black_king_bar": 17,
+        "blink": 75,
+        "boots_of_bearing": 0,
+        "octarine_core": 1,
+        "refresher": 3,
+        "ultimate_scepter": 3
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4210,
+        "17": 6485,
+        "21": 10075,
+        "25": 10535,
+        "30": 14275
+      }
+    },
+    "warlock": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "ultimate_scepter",
+        "force_staff",
+        "black_king_bar",
+        "refresher"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "ultimate_scepter",
+        "force_staff",
+        "black_king_bar",
+        "refresher"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "black_king_bar",
+        "refresher",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/37/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 0,
+        "boots_of_bearing": 0,
+        "force_staff": 21,
+        "glimmer_cape": 77,
+        "octarine_core": 1,
+        "refresher": 7,
+        "ultimate_scepter": 22
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4110,
+        "17": 8310,
+        "21": 10850,
+        "25": 11310,
+        "30": 15850
+      }
+    },
+    "jakiro": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "force_staff",
+        "glimmer_cape",
+        "cyclone",
+        "ultimate_scepter",
+        "octarine_core"
+      ],
+      "mid": [
+        "force_staff",
+        "glimmer_cape",
+        "wind_waker",
+        "ultimate_scepter",
+        "octarine_core"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "sheepstick",
+        "glimmer_cape",
+        "wind_waker",
+        "ultimate_scepter",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/64/itemPopularity",
+      "observed_purchases": {
+        "boots_of_bearing": 0,
+        "cyclone": 23,
+        "force_staff": 42,
+        "glimmer_cape": 32,
+        "octarine_core": 0,
+        "sheepstick": 0,
+        "ultimate_scepter": 31,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 8450,
+        "25": 8910,
+        "30": 16850
+      }
+    },
+    "disruptor": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "force_staff",
+        "aeon_disk"
+      ],
+      "mid": [
+        "blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "force_staff",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "wind_waker",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/87/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 5,
+        "arcane_blink": 0,
+        "blink": 56,
+        "boots_of_bearing": 0,
+        "force_staff": 12,
+        "glimmer_cape": 18,
+        "ultimate_scepter": 37,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4110,
+        "17": 6310,
+        "21": 8850,
+        "25": 9310,
+        "30": 13050
+      }
+    },
+    "death_prophet": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "cyclone",
+        "black_king_bar",
+        "kaya_and_sange",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "mid": [
+        "wind_waker",
+        "black_king_bar",
+        "kaya_and_sange",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "late": [
+        "arcane_blink",
+        "wind_waker",
+        "black_king_bar",
+        "kaya_and_sange",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/43/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 50,
+        "cyclone": 37,
+        "kaya_and_sange": 22,
+        "octarine_core": 4,
+        "shivas_guard": 31,
+        "wind_waker": 8
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4560,
+        "17": 8760,
+        "21": 12350,
+        "25": 21050,
+        "30": 26950
+      }
+    },
+    "necrolyte": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "radiance",
+        "kaya_and_sange",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "mid": [
+        "radiance",
+        "kaya_and_sange",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "late": [
+        "arcane_blink",
+        "radiance",
+        "kaya_and_sange",
+        "black_king_bar",
+        "heart",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/36/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 68,
+        "heart": 61,
+        "kaya_and_sange": 0,
+        "radiance": 94,
+        "shivas_guard": 51
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 6160,
+        "17": 10060,
+        "21": 14100,
+        "25": 19300,
+        "30": 25200
+      }
+    },
+    "queenofpain": {
+      "role": "caster",
+      "boots": "power_treads",
+      "core": [
+        "kaya_and_sange",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "mid": [
+        "kaya_and_sange",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "late": [
+        "arcane_blink",
+        "kaya_and_sange",
+        "ultimate_scepter",
+        "black_king_bar",
+        "shivas_guard",
+        "octarine_core"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/39/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 2,
+        "black_king_bar": 54,
+        "kaya_and_sange": 75,
+        "octarine_core": 25,
+        "shivas_guard": 40,
+        "ultimate_scepter": 79
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2365,
+        "13": 5135,
+        "17": 9335,
+        "21": 12925,
+        "25": 20550,
+        "30": 26450
+      }
+    },
+    "leshrac": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "bloodstone",
+        "blink",
+        "kaya_and_sange",
+        "black_king_bar",
+        "shivas_guard"
+      ],
+      "mid": [
+        "bloodstone",
+        "blink",
+        "kaya_and_sange",
+        "black_king_bar",
+        "shivas_guard"
+      ],
+      "late": [
+        "arcane_boots",
+        "bloodstone",
+        "arcane_blink",
+        "kaya_and_sange",
+        "black_king_bar",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/52/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "arcane_boots": 8,
+        "black_king_bar": 45,
+        "blink": 78,
+        "bloodstone": 48,
+        "kaya_and_sange": 49,
+        "shivas_guard": 31
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 6660,
+        "17": 10860,
+        "21": 14450,
+        "25": 18950,
+        "30": 24850
+      }
+    },
+    "zuus": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "ultimate_scepter",
+        "kaya_and_sange",
+        "refresher",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "mid": [
+        "ultimate_scepter",
+        "kaya_and_sange",
+        "refresher",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "late": [
+        "arcane_blink",
+        "ultimate_scepter",
+        "kaya_and_sange",
+        "refresher",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/22/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "kaya_and_sange": 8,
+        "octarine_core": 27,
+        "refresher": 51,
+        "sheepstick": 1,
+        "ultimate_scepter": 82
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4560,
+        "17": 8760,
+        "21": 12500,
+        "25": 17500,
+        "30": 22000
+      }
+    },
+    "pugna": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "mid": [
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "late": [
+        "arcane_blink",
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "octarine_core",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/45/itemPopularity",
+      "observed_purchases": {
+        "aether_lens": 62,
+        "arcane_blink": 0,
+        "glimmer_cape": 68,
+        "octarine_core": 2,
+        "sheepstick": 1,
+        "ultimate_scepter": 8
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4235,
+        "17": 6385,
+        "21": 10125,
+        "25": 15025,
+        "30": 19525
+      }
+    },
+    "vengefulspirit": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "force_staff",
+        "glimmer_cape",
+        "lotus_orb",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "mid": [
+        "force_staff",
+        "glimmer_cape",
+        "lotus_orb",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "wind_waker",
+        "glimmer_cape",
+        "lotus_orb",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/20/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 0,
+        "boots_of_bearing": 4,
+        "force_staff": 10,
+        "glimmer_cape": 12,
+        "lotus_orb": 1,
+        "ultimate_scepter": 65,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 9700,
+        "25": 10160,
+        "30": 13900
+      }
+    },
+    "venomancer": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "spirit_vessel",
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "shivas_guard"
+      ],
+      "mid": [
+        "spirit_vessel",
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "shivas_guard"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "spirit_vessel",
+        "wind_waker",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "shivas_guard"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/40/itemPopularity",
+      "observed_purchases": {
+        "boots_of_bearing": 1,
+        "force_staff": 36,
+        "glimmer_cape": 29,
+        "shivas_guard": 0,
+        "spirit_vessel": 34,
+        "ultimate_scepter": 16,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4685,
+        "17": 6835,
+        "21": 8575,
+        "25": 9035,
+        "30": 13075
+      }
+    },
+    "skywrath_mage": {
+      "role": "caster",
+      "boots": "arcane_boots",
+      "core": [
+        "rod_of_atos",
+        "kaya_and_sange",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "mid": [
+        "gungir",
+        "kaya_and_sange",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "late": [
+        "arcane_blink",
+        "gungir",
+        "kaya_and_sange",
+        "black_king_bar",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/101/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "black_king_bar": 0,
+        "gungir": 0,
+        "kaya_and_sange": 4,
+        "rod_of_atos": 41,
+        "sheepstick": 7,
+        "ultimate_scepter": 7
+      },
+      "previous_value_at_level": {
+        "3": 505,
+        "6": 1005,
+        "9": 2465,
+        "13": 4210,
+        "17": 6485,
+        "21": 10075,
+        "25": 14275,
+        "30": 18775
+      }
+    },
+    "ancient_apparition": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "rod_of_atos",
+        "force_staff",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "gungir",
+        "force_staff",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "gungir",
+        "wind_waker",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/68/itemPopularity",
+      "observed_purchases": {
+        "boots_of_bearing": 0,
+        "force_staff": 27,
+        "glimmer_cape": 44,
+        "gungir": 7,
+        "rod_of_atos": 29,
+        "sheepstick": 9,
+        "ultimate_scepter": 2,
+        "wind_waker": 2
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4110,
+        "17": 6310,
+        "21": 8125,
+        "25": 8585,
+        "30": 12325
+      }
+    },
+    "grimstroke": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "mid": [
+        "blink",
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "octarine_core",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/121/itemPopularity",
+      "observed_purchases": {
+        "aether_lens": 14,
+        "arcane_blink": 1,
+        "blink": 67,
+        "boots_of_bearing": 0,
+        "glimmer_cape": 21,
+        "octarine_core": 0,
+        "sheepstick": 12,
+        "ultimate_scepter": 36
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4235,
+        "17": 6385,
+        "21": 10125,
+        "25": 10585,
+        "30": 15325
+      }
+    },
+    "shadow_demon": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "mid": [
+        "blink",
+        "aether_lens",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "octarine_core",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/79/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 13,
+        "aether_lens": 33,
+        "arcane_blink": 0,
+        "blink": 91,
+        "boots_of_bearing": 0,
+        "glimmer_cape": 28,
+        "octarine_core": 1,
+        "ultimate_scepter": 28
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4235,
+        "17": 6385,
+        "21": 8925,
+        "25": 9385,
+        "30": 13125
+      }
+    },
+    "bane": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "aether_lens",
+        "ultimate_scepter",
+        "blink",
+        "black_king_bar",
+        "glimmer_cape"
+      ],
+      "mid": [
+        "aether_lens",
+        "ultimate_scepter",
+        "blink",
+        "black_king_bar",
+        "glimmer_cape"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "octarine_core",
+        "ultimate_scepter",
+        "arcane_blink",
+        "black_king_bar",
+        "glimmer_cape"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/3/itemPopularity",
+      "observed_purchases": {
+        "aether_lens": 47,
+        "arcane_blink": 0,
+        "black_king_bar": 2,
+        "blink": 37,
+        "boots_of_bearing": 0,
+        "glimmer_cape": 11,
+        "octarine_core": 0,
+        "ultimate_scepter": 43
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4235,
+        "17": 6385,
+        "21": 9975,
+        "25": 10435,
+        "30": 14175
+      }
+    },
+    "silencer": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "refresher",
+        "aeon_disk"
+      ],
+      "mid": [
+        "force_staff",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "refresher",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "wind_waker",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "refresher",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/75/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 1,
+        "boots_of_bearing": 2,
+        "force_staff": 45,
+        "glimmer_cape": 30,
+        "refresher": 24,
+        "ultimate_scepter": 13,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6310,
+        "21": 8850,
+        "25": 9310,
+        "30": 13850
+      }
+    },
+    "treant": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "blink",
+        "force_staff",
+        "lotus_orb",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "mid": [
+        "blink",
+        "force_staff",
+        "lotus_orb",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "arcane_blink",
+        "wind_waker",
+        "lotus_orb",
+        "ultimate_scepter",
+        "refresher"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/83/itemPopularity",
+      "observed_purchases": {
+        "arcane_blink": 0,
+        "blink": 85,
+        "boots_of_bearing": 0,
+        "force_staff": 24,
+        "lotus_orb": 6,
+        "refresher": 3,
+        "ultimate_scepter": 21,
+        "wind_waker": 3
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4210,
+        "17": 7060,
+        "21": 10450,
+        "25": 10910,
+        "30": 14650
+      }
+    },
+    "enchantress": {
+      "role": "support",
+      "boots": "power_treads",
+      "core": [
+        "dragon_lance",
+        "glimmer_cape",
+        "lotus_orb",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "mid": [
+        "hurricane_pike",
+        "glimmer_cape",
+        "lotus_orb",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "hurricane_pike",
+        "wind_waker",
+        "lotus_orb",
+        "ultimate_scepter",
+        "black_king_bar"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/58/itemPopularity",
+      "observed_purchases": {
+        "black_king_bar": 12,
+        "boots_of_bearing": 1,
+        "dragon_lance": 12,
+        "glimmer_cape": 9,
+        "hurricane_pike": 50,
+        "lotus_orb": 4,
+        "ultimate_scepter": 41,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2085,
+        "13": 3760,
+        "17": 5910,
+        "21": 9300,
+        "25": 9760,
+        "30": 16050
+      }
+    },
+    "ogre_magi": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "glimmer_cape",
+        "aether_lens",
+        "force_staff",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "mid": [
+        "glimmer_cape",
+        "aether_lens",
+        "force_staff",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "glimmer_cape",
+        "octarine_core",
+        "wind_waker",
+        "ultimate_scepter",
+        "sheepstick"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/84/itemPopularity",
+      "observed_purchases": {
+        "aether_lens": 21,
+        "boots_of_bearing": 1,
+        "force_staff": 11,
+        "glimmer_cape": 26,
+        "octarine_core": 0,
+        "sheepstick": 11,
+        "ultimate_scepter": 8,
+        "wind_waker": 0
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4160,
+        "17": 6435,
+        "21": 8125,
+        "25": 8585,
+        "30": 13325
+      }
+    },
+    "dark_willow": {
+      "role": "support",
+      "boots": "arcane_boots",
+      "core": [
+        "cyclone",
+        "blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "mid": [
+        "wind_waker",
+        "blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "late": [
+        "boots_of_bearing",
+        "wind_waker",
+        "arcane_blink",
+        "glimmer_cape",
+        "ultimate_scepter",
+        "aeon_disk"
+      ],
+      "source_url": "https://api.opendota.com/api/heroes/119/itemPopularity",
+      "observed_purchases": {
+        "aeon_disk": 15,
+        "arcane_blink": 0,
+        "blink": 66,
+        "boots_of_bearing": 0,
+        "cyclone": 70,
+        "glimmer_cape": 8,
+        "ultimate_scepter": 0,
+        "wind_waker": 7
+      },
+      "previous_value_at_level": {
+        "3": 460,
+        "6": 960,
+        "9": 2185,
+        "13": 4560,
+        "17": 6710,
+        "21": 8500,
+        "25": 8960,
+        "30": 16900
+      }
+    }
+  },
+  "boss_loadouts": {
+    "spirit_breaker": [
+      "silver_edge",
+      "ultimate_scepter",
+      "black_king_bar",
+      "octarine_core",
+      "moon_shard",
+      "moon_shard"
+    ]
+  },
+  "boss_policy": "Spirit Breaker Boss explicitly equips two native Moon Shards in the six active slots; their attack-speed bonuses remain equipped, not consumed."
+}

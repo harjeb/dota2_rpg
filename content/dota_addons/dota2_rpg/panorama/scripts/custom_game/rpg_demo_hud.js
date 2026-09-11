@@ -1665,8 +1665,32 @@
         });
     }
 
+    var replayGeneration = -1;
+    var replayRequested = -1;
+    function updateReplay(data) {
+        var generation = Number(data.settlement_generation || 0);
+        var owner = typeof Players.GetLocalPlayer === "function" &&
+            Players.GetLocalPlayer() === Number(data.owner_player_id);
+        var available = data.phase === "result" && Number(data.replay_available) === 1 && owner;
+        replayGeneration = generation;
+        $("#ReplayRunButton").SetHasClass("Hidden", !available);
+        $("#ReplayRunHint").SetHasClass("Hidden", !available);
+        $("#ReplayRunButton").enabled = available && replayRequested !== generation;
+        $("#ReplayRunLabel").text = $.Localize(Number(data.run_failed) === 1
+            ? "#dota2_rpg_replay_retry" : "#dota2_rpg_replay_chapter_one");
+    }
+    $("#ReplayRunButton").SetPanelEvent("onactivate", function () {
+        var button = $("#ReplayRunButton");
+        if (!button.enabled || button.BHasClass("Hidden") || replayRequested === replayGeneration) { return; }
+        replayRequested = replayGeneration;
+        button.enabled = false;
+        GameEvents.SendCustomGameEventToServer("rpg_replay_run", { settlement_generation: replayGeneration });
+    });
+
     function onBattleState(data) {
         if (!acceptRuleGeneration(data)) { return; }
+        if (data.settlement_generation !== undefined && Number(data.settlement_generation) < replayGeneration) { return; }
+        updateReplay(data);
         updateBattleCountdown(data);
         updateRunLives(data);
         var previousPhase = phase;
@@ -1697,6 +1721,7 @@
             startButton.enabled = serverReady;
             startButton.SetHasClass("Hidden", false);
             $("#BattleResult").SetHasClass("Hidden", true);
+            closeLootPopup();
             $("#RewardLabel").text = "";
         } else if (phase === "fight" || phase === "battle") {
             setStatus("#dota2_rpg_status_running");
@@ -1798,6 +1823,8 @@
     }
 
     function onSettlement(settlement) {
+        if (settlement && settlement.settlement_generation !== undefined &&
+            Number(settlement.settlement_generation) < replayGeneration) { return; }
         if (settlement) { updateResult(settlement.winner); }
         var reward = grantSettlement(settlement);
         var rewardLabel = $("#RewardLabel");

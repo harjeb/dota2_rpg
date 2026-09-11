@@ -22,10 +22,17 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
     end
     local opening = Items.OpeningRules(unit, attack)
     if opening then return opening end
+    local ultimates, basics = {}, {}
     for _, rule in ipairs(rules) do
         rule.id = "enemy_" .. rule.id
+        local ability = unit.FindAbilityByName and unit:FindAbilityByName(rule.action.logical_id)
+        if ability and ability.GetAbilityType
+            and ability:GetAbilityType() == (ABILITY_TYPE_ULTIMATE or 1) then
+            ultimates[#ultimates + 1] = rule
+        else
+            basics[#basics + 1] = rule
+        end
         if rule.target.team == "self" then
-            local ability = unit.FindAbilityByName and unit:FindAbilityByName(rule.action.logical_id)
             local radius = ability and ability.GetAOERadius and tonumber(ability:GetAOERadius()) or 0
             if radius > 0 then
                 rule.use_conditions = { { type = "nearby_enemies_gte", radius = radius, value = 1 } }
@@ -35,7 +42,11 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
         end
     end
     local result = Items.CreateForUnit(unit, opponents)
-    for _, rule in ipairs(rules) do result[#result + 1] = rule end
+    -- Stable native-type priority: preserve relative order within each group.
+    -- An unavailable ultimate still yields through normal native validation.
+    for _, group in ipairs({ultimates, basics}) do
+        for _, rule in ipairs(group) do result[#result + 1] = rule end
+    end
     result[#result + 1] = attack
     return result
 end

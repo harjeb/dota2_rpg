@@ -131,3 +131,55 @@ do
     assert(g.phase=="fight" and aiTicks==20, "independent tactics still run before the deadline")
 end
 print("PASS: lifecycle/cleanup/broadcast exceptions preserve deadline and settlement; traces throttled; stale callback rejected (native APIs mocked)")
+
+for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
+    local g,bm=fixture()
+    g.playerId=0; g.currentLevelId="ch02"
+    g.runLives.remaining=winner=="radiant" and 5 or 1
+    local build={inventory={"item_blink"}, level=20}; g.heroData={wk=build}
+    g.heroRulesByName={wk={{action="attack"}}}; local rules=g.heroRulesByName
+    g.gold=1234; g.GetGoldBalance=function(s) return s.gold end
+    local setupStates,rebuilt,enemies,barriers,rolls=0,0,0,0,0
+    g.BroadcastBattleState=function(s)
+        local data=s:BuildBattleState()
+        if s.phase=="result" then assert(data.replay_available==1 and data.run_complete==1) end
+        if s.phase=="setup" then setupStates=setupStates+1; assert(data.ready==1 and data.replay_available==0) end
+    end
+    local request
+    g.RespawnPlayerRoster=function(s)
+        rebuilt=rebuilt+1
+        assert(s.phase=="setup" and not s.runComplete and s.runLives.remaining==5)
+        assert(not s:OnReplayRun(0,request), "reentrant replay cannot rebuild twice")
+    end
+    g.SpawnLevelEnemies=function(s,id) enemies=enemies+1; assert(id==s.currentLevelId) end
+    g.SpawnBattleBarrier=function() barriers=barriers+1 end
+    g.RollShop=function(s) rolls=rolls+1; s.shopOffers={} end
+    g:EndBattle(winner,winner=="radiant" and 2 or 3)
+    assert(g.runComplete and g.phase=="result" and callback==nil)
+    request={PlayerID=0,settlement_generation=g.settlementGeneration}
+    assert(not g:OnReplayRun(0,{settlement_generation=request.settlement_generation}))
+    assert(not g:OnReplayRun(0,{PlayerID=1,settlement_generation=request.settlement_generation}))
+    assert(not g:OnReplayRun(0,{PlayerID=0,settlement_generation=request.settlement_generation-1}))
+    g.skillDebug={pending=true}; assert(not g:OnReplayRun(0,request))
+    g.skillDebug={active=true}; assert(not g:OnReplayRun(0,request)); g.skillDebug=nil
+    assert(g:OnReplayRun(0,request)); assert(not g:OnReplayRun(0,request))
+    assert(rebuilt==1 and enemies==1 and barriers==1 and rolls==1 and setupStates==1)
+    assert(g.currentLevelId==(winner=="radiant" and "ch01" or "ch02"))
+    assert(g.heroData.wk==build and g.heroRulesByName==rules and g.gold==1234)
+    g.phase="fight"; bm:StartBattle({}); assert(bm:GetTimeLeft()==120)
+    g.runLives.remaining=1; g:EndBattle("dire",3)
+    assert(not g:OnReplayRun(0,request), "old result request rejected at later terminal")
+    request={PlayerID=0,settlement_generation=g.settlementGeneration}
+    assert(g:OnReplayRun(0,request) and rebuilt==2)
+end
+do
+    local g=fixture(); g.playerId=0
+    g:EndBattle("dire",3); local oldSetup=callback
+    -- An old automatic transition can still be queued when another lifecycle starts.
+    g.settlementGeneration=g.settlementGeneration+1
+    g.runComplete=true; g.runFailed=true
+    assert(g:OnReplayRun(0,{PlayerID=0,settlement_generation=g.settlementGeneration}))
+    g.rebuilt=false; g.phase="result"; oldSetup()
+    assert(not g.rebuilt and g.phase=="result", "old delayed setup cannot reset a replay")
+end
+print("PASS real EndBattle/replay: all terminal outcomes, owner/generation gates, reentrancy, retained build, five lives, unit rebuild, fresh deadline, old timer invalidation")
