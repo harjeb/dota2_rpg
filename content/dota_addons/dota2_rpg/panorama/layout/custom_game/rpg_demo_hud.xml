@@ -87,7 +87,7 @@
 			</Panel>
 			<Label id="VersusLabel" text="#dota2_rpg_versus" />
 			<Button id="StartBattleButton">
-				<Label text="#dota2_rpg_start_battle" />
+				<Label id="StartBattleLabel" text="#dota2_rpg_start_battle" />
 			</Button>
 			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>

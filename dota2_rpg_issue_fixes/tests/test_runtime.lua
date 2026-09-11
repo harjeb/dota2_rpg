@@ -846,12 +846,13 @@ do
     local Bootstrap = require("issue_fixes.bootstrap")
     local Game = { InitGameMode = function() end }
     function Game:OnStartBattle(accept) if accept then self.phase = "fight" end end
+    function Game:SpawnLevelEnemies(ready) return ready end
     Bootstrap.Install(Game)
-    local started = 0
+    local started, registered = 0, 0
     local game = setmetatable({ phase = "setup" }, { __index = Game })
     game.rpgIssueFixCompat = require("issue_fixes.compat").new(game)
     game.issueFixes = {
-        RegisterCurrentStage = function() end,
+        RegisterCurrentStage = function() registered = registered + 1 end,
         OnBattleStarted = function() started = started + 1 end,
     }
     local active, bench, portrait = Unit.new(2), Unit.new(2), Unit.new(2)
@@ -861,6 +862,10 @@ do
     end
     game.battleManager = { teamHeroes = { [2] = { active }, [3] = {} } }
     game.selectedHero = portrait
+    assert_equal(game:SpawnLevelEnemies(false), false, "pending spawn keeps return value")
+    assert_equal(registered, 0, "pending/failed stage must not bind new entries to old enemies")
+    assert_equal(game:SpawnLevelEnemies(true), true, "ready spawn keeps return value")
+    assert_equal(registered, 1, "completed stage registers native units")
     game:OnStartBattle(false)
     assert_equal(active.modifiers.modifier_rpg_prepare_bench, true, "rejected start retains preparation")
     assert_equal(started, 0, "rejected start does not activate runtime")

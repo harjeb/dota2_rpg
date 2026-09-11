@@ -167,7 +167,7 @@ function Bootstrap.Install(class_table)
     }, function(original)
         return function(self, ...)
             local results = pack_values(original(self, ...))
-            if self.issueFixes ~= nil and self.rpgIssueFixCompat ~= nil then
+            if results[1] ~= false and self.issueFixes ~= nil and self.rpgIssueFixCompat ~= nil then
                 self.issueFixes:RegisterCurrentStage(
                     self.rpgIssueFixCompat:GetStageEntries(),
                     self.rpgIssueFixCompat:GetEnemyUnits()

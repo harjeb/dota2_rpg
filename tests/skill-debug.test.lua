@@ -136,10 +136,13 @@ test("fresh runs advance rule generation once before roster broadcasts and disca
         g.battleManager.teamRules[2]={{action="old"}}
         g.battleManager.teamRules[3]={{action="old"}}
         g.tacticBridge.ruleService.state.rules={old=true}
+        g.enemySpawnRequest={level="ch02"}; g.stageLoading=true; g.stageLoadError="timeout"
     end
     local spawn=g.SpawnLevelEnemies
     g.SpawnLevelEnemies=function(self,id)
         eq(self.ruleGeneration,expected,"generation advances before roster spawn")
+        assert(not self.enemySpawnRequest and not self.stageLoading and not self.stageLoadError,
+            "debug entry and exit release obsolete campaign loading gate")
         eq(next(self.heroRulesByName),nil,"hero rules cleared before spawn")
         eq(next(self.battleManager.teamRules[2]),nil,"ally rules cleared before spawn")
         eq(next(self.battleManager.teamRules[3]),nil,"enemy rules cleared before spawn")
@@ -169,7 +172,9 @@ test("fresh runs advance rule generation once before roster broadcasts and disca
 end)
 test("failed pending entry and cancellation preserve generation and rule stores",function()
     for _,action in ipairs({"cancel","timeout","exception","phase"}) do
-        local f,g=fixture(); g.ruleGeneration=17
+        local f,g=fixture(); g.ruleGeneration=17; g.settlementGeneration=22
+        local campaignRequest={level="ch03"}
+        g.enemySpawnRequest=campaignRequest; g.stageLoading=true
         local heroRules=g.heroRulesByName
         local teamRules=g.battleManager.teamRules
         local serviceRules={authored=true}; g.tacticBridge.ruleService.state.rules=serviceRules
@@ -180,6 +185,9 @@ test("failed pending entry and cancellation preserve generation and rule stores"
         elseif action=="phase" then g.phase="result"; f.loads[1].fn() end
         if f.loads[1] then f.loads[1].fn() end
         eq(g.ruleGeneration,17,action .. " preserves generation")
+        eq(g.settlementGeneration,22,action .. " preserves campaign preparation epoch")
+        assert(g.enemySpawnRequest==campaignRequest and g.stageLoading,
+            "cancelled debug entry retains the campaign preload request")
         eq(g.heroRulesByName,heroRules,action .. " preserves hero rules")
         eq(g.battleManager.teamRules,teamRules,action .. " preserves team rules")
         eq(g.tacticBridge.ruleService.state.rules,serviceRules,action .. " preserves service rules")

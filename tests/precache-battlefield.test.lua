@@ -33,6 +33,9 @@ require = function(moduleName)
 	if moduleName == "patches.enemy_items_patch" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/patches/enemy_items_patch.lua")
 	end
+	if moduleName == "battle.stage_precache" then
+		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/stage_precache.lua")
+	end
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
@@ -84,6 +87,7 @@ for index = 1, 5 do
 end
 
 local levelData = {
+	ch02 = {enemies = {{unit = "npc_dota_hero_lion", items = {"item_black_king_bar"}}}},
 	ch01 = {
 		name = "Level display name must not be precached",
 		enemies = enemyEntries,
@@ -130,6 +134,7 @@ end
 assert(precached.npc_dota_hero_sven == nil and precached.npc_dota_hero_lion == nil,
     "shop-only heroes load asynchronously on purchase, not all at startup")
 assert(precached["Level display name must not be precached"] == nil, "level labels are not unit names")
+assert(precachedItems.item_black_king_bar == nil, "future-stage equipment must not load at startup")
 assert(precachedItems.item_rpg_scroll_low == 1 and precachedItems.item_rpg_scroll_high == 1,
 	"the two project scroll items must be precached exactly once")
 
@@ -372,6 +377,84 @@ assert(radiant.acquisitionRange == 4000 and dire.acquisitionRange == 4000,
 	"both teams must use the expanded 4000-unit acquisition range")
 
 print("PASS: categorized unit precache, compact team spawns, and expanded battle acquisition range")
+
+-- Actual addon spawn/start/broadcast wiring waits for cache readiness and ignores
+-- callbacks whose chapter, settlement or debug run no longer owns the request.
+local callbacks, readyStages, prefetched = {}, {}, {}
+spawnGame.stagePrecache = {
+    IsReady=function(_,id) return readyStages[id] == true end,
+    Request=function(_,id,callback) callbacks[#callbacks+1] = {id=id, done=callback} end,
+    Prefetch=function(_,id) prefetched[#prefetched+1] = id end,
+}
+spawnGame.BroadcastBattleState = function() end
+spawnGame.currentLevelId, spawnGame.orderedLevels = "ch02", {"ch01", "ch02", "ch03"}
+spawnGame.teamsSpawned = true
+spawnGame.GetGoldBalance = function() return 500 end
+spawnGame.battleManager.GetAliveCount = function() return 5 end
+spawnGame.battleManager.GetBattleTime = function() return 0 end
+local beforeStage = #spawned
+assert(not spawnGame:SpawnLevelEnemies("ch02") and spawnGame.stageLoading)
+assert(#spawned == beforeStage and spawnGame:BuildBattleState().ready == 0)
+spawnGame:OnStartBattle(nil,{})
+assert(spawnGame.phase == "setup" and not spawnGame.battleManager.started, "loading cannot start empty/old enemy roster")
+assert(not spawnGame:SpawnLevelEnemies("ch02") and #callbacks == 1, "same pending stage is coalesced")
+-- Rapid selection supersedes the old request without clearing its already loaded resources.
+spawnGame:OnSelectLevel(nil,{level="ch03"})
+readyStages.ch02 = true; callbacks[1].done(true)
+assert(#spawned == beforeStage and spawnGame.stageLoading, "old level callback cannot replace current enemies")
+callbacks[2].done(false,"timeout")
+assert(not spawnGame.stageLoading and spawnGame.stageLoadError and spawnGame:BuildBattleState().stage_failed == 1)
+spawnGame:OnStartBattle(nil,{})
+assert(#callbacks == 3 and spawnGame.stageLoading and spawnGame.phase == "setup", "retry only prepares; it cannot begin combat")
+readyStages.ch03 = true; callbacks[3].done(true); callbacks[3].done(true)
+assert(#spawned == beforeStage + 5 and not spawnGame.stageLoading and not spawnGame.stageLoadError)
+assert(spawnGame:BuildBattleState().ready == 1, "ready published only after actual enemy assembly")
+spawnGame.currentLevelId = "ch02"; spawnGame:SpawnLevelEnemies("ch02")
+assert(prefetched[#prefetched] == "ch03", "completed current stage warms exactly the next stage")
+-- A fresh debug run/settlement cannot be overwritten by the old campaign request.
+for _, field in ipairs({"ruleGeneration", "settlementGeneration"}) do
+    readyStages.ch03 = nil; spawnGame.currentLevelId = "ch03"
+    spawnGame:SpawnLevelEnemies("ch03"); local callback = callbacks[#callbacks].done
+    local before = #spawned; spawnGame[field] = (spawnGame[field] or 0) + 1
+    callback(true); assert(#spawned == before and not spawnGame.stageLoading, "stale " .. field)
+    assert(spawnGame:BuildBattleState().ready == 0 and spawnGame:BuildBattleState().stage_failed == 1,
+        "stale epoch must offer retry instead of making the previous enemy roster playable")
+end
+readyStages.ch03 = nil; spawnGame:SpawnLevelEnemies("ch03")
+local obsolete = callbacks[#callbacks].done
+spawnGame:InvalidateEnemyPreparation(); spawnGame.skillDebug = {active=true}
+local beforeDebug = #spawned; obsolete(true)
+assert(#spawned == beforeDebug and not spawnGame.stageLoading)
+spawnGame.skillDebug = nil; spawnGame.stagePrecache = nil
+-- Native spawning itself can fail even after precache; do not enable combat.
+local nativeCreate = CreateUnitByName
+CreateUnitByName = function() return nil end
+assert(not spawnGame:SpawnLevelEnemies("ch01") and spawnGame.stageLoadError == "spawn_failed")
+assert(spawnGame:BuildBattleState().ready == 0)
+CreateUnitByName = nativeCreate
+spawnGame:SpawnLevelEnemies("ch01")
+assert(not spawnGame.stageLoadError and not spawnGame.stageLoading)
+local partial, calls = nil, 0
+CreateUnitByName = function(...)
+    calls = calls + 1
+    if calls == 2 then error("native spawn exception") end
+    partial = nativeCreate(...); return partial
+end
+assert(not spawnGame:SpawnLevelEnemies("ch01") and not spawnGame.stageLoading and spawnGame.stageLoadError)
+assert(partial and partial.removed, "partially assembled native units are removed on exceptions")
+CreateUnitByName = nativeCreate
+spawnGame.currentLevelId = "ch01"
+spawnGame:OnStartBattle(nil,{})
+assert(not spawnGame.stageLoadError and not spawnGame.stageLoading and spawnGame.phase == "setup",
+    "cached-stage exception remains recoverable without auto-start")
+local clearSpace = FindClearSpaceForUnit
+FindClearSpaceForUnit = function(unit) partial=unit; error("native preparation exception") end
+assert(not spawnGame:SpawnLevelEnemies("ch01") and partial.removed,
+    "unregistered units are still tracked and removed when preparation throws")
+FindClearSpaceForUnit = clearSpace
+spawnGame:OnStartBattle(nil,{})
+assert(not spawnGame.stageLoadError and not spawnGame.stageLoading)
+print("PASS: deferred stage spawn, latest intent, retries, battle gate, debug/replay guards and next-stage prefetch")
 
 -- Exercise the actual spawn -> auto-level -> equipment -> BossScaling path.
 -- Only the native unit API is simulated; no stub replaces the Boss module.

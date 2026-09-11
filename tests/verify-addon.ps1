@@ -84,7 +84,10 @@ $luaChecks = @(
            'SetCustomGameForceHero\(PLAYER_PLACEHOLDER_HERO\)',
            'local HERO_LEVEL = 30',
            'local BATTLE_ACQUISITION_RANGE = 4000',
-           'seenUnits\[unitName\]',
+           'StagePrecache\.Startup\(context, levels\)',
+           'AwaitEnemyResources',
+           'PrecacheUnitByNameAsync',
+           'PrecacheItemByNameAsync',
            'SetFogOfWarDisabled\(true\)',
            'SetUnseenFogOfWarEnabled\(false\)',
            'SetHeroRespawnEnabled\(true\)',
@@ -191,6 +194,8 @@ $luaChecks = @(
            'GetItemInSlot',
            'BATTLE_TIME_LIMIT'
        ) },
+    @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\battle\stage_precache.lua";
+       Patterns = @('function M\.Startup', 'function self:Request', 'function self:Prefetch', 'function self:IsReady') },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\data\data_loader.lua";
        Patterns = @(
            'levels\.kv',

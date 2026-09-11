@@ -231,6 +231,7 @@
     var itemSellRequestId = 0;
     var pendingItemSales = {};
     var serverReady = false;
+    var stageRetryReady = false;
     var lastNativePurchaseTarget = -1;
     var lastNativePurchaseHero = "";
     var selectedEquipmentHeroName = "";
@@ -1676,8 +1677,7 @@
         $("#ReplayRunButton").SetHasClass("Hidden", !available);
         $("#ReplayRunHint").SetHasClass("Hidden", !available);
         $("#ReplayRunButton").enabled = available && replayRequested !== generation;
-        $("#ReplayRunLabel").text = $.Localize(Number(data.run_failed) === 1
-            ? "#dota2_rpg_replay_retry" : "#dota2_rpg_replay_chapter_one");
+        $("#ReplayRunLabel").text = $.Localize("#dota2_rpg_replay_chapter_one");
     }
     $("#ReplayRunButton").SetPanelEvent("onactivate", function () {
         var button = $("#ReplayRunButton");
@@ -1706,6 +1706,8 @@
         // The server publishes a fresh zero snapshot only when a battle starts.
         // Keep the completed battle available throughout results and preparation.
         serverReady = Number(data.ready || 0) === 1;
+        var stageLoading = Number(data.stage_loading || 0) === 1;
+        stageRetryReady = phase === "setup" && !stageLoading && Number(data.stage_failed || 0) === 1;
         if (data.gold !== undefined) {
             shopState.gold = Math.max(0, Number(data.gold) || 0);
             saveData.gold = shopState.gold;
@@ -1717,8 +1719,11 @@
 
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
-            setStatus(serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing");
-            startButton.enabled = serverReady;
+            setStatus(stageRetryReady ? "#dota2_rpg_stage_failed" : (stageLoading ? "#dota2_rpg_stage_loading" :
+                (serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing")));
+            $("#StartBattleLabel").text = $.Localize(stageRetryReady ? "#dota2_rpg_stage_retry" :
+                (stageLoading ? "#dota2_rpg_stage_loading_button" : "#dota2_rpg_start_battle"));
+            startButton.enabled = serverReady || stageRetryReady;
             startButton.SetHasClass("Hidden", false);
             $("#BattleResult").SetHasClass("Hidden", true);
             closeLootPopup();
@@ -1743,7 +1748,7 @@
                 unspent += hero.skill_points;
             }
         }
-        if (phase === "setup" && unspent > 0) {
+        if (phase === "setup" && serverReady && !stageLoading && !stageRetryReady && unspent > 0) {
             setStatus($.Localize("#dota2_rpg_skill_points_hint").replace("%s1", String(unspent)));
         }
         var battleSpeedRow = $("#BattleSpeedRow");
@@ -1869,8 +1874,12 @@
     wireHeroPortraits("Radiant");
     $("#StartBattleButton").enabled = false;
     $("#StartBattleButton").SetPanelEvent("onactivate", function () {
-        if (phase !== "setup" || !serverReady) {
+        if (phase !== "setup" || (!serverReady && !stageRetryReady)) {
             return;
+        }
+        if (stageRetryReady) {
+            stageRetryReady = false;
+            $("#StartBattleButton").enabled = false;
         }
         GameEvents.SendCustomGameEventToServer("rpg_start_battle", buildPayload());
     });

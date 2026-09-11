@@ -13,6 +13,7 @@ local AbilityCatalog = require("tactics/ability_catalog")
 local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
 local BossScaling = require("battle.boss_scaling")
+local StagePrecache = require("battle.stage_precache")
 local RunLives = require("battle.run_lives")
 local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
@@ -219,48 +220,11 @@ local function BuildHeroActionSlots(hero)
 end
 
 function Precache(context)
-	local seenUnits = {}
-	local seenItems = {}
-	local function PrecacheUnit(unitName)
-		if type(unitName) ~= "string" or string.sub(unitName, 1, 9) ~= "npc_dota_" or seenUnits[unitName] then
-			return
-		end
-		seenUnits[unitName] = true
-		PrecacheUnitByNameSync(unitName, context)
-	end
-	local function PrecacheItem(itemName)
-		if type(itemName) ~= "string" or itemName == "" or seenItems[itemName] then
-			return
-		end
-		seenItems[itemName] = true
-		PrecacheItemByNameSync(itemName, context)
-	end
-
-	PrecacheUnit(PLAYER_PLACEHOLDER_HERO)
-	-- 经验卷轴（自定义物品）
-	PrecacheItem("item_rpg_scroll_low")
-	PrecacheItem("item_rpg_scroll_high")
-	PrecacheItem("item_aegis")
-	PrecacheItem("item_cheese")
-
-	-- Expanded recruitment is precached asynchronously on purchase. Keep startup
-    -- loading bounded to the commander and authored enemy encounters.
-
-	local levelData = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
-	if type(levelData) == "table" then
-		for _, levelEntry in pairs(levelData) do
-			if type(levelEntry) == "table" then
-				for _, enemyEntry in pairs(levelEntry.enemies or {}) do
-					if type(enemyEntry) == "table" then
-						PrecacheUnit(enemyEntry.unit)
-						for _, itemName in pairs(enemyEntry.items or {}) do
-							PrecacheItem(itemName)
-						end
-					end
-				end
-			end
-		end
-	end
+	local started = RealTime and RealTime() or 0
+	local levels = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
+	local startup = StagePrecache.Startup(context, levels)
+	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v41-20260912 level=%s units=%d items=%d elapsed=%.3f",
+		tostring(startup.levelId), #startup.units, #startup.items, RealTime and (RealTime() - started) or 0))
 end
 
 function Activate()
@@ -269,7 +233,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v40-20260911") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v41-20260912") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -298,6 +262,21 @@ function CDota2RpgDemo:InitGameMode()
 	end
 	table.sort(levelIds)
 	self.orderedLevels = levelIds
+	self.currentLevelId = levelIds[1] or "ch01"
+	self.stagePrecache = StagePrecache.new(self.dataLoader:GetAllLevels(), {
+		now = function() return RealTime() end,
+		log = function(message) RuntimeLog.WriteCritical("StagePrecache " .. message) end,
+		schedule = function(callback, delay)
+			gameMode:SetContextThink(DoUniqueString("RpgStagePrecache"), function()
+				callback()
+				return nil
+			end, delay)
+		end,
+		load_unit = function(name, callback)
+			return PrecacheUnitByNameAsync(name, callback, math.max(0, self.playerId))
+		end,
+		load_item = function(name, callback) return PrecacheItemByNameAsync(name, callback) end,
+	})
 
 	-- 经济/商店/阵容：项目消费与 Valve 原版商店共用同一个玩家钱包。
 	self.initialGold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 500
@@ -445,7 +424,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v40-20260911 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v41-20260912 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2719,9 +2698,90 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 end
 
 -- 从 levels.kv 生成关卡敌方阵容（英雄/野怪混编，随关卡切换重建）
+function CDota2RpgDemo:InvalidateEnemyPreparation()
+	self.enemySpawnRequest = nil
+	self.stageLoading, self.stageLoadError = false, nil
+end
+
+function CDota2RpgDemo:AwaitEnemyResources(levelId)
+	if self.stagePrecache == nil or (self.skillDebug and self.skillDebug.active)
+		or self.stagePrecache:IsReady(levelId) then
+		self:InvalidateEnemyPreparation()
+		return true
+	end
+	local previous = self.enemySpawnRequest
+	if previous and previous.level == levelId and previous.rules == self.ruleGeneration
+		and previous.settlement == self.settlementGeneration then return false end
+	local request = {level = levelId, rules = self.ruleGeneration, settlement = self.settlementGeneration}
+	self.enemySpawnRequest = request
+	self.stageLoading, self.stageLoadError = true, nil
+	self.stagePrecache:Request(levelId, function(ok, reason)
+		if self.enemySpawnRequest ~= request then return end
+		self.enemySpawnRequest = nil
+		self.stageLoading = false
+		if self.currentLevelId ~= levelId or self.phase ~= "setup"
+			or self.ruleGeneration ~= request.rules or self.settlementGeneration ~= request.settlement
+			or (self.skillDebug and self.skillDebug.active) then
+			self:BroadcastBattleState()
+			return
+		end
+		if ok then
+			local spawned, err = xpcall(function() self:SpawnLevelEnemies(levelId) end, debug.traceback)
+			if not spawned then
+				self.stageLoading, self.stageLoadError = false, "spawn_failed"
+				RuntimeLog.WriteCritical("StagePrecache spawn_failed level=" .. tostring(levelId) .. " error=" .. tostring(err))
+			end
+		else
+			self.stageLoadError = reason or "precache_failed"
+		end
+		self:BroadcastHeroInfo()
+		self:BroadcastBattleState()
+	end)
+	if self.enemySpawnRequest == request then self:BroadcastBattleState() end
+	return false
+end
+
+function CDota2RpgDemo:PreloadNextLevel(levelId)
+	if self.stagePrecache == nil or (self.skillDebug and self.skillDebug.active) then return end
+	for index, id in ipairs(self.orderedLevels or {}) do
+		if id == levelId and self.orderedLevels[index + 1] then
+			self.stagePrecache:Prefetch(self.orderedLevels[index + 1])
+			return
+		end
+	end
+end
+
 function CDota2RpgDemo:SpawnLevelEnemies(levelId)
+	if not self:AwaitEnemyResources(levelId) then return false end
+	self.stageLoading = true -- Also guard native spawn callbacks until the whole roster exists.
+	self.preparedEnemyLevel = nil
+	local created = {}
+	local ok, result = xpcall(function() return self:AssembleLevelEnemies(levelId, created) end, debug.traceback)
+	self.stageLoading = false
+	if not ok or not result then
+		self.stageLoadError = "spawn_failed"
+		local lifecycle = require("issue_fixes.hero_lifecycle_log")
+		self.pendingEnemyCleanup = self.pendingEnemyCleanup or {}
+		for _, unit in ipairs(created) do
+			self.pendingEnemyCleanup[#self.pendingEnemyCleanup + 1] = unit
+			pcall(lifecycle.Remove, self, unit, "enemy_spawn_failed")
+		end
+		RuntimeLog.WriteCritical("StagePrecache spawn_failed level=" .. tostring(levelId) .. " error=" .. tostring(result))
+		self:BroadcastBattleState()
+		return false
+	end
+	self.preparedEnemyLevel = levelId
+	self:PreloadNextLevel(levelId)
+	return true
+end
+
+function CDota2RpgDemo:AssembleLevelEnemies(levelId, created)
 	local lifecycle = require("issue_fixes.hero_lifecycle_log")
 	local battleManager = self.battleManager
+	for _, unit in ipairs(self.pendingEnemyCleanup or {}) do
+		if TacticEngine.IsValidUnit(unit) then lifecycle.Remove(self, unit, "enemy_spawn_failed") end
+	end
+	self.pendingEnemyCleanup = {}
 	for _, unit in ipairs(battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
 		if TacticEngine.IsValidUnit(unit) then
 			lifecycle.Remove(self, unit, "enemy")
@@ -2732,10 +2792,12 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 
 	local level = self.dataLoader:GetLevel(levelId)
 	if level == nil then
+		self.stageLoading, self.stageLoadError = false, "unknown_level"
 		print("[Dota2Rpg] WARNING: level '" .. tostring(levelId) .. "' not found in levels.kv.")
-		return
+		return false
 	end
 
+	local createdCount = 0
 	local enemyIndex = 0
 	local enemyOccurrences = {}
 	local spawnCount = #TEAM_SPAWNS[DOTA_TEAM_BADGUYS]
@@ -2748,6 +2810,8 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 			local spawnPosition = GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_BADGUYS][slot] + offset, nil)
 			local unit = lifecycle.Create(self, entry.unit, spawnPosition, DOTA_TEAM_BADGUYS, "enemy")
 			if TacticEngine.IsValidUnit(unit) then
+				created[#created + 1] = unit -- Keep it recoverable even if native preparation throws.
+				createdCount = createdCount + 1
 				FindClearSpaceForUnit(unit, spawnPosition, true)
 				if unit:IsRealHero() then
 					self:PrepareEnemyHero(unit, tonumber(entry.level) or 1)
@@ -2806,7 +2870,9 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 			end
 		end
 	end
-	print(string.format("[Dota2Rpg] Level '%s' spawned %d enemy units.", levelId, enemyIndex))
+	if createdCount == 0 or createdCount ~= enemyIndex then return false end
+	print(string.format("[Dota2Rpg] Level '%s' spawned %d enemy units.", levelId, createdCount))
+	return true
 end
 
 function CDota2RpgDemo:PrepareEnemyHero(hero, level)
@@ -3324,6 +3390,13 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	if self.runComplete or self.phase ~= "setup" or not self.teamsSpawned then
 		return
 	end
+	if self.stageLoading then return end
+	if self.stageLoadError or (self.stagePrecache and self.preparedEnemyLevel ~= self.currentLevelId) then
+		self:SpawnLevelEnemies(self.currentLevelId)
+		self:BroadcastHeroInfo()
+		self:BroadcastBattleState()
+		return -- A retry prepares the stage; it never starts a fight implicitly.
+	end
 	if #self.lineup == 0 then
 		return -- 必须先购买英雄并上阵
 	end
@@ -3506,16 +3579,13 @@ function CDota2RpgDemo:OnReplayRun(_, payload)
 		or tonumber(payload.settlement_generation) ~= self.settlementGeneration
 		or self.phase ~= "result" or not self.runComplete
 		or (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending)) then return false end
-	local failed = self.runFailed
 	self.settlementGeneration = self.settlementGeneration + 1
 	self.phase = "restarting" -- claim before native callbacks/reentrant events
 	self.runComplete, self.runFailed, self.winner = false, false, ""
 	RespawnPolicy.SetBattleActive(self, false)
-	if not failed then
-		self.currentLevelId = self.orderedLevels[1] or "ch01"
-		self.refreshCount = 0
-		self.scrollPurchases = { low = 0, high = 0 }
-	end
+	self.currentLevelId = self.orderedLevels[1] or "ch01"
+	self.refreshCount = 0
+	self.scrollPurchases = { low = 0, high = 0 }
 	-- Retain the build, wallet, authored rules, and undelivered native items.
 	RunLives.Ensure(self).remaining = RunLives.MAX_LIVES
 	self.nextLifeRewardAttempt = 0
@@ -3851,10 +3921,13 @@ function CDota2RpgDemo:BroadcastLevelInfo()
 end
 
 function CDota2RpgDemo:BuildBattleState()
+	local missingStage = self.stagePrecache ~= nil and self.preparedEnemyLevel ~= self.currentLevelId
 	return {
 		rule_generation = self.ruleGeneration or 0,
 		phase = self.phase,
-		ready = (self.teamsSpawned and not self.runComplete) and 1 or 0,
+		ready = (self.teamsSpawned and not self.runComplete and not self.stageLoading and not self.stageLoadError and not missingStage) and 1 or 0,
+		stage_loading = self.stageLoading and 1 or 0,
+		stage_failed = (self.stageLoadError or (missingStage and self.teamsSpawned and not self.stageLoading)) and 1 or 0,
 		replay_available = (self.phase == "result" and self.runComplete
 			and not (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending))) and 1 or 0,
 		settlement_generation = self.settlementGeneration or 0,

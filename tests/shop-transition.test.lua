@@ -18,6 +18,7 @@ require = function(name)
         ["battle.damage_stats"] = true,
         ["battle.enemy_diagnostics"] = true,
         ["battle.enemy_scaling"] = true,
+        ["battle.stage_precache"] = true,
         ["battle.boss_scaling"] = true,
         ["battle.run_lives"] = true,
         ["battle.respawn_policy"] = true,

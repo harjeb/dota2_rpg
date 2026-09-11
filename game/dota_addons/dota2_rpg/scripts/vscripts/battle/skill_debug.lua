@@ -97,6 +97,8 @@ local function clear_items(unit)
     end
 end
 local function clear_run(game)
+    game.enemySpawnRequest = nil
+    game.stageLoading, game.stageLoadError = false, nil
     stop(game)
     local removed = {}
     local function remove(unit)
@@ -106,6 +108,8 @@ local function clear_run(game)
         Lifecycle.Remove(game, unit, "debug_run_reset")
     end
     for _, unit in ipairs(all_units(game)) do remove(unit) end
+    for _, unit in ipairs(game.pendingEnemyCleanup or {}) do remove(unit) end
+    game.pendingEnemyCleanup = {}
     for _, unit in ipairs(game.benchUnits or {}) do remove(unit) end
     clear_items(game:GetStashUnit())
     -- A fresh run must not inherit equipment left on the ground in the old run.
@@ -186,9 +190,10 @@ function Debug.Exit(game)
     local s = state(game)
     if not s.active and not s.pending then return false, "wrong_phase" end
     s.serial, s.pending = s.serial + 1, false
-    game.settlementGeneration = (game.settlementGeneration or 0) + 1
-    -- Cancelling initial resource loading leaves the existing normal run intact.
+    -- Cancelling initial resource loading leaves the existing normal run intact,
+    -- including the epoch of any campaign resource request still in flight.
     if not s.active then Debug.Publish(game); return true end
+    game.settlementGeneration = (game.settlementGeneration or 0) + 1
     clear_run(game)
     s.active, s.hero = false, nil
     game.orderedLevels = s.normalLevels

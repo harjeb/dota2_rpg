@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-09-12T00:31:54.362653+08:00",
+  "source": "bd sql / local Dolt",
+  "counts": {
+    "issues": 155,
+    "dependencies": 87,
+    "comments": 4,
+    "events": 368,
+    "labels": 0,
+    "config": 13
+  },
+  "completed_issues": [
+    "dota2_rpg-vyp",
+    "dota2_rpg-7c0"
+  ],
+  "native_followup": "dota2_rpg-wms",
+  "evidence": "UI41:74/74 automated suites; verify-addon; two native resources compiled;123 installed source files byte-equal; existing map/loading asset hashes preserved. Startup sync calls137-to7; no actual native timing or gameplay validation. docs/RUNTIME_FIXES_V41.md"
+}

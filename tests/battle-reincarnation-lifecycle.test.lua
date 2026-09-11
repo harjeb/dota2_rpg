@@ -139,6 +139,7 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
     local build={inventory={"item_blink"}, level=20}; g.heroData={wk=build}
     g.heroRulesByName={wk={{action="attack"}}}; local rules=g.heroRulesByName
     g.gold=1234; g.GetGoldBalance=function(s) return s.gold end
+    g.refreshCount=7; g.scrollPurchases={low=3,high=2}
     local setupStates,rebuilt,enemies,barriers,rolls=0,0,0,0,0
     g.BroadcastBattleState=function(s)
         local data=s:BuildBattleState()
@@ -164,7 +165,8 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
     g.skillDebug={active=true}; assert(not g:OnReplayRun(0,request)); g.skillDebug=nil
     assert(g:OnReplayRun(0,request)); assert(not g:OnReplayRun(0,request))
     assert(rebuilt==1 and enemies==1 and barriers==1 and rolls==1 and setupStates==1)
-    assert(g.currentLevelId==(winner=="radiant" and "ch01" or "ch02"))
+    assert(g.currentLevelId=="ch01", "all terminal replays restart chapter one")
+    assert(g.refreshCount==0 and g.scrollPurchases.low==0 and g.scrollPurchases.high==0)
     assert(g.heroData.wk==build and g.heroRulesByName==rules and g.gold==1234)
     g.phase="fight"; bm:StartBattle({}); assert(bm:GetTimeLeft()==120)
     g.runLives.remaining=1; g:EndBattle("dire",3)
