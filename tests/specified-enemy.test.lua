@@ -115,6 +115,7 @@ second.team=3
 addon:BroadcastHeroInfo()
 local enemySlots=0
 for _,event in ipairs(events) do
+    assert(event.data.rule_generation==0,"roster and slots default rule generation to zero")
     if event.event=="rpg_hero_slots" then
         if event.data.slot_key:match("^dire_") then
             enemySlots=enemySlots+1
@@ -125,4 +126,17 @@ for _,event in ipairs(events) do
     end
 end
 assert(enemySlots==2)
+addon.ruleGeneration=7; events={}; addon:BroadcastHeroInfo()
+assert(#events==4,"populated roster publishes roster and each hero slot")
+for _,event in ipairs(events) do
+    assert(event.data.rule_generation==7,"roster and every hero slot publish current generation")
+end
+manager.teamHeroes={[2]={},[3]={}}
+for _,generation in ipairs({0,7}) do
+    if generation==0 then addon.ruleGeneration=nil else addon.ruleGeneration=generation end
+    events={}; addon:BroadcastHeroInfo()
+    assert(#events==1 and events[1].event=="rpg_enemy_roster","empty lineup still publishes roster")
+    assert(events[1].data.rule_generation==generation and #events[1].data.units==0,
+        "empty roster publishes default/current generation")
+end
 print("PASS: specified enemy protocol, validation, snapshots/legacy, broadcasts, duplicate occurrences, retry, dead/missing fallthrough and next-chapter fail-closed")

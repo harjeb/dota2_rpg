@@ -1383,11 +1383,29 @@ local broadcastGame = newGame({
 	end,
 })
 broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.rule_generation, 0, "shop generation defaults to zero")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_axe, 501, "active native selection ID")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 503, "bench native selection ID")
 function benchHero:GetEntityIndex() return 603 end
+broadcastGame.ruleGeneration = 9
 broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.rule_generation, 9, "shop publishes current generation")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 603, "respawn refreshes native selection ID")
+broadcastGame.ownedHeroes, broadcastGame.lineup = {}, {}
+broadcastGame.battleManager = {
+	GetAliveCount = function() return 0 end,
+	GetBattleTime = function() return 0 end,
+}
+for _, generation in ipairs({0, 9}) do
+	if generation == 0 then broadcastGame.ruleGeneration = nil else broadcastGame.ruleGeneration = generation end
+	broadcastGame:BroadcastShopState()
+	assertEqual(shopPayload.rule_generation, generation, "empty lineup shop generation")
+	assertEqual(shopPayload.lineup_text, "", "empty lineup shop snapshot")
+	assertEqual(next(shopPayload.hero_entity_indices), nil, "empty roster has no stale selection IDs")
+	local battle = broadcastGame:BuildBattleState()
+	assertEqual(battle.rule_generation, generation, "empty lineup battle generation")
+	assertEqual(battle.radiant_alive, 0, "empty lineup battle snapshot")
+end
 CustomGameEventManager = priorEvents
 
 -- Life rewards use the real storage helpers and retain native item entities.

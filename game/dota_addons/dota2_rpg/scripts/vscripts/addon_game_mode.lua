@@ -268,7 +268,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v32-20260910") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v33-20260911") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -441,7 +441,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v32-20260910 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v33-20260911 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3665,7 +3665,7 @@ function CDota2RpgDemo:BroadcastHeroInfo()
                 target_actor = RuleSnapshot.TargetActor(self.battleManager, self.currentLevelId, unit) or "" })
 		end
 	end
-	CustomGameEventManager:Send_ServerToAllClients("rpg_enemy_roster", { units = roster })
+	CustomGameEventManager:Send_ServerToAllClients("rpg_enemy_roster", { rule_generation = self.ruleGeneration or 0, units = roster })
 	local sides = {
 		{ key = "radiant", team = DOTA_TEAM_GOODGUYS },
 		{ key = "dire", team = DOTA_TEAM_BADGUYS },
@@ -3682,6 +3682,7 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 				end
 				local capRevision = AbilityCatalog.PublishCapabilities(hero, slots, RuleSnapshot.HeroKey(self.battleManager,hero))
 				CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
+                    rule_generation = self.ruleGeneration or 0,
                     capability_revision = capRevision,
 					slot_key = side.key .. "_" .. index,
 					hero_index = hero:entindex(),
@@ -3751,6 +3752,7 @@ function CDota2RpgDemo:BroadcastShopState()
 		table.insert(equippedParts, heroName .. ":" .. table.concat(heroItems, ","))
 	end
 	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
+		rule_generation = self.ruleGeneration or 0,
 		gold = gold,
 		offer_text = self.shopOfferText or "",
 		owned_text = table.concat(self.ownedHeroes, ";"),
@@ -3796,6 +3798,7 @@ end
 
 function CDota2RpgDemo:BuildBattleState()
 	return {
+		rule_generation = self.ruleGeneration or 0,
 		phase = self.phase,
 		ready = (self.teamsSpawned and not self.runComplete) and 1 or 0,
 		run_complete = self.runComplete and 1 or 0,

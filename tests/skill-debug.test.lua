@@ -128,6 +128,65 @@ end
 local tests={}
 local function test(name,fn) tests[#tests+1]={name,fn} end
 
+test("fresh runs advance rule generation once before roster broadcasts and discard old rules",function()
+    local f,g=fixture()
+    local expected=0
+    local function seed()
+        g.heroRulesByName[HERO]={{action="old"}}
+        g.battleManager.teamRules[2]={{action="old"}}
+        g.battleManager.teamRules[3]={{action="old"}}
+        g.tacticBridge.ruleService.state.rules={old=true}
+    end
+    local spawn=g.SpawnLevelEnemies
+    g.SpawnLevelEnemies=function(self,id)
+        eq(self.ruleGeneration,expected,"generation advances before roster spawn")
+        eq(next(self.heroRulesByName),nil,"hero rules cleared before spawn")
+        eq(next(self.battleManager.teamRules[2]),nil,"ally rules cleared before spawn")
+        eq(next(self.battleManager.teamRules[3]),nil,"enemy rules cleared before spawn")
+        eq(next(self.tacticBridge.ruleService.state.rules),nil,"service rules cleared before spawn")
+        return spawn(self,id)
+    end
+    local broadcasts=0
+    for _,name in ipairs({"BroadcastBattleState","BroadcastHeroInfo","BroadcastShopState"}) do
+        g[name]=function(self)
+            eq(self.ruleGeneration,expected,"snapshot observes fresh generation")
+            broadcasts=broadcasts+1
+        end
+    end
+    for generation=1,2 do
+        seed(); expected=generation
+        local loadStart=#f.loads
+        f:start(); eq(g.ruleGeneration or 0,generation-1,"pending preserves generation")
+        f.loads[loadStart+1].fn(); f.loads[loadStart+2].fn()
+        eq(g.ruleGeneration,generation,"entry and reentry increment once")
+        f.loads[loadStart+2].fn(); eq(g.ruleGeneration,generation,"duplicate callback is inert")
+    end
+    seed(); expected=3
+    f:emit("exit",{PlayerID=7}); eq(g.ruleGeneration,3,"exit increments once")
+    eq(next(g.heroRulesByName),nil,"empty normal lineup retains no old rules")
+    eq(broadcasts,9,"all fresh runs publish their generation")
+    f:emit("exit",{PlayerID=7}); eq(g.ruleGeneration,3,"inactive exit is inert")
+end)
+test("failed pending entry and cancellation preserve generation and rule stores",function()
+    for _,action in ipairs({"cancel","timeout","exception","phase"}) do
+        local f,g=fixture(); g.ruleGeneration=17
+        local heroRules=g.heroRulesByName
+        local teamRules=g.battleManager.teamRules
+        local serviceRules={authored=true}; g.tacticBridge.ruleService.state.rules=serviceRules
+        if action=="exception" then PrecacheUnitByNameAsync=function() error("precache failed") end end
+        f:start(); eq(g.ruleGeneration,17,"pending preserves generation")
+        if action=="cancel" then f:emit("exit",{PlayerID=7})
+        elseif action=="timeout" then f.thinks.RpgSkillDebugPrecache.fn()
+        elseif action=="phase" then g.phase="result"; f.loads[1].fn() end
+        if f.loads[1] then f.loads[1].fn() end
+        eq(g.ruleGeneration,17,action .. " preserves generation")
+        eq(g.heroRulesByName,heroRules,action .. " preserves hero rules")
+        eq(g.battleManager.teamRules,teamRules,action .. " preserves team rules")
+        eq(g.tacticBridge.ruleService.state.rules,serviceRules,action .. " preserves service rules")
+        assert(not g.skillDebug.pending and not g.skillDebug.active)
+    end
+end)
+
 test("trusted sorted deduplicated catalog and owner metadata",function()
     local f,g=fixture(); local names,allowed=Debug.Catalog(g)
     eq(table.concat(names,","),HERO..",npc_dota_hero_drow_ranger,npc_dota_hero_sven")
@@ -202,6 +261,7 @@ test("reset retains authored rules equipment learned skills and talents; refresh
     old.abilities[1].level=4; old.abilities[2].level=1
     local item=cooldown("item_blink"); old.items[0]=item; g.gold=2; g.phase="fight"
     f:emit("reset",{PlayerID=7})
+    eq(g.ruleGeneration,1,"reset keeps the current rule generation")
     local new=g.battleManager.teamHeroes[2][1]; assert(new~=old and old.removed)
     eq(new.abilities[1].level,4); eq(new.abilities[2].level,1); eq(new.items[0],item)
     eq(new.abilities[1].remaining,0); eq(new.abilities[2].remaining,0); eq(item.remaining,0)

@@ -209,6 +209,7 @@
         var heroes = HEROES[side] || [];
         var entry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
         var name = heroes[heroIndex] ? heroes[heroIndex].name : (entry ? entry.name : "");
+        if (!name) { return []; }
         var occurrence = 0;
         for (var index = 0; index < heroIndex; index++) {
             var prior = heroSlots[side.toLowerCase() + "_" + (index + 1)];
@@ -234,6 +235,32 @@
     var lastNativePurchaseHero = "";
     var selectedEquipmentHeroName = "";
     var heroEntityIndices = {};
+    var ruleGeneration = 0;
+
+    function acceptRuleGeneration(data) {
+        if (!data || data.rule_generation === undefined) { return true; }
+        var generation = Number(data.rule_generation);
+        if (!isFinite(generation) || generation < ruleGeneration || generation !== Math.floor(generation)) { return false; }
+        if (generation === ruleGeneration) { return true; }
+        ruleGeneration = generation;
+        closeEditorMenus();
+        RpgConditionCatalog.reset();
+        RpgRuleSync.reset();
+        rulesBySide = { Radiant: {} };
+        heroSlots = {};
+        // Fresh hero snapshots can precede the shop lineup. Discard its old names
+        // too, so the new hero's defaults are cached under the correct identity.
+        HEROES.Radiant = [];
+        HEROES.Dire = [];
+        enemyRosterSignature = null;
+        selectedHeroIndex.Radiant = 0;
+        rowPanels.Radiant.forEach(function (panels) {
+            panels.actionMenu.RemoveAndDeleteChildren();
+            panels.diagnosticLabel.text = "";
+        });
+        renderSide("Radiant");
+        return true;
+    }
 
     function selectNativeHero(heroName) {
         var unitIndex = Number(heroEntityIndices[heroName] || -1);
@@ -495,6 +522,7 @@
         }
         // 动态填充：该英雄全部可用动作（可重复选择）
         menu.RemoveAndDeleteChildren();
+        var menuGeneration = ruleGeneration;
         var actions = getSlotActions(side, selectedHeroIndex[side]);
         for (var i = 0; i < actions.length; i++) {
             (function (actionKey) {
@@ -517,6 +545,7 @@
                 var label = createLabel(option, "ActionOptionLabel", text);
                 label.hittest = false;
                 option.SetPanelEvent("onactivate", function () {
+                    if (menuGeneration !== ruleGeneration) { return; }
                     chooseAction(side, index, actionKey);
                 });
             }(actions[i]));
@@ -812,6 +841,7 @@
     };
 
     function onShopState(data) {
+        if (!acceptRuleGeneration(data)) { return; }
         // Publish the authoritative wallet before optional inventory/menu rendering.
         if (data && data.gold !== undefined) { updateWalletLabel(data.gold); }
         updateRunLives(data);
@@ -1507,6 +1537,7 @@
     }
     var enemyRosterSignature = null;
     function onEnemyRoster(data) {
+        if (!acceptRuleGeneration(data)) { return; }
         var roster = eventArray(data.units);
         var signature = roster.map(function (u) { return u.id + ":" + u.name; }).join(";");
         if (signature === enemyRosterSignature) { return; }
@@ -1621,6 +1652,7 @@
     }
 
     function onBattleState(data) {
+        if (!acceptRuleGeneration(data)) { return; }
         updateBattleCountdown(data);
         updateRunLives(data);
         var previousPhase = phase;
@@ -1821,7 +1853,7 @@
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {
-        if (!data || !data.slot_key) {
+        if (!data || !data.slot_key || !acceptRuleGeneration(data)) {
             return;
         }
         var slotKey = String(data.slot_key);

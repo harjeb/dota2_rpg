@@ -45,6 +45,12 @@ var RpgRuleSync = (function () {
         showFailures();
     }
 
+    function reset() {
+        // Keep requestSerial increasing: delayed replies belong to the old run.
+        pending = {}; latestByKey = {}; failures = {};
+        showFailures();
+    }
+
     function nextRequestId() {
         requestSerial += 1;
         return "rule_" + requestSerial + "_" + Math.floor(Date.now());
@@ -319,6 +325,7 @@ var RpgRuleSync = (function () {
         actionSettings: actionSettings,
         bool: bool,
         forgetHero: forgetHero,
+        reset: reset,
         onResult: onResult,
         fromServer: fromServer,
         list: list,

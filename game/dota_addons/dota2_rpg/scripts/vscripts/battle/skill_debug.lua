@@ -132,6 +132,7 @@ local function clear_run(game)
     game.damageStats = nil
     game.attemptBuybacks, game.encounterSeed = 0, nil
     if game.tacticBridge.ruleService then game.tacticBridge.ruleService.state.rules = {} end
+    game.ruleGeneration = (game.ruleGeneration or 0) + 1
     game.tacticBridge:ResetState()
 end
 local function broadcast(game)
@@ -182,7 +183,7 @@ function Debug.Enter(game, hero, damage)
     game.ownedHeroes, game.lineup, game.heroOrder = {hero}, {hero}, 1
     game.heroData[hero] = {level=30, current_xp=0, skill_points=30, quality="common", order=1, inventory={}}
     ready(game)
-    Log.Write("SkillDebug enter hero=" .. hero .. " level=30 gold=99999 hp=50000 damage=" .. damage)
+    Log.Write("SkillDebug enter hero=" .. hero .. " level=30 gold=99999 hp=50000 damage=" .. damage .. " rule_generation=" .. (game.ruleGeneration or 0))
 end
 function Debug.Exit(game)
     local s = state(game)
@@ -204,7 +205,7 @@ function Debug.Exit(game)
     game:SpawnBattleBarrier()
     game:RollShop()
     broadcast(game)
-    Log.Write("SkillDebug exit normal_level=" .. game.currentLevelId)
+    Log.Write("SkillDebug exit normal_level=" .. game.currentLevelId .. " rule_generation=" .. (game.ruleGeneration or 0))
     return true
 end
 function Debug.Start(game, payload)

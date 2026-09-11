@@ -520,7 +520,7 @@ var RpgConditionCatalog = (function () {
         body.enabled = !options.readOnly;
         $("#RuleSettingsApply").enabled = !options.readOnly && (!strict || !!cap);
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
-            if (options.readOnly) { return; }
+            if (options.readOnly || generation !== editorGeneration) { return; }
             readers.forEach(function (read) { read(); });
             var missing = false;
             [["use", "use_conditions"], ["target", "target_filters"]].forEach(function (spec) {
@@ -543,5 +543,13 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
         root.SetHasClass("Hidden", false);
     }
-    return { movementPreset: movementPreset, groups: groups, abilityLabel: abilityLabel, summary: summary, normalize: normalize, wire: wire, open: open, number: number };
+    function reset() {
+        editorGeneration++;
+        $("#RuleSettings").SetHasClass("Hidden", true);
+        $("#RuleSettingsBody").RemoveAndDeleteChildren();
+        $("#RuleSettingsError").text = "";
+        $("#RuleSettingsApply").enabled = false;
+        $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {});
+    }
+    return { movementPreset: movementPreset, groups: groups, abilityLabel: abilityLabel, summary: summary, normalize: normalize, wire: wire, open: open, reset: reset, number: number };
 }());
