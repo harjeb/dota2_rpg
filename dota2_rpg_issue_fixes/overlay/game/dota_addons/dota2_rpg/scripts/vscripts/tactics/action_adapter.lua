@@ -311,7 +311,7 @@ function ActionAdapter:IsValidTarget(caster, spec, target)
     if spec.cast_type ~= "unit" and not (spec.cast_type == "vector" and spec.vector_mode == "unit") then return true end
     local source = spec.source
     if source == nil then return false end
-    if NativeTargeting.RejectsSelf(source, caster, target) then return false end
+    if NativeTargeting.RejectsTarget(source, caster, target) then return false end
     if UnitFilter ~= nil and source.GetAbilityTargetTeam ~= nil
         and source.GetAbilityTargetType ~= nil and source.GetAbilityTargetFlags ~= nil
         and caster.GetTeamNumber ~= nil then
@@ -321,8 +321,10 @@ function ActionAdapter:IsValidTarget(caster, spec, target)
             types, source:GetAbilityTargetFlags(), caster:GetTeamNumber())
         if not ok or result ~= (UF_SUCCESS or 0) then return false end
     end
-    if source.CastFilterResultTarget ~= nil then
-        local ok, result = pcall(source.CastFilterResultTarget, source, target)
+    local readable, method = pcall(function() return source.CastFilterResultTarget end)
+    if not readable then return false end
+    if method ~= nil then
+        local ok, result = pcall(method, source, target)
         if not ok or result ~= (UF_SUCCESS or 0) then return false end
     end
     return true

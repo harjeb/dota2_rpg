@@ -30,7 +30,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual(manifest["stage_count"], 30)
             self.assertEqual(manifest["unit_configuration_rows"], 125)
             self.assertEqual(manifest["equipment_rows"], 448)
-            self.assertEqual(manifest["unique_units"], 69)
+            self.assertEqual(manifest["unique_units"], 75)
             self.assertEqual(manifest["item_name_count"], 67)
             self.assertEqual(manifest["untranslated_item_ids"], [])
             # Equipment authoring synchronizes actual hero levels from KV.
@@ -56,15 +56,23 @@ class LevelConfigurationExportTests(unittest.TestCase):
                              ("斧王", 1, 8, "aggro_front", "相位鞋", "item_phase_boots", "护腕", "item_bracer"))
             for chapter, unit, health, attack, spell, cooldown in [
                 ("ch10", "npc_dota_hero_centaur", 6000, 16.666667, 16.666667, 4.166667),
-                ("ch20", "npc_dota_hero_spirit_breaker", 10000, 33.333333, 25, 6.666667),
-                ("ch30", "npc_dota_hero_skeleton_king", 16000, 50, 33.333333, 8.333333),
+                ("ch20", "npc_dota_hero_spirit_breaker", 20000, 75, 25, 6.666667),
+                ("ch30", "npc_dota_hero_skeleton_king", 32000, 100, 33.333333, 8.333333),
             ]:
                 bosses = [row for row in records if row["关卡"] == chapter]
                 self.assertEqual(len(bosses), 1, chapter + " must remain a solo Boss")
                 boss = bosses[0]
                 self.assertEqual((boss["单位原生ID"], boss["数量"], boss["是否Boss"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
                                  (unit, 1, "是", health, None, attack, spell, cooldown))
+                self.assertEqual((boss['Boss额外护甲'], boss['Boss魔抗乘算加成%']),
+                                 {'ch10': (None, None), 'ch20': (15, 20), 'ch30': (25, 30)}[chapter])
             self.assertEqual(boss["等级"], 30)
+            for chapter, expected in {'ch11': (3, 2.5, 12, 45), 'ch16': (4, 3.5, 18, 50),
+                                      'ch21': (5.5, 4.5, 24, 55), 'ch26': (7, 6, 30, 60)}.items():
+                for row in records:
+                    if row['关卡'] == chapter:
+                        self.assertEqual(tuple(row[key] for key in ('生命倍率', '攻击倍率', '额外护甲', '魔法抗性%')), expected)
+                        self.assertIn(row['单位原生ID'], EXPORT.UNIT_NAMES)
 
             difference_sheet = book["源文件差异"]
             difference_headers = [cell.value for cell in difference_sheet[1]]

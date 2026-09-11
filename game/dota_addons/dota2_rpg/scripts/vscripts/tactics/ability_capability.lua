@@ -73,6 +73,7 @@ function A.Describe(hero,source,action,options)
                 cap.teams={self=yes(friendly),ally=yes(friendly),enemy=yes(enemy)}
             end
         end
+        if Native.RejectsAllies(source) then cap.teams.ally=0 end
         if Native.RejectsSelf(source,hero,hero) or flag(targetFlags,"DOTA_UNIT_TARGET_FLAG_NOT_SELF") then cap.teams.self=0 end
         if nativeTypes and nativeTypes>0 and nativeTypes~=(DOTA_UNIT_TARGET_CUSTOM or 128)
             and type(DOTA_UNIT_TARGET_HERO)=="number" and type(DOTA_UNIT_TARGET_BASIC)=="number" then

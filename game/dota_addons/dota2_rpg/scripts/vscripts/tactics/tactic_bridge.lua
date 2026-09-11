@@ -275,7 +275,8 @@ function TacticBridge:Install()
 					table.insert(converted, TacticBridge.ConvertLegacyRule(slot, legacy))
 				end
 			end
-			return require("issue_fixes.enemy_rules").CreateForUnit(unit, converted)
+			return require("issue_fixes.enemy_rules").CreateForUnit(unit, converted,
+                self.unitObservation and self.unitObservation.units or getBattleUnits())
 		end
 
 		-- 仅为旧版本当前 Run 内存数据提供迁移回退，不再在开战时覆盖新版规则。

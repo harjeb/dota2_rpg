@@ -109,7 +109,7 @@ local function native_legal(target, spec, ctx)
         return Context.Call(target,"IsOutOfGame") ~= true and Context.Call(target,"IsInvulnerable") ~= true
     end
     local ability = spec.ability or spec.source
-    if ability == nil or NativeTargeting.RejectsSelf(ability, ctx.caster, target) then return false end
+    if ability == nil or NativeTargeting.RejectsTarget(ability, ctx.caster, target) then return false end
     local checked = false
     if spec.target_mode == "unit" or spec.target_mode == "self" then
         local readable, method = pcall(function() return ability.CastFilterResultTarget end)

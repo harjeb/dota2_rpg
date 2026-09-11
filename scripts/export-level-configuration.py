@@ -63,6 +63,10 @@ UNIT_NAMES = {
     "npc_dota_neutral_centaur_khan": "半人马可汗", "npc_dota_neutral_dark_troll_warlord": "黑暗巨魔首领",
     "npc_dota_neutral_gnoll_assassin": "豺狼刺客", "npc_dota_neutral_kobold": "狗头人",
     "npc_dota_neutral_ogre_mauler": "食人魔拳手", "npc_dota_neutral_polar_furbolg_champion": "极地熊怪勇士",
+    "npc_dota_neutral_black_drake": "黑蜉蝣", "npc_dota_neutral_rock_golem": "岩石傀儡",
+    "npc_dota_neutral_granite_golem": "花岗岩傀儡", "npc_dota_neutral_ice_shaman": "寒冰萨满",
+    "npc_dota_neutral_frostbitten_golem": "霜害傀儡", "npc_dota_neutral_big_thunder_lizard": "雷霆蜥蜴",
+    "npc_dota_neutral_small_thunder_lizard": "岚隐兽",
     "npc_dota_neutral_satyr_hellcaller": "萨特地狱使者",
 }
 AI_NAMES = {
@@ -200,6 +204,8 @@ def unit_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
                 "Boss最大生命": as_number(enemy.get("boss_max_health", "")),
                 "Boss生命倍率": as_number(enemy.get("boss_health_multiplier", "")),
                 "Boss攻击伤害+%": as_number(enemy.get("boss_attack_damage_pct", "")),
+                "Boss额外护甲": as_number(enemy.get("boss_bonus_armor", "")),
+                "Boss魔抗乘算加成%": as_number(enemy.get("boss_magic_resistance_bonus_pct", "")),
                 "Boss法术增幅+%": as_number(enemy.get("boss_spell_amp_pct", "")),
                 "Boss冷却减少%": as_number(enemy.get("boss_cooldown_reduction_pct", "")),
                 "装备数量": len(items), "装备合计（中文）": "；".join(item_name(item) for item in items),
@@ -361,7 +367,8 @@ def write_workbook(path: Path, sheets: list[tuple[str, list[dict[str, Any]]]], m
         ("装备明细", "每件装备一行，便于按中文名、原生ID或关卡筛选。"),
         ("单位出现汇总", "按单位汇总当前所有关卡的配置次数、实际累计刷出数量、等级范围与 Boss 出现关卡。"),
         ("AI说明", "simple_nearest=野怪最近目标；aggro_front=前排近距攻击；focus_lowest_hp=优先最低生命；ai_healer_protect=治疗/保护友军。"),
-        ("Boss列", "仅 Boss 行有 Boss最大生命（优先于生命倍率）、攻击伤害、法术增幅、冷却减少数值；这些由 modifier_rpg_boss_power 生效。"),
+        ("Boss列", "仅 Boss 行有 Boss最大生命（优先于生命倍率）、攻击伤害、额外护甲、魔抗乘算加成、法术增幅、冷却减少数值；由 modifier_rpg_boss_power 生效。魔抗加成保留原生/装备魔抗：最终魔抗=1-(1-原魔抗)×(1-加成)，并非最终绝对魔抗。"),
+        ("野怪成长", "生命/攻击倍率在关卡倍率后生效；额外护甲加到关卡缩放后的原生基础护甲；魔法抗性%设置基础魔抗。第11关起所有野怪均使用已验证 IsAncient=1 的原生远古单位。"),
     ]
     for key, value in notes:
         info.append([key, value])

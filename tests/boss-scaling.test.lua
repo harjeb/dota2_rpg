@@ -7,6 +7,8 @@ MODIFIER_PROPERTY_HEALTH_BONUS = 1
 MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE = 2
 MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE = 3
 MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE = 4
+MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS = 5
+MODIFIER_PROPERTY_MAGICAL_RESISTANCE_BONUS = 6
 local server = true
 function IsServer() return server end
 local linked
@@ -68,8 +70,8 @@ for _, tier in ipairs({ {6, 100, 100, 25}, {10, 200, 150, 40}, {16, 300, 200, 50
     assert(power:GetModifierSpellAmplify_Percentage() == tier[3])
     assert(power:GetModifierPercentageCooldown() == tier[4])
     local properties = power:DeclareFunctions()
-    assert(#properties == 4)
-    for index = 1, 4 do assert(properties[index] == index) end
+    assert(#properties == 6)
+    for index = 1, 6 do assert(properties[index] == index) end
     assert(not power:IsHidden() and not power:IsPurgable() and not power:RemoveOnDeath())
     assert(not power:AllowIllusionDuplicate() and power.transmitter)
     assert(Scaling.Apply(hero, config) == power and hero.adds == 1 and power.sent == 1)
@@ -130,7 +132,7 @@ assert(hero:GetMaxHealth() == 200000 and power:GetModifierPercentageCooldown() =
 assert(power:GetModifierSpellAmplify_Percentage() == 1000)
 local plain = unit()
 assert(Scaling.Apply(plain, { tags = { "boss" } }) == nil, "a boss tag without strength config remains baseline")
-for _, health in ipairs({6000, 10000, 16000}) do
+for _, health in ipairs({6000, 20000, 32000}) do
     for _, baseline in ipairs({2000, 18000}) do
         local fixed = unit()
         fixed.baseHealth = baseline
@@ -148,5 +150,41 @@ for _, health in ipairs({6000, 10000, 16000}) do
         Scaling.Apply(fixed, config)
         assert(fixed:GetMaxHealth() == health, "reapplication recalibrates a changed native baseline")
     end
+end
+for _, tier in ipairs({{20000, 75, 15, 20}, {32000, 100, 25, 30}}) do
+    local hero = unit()
+    local config = {tags = {"boss"}, boss_max_health = tier[1], boss_attack_damage_pct = tier[2],
+        boss_bonus_armor = tostring(tier[3]), boss_magic_resistance_bonus_pct = tostring(tier[4])}
+    local power = Scaling.Apply(hero, config)
+    for refresh = 1, 3 do
+        assert(Scaling.Apply(hero, config) == power and hero.adds == 1)
+        assert(power:GetModifierPhysicalArmorBonus() == tier[3])
+        assert(power:GetModifierMagicalResistanceBonus() == tier[4])
+        assert(power:GetModifierTotalDamageOutgoing_Percentage({damage_category = 1}) == tier[2])
+    end
+    hero.alive = false
+    assert(not power:RemoveOnDeath() and power:GetModifierPhysicalArmorBonus() == tier[3])
+    hero.alive = true
+    server = false
+    local client = setmetatable({GetParent = function() return hero end}, Power)
+    client:OnCreated({})
+    client:HandleCustomTransmitterData(power:AddCustomTransmitterData())
+    assert(client:GetModifierPhysicalArmorBonus() == tier[3])
+    assert(client:GetModifierMagicalResistanceBonus() == tier[4])
+    server = true
+    hero.illusion = true
+    assert(power:GetModifierPhysicalArmorBonus() == 0 and power:GetModifierMagicalResistanceBonus() == 0)
+    hero.illusion = false
+    config.boss_bonus_armor, config.boss_magic_resistance_bonus_pct = nil, nil
+    Scaling.Apply(hero, config)
+    assert(power:GetModifierPhysicalArmorBonus() == 0 and power:GetModifierMagicalResistanceBonus() == 0,
+        "refresh removes obsolete defenses")
+end
+for _, field in ipairs({"boss_bonus_armor", "boss_magic_resistance_bonus_pct"}) do
+    for _, bad in ipairs({"invalid", "1e999", -1, 0/0}) do
+        assert(Scaling.Apply(unit(), {tags={"boss"}, [field]=bad}) == nil)
+    end
+    assert(Scaling.Apply(unit(), {tags={"boss"}, [field]=10}) ~= nil,
+        "defense-only boss config is not skipped")
 end
 print("PASS: Boss stat tiers, absolute HP, native properties, refresh, replication, death, eligibility and config bounds")

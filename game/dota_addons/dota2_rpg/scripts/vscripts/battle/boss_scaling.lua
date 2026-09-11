@@ -40,8 +40,10 @@ function BossScaling.Apply(unit, entry)
     local attack = bounded(entry.boss_attack_damage_pct, 0, 0, 1000)
     local spell = bounded(entry.boss_spell_amp_pct, 0, 0, 1000)
     local cooldown = bounded(entry.boss_cooldown_reduction_pct, 0, 0, 80)
+    local armor = bounded(entry.boss_bonus_armor, 0, 0, 1000)
+    local resistance = bounded(entry.boss_magic_resistance_bonus_pct, 0, 0, 80)
     local previous = unit:FindModifierByName(MODIFIER)
-    if targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and not valid(previous) then
+    if targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and armor == 0 and resistance == 0 and not valid(previous) then
         return nil
     end
     unit:CalculateStatBonus(true)
@@ -55,12 +57,14 @@ function BossScaling.Apply(unit, entry)
         attack_damage_pct = attack,
         spell_amp_pct = spell,
         cooldown_reduction_pct = cooldown,
+        bonus_armor = armor,
+        magic_resistance_bonus_pct = resistance,
     })
     if not valid(modifier) then return nil end
     unit:CalculateStatBonus(true)
     unit:SetHealth(unit:GetMaxHealth())
-    print(string.format("[RPG][BossPower] unit=%s max_hp=%d hp_multiplier=%.2f attack_bonus_pct=%.1f spell_amp_pct=%.1f cooldown_reduction_pct=%.1f",
-        unit:GetUnitName(), unit:GetMaxHealth(), hpMultiplier, attack, spell, cooldown))
+    print(string.format("[RPG][BossPower] unit=%s max_hp=%d hp_multiplier=%.2f attack_bonus_pct=%.1f spell_amp_pct=%.1f cooldown_reduction_pct=%.1f bonus_armor=%.1f magic_resistance_bonus_pct=%.1f",
+        unit:GetUnitName(), unit:GetMaxHealth(), hpMultiplier, attack, spell, cooldown, armor, resistance))
     return modifier
 end
 

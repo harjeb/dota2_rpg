@@ -39,6 +39,10 @@ assert(rules[4] == attack, "preserve profile attack priorities and chase policy"
 list = { ability("omniknight_purification", 8, 1) }
 rules = EnemyRules.CreateForUnit(unit, {})
 assert(rules[1].target.team == "ally", "native friendly spell must select allies")
+list = { ability("skeleton_king_reincarnation", 8, 1) }
+rules = EnemyRules.CreateForUnit(unit, {})
+assert(#rules == 1 and rules[1].action.kind == "attack", "enemy WK must not actively cast native Reincarnation")
+assert(#require("issue_fixes.default_rules").CreateForHero(unit) == 2, "player defaults remain untouched")
 list = {}
 assert(#EnemyRules.CreateForUnit(unit, {}) == 1, "creeps without active abilities retain attack fallback")
 print("enemy-rules.test.lua: passed")

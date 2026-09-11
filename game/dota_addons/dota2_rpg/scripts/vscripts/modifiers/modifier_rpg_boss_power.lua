@@ -11,6 +11,8 @@ local function assign(self, values)
     self.attack_damage_pct = tonumber(values.attack_damage_pct) or 0
     self.spell_amp_pct = tonumber(values.spell_amp_pct) or 0
     self.cooldown_reduction_pct = tonumber(values.cooldown_reduction_pct) or 0
+    self.bonus_armor = tonumber(values.bonus_armor) or 0
+    self.magic_resistance_bonus_pct = tonumber(values.magic_resistance_bonus_pct) or 0
 end
 
 function modifier_rpg_boss_power:OnCreated(kv)
@@ -36,6 +38,8 @@ function modifier_rpg_boss_power:AddCustomTransmitterData()
         attack_damage_pct = self.attack_damage_pct,
         spell_amp_pct = self.spell_amp_pct,
         cooldown_reduction_pct = self.cooldown_reduction_pct,
+        bonus_armor = self.bonus_armor,
+        magic_resistance_bonus_pct = self.magic_resistance_bonus_pct,
     }
 end
 
@@ -49,6 +53,8 @@ function modifier_rpg_boss_power:DeclareFunctions()
         MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE,
         MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE,
         MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE,
+        MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS,
+        MODIFIER_PROPERTY_MAGICAL_RESISTANCE_BONUS,
     }
 end
 
@@ -56,6 +62,15 @@ local function valueForRealUnit(self, field)
     local parent = self:GetParent()
     if parent ~= nil and parent.IsIllusion ~= nil and parent:IsIllusion() then return 0 end
     return self[field] or 0
+end
+
+-- Native additive armor and multiplicative MR preserve native/equipment stats.
+function modifier_rpg_boss_power:GetModifierPhysicalArmorBonus()
+    return valueForRealUnit(self, "bonus_armor")
+end
+
+function modifier_rpg_boss_power:GetModifierMagicalResistanceBonus()
+    return valueForRealUnit(self, "magic_resistance_bonus_pct")
 end
 
 function modifier_rpg_boss_power:GetModifierHealthBonus()
