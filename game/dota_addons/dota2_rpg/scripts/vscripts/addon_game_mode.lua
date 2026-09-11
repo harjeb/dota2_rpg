@@ -268,7 +268,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v33-20260911") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v34-20260911") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -441,7 +441,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v33-20260911 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v34-20260911 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 

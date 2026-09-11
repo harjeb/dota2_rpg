@@ -1,0 +1,19 @@
+{
+  "source": "beads_dota2_rpg",
+  "tables": {
+    "issues": 131,
+    "dependencies": 71,
+    "comments": 4,
+    "events": 311,
+    "labels": 0,
+    "config": 13
+  },
+  "completed": [
+    "dota2_rpg-t74",
+    "dota2_rpg-650"
+  ],
+  "followup": [
+    "dota2_rpg-80w"
+  ],
+  "validation": "65/65 offline checks; verify-addon; final CSS UI regressions; one Panorama CSS compiled; UI34 installed114sourcefilesmatch. Native metadata queried read-only; no live healing/layout pixel acceptance."
+}
