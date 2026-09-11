@@ -243,8 +243,8 @@ assert(adapter:CanExecute(caster, spec, {}), "mute permits spells")
 controlled.IsMuted = false
 for _, name in ipairs({"npc_dota_hero_faceless_void", "npc_dota_hero_axe"}) do
     caster.GetUnitName = function() return name end
-    caster.HasModifier = function() return true end
-    assert(adapter:CanExecute(caster, spec, {}), "modifier presence alone never synthesizes a stun")
+    caster.HasModifier = function(_, modifier) return modifier == "modifier_faceless_void_chronosphere_freeze" end
+    assert(adapter:CanExecute(caster, spec, {}), "Chronosphere modifier alone never synthesizes a native stun")
     controlled.IsStunned = true
     assert(not adapter:CanExecute(caster, spec, {}), "Void is not immune to unrelated native stuns")
     controlled.IsStunned = false

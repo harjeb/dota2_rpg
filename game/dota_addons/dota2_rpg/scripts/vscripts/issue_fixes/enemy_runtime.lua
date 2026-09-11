@@ -4,6 +4,7 @@
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 local NeutralAttack = require("tactics/neutral_attack")
+local SustainedCast = require("tactics/sustained_cast")
 local EnemyRuntime = {}
 EnemyRuntime.__index = EnemyRuntime
 
@@ -208,6 +209,7 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
 end
 
 function EnemyRuntime:IssueAttack(unit, target)
+    if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or not NeutralAttack.ValidTarget(unit, target) then return false end
     local function execute()
         return self.execute_order({
@@ -222,6 +224,7 @@ function EnemyRuntime:IssueAttack(unit, target)
 end
 
 function EnemyRuntime:IssueAttackMove(unit)
+    if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or self.fight_center == nil then return false end
 
     return self.execute_order({
@@ -234,6 +237,7 @@ end
 
 function EnemyRuntime:CanFallbackOrder(unit)
     if not is_alive(unit) then return false end
+    if SustainedCast.ActiveAbility(unit) then return false end
     if NeutralAttack.HasTactic(unit) then return false end
     if safe_call(unit, "IsChanneling", false) then return false end
     if safe_call(unit, "IsInAbilityPhase", false) then return false end

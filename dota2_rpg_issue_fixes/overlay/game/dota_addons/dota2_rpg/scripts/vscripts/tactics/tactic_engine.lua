@@ -6,6 +6,7 @@ local Movement = require("tactics/persistent_movement")
 local Positioning = require("tactics/positioning")
 local NativeEvents = require("tactics/native_events")
 local NeutralAttack = require("tactics/neutral_attack")
+local SustainedCast = require("tactics/sustained_cast")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -194,6 +195,9 @@ function TacticEngine:BuildContext(unit, current_time)
 end
 
 function TacticEngine:IsBusy(unit)
+    if SustainedCast.ActiveAbility(unit) then
+        return true, "sustained_cast"
+    end
     if unit.IsChanneling ~= nil and unit:IsChanneling() then
         return true, "channeling"
     end

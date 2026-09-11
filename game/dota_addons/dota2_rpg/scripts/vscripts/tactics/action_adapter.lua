@@ -3,6 +3,7 @@ local VectorTarget = require("tactics/vector_target")
 local Behavior = require("tactics/ability_behavior")
 local NativeTargeting = require("tactics/native_targeting")
 local NeutralAttack = require("tactics/neutral_attack")
+local SustainedCast = require("tactics/sustained_cast")
 local Capability = require("tactics/ability_capability")
 local Lifecycle = require("tactics/action_lifecycle")
 local State = require("tactics/state_controller")
@@ -344,12 +345,13 @@ function ActionAdapter:IsValidTarget(caster, spec, target)
     return true
 end
 
--- Read engine states instead of identifying control by modifier name or area.
--- Chronosphere exceptions (including other Faceless Voids) remain native.
+-- Enemy control remains based on engine states (including Chronosphere exceptions).
+-- Separately protect reviewed native sustained casts from our replacement orders.
 local function native_control(caster, spec, approaching)
     if not is_valid(caster) or (caster.IsAlive ~= nil and not caster:IsAlive()) then
         return false, "caster_invalid"
     end
+    if SustainedCast.ActiveAbility(caster) then return false, "sustained_cast" end
     local function state(method)
         return caster[method] ~= nil and caster[method](caster)
     end

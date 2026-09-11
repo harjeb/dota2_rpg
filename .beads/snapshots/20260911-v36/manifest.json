@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-09-11T21:40:12.159234+08:00",
+  "source": "bd sql; local Dolt store auto-commits; bd sync is deprecated/no-op",
+  "counts": {
+    "issues": 137,
+    "dependencies": 75,
+    "comments": 4,
+    "events": 323,
+    "labels": 0,
+    "config": 13
+  },
+  "completed": [
+    "dota2_rpg-6zg"
+  ],
+  "followup": [
+    "dota2_rpg-jie"
+  ],
+  "evidence": "docs/RUNTIME_FIXES_V36.md"
+}
