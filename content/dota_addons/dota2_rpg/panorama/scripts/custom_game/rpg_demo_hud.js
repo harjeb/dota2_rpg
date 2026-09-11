@@ -605,19 +605,20 @@
         syncHeroRules(side);
     }
 
-    // New rows copy the complete authored rule, including advanced options (up to 32).
+    // Keep the convenient action selection, but start every new row unconfigured.
     function addRuleAtEnd(side) {
         var rules = getSelectedRules(side);
         if (rules.length >= MAX_RULE_ROWS) {
             return;
         }
         var last = rules[rules.length - 1];
-        var source = last || { action: "attack", condition: "always", value: 50,
-            target_attr: "distance", target_side: "nearest",
-            target: "enemy_distance_nearest", forced: false };
-        var copied = JSON.parse(JSON.stringify(source));
-        copied.enabled = true;
-        rules.push(copied);
+        rules.push({
+            action: last ? last.action : "attack", enabled: true,
+            condition: "always", value: 50,
+            target_team: last && last.target_team ? last.target_team : "enemy",
+            use_conditions: [], target_filters: [], target_priorities: [],
+            approach: "range_only", forced: false
+        });
         renderSide(side);
         syncHeroRules(side);
     }
@@ -1170,6 +1171,19 @@
             setItemSellNotice(reason, data.refund, success);
         }
         renderItemShop();
+    }
+
+    function onItemTransferResult(data) {
+        var notice = $("#ItemTransferNotice");
+        if (!notice) { return; }
+        var success = Number(data.ok) === 1;
+        notice.text = success ? $.Localize("#dota2_rpg_item_transfer_done")
+            .replace("{hero}", localizeHeroName(String(data.hero_name || "")))
+            .replace("{item}", itemDisplayName(data.item_name))
+            : String(data.message || $.Localize("#dota2_rpg_item_transfer_failed"));
+        notice.SetHasClass("Hidden", false);
+        notice.SetHasClass("Success", success);
+        notice.SetHasClass("Error", !success);
     }
 
     function renderItemTarget(target) {
@@ -1850,6 +1864,7 @@
     // 服务端数据（商店/关卡/动作槽）通过 CEM 事件推送
     GameEvents.Subscribe("rpg_rule_update_result", RpgRuleSync.onResult);
     GameEvents.Subscribe("rpg_item_sell_result", onItemSellResult);
+    GameEvents.Subscribe("rpg_inventory_transfer_result", onItemTransferResult);
     GameEvents.Subscribe("rpg_shop_state", onShopState);
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {

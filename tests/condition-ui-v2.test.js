@@ -332,9 +332,14 @@ assert(panel(hud, "V2_use2_seconds").text === "57.5", "reopening does not clamp 
 input(hud, "V2_use2_seconds", 999); click(hud, "RuleSettingsClose");
 click(hud, "RadiantRuleSettings0"); assert(panel(hud, "V2_use2_seconds").text === "57.5", "cancel leaves authored rule untouched"); click(hud, "RuleSettingsApply");
 click(hud, "RadiantAddRule0");
-assert(latest(hud, lion, 2).use_condition_3_seconds === 57.5 && latest(hud, lion, 2).target_filter_2_modifier === "modifier_test", "new row deep-copies advanced options");
-click(hud, "RadiantRuleSettings1"); input(hud, "V2_use2_seconds", 7); click(hud, "RuleSettingsApply");
-assert(latest(hud, lion).use_condition_3_seconds === 57.5, "editing copied row does not mutate source");
+assert(latest(hud, lion, 2).use_condition_1_type === "" && latest(hud, lion, 2).target_filter_1_type === ""
+    && latest(hud, lion, 2).target_priority_1_type === "", "new row starts with empty conditions, filters and priorities");
+click(hud, "RadiantRuleSettings1");
+assert(panel(hud, "V2_use0Select").GetChild(0).text === "#dota2_rpg_v2_none", "new condition editor opens blank");
+choice(hud, "V2_use0", "elapsed_gte"); input(hud, "V2_use0_seconds", 7); click(hud, "RuleSettingsApply");
+assert(latest(hud, lion, 2).use_condition_1_seconds === 7, "new row accepts its own conditions");
+assert(latest(hud, lion).use_condition_3_seconds === 57.5 && latest(hud, lion).target_filter_2_modifier === "modifier_test",
+    "editing new row leaves source conditions intact");
 click(hud, "RadiantHeroDyn2");
 click(hud,"RadiantRuleSettings0"); click(hud,"RuleSettingsApply");
 assert(latest(hud, axe).hero_index === 102 && latest(hud, axe).use_condition_1_type === "always", "allied heroes start independently");
@@ -717,6 +722,23 @@ var beforeFightSales=saleEvents().length;
 click(saleHud,"Sell_Stock1");
 assert(!panel(saleHud,"Sell_Stock1").enabled && saleEvents().length===beforeFightSales,"combat cannot emit sale requests");
 
+// Equipment transfer feedback reports the server result and never invents a
+// successful inventory mutation from a click or a result message alone.
+var equipHud = runHud();
+equipHud.subscriptions.rpg_shop_state({owned_text:axe+";"+lion,lineup_text:axe+";"+lion,
+    stock_text:"item_wraith_band|9401"});
+click(equipHud,"ItemTarget_"+lion); click(equipHud,"Equip0");
+var equipRequest=equipHud.sentEvents.filter(function(e){return e.name==="rpg_item_equip";}).slice(-1)[0].payload;
+assert(equipRequest.hero===lion && String(equipRequest.item_index)==="9401","equipment click names highlighted hero and exact entity");
+equipHud.subscriptions.rpg_inventory_transfer_result({ok:0,code:"target_rejected",message:"装备已退回仓库。"});
+assert(panel(equipHud,"ItemTransferNotice").BHasClass("Error")
+    && panel(equipHud,"ItemTransferNotice").text==="装备已退回仓库。" && panel(equipHud,"Stock0"),"failed transfer displays reason and retains authoritative stock");
+equipHud.subscriptions.rpg_inventory_transfer_result({ok:1,hero_name:lion,item_name:"item_wraith_band"});
+assert(panel(equipHud,"ItemTransferNotice").BHasClass("Success") && panel(equipHud,"Stock0"),"transfer result alone does not fabricate item removal");
+equipHud.subscriptions.rpg_shop_state({owned_text:axe+";"+lion,lineup_text:axe+";"+lion,
+    stock_text:"",equipped_text:lion+":item_wraith_band|9401|0"});
+assert(panel(equipHud,"Equipped_"+lion+"_0"),"server snapshot shows original item on the selected hero");
+
 ["marci_companion_run", "marci_bodyguard", "magnataur_empower"].forEach(function (ability) {
     var targetHud=runHud(), hero=ability === "magnataur_empower" ? "npc_dota_hero_magnataur" : "npc_dota_hero_marci";
     targetHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
@@ -859,4 +881,4 @@ assert(!panel(livesHud,"StartBattleButton").enabled
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
 console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, previews and stale field removal");
-console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, copying, 32 rules, respawn/reorder and hero isolation");
+console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation");

@@ -82,15 +82,21 @@ end
 function Unit:IsNull() return not self.valid end
 function Unit:entindex() return self.index end
 function Unit:GetItemInSlot(slot) return self.inventory[slot] end
-function Unit:RemoveItem(item)
+function Unit:TakeItem(item)
     for slot = 0, 15 do
         if self.inventory[slot] == item then
             self.inventory[slot] = nil
-            return
+            return item
         end
     end
 end
+-- Match Dota: RemoveItem destroys; TakeItem only detaches the original entity.
+function Unit:RemoveItem(item)
+    self:TakeItem(item)
+    item.valid = false
+end
 function Unit:AddItem(item)
+    assert(IsValidEntity(item), "cannot attach a deleted native item")
     for slot = 0, 15 do
         if self.inventory[slot] == nil then
             self.inventory[slot] = item
@@ -140,6 +146,105 @@ do
     local full_ok = service:Transfer(0, source, second, target)
     assert_equal(full_ok, false, "full inventory rejected")
     assert_equal(source.inventory[0], second, "rejected item remains in source")
+end
+
+-- Native TakeItem detaches; rejected attachments must preserve the original item,
+-- including when the engine routes it to native stash slots or drops it instead.
+do
+    local Transfer = require("issue_fixes.inventory_transfer")
+    local function fixture()
+        local source, target = Unit.new(), Unit.new()
+        local item = Item.new("item_wraith_band")
+        item.charges, item.secondary, item.cooldown, item.purchaser = 3, 2, 7, source
+        source.inventory[14] = item
+        return Transfer.new(), source, target, item
+    end
+    local function retained(item, purchaser)
+        assert(item.valid, "native item must remain alive")
+        assert_equal(item.charges, 3, "charges preserved")
+        assert_equal(item.secondary, 2, "secondary charges preserved")
+        assert_equal(item.cooldown, 7, "cooldown preserved")
+        assert_equal(item.purchaser, purchaser, "purchaser preserved")
+    end
+    local function dropped(item)
+        local container = allocate({})
+        function container:IsNull() return not self.valid end
+        function container:GetContainedItem() return item end
+        function container:RemoveSelf()
+            self.valid, item.valid = false, false -- destructive populated container
+            error("transfer must never remove a populated container")
+        end
+        item.GetContainer = function() return container end
+        return container
+    end
+
+    local service, source, target, item = fixture()
+    for slot = 0, 5 do target.inventory[slot] = Item.new("full_active_" .. slot) end
+    assert_equal(service:Transfer(0, source, item, target), true, "native stash to backpack")
+    assert_equal(target.inventory[6], item, "backpack holds exact source item")
+    retained(item, source)
+    assert_equal(service:Transfer(0, source, item, target), false, "stale repeated click rejected")
+    assert_equal(target.inventory[6], item, "stale click does not detach recipient item")
+
+    for _, mode in ipairs({ "missing", "no_op", "throw_before", "destroy" }) do
+        service, source, target, item = fixture()
+        source.TakeItem = mode == "missing" and false or function(self, value)
+            if mode == "throw_before" then error("detach rejected") end
+            if mode == "destroy" then Unit.TakeItem(self, value); value.valid = false end
+        end
+        local additions = 0
+        target.AddItem = function() additions = additions + 1 end
+        assert_equal(service:Transfer(0, source, item, target), false, mode .. " detach rejected")
+        assert_equal(additions, 0, mode .. " cannot attach an unverified handle")
+        if mode ~= "destroy" then
+            assert_equal(source.inventory[14], item, mode .. " preserves source")
+            retained(item, source)
+        end
+    end
+
+    service, source, target, item = fixture()
+    source.TakeItem = function(self, value) Unit.TakeItem(self, value); error("after detach") end
+    assert_equal(service:Transfer(0, source, item, target), true, "post-detach exception accepted")
+    retained(item, source)
+
+    service, source, target, item = fixture()
+    target.AddItem = function(self, value) self.inventory[14] = value end
+    local ok, code = service:Transfer(0, source, item, target)
+    assert_equal(ok, false, "target native stash attachment rolled back")
+    assert_equal(code, "target_rejected", "rollback reported")
+    assert_equal(target.inventory[14], nil, "target stash safely detached")
+    assert_equal(source.inventory[0], item, "same item returned to warehouse")
+    retained(item, source)
+
+    service, source, target, item = fixture()
+    target.AddItem = function(self, value) self.inventory[14] = value end
+    target.TakeItem = function() error("rollback detach rejected") end
+    ok, code = service:Transfer(0, source, item, target)
+    assert_equal(code, "target_retained", "failed rollback leaves target ownership intact")
+    assert_equal(target.inventory[14], item, "item retained in target stash")
+    retained(item, source)
+
+    service, source, target, item = fixture()
+    local container
+    target.AddItem = function(_, value) container = dropped(value) end
+    ok, code = service:Transfer(0, source, item, target)
+    assert_equal(code, "preserved_on_ground", "native ground fallback reported")
+    assert(container.valid and container:GetContainedItem() == item, "populated drop retained")
+    retained(item, source)
+
+    service, source, target, item = fixture()
+    target.AddItem = function() error("target rejected") end
+    source.AddItem = function() error("rollback rejected") end
+    local oldCreate = CreateItemOnPositionSync
+    CreateItemOnPositionSync = function(position, value)
+        assert_equal(position, source.position, "fallback at warehouse origin")
+        assert_equal(value, item, "fallback uses exact original entity")
+        return dropped(value)
+    end
+    ok, code = service:Transfer(0, source, item, target)
+    CreateItemOnPositionSync = oldCreate
+    assert_equal(code, "preserved_on_ground", "detached item safely dropped")
+    retained(item, source)
 end
 
 -- Without a hero's learned abilities, defaults still contain one fallback attack.
@@ -429,7 +534,7 @@ do
     assert_equal(service:Transfer(0, source, item, target), true, "post-attach exception retains success")
     assert_equal(target.inventory[0], item, "successful handle retained")
     assert_equal(item.purchaser, nil, "transfer preserves original purchaser")
-    target:RemoveItem(item)
+    target:TakeItem(item)
     source.inventory[0] = item
     target.AddItem = function(self, value)
         value.valid = false

@@ -93,15 +93,29 @@ local function inventory_fingerprint(unit, last_slot)
     return table.concat(rows, "|")
 end
 
-local function remove_dropped_container(item)
-    if not is_valid(item) then
-        return
-    end
+-- TakeItem detaches a live entity. RemoveItem destroys it in the native engine.
+-- Inspect ownership even if the API throws after completing the operation.
+local function detach_item(unit, item, last_slot)
+    if not is_valid(item) or unit.TakeItem == nil then return false end
+    pcall(unit.TakeItem, unit, item)
+    return is_valid(item) and not contains_exact_item(unit, item, last_slot)
+end
 
+local function has_ground_container(item)
     local container = safe_call(item, "GetContainer", nil)
-    if is_valid(container) and container.RemoveSelf ~= nil then
-        pcall(container.RemoveSelf, container)
+    return is_valid(container) and safe_call(container, "GetContainedItem", nil) == item
+end
+
+local function preserve_on_ground(item, source)
+    if not is_valid(item) then return false end
+    if has_ground_container(item) then return true end
+    local origin = safe_call(source, "GetAbsOrigin", nil)
+    if origin ~= nil and CreateItemOnPositionSync ~= nil then
+        local ok, container = pcall(CreateItemOnPositionSync, origin, item)
+        return has_ground_container(item) or (ok and is_valid(container)
+            and safe_call(container, "GetContainedItem", nil) == item)
     end
+    return false
 end
 
 local function send_result(player_id, payload)
@@ -136,6 +150,7 @@ function InventoryTransfer.new(options)
 end
 
 function InventoryTransfer:Fail(player_id, code, message)
+    print("[RPGInventory] failed player=" .. tostring(player_id) .. " code=" .. tostring(code))
     local payload = {
         ok = 0,
         code = tostring(code),
@@ -150,11 +165,15 @@ function InventoryTransfer:Fail(player_id, code, message)
 end
 
 function InventoryTransfer:Succeed(player_id, item, hero, original_name, original_index)
+    print("[RPGInventory] transferred player=" .. tostring(player_id)
+        .. " item=" .. tostring(original_name) .. " entity=" .. tostring(original_index)
+        .. " target=" .. tostring(safe_call(hero, "entindex", -1)))
     if self.on_success ~= nil then pcall(self.on_success, player_id, item, hero) end
     send_result(player_id, {
         ok = 1,
         item_entindex = is_valid(item) and item_entindex(item) or original_index,
         item_name = original_name or item_name(item),
+        hero_name = safe_call(hero, "GetUnitName", ""),
         hero_entindex = safe_call(hero, "entindex", -1),
     })
     return true
@@ -207,19 +226,12 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
     local original_name = item_name(source_item)
     local original_index = item_entindex(source_item)
 
-    -- Move the original handle. Do not CreateItem + delete the source: that was the
-    -- loss-prone path which caused the reported disappearing equipment.
-    pcall(function()
-        source_unit:RemoveItem(source_item)
-    end)
-
-    local still_in_source = contains_exact_item(
-        source_unit,
-        source_item,
-        self.source_last_slot
-    )
-    if still_in_source then
-        return self:Fail(player_id, "detach_failed", "装备仍在仓库中，未执行转交。")
+    print("[RPGInventory] requested player=" .. tostring(player_id)
+        .. " item=" .. original_name .. " entity=" .. tostring(original_index)
+        .. " source=" .. tostring(item_entindex(source_unit))
+        .. " target=" .. tostring(item_entindex(target_hero)))
+    if not detach_item(source_unit, source_item, self.source_last_slot) then
+        return self:Fail(player_id, "detach_failed", "无法安全取出装备，未执行转交。")
     end
 
     pcall(function()
@@ -245,23 +257,21 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         )
     end
 
-    -- Roll back on failure. Remove any dropped container first, then put the same
-    -- handle back into the warehouse. Never destroy it.
-    remove_dropped_container(source_item)
+    -- Keep a native dropped item in its container: deleting a nonempty container
+    -- can destroy its contents. A failed attachment must preserve the same item.
     if is_valid(source_item) then
-        if contains_exact_item(target_hero, source_item, self.source_last_slot) then
-            pcall(target_hero.RemoveItem, target_hero, source_item)
+        if contains_exact_item(target_hero, source_item, self.source_last_slot)
+            and not detach_item(target_hero, source_item, self.source_last_slot) then
+            return self:Fail(player_id, "target_retained", "装备仍在目标英雄储藏栏中，请检查装备列表。")
         end
-        pcall(function()
-            source_unit:AddItem(source_item)
-        end)
-        local source_restored = contains_exact_item(
-            source_unit,
-            source_item,
-            self.source_last_slot
-        )
-        if source_restored then
+        if not has_ground_container(source_item) then
+            pcall(function() source_unit:AddItem(source_item) end)
+        end
+        if contains_exact_item(source_unit, source_item, self.source_last_slot) then
             return self:Fail(player_id, "target_rejected", "目标英雄未接收装备，装备已退回仓库。")
+        end
+        if preserve_on_ground(source_item, source_unit) then
+            return self:Fail(player_id, "preserved_on_ground", "装备未能入栏，已保留在地面，请拾取。")
         end
     end
 
