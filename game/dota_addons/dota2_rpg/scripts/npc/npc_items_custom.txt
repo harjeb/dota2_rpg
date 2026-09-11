@@ -2,6 +2,14 @@
 {
 	"Version" "1"
 
+	// Keep the native Shard; only remove its initial shop availability delay.
+	"item_aghanims_shard"
+	{
+		"ItemStockInitial" "1"
+		"ItemInitialStockTime" "0"
+		"ItemInitialStockTimeTurbo" "0"
+	}
+
 	"item_rpg_scroll_low"
 	{
 		"BaseClass" "item_lua"
