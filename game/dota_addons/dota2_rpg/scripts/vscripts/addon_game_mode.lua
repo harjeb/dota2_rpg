@@ -477,7 +477,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-pursuit-v1 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -3607,8 +3607,8 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 				end
 				hero:SetHealth(hero:GetMaxHealth())
 				hero:SetMana(hero:GetMaxMana())
-				hero:SetIdleAcquire(not hero.rpg_debug_manual_cast)
-				hero:SetAcquisitionRange(hero.rpg_debug_manual_cast and 0 or BATTLE_ACQUISITION_RANGE)
+				hero:SetIdleAcquire(not hero.rpg_debug_manual_cast or hero.rpg_debug_auto_acquire == true)
+				hero:SetAcquisitionRange(hero.rpg_debug_manual_cast and not hero.rpg_debug_auto_acquire and 0 or BATTLE_ACQUISITION_RANGE)
 			end
 		end
 	end
@@ -3616,8 +3616,8 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	-- 野怪关的敌方小怪没有规则行，也要解除开战前的静止状态
 	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
 		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() then
-			unit:SetIdleAcquire(not unit.rpg_debug_manual_cast)
-			unit:SetAcquisitionRange(unit.rpg_debug_manual_cast and 0 or BATTLE_ACQUISITION_RANGE)
+			unit:SetIdleAcquire(not unit.rpg_debug_manual_cast or unit.rpg_debug_auto_acquire == true)
+			unit:SetAcquisitionRange(unit.rpg_debug_manual_cast and not unit.rpg_debug_auto_acquire and 0 or BATTLE_ACQUISITION_RANGE)
 		end
 	end
 

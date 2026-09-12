@@ -142,4 +142,24 @@ for i=0,40 do
 end
 assert(blocked and submits<=7,'stalled intent has bounded retries and yields for target re-evaluation')
 Attack.Release(creep)
+-- Custom creatures have no native camp leash. A force target can mask orders,
+-- and a cached attack target outside melee range is not movement evidence.
+creep.GetClassname=function() return 'npc_dota_creature' end
+creep.x=0;creep.y=0;creep.target=a;creep.idle=false;creep.stunned=false
+a.x=1000;a.alive=true;time=50
+local creatureOrders=0
+local function creatureExecute()
+    assert(creep.forced==nil, 'custom creature receives an ordinary unforced attack order')
+    creatureOrders=creatureOrders+1
+    return true
+end
+assert(Attack.Submit(creep,a,'fallback',creatureExecute))
+assert(creep.forced==nil, 'custom creatures retain Lua ownership without forcing the native target')
+time=52
+assert(Attack.Submit(creep,a,'fallback',creatureExecute))
+assert(creatureOrders==2, 'cached distant attack target cannot hide stalled approach')
+creep.stunned=true;time=54
+Attack.Submit(creep,a,'fallback',creatureExecute)
+assert(creatureOrders==2, 'recovery must respect control and cast windows')
+Attack.Release(creep)
 print('PASS: interleaved real engine/adapter/compat/runtime, stable neutral attacks, single ownership and bounded non-idle recovery')

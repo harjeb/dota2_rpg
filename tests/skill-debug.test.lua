@@ -352,11 +352,17 @@ test("manual diagnostic flag suppresses both real script AI order paths",functio
     local enemy=g.battleManager.teamHeroes[3][1]
     eq(enemy.rpg_debug_manual_cast,true)
     eq(enemy.rpg_debug_auto_stomp,true)
+    -- Sandbox default after the stomp fix: tactic attack, chase and positioning
+    -- open; fallback and auto-acquire stay closed.
+    eq(enemy.rpg_debug_tactic_attack,true)
+    eq(enemy.rpg_debug_chase,true); eq(enemy.rpg_debug_positioning,true)
+    eq(enemy.rpg_debug_fallback,false); eq(enemy.rpg_debug_auto_acquire,false)
     local Engine=require("tactics.tactic_engine")
     enemy.rpg_debug_auto_stomp=false
     -- The previous manual-only baseline still short-circuits evaluation.
     Engine:EvaluateUnit(enemy,{},0)
     enemy.rpg_debug_auto_stomp=true
+    enemy.rpg_debug_tactic_attack=false
     local engine=setmetatable({actions={Resolve=function() return {logical_id="attack"} end}}, {__index=Engine})
     local ok,why=engine:TryRule(enemy,{}, {}, {action={kind="attack"}},1)
     eq(ok,false); eq(why,"debug_spell_only")
@@ -369,6 +375,76 @@ test("manual diagnostic flag suppresses both real script AI order paths",functio
     enemy.SetAcquisitionRange=function(self,v) self.acquisition=v end
     runtime:RemovePrepareRestrictions(enemy)
     eq(enemy.idleAcquire,false); eq(enemy.acquisition,0)
+end)
+test("step 1 reopens the tactic attack only while the spell stays castable",function()
+    local f,g=fixture(); f:enter()
+    local enemy=g.battleManager.teamHeroes[3][1]
+    local Engine=require("tactics.tactic_engine")
+    -- The stomp still passes with the step-1 flag on, because the spell branch
+    -- is unconditional; the flag only adds the attack branch.
+    local function engineFor(id,kind)
+        return setmetatable({actions={
+            Resolve=function() return {logical_id=id,kind=kind,target_mode="unit"} end,
+            CanExecute=function() return true end,
+            IsInRange=function() return false end,
+        },conditions={
+            EvaluateUseConditions=function() return true end,
+        },selector={
+            SelectUnit=function() return {entindex=function() return 1 end} end,
+        }},{__index=Engine})
+    end
+    -- A tactic attack is now admissible: it proceeds past debug_spell_only and
+    -- fails only on range, proving the sandbox gate no longer rejected it.
+    local attack=engineFor("centaur_hoof_stomp","attack")
+    local ok,why=attack:TryRule(enemy,{}, {}, {action={kind="attack"}},1)
+    eq(ok,false); eq(why,"out_of_range")
+    -- Any other ability is still blocked while only the stomp is whitelisted.
+    local other=engineFor("some_other_ability","ability")
+    local ok2,why2=other:TryRule(enemy,{}, {}, {action={kind="ability"}},1)
+    eq(ok2,false); eq(why2,"debug_spell_only")
+    -- Chase is open in the current sandbox step. Positioning is a separate path
+    -- with its own gate, so disable it here to assert the chase branch itself:
+    -- an out-of-range action now starts a chase instead of failing on range.
+    eq(enemy.rpg_debug_chase,true)
+    local chasing=engineFor("centaur_hoof_stomp","attack")
+    chasing.actions.IssueApproach=function() return true end
+    enemy.rpg_debug_positioning=false
+    enemy.GetAbsOrigin=enemy.GetAbsOrigin or function() return {x=0,y=0,z=0} end
+    local state={}
+    local chaseRule={action={kind="attack"}, approach="allow_approach"}
+    local ok3=chasing:TryRule(enemy,state, {now=0}, chaseRule,1)
+    enemy.rpg_debug_positioning=true
+    eq(ok3,true); eq(state.chase ~= nil,true,"out-of-range action starts a chase once chase is open")
+    -- Fallback attack and auto-acquire stay suppressed (step 3 and 4 closed).
+    eq(Engine:ExecuteFallback(enemy,{},{}),false)
+    local runtime=require("issue_fixes.enemy_runtime").new({execute_order=function() error("step 1 must not issue runtime orders") end,
+        fight_center={x=0,y=0,z=0}})
+    eq(runtime:IssueAttack(enemy,g.battleManager.teamHeroes[2][1]),false)
+    eq(runtime:IssueAttackMove(enemy),false)
+    enemy.SetIdleAcquire=function(self,v) self.idleAcquire=v end
+    enemy.SetAcquisitionRange=function(self,v) self.acquisition=v end
+    runtime:RemovePrepareRestrictions(enemy)
+    eq(enemy.idleAcquire,false); eq(enemy.acquisition,0,"auto-acquire range stays 0 in step 1")
+    -- Opening the step-4 flag is the only thing that restores native acquisition.
+    enemy.rpg_debug_auto_acquire=true
+    runtime:RemovePrepareRestrictions(enemy)
+    eq(enemy.idleAcquire,true); eq(enemy.acquisition,1800)
+end)
+test("order attribution records the source that claims the target",function()
+    local f,g=fixture(); f:enter()
+    local enemy=g.battleManager.teamHeroes[3][1]
+    local Debug2=Debug
+    local target=g.battleManager.teamHeroes[2][1]
+    target.entindex=function() return 777 end
+    Debug2.NoteOrder(enemy,"tactic:centaur_hoof_stomp",target)
+    eq(enemy.rpg_debug_last_order_source,"tactic:centaur_hoof_stomp")
+    eq(enemy.rpg_debug_last_order_target,777)
+    Debug2.NoteOrder(enemy,"runtime_fallback_attack",nil)
+    eq(enemy.rpg_debug_last_order_source,"runtime_fallback_attack")
+    eq(enemy.rpg_debug_last_order_target,-1)
+    -- The state trace must surface the attribution without throwing.
+    local snapshot=Debug2.TraceTarget(g,enemy,"attribution")
+    eq(snapshot.source,"runtime_fallback_attack")
 end)
 test("manual stomp exception is exact and passes the real combat filter",function()
     local f,g=fixture(); f:enter(); g.phase="fight"

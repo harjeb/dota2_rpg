@@ -30,4 +30,89 @@
         "BountyGoldMin"             "0"
         "BountyGoldMax"             "0"
     }
+
+    //----------------------------------------------------------------------
+    // 战斗野怪：自定义 npc_dota_creature 版本
+    //
+    // 为什么不直接用引擎原生的 npc_dota_neutral_*：
+    //   原生野怪的基类是 npc_dota_creep_neutral（无玩家 owner）。引擎不接受
+    //   对这类单位下发的脚本施法订单 —— ExecuteOrderFromTable 返回成功、不报错，
+    //   但技能不进入冷却、不扣法力、没有施法前摇，战术规则于是无限重试。
+    //   实机证据（v44，ch01 可汗）：rule_executed 每 0.5 秒一次、cd 恒为 0，
+    //   而同一段代码在 npc_dota_creature 单位（沙箱测试怪）上完全正常。
+    //   原生中立单位还带返营 AI，会让单位在接近途中被拉回营地。
+    //
+    // 数值全部照抄引擎 scripts/npc/npc_units.txt 里的同名原生单位，只有
+    // BaseClass 与 IsNeutralUnitType / TeamName 不同 —— 后两者由
+    // CreateUnitByName 与战斗系统接管。
+    //----------------------------------------------------------------------
+    "npc_dota_neutral_centaur_khan"
+    {
+        "BaseClass"                 "npc_dota_creature"
+        "Model"                     "models/creeps/neutral_creeps/n_creep_centaur_lrg/n_creep_centaur_lrg.vmdl"
+        "SoundSet"                  "n_creep_Melee"
+        "Level"                     "5"
+        "ModelScale"                "1"
+        "Ability1"                  "centaur_khan_war_stomp"
+        "ArmorPhysical"             "4"
+        "MagicalResistance"         "0"
+        "AttackCapabilities"        "DOTA_UNIT_CAP_MELEE_ATTACK"
+        "AttackDamageMin"           "49"
+        "AttackDamageMax"           "55"
+        "AttackRate"                "2"
+        "BaseAttackSpeed"           "135"
+        "AttackAnimationPoint"      "0.3"
+        "AttackAcquisitionRange"    "500"
+        "AttackRange"               "100"
+        "RingRadius"                "80"
+        "HealthBarOffset"           "220"
+        "MovementCapabilities"      "DOTA_UNIT_CAP_MOVE_GROUND"
+        "MovementSpeed"             "320"
+        "MovementTurnRate"          "0.9"
+        "StatusHealth"              "1100"
+        "StatusHealthRegen"         "1"
+        "StatusMana"                "200"
+        "StatusManaRegen"           "1"
+        "VisionDaytimeRange"        "800"
+        "VisionNighttimeRange"      "800"
+        "BountyXP"                  "90"
+        "BountyGoldMin"             "54"
+        "BountyGoldMax"             "60"
+    }
+
+    "npc_dota_neutral_ogre_mauler"
+    {
+        "BaseClass"                 "npc_dota_creature"
+        "Model"                     "models/creeps/neutral_creeps/n_creep_ogre_med/n_creep_ogre_med.vmdl"
+        "SoundSet"                  "n_creep_Melee"
+        "Level"                     "2"
+        "ModelScale"                "0.90"
+        "Ability1"                  "ogre_bruiser_ogre_smash"
+        "ArmorPhysical"             "1"
+        "MagicalResistance"         "0"
+        "AttackCapabilities"        "DOTA_UNIT_CAP_MELEE_ATTACK"
+        "AttackDamageMin"           "22"
+        "AttackDamageMax"           "24"
+        "AttackRate"                "2"
+        "BaseAttackSpeed"           "150"
+        "AttackAnimationPoint"      "0.3"
+        "AttackAcquisitionRange"    "500"
+        "AttackRange"               "100"
+        "RingRadius"                "60"
+        "HealthBarOffset"           "190"
+        "MovementCapabilities"      "DOTA_UNIT_CAP_MOVE_GROUND"
+        "MovementSpeed"             "270"
+        "MovementTurnRate"          "0.9"
+        "StatusHealth"              "800"
+        "StatusHealthRegen"         "0.5"
+        // Keep the configured custom-creature mana pool. Native Ogre Smash
+        // currently costs zero mana; this pool is not required to cast it.
+        "StatusMana"                "200"
+        "StatusManaRegen"           "1"
+        "VisionDaytimeRange"        "800"
+        "VisionNighttimeRange"      "800"
+        "BountyXP"                  "32"
+        "BountyGoldMin"             "22"
+        "BountyGoldMax"             "26"
+    }
 }

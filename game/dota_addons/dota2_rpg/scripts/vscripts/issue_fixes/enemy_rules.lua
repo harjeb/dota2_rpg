@@ -2,6 +2,7 @@
 -- profile slots (ability_1 can be a heal on one hero and a nuke on another).
 local Defaults = require("issue_fixes.default_rules")
 local Items = require("issue_fixes.enemy_item_rules")
+local NeutralSpells = require("tactics/neutral_spells")
 local EnemyRules = {}
 
 function EnemyRules.CreateForUnit(unit, profileRules, opponents)
@@ -32,7 +33,10 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
         else
             basics[#basics + 1] = rule
         end
-        if rule.target.team == "self" then
+        local centered_radius = NeutralSpells.Radius(ability)
+        if centered_radius ~= nil then
+            rule.use_conditions = { { type = "nearby_enemies_gte", radius = centered_radius, value = 1 } }
+        elseif rule.target.team == "self" then
             local radius = ability and ability.GetAOERadius and tonumber(ability:GetAOERadius()) or 0
             if radius > 0 then
                 rule.use_conditions = { { type = "nearby_enemies_gte", radius = radius, value = 1 } }

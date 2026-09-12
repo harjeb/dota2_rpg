@@ -6,6 +6,11 @@ local C = require("tactics/condition_context")
 local M = {}
 local function call(u,k,...) return C.Call(u,k,...) end
 local function now() return GameRules and GameRules.GetGameTime and GameRules:GetGameTime() or 0 end
+local function needs_force(unit)
+    -- Custom creatures have no native camp leash; ordinary attack orders start
+    -- pursuit without a forced target masking later movement or spell orders.
+    return call(unit,"GetClassname") ~= "npc_dota_creature"
+end
 function M.IsNeutral(unit)
     local name = tostring(call(unit,"GetUnitName") or "")
     return name:match("^npc_dota_neutral_")~=nil or name=="npc_rpg_skill_test_target"
@@ -49,7 +54,11 @@ local function progressing(unit,target,state)
     local p,q=position(unit),position(target)
     local old=state.position
     state.position=p
-    if call(unit,"GetAttackTarget")==target then return true end
+    if call(unit,"GetAttackTarget")==target and p and q then
+        local range=tonumber(call(unit,"Script_GetAttackRange")) or 0
+        range=range+(tonumber(call(unit,"GetHullRadius")) or 0)+(tonumber(call(target,"GetHullRadius")) or 0)
+        if (p.x-q.x)^2+(p.y-q.y)^2<=range^2 then return true end
+    end
     local attack=unit.rpgTacticsEvents and unit.rpgTacticsEvents.attack
     if attack and attack.target==target and attack.time>(state.release_time or -math.huge) then
         state.release_time=attack.time
@@ -80,7 +89,7 @@ function M.Submit(unit,target,owner,execute)
             if progress or waiting then s.progress=t;s.retries=0 end
             local recovery=math.max(1.5,(tonumber(call(unit,"GetSecondsPerAttack",false)) or 0)+.25)
             local idle=call(unit,"IsIdle")==true
-            local lost=not progress and type(unit.GetForceAttackTarget)=="function" and call(unit,"GetForceAttackTarget")~=target
+            local lost=needs_force(unit) and not progress and type(unit.GetForceAttackTarget)=="function" and call(unit,"GetForceAttackTarget")~=target
             if waiting or (not idle and not lost and t-math.max(s.progress,s.submitted)<recovery) then return true,"attack_persisted" end
             -- Do not retry multiple times per engine/fallback tick, including
             -- native rejection that leaves the unit idle with a cached target.
@@ -106,7 +115,7 @@ function M.Submit(unit,target,owner,execute)
     claim(unit,s,owner)
     s.requested=t;s.submitted=t
     -- submitted provides recovery grace; progress changes only on observation.
-    call(unit,"SetForceAttackTarget",target)
+    call(unit,"SetForceAttackTarget",needs_force(unit) and target or nil)
     if execute()==false then M.Release(unit);return false,"order_rejected" end
     return true
 end

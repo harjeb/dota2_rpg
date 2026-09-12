@@ -38,6 +38,14 @@ local function unit_index(unit)
     return tonumber(safe_call(unit, "entindex", -1)) or -1
 end
 
+-- Sandbox attribution for the EnemyRuntime order paths. Only active for units
+-- flagged by the skill sandbox, so ordinary battles pay nothing.
+local function note_order(unit, source, target)
+    if is_valid(unit) and unit.rpg_debug_manual_cast then
+        require("battle.skill_debug").NoteOrder(unit, source, target)
+    end
+end
+
 local function distance_2d(a, b)
     local pa = safe_call(a, "GetAbsOrigin", nil)
     local pb = safe_call(b, "GetAbsOrigin", nil)
@@ -202,16 +210,24 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
         end
     end
 
-    safe_call(unit, "SetIdleAcquire", nil, not unit.rpg_debug_manual_cast and not is_native_neutral(unit))
-    safe_call(unit, "SetAcquisitionRange", nil, unit.rpg_debug_manual_cast and 0 or self.acquisition_range)
+    -- Recovery step 4 (auto-acquire): idle acquisition and the native
+    -- acquisition range are the last two sources reopened in the sandbox.
+    -- Until then the unit only acts on orders the tactic engine submits.
+    safe_call(unit, "SetIdleAcquire", nil, unit.rpg_debug_auto_acquire == true
+        or (not unit.rpg_debug_manual_cast and not is_native_neutral(unit)))
+    safe_call(unit, "SetAcquisitionRange", nil, unit.rpg_debug_manual_cast
+        and (unit.rpg_debug_auto_acquire and self.acquisition_range or 0) or self.acquisition_range)
     safe_call(unit, "SetForceAttackTarget", nil, nil)
     NeutralAttack.Release(unit)
 end
 
 function EnemyRuntime:IssueAttack(unit, target)
-    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
+    -- Recovery step 3: EnemyRuntime fallback attacks stay closed in the sandbox
+    -- until rpg_debug_fallback is set.
+    if is_valid(unit) and unit.rpg_debug_manual_cast and not unit.rpg_debug_fallback then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or not NeutralAttack.ValidTarget(unit, target) then return false end
+    note_order(unit, "runtime_fallback_attack", target)
     local function execute()
         return self.execute_order({
             UnitIndex = unit_index(unit),
@@ -225,9 +241,10 @@ function EnemyRuntime:IssueAttack(unit, target)
 end
 
 function EnemyRuntime:IssueAttackMove(unit)
-    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
+    if is_valid(unit) and unit.rpg_debug_manual_cast and not unit.rpg_debug_fallback then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or self.fight_center == nil then return false end
+    note_order(unit, "runtime_fallback_attack_move", nil)
 
     return self.execute_order({
         UnitIndex = unit_index(unit),
@@ -238,7 +255,7 @@ function EnemyRuntime:IssueAttackMove(unit)
 end
 
 function EnemyRuntime:CanFallbackOrder(unit)
-    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
+    if is_valid(unit) and unit.rpg_debug_manual_cast and not unit.rpg_debug_fallback then return false end
     if not is_alive(unit) then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if NeutralAttack.HasTactic(unit) then return false end

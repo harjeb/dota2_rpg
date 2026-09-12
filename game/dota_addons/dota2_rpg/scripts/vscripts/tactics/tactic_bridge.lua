@@ -448,12 +448,18 @@ function TacticBridge:Install()
 			get_action_use_count = function(target, logicalId)
 				return self.combatMemory:GetActionUseCount(target, resolveActionName(target, logicalId))
 			end,
-			record_action_order = function(target, logicalId, _)
+			record_action_order = function(target, logicalId, order_target)
 				local name = resolveActionName(target, logicalId)
                 self.combatMemory:RecordActionUse(target, name)
                 -- Fresh spawns must not inherit history from recycled entity indices.
                 self.lastActionOrders[target] = self.lastActionOrders[target] or {}
                 self.lastActionOrders[target][name] = GameRules:GetGameTime()
+                -- Sandbox attribution: name the order source that just executed,
+                -- so a stomp that never lands can be pinned on the order that
+                -- overwrote it instead of only showing "ability did not fire".
+                if target ~= nil and target.rpg_debug_manual_cast then
+                    require("battle.skill_debug").NoteOrder(target, "tactic:" .. tostring(logicalId), order_target)
+                end
 			end,
 			resolve_action_name = resolveActionName,
 		}

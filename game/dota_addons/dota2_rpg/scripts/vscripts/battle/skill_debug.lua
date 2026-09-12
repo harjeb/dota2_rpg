@@ -8,6 +8,10 @@ local ItemCooldowns = require("battle.item_cooldowns")
 local cleanup = { require("battle.tempest_double"), require("tactics.special_targets"),
     require("battle.summon_behavior"), require("issue_fixes.tiny_tree") }
 local function valid(unit) return unit ~= nil and (not unit.IsNull or not unit:IsNull()) end
+local function entity_index(entity)
+    if entity ~= nil and entity.entindex ~= nil then return entity:entindex() end
+    return -1
+end
 local function state(game) return game.skillDebug end
 local function safe(game, name, fn)
     if game.RunLifecycleStep then return game:RunLifecycleStep("debug_" .. name, fn) end
@@ -32,23 +36,47 @@ end
 function Debug.TraceTarget(game, unit, event)
     if not valid(unit) then return end
     local ability = unit.FindAbilityByName and unit:FindAbilityByName("centaur_hoof_stomp")
+    local cd = inspect(ability, "GetCooldownTimeRemaining")
+    local snapshot = {
+        cd = cd, phase = game.phase, cast_serial = (state(game) or {}).castSerial,
+        ability_phase = inspect(ability, "IsInAbilityPhase"),
+        -- Order attribution: which side currently owns this unit's order.
+        source = unit.rpg_debug_last_order_source or "none",
+        target = tostring(unit.rpg_debug_last_order_target or -1),
+    }
     Log.Write("SkillDebug target_state event=" .. event .. " phase=" .. tostring(game.phase)
         .. " unit_level=" .. inspect(unit, "GetLevel")
         .. " ability_level=" .. inspect(ability, "GetLevel")
         .. " mana=" .. inspect(unit, "GetMana") .. "/" .. inspect(unit, "GetMaxMana")
-        .. " cooldown=" .. inspect(ability, "GetCooldownTimeRemaining")
-        .. " ability_phase=" .. inspect(ability, "IsInAbilityPhase")
+        .. " cooldown=" .. cd
+        .. " ability_phase=" .. snapshot.ability_phase
         .. " channeling=" .. inspect(unit, "IsChanneling")
         .. " alive=" .. inspect(unit, "IsAlive")
         .. " ai_paused=" .. tostring(unit.rpg_debug_manual_cast == true)
         .. " auto_stomp=" .. tostring(unit.rpg_debug_auto_stomp == true)
+        .. " tactic_attack=" .. tostring(unit.rpg_debug_tactic_attack == true)
+        .. " chase=" .. tostring(unit.rpg_debug_chase == true)
+        .. " fallback=" .. tostring(unit.rpg_debug_fallback == true)
+        .. " auto_acquire=" .. tostring(unit.rpg_debug_auto_acquire == true)
         .. " castable=" .. inspect(ability, "IsFullyCastable")
         .. " hidden=" .. inspect(ability, "IsHidden")
         .. " activated=" .. inspect(ability, "IsActivated")
         .. " silenced=" .. inspect(unit, "IsSilenced")
         .. " stunned=" .. inspect(unit, "IsStunned")
         .. " command_restricted=" .. inspect(unit, "IsCommandRestricted")
-        .. " controllable=" .. inspect(unit, "IsControllableByPlayer", game.playerId))
+        .. " controllable=" .. inspect(unit, "IsControllableByPlayer", game.playerId)
+        .. " order_source=" .. tostring(snapshot.source)
+        .. " order_target=" .. tostring(snapshot.target))
+    return snapshot
+end
+-- Records who issued the latest order on the target and what it was aimed at.
+-- Called by every order site (tactic attack, chase, fallback, native engine) so
+-- a stomp that never fires can be attributed to the order that overwrote it.
+function Debug.NoteOrder(unit, source, target)
+    if not valid(unit) then return end
+    unit.rpg_debug_last_order_source = tostring(source or "unknown")
+    unit.rpg_debug_last_order_target = target ~= nil and entity_index(target) or -1
+    unit.rpg_debug_last_order_time = GameRules and GameRules.GetGameTime and GameRules:GetGameTime() or 0
 end
 function Debug.AllowManualCast(game, order)
     local s = state(game)
@@ -363,6 +391,13 @@ function Debug.Install(game)
                 unit:SetBaseDamageMin(state(self).damage); unit:SetBaseDamageMax(state(self).damage)
                 unit.rpg_debug_manual_cast = true
                 unit.rpg_debug_auto_stomp = true
+                -- 技能与战术普攻已各自独立验证通过（踩踏的静默吞单已在
+                -- action_adapter 里正式修掉），追击与走位一并放开，用来验证
+                -- "接近 -> 踩 -> 平A -> 冷却到点再踩" 的完整循环。
+                -- 只有 fallback / auto-acquire 仍关闭，避免原生 AI 干扰观察。
+                unit.rpg_debug_tactic_attack = true
+                unit.rpg_debug_chase, unit.rpg_debug_positioning = true, true
+                unit.rpg_debug_fallback, unit.rpg_debug_auto_acquire = false, false
                 -- Single-variable comparison: revoke control, retain spell-only AI.
                 -- Enemy team and owner remain unchanged.
                 unit:SetControllableByPlayer(self.playerId, false)

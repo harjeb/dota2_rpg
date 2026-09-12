@@ -7,6 +7,8 @@ local SustainedCast = require("tactics/sustained_cast")
 local Capability = require("tactics/ability_capability")
 local Lifecycle = require("tactics/action_lifecycle")
 local State = require("tactics/state_controller")
+local Context = require("tactics/condition_context")
+local NeutralSpells = require("tactics/neutral_spells")
 local ActionAdapter = {}
 ActionAdapter.__index = ActionAdapter
 
@@ -18,13 +20,37 @@ local function release_fallback_target(caster)
     NeutralAttack.Release(caster)
 end
 
--- moves 表示这个动作会把单位带走（接近后再施放）。会移动单位的动作必须先放弃追击，
--- 否则强迫攻击会和位移指令互相拉扯；但"原地施法"不移动单位，此时 Release 会
--- SetForceAttackTarget(nil)，中立单位一旦失去攻击目标就被原版返营拖回营地，
--- 等回退逻辑重新咬住目标再往前走——观感就是"往前一下往后一下"
--- （实机证据：半人马可汗自施放战争践踏，x 坐标 309→331→310 往复）。
+-- Preserve Lua attack ownership while submitting an in-place spell. Legacy
+-- native neutrals still need their camp-leash target restored after submission;
+-- custom creatures use ordinary attack orders and normally have no force target.
+local function suppress_force_target(caster, spec)
+    if spec.kind ~= "ability" or not NeutralAttack.IsNeutral(caster) then return nil end
+    -- Only no-target and reviewed centered point spells are in-place casts.
+    if spec.cast_type ~= "none" and not spec.self_centered_point then return nil end
+    if type(caster.GetForceAttackTarget) ~= "function" or type(caster.SetForceAttackTarget) ~= "function" then return nil end
+    local previous = Context.Call(caster, "GetForceAttackTarget")
+    if previous == nil then return nil end
+    caster:SetForceAttackTarget(nil)
+    return previous
+end
+
+-- Restore on all exits, including adapter rejection and exceptions.
+local function restore_force_target(caster, spec, accepted)
+    local held = caster.rpg_force_target_held
+    if held == nil then return end
+    caster.rpg_force_target_held = nil
+    if is_valid(held) then caster:SetForceAttackTarget(held) end
+    if caster.rpg_debug_manual_cast then
+        require("issue_fixes.runtime_log").Write("ForceTargetRelease source=" .. tostring(spec.logical_id)
+            .. " caster=" .. tostring(caster:entindex())
+            .. " restored=" .. tostring(is_valid(held) and held:entindex() or -1)
+            .. " accepted=" .. tostring(accepted == true))
+    end
+end
+
 local function own_attack_target(caster, spec, target, moves)
     if not moves and spec.kind == "ability" and NeutralAttack.IsNeutral(caster) then
+        caster.rpg_force_target_held = suppress_force_target(caster, spec)
         return
     end
     if spec.kind ~= "attack" or not NeutralAttack.IsNeutral(caster) then
@@ -298,12 +324,16 @@ function ActionAdapter:Resolve(caster, action, ctx)
         return nil, "unsupported_target_mode"
     end
 
+    local self_centered_point = cast_type == "point" and NeutralSpells.IsSelfPoint(source)
+    if self_centered_point then target_mode = "self" end
+
     return {
         kind = action.kind,
         logical_id = logical_id,
         target_mode = target_mode,
         target_team = action.target_team,
         cast_type = cast_type,
+        self_centered_point = self_centered_point,
         vector_mode = cast_type == "vector" and VectorTarget.NativeMode(source) or nil,
         desired_toggle_state = action.desired_toggle_state ~= false,
         desired_autocast_state = action.desired_autocast_state,
@@ -516,6 +546,14 @@ local function unsupported_geometry(spec)
 end
 
 function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
+    local ok, first, second = pcall(self.IssueOrder, self, caster, spec, target_or_point, ctx)
+    -- Restore a temporarily suppressed native target on every exit path.
+    restore_force_target(caster, spec, ok and first == true)
+    if not ok then return false, "issue_error" end
+    return first, second
+end
+
+function ActionAdapter:IssueOrder(caster, spec, target_or_point, ctx)
     local allowed, reason = native_control(caster, spec, false)
     if not allowed then return false, reason end
     if unsupported_geometry(spec) then return false, "special_adapter_required" end
@@ -557,7 +595,9 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         return false, "invalid_native_target"
     end
     if spec.cast_type == "point" and spec.source ~= nil and spec.source.CastFilterResultLocation ~= nil then
-        local ok, result = pcall(spec.source.CastFilterResultLocation, spec.source, target_or_point)
+        local point = target_or_point ~= nil and target_or_point.GetAbsOrigin ~= nil
+            and target_or_point:GetAbsOrigin() or target_or_point
+        local ok, result = pcall(spec.source.CastFilterResultLocation, spec.source, point)
         if not ok or result ~= (UF_SUCCESS or 0) then return false, "invalid_native_location" end
     end
     own_attack_target(caster, spec, target_or_point, false)

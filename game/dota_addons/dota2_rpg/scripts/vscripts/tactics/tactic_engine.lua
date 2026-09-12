@@ -327,6 +327,10 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
         end
         return ctx.caster, ctx.caster, nil
     elseif spec.target_mode == "unit" or spec.target_mode == "self" then
+        -- A centered point is a location, not a native friendly unit target.
+        if spec.self_centered_point then
+            return ctx.caster:GetAbsOrigin(), ctx.caster, nil
+        end
         local target, reason = self.selector:SelectUnit(rule, spec, ctx)
         return target, target, reason
     end
@@ -340,8 +344,14 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     if spec == nil then
         return false, resolve_reason
     end
+    -- Sandbox isolation: walk back one AI path at a time so a regression can be
+    -- attributed to the exact order source that reclaims the cast.
+    --   step 0 (default)      spell only          -> rpg_debug_auto_stomp
+    --   step 1                + tactic basic attack -> rpg_debug_tactic_attack
+    -- Chase/fallback/auto-acquire stay closed until their own flag is set.
     if unit.rpg_debug_manual_cast and (not unit.rpg_debug_auto_stomp
-        or spec.logical_id ~= "centaur_hoof_stomp") then
+        or (spec.logical_id ~= "centaur_hoof_stomp"
+            and not (unit.rpg_debug_tactic_attack and spec.kind == "attack"))) then
         return false, "debug_spell_only"
     end
 
@@ -367,7 +377,8 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     if spec.logical_id == "sustained_move" then
         return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
     end
-    if not unit.rpg_debug_manual_cast and Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
+    if (not unit.rpg_debug_manual_cast or unit.rpg_debug_positioning)
+        and Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
         state.chase = nil
         state.posture_order = {owns_order=true, expires=ctx.now+self.tick_interval*2}
         -- The next attack must not be suppressed as a duplicate of the order
@@ -380,7 +391,12 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return self:IssueAction(unit, state, ctx, rule, rule_index, spec, target_or_point, anchor)
     end
 
-    if unit.rpg_debug_manual_cast or rule.approach ~= "allow_approach" then
+    -- Chase/approach is its own recovery step (rpg_debug_chase). Until it is
+    -- opened, an out-of-range sandbox action simply fails without moving.
+    if unit.rpg_debug_manual_cast and not unit.rpg_debug_chase then
+        return false, "out_of_range"
+    end
+    if rule.approach ~= "allow_approach" then
         return false, "out_of_range"
     end
 
@@ -549,7 +565,9 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
 end
 
 function TacticEngine:ExecuteFallback(unit, state, ctx)
-    if unit.rpg_debug_manual_cast then return false end
+    -- Recovery step 3: the EnemyRuntime fallback attack is opened by
+    -- rpg_debug_fallback, independently of the tactic rule attack.
+    if unit.rpg_debug_manual_cast and not unit.rpg_debug_fallback then return false end
     local fallback = {
         id = "system_fallback_attack",
         enabled = true,
