@@ -169,10 +169,10 @@ QUALITY_CONSUMED_MODIFIERS = {
 REFRESH_BASE = 20
 REFRESH_STEP = 20
 REFRESH_MAX = 200
--- 经验卷轴（DESIGN.md §2.5）：每关各限购 3 个
-SCROLL_COST = { low = 100, high = 1000 }
+-- 经验卷轴（DESIGN.md §2.5）：低级 200 金/每关限购 2，高级 1000 金/每关限购 1
+SCROLL_COST = { low = 200, high = 1000 }
 SCROLL_XP = { low = 500, high = 2000 }
-SCROLL_LIMIT_PER_STAGE = 3
+SCROLL_LIMIT_PER_STAGE = { low = 2, high = 1 }
 -- 个人升级公式和时间奖励上限由 ProgressionPatch 使用统一数据模块提供。
 
 -- 商店与阵容经济（刷新 20/次，替补格 200/个）
@@ -181,11 +181,8 @@ local SHOP_BENCH_SLOT_COST = 200
 local BENCH_SLOT_MAX = 5
 local LINEUP_MAX = 5
 
--- 经验卷轴物品（真物品 KV 见 scripts/npc/npc_items_custom.txt）
-SCROLL_ITEM_COST = {
-	item_rpg_scroll_low = 100,
-	item_rpg_scroll_high = 1000,
-}
+-- 经验卷轴价格/经验/限购见上方 SCROLL_COST / SCROLL_XP / SCROLL_LIMIT_PER_STAGE；
+-- 真物品 KV 见 scripts/npc/npc_items_custom.txt（ItemCost 必须与 SCROLL_COST 一致）。
 local SHOP_OFFER_SIZE = 5
 local SHOP_CATEGORIES = { "strength", "agility", "intelligence", "universal" }
 
@@ -940,9 +937,13 @@ function CDota2RpgDemo:GetHeroData(heroName)
 	return self.heroData[heroName]
 end
 
--- 当前关剩余卷轴限购
+-- 当前关剩余卷轴限购（低级 2、高级 1，见 SCROLL_LIMIT_PER_STAGE）
 function CDota2RpgDemo:GetScrollRemaining(kind)
-	return SCROLL_LIMIT_PER_STAGE - (self.scrollPurchases[kind] or 0)
+	local limit = SCROLL_LIMIT_PER_STAGE[kind]
+	if limit == nil then
+		return 0
+	end
+	return limit - (self.scrollPurchases[kind] or 0)
 end
 
 function CDota2RpgDemo:OnScrollBuy(_, payload)

@@ -1075,9 +1075,28 @@ wisp:RemoveItem(heroNativeStashItem)
 nativeWalletReliable[0] = 750
 nativeWalletUnreliable[0] = 0
 equipmentGame:SyncGoldFromPlayer()
+-- 低级卷轴 200 金（DESIGN.md §2.5）；扣款必须和原版商店共用同一钱包。
+assertEqual(equipmentGame:GetScrollRemaining("low"), 2, "low scroll limit is 2 per stage")
+assertEqual(equipmentGame:GetScrollRemaining("high"), 1, "high scroll limit is 1 per stage")
 equipmentGame:OnScrollBuy(nil, { kind = "low" })
-assertEqual(nativeWalletGold(0), 650, "scroll purchase must debit the same wallet as the native shop")
+assertEqual(nativeWalletGold(0), 550, "scroll purchase must debit the same wallet as the native shop")
 assertEqual(equipmentGame.scrollStock.low, 1, "scroll panel must retain the two-scroll stock flow")
+-- 低级卷轴每关只能买 2 个：第二次成功，第三次被限购拒绝且不再扣款。
+equipmentGame:OnScrollBuy(nil, { kind = "low" })
+assertEqual(nativeWalletGold(0), 350, "second low scroll debits again")
+assertEqual(equipmentGame:GetScrollRemaining("low"), 0, "low scrolls exhausted after two buys")
+equipmentGame:OnScrollBuy(nil, { kind = "low" })
+assertEqual(nativeWalletGold(0), 350, "third low scroll is rejected without charging")
+assertEqual(equipmentGame.scrollStock.low, 2, "third low scroll never enters stock")
+-- 高级卷轴每关只能买 1 个。
+nativeWalletReliable[0] = 5000
+equipmentGame:OnScrollBuy(nil, { kind = "high" })
+assertEqual(nativeWalletGold(0), 4000, "high scroll costs 1000")
+assertEqual(equipmentGame:GetScrollRemaining("high"), 0, "high scrolls exhausted after one buy")
+assertEqual(equipmentGame.scrollStock.high, 1, "high scroll stock grew once")
+equipmentGame:OnScrollBuy(nil, { kind = "high" })
+assertEqual(nativeWalletGold(0), 4000, "second high scroll is rejected without charging")
+assertEqual(equipmentGame.scrollStock.high, 1, "second high scroll never enters stock")
 local scrollStockBeforeLock = equipmentGame.scrollStock.low
 local scrollXpBeforeLock = equipmentGame.heroData.npc_dota_hero_axe.current_xp or 0
 equipmentGame.phase = "fight"

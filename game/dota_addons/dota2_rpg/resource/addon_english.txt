@@ -150,7 +150,7 @@
 		"dota2_rpg_item_sell_sale_failed" "The sale failed. Please try again."
 		"dota2_rpg_item_sell_unavailable" "Item selling is unavailable. Please try again."
 		"dota2_rpg_item_unequip"		"Unequip"
-		"dota2_rpg_scroll_low"			"Low scroll 100g"
+		"dota2_rpg_scroll_low"			"Low scroll 200g"
 		"dota2_rpg_scroll_high"			"High scroll 1000g"
 		"dota2_rpg_scroll_use_low"		"Use low scroll (+500)"
 		"dota2_rpg_scroll_use_high"		"Use high scroll (+2000)"

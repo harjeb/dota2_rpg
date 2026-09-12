@@ -1153,7 +1153,13 @@
     }
 
     function itemDisplayName(itemName) {
-        return String(itemName || "").replace("item_", "").replace(/_/g, " ");
+        var name = String(itemName || "");
+        // 原版物品名有本地化 token（中立装备与附魔同样有）；取不到才退回拆词，
+        // 否则转交面板会对着一件原生装备显示英文原名。
+        var token = "#DOTA_Tooltip_ability_" + name;
+        var localized = $.Localize(token);
+        if (localized && localized !== token && localized !== name) { return localized; }
+        return name.replace("item_", "").replace(/_/g, " ");
     }
 
     function createItemIcon(parent, itemName) {
@@ -1304,7 +1310,7 @@
         var scrollDefs = [
             { kind: "low", label: $.Localize("#dota2_rpg_scroll_low"),
               remaining: shopState.scroll_low_remaining, stockCount: shopState.scroll_low_stock,
-              cost: 100 },
+              cost: 200 },
             { kind: "high", label: $.Localize("#dota2_rpg_scroll_high"),
               remaining: shopState.scroll_high_remaining, stockCount: shopState.scroll_high_stock,
               cost: 1000 }

@@ -150,7 +150,7 @@
 		"dota2_rpg_item_sell_sale_failed" "出售失败，请重试。"
 		"dota2_rpg_item_sell_unavailable" "出售功能暂不可用，请重试。"
 		"dota2_rpg_item_unequip"		"卸下"
-		"dota2_rpg_scroll_low"			"低级卷轴 100g"
+		"dota2_rpg_scroll_low"			"低级卷轴 200g"
 		"dota2_rpg_scroll_high"			"高级卷轴 1000g"
 		"dota2_rpg_scroll_use_low"		"使用低级卷轴(+500)"
 		"dota2_rpg_scroll_use_high"		"使用高级卷轴(+2000)"
