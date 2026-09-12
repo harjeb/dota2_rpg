@@ -60,7 +60,7 @@ end
 function Debug.Level(game)
     return { name = "Skill condition test", time_limit = 120, multi = 1,
         reward = { gold = 0, xp_per_active_hero = 0 },
-        enemies = {{ unit = Debug.UNIT, count = 1, level = 1, ai = "demo_default", tags = {"skill_test"} }} }
+        enemies = {{ unit = Debug.UNIT, count = 1, level = 1, ai = "skill_test_stomp", tags = {"skill_test"} }} }
 end
 local function all_units(game)
     local result = {}

@@ -17,6 +17,21 @@ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS = 2, 3
 local Debug = require("battle.skill_debug")
 local HERO = "npc_dota_hero_axe"
 local function eq(a,b,message) assert(a == b, (message or "values differ") .. ": expected " .. tostring(b) .. ", got " .. tostring(a)) end
+-- The sandbox must exercise a real spell rule, not the attack-only campaign default.
+local targetEntry = Debug.Level({}).enemies[1]
+eq(targetEntry.unit, Debug.UNIT)
+eq(targetEntry.ai, "skill_test_stomp")
+local function readSource(path)
+    local file = assert(io.open(path, "r"))
+    local text = file:read("*a"); file:close(); return text
+end
+local targetKV = readSource(root .. "/../npc/npc_units_custom.txt")
+assert(targetKV:match('"Ability1"%s+"centaur_hoof_stomp"'), "test target needs a visible native stomp")
+assert(targetKV:match('"StatusMana"%s+"1000"'), "test target needs mana")
+assert(targetKV:match('"StatusManaRegen"%s+"20"'), "repeat casts need mana regeneration")
+local aiKV = readSource(root .. "/../data/enemy_ai.kv")
+local debugAI = assert(aiKV:match('"skill_test_stomp"(.-)"demo_default"'))
+assert(debugAI:find('"ability_1"', 1, true) < debugAI:find('"attack"', 1, true), "cast before attack fallback")
 local function cooldown(name, level)
     return {name=name, level=level or 0, remaining=20, IsNull=function() return false end,
         EndCooldown=function(self) self.remaining=0 end, RemoveSelf=function(self) self.removed=true end}

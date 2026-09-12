@@ -1,5 +1,26 @@
 "enemy_ai"
 {
+	"skill_test_stomp"
+	{
+		"name" "调试怪：马蹄践踏后普攻"
+		"rules"
+		{
+			"1"
+			{
+				"cond" { "type" "always" }
+				"action" { "type" "ability_1" }
+				"target" "enemy_distance_nearest"
+				"mode" "range_only"
+			}
+			"2"
+			{
+				"cond" { "type" "always" }
+				"action" { "type" "attack" }
+				"target" "enemy_distance_nearest"
+				"mode" "range_only"
+			}
+		}
+	}
 	"demo_default"
 {
 		"name" "默认索敌"
