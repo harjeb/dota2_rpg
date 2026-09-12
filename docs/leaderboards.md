@@ -38,11 +38,23 @@
 
 查询支持 `limit`（1–100）和 `offset`（0–10000）。写入只由服务器通过带鉴权的 `POST /api/v1/runs` 执行。
 
-插件中的 `data/leaderboard_config.lua` 只保存公开地址、版本和密钥盐，不包含秘密。私有服务器可在 Dota 安装目录的 `game/dota/cfg/rpg_leaderboard.kv` 配置 `Leaderboard.submit_key`，须与 Worker 的 `SUBMIT_API_KEY` 一致。该文件在插件目录之外，不能打入创意工坊包。
+插件中的 `data/leaderboard_config.lua` 只保存公开地址、版本、密钥盐及 Workshop/发布者 ID，不包含秘密。私有服务器可在 Dota 安装目录的 `game/dota/cfg/rpg_leaderboard.kv` 配置 `Leaderboard.submit_key`，须与 Worker 的 `SUBMIT_API_KEY` 一致。该文件在插件目录之外，不能打入创意工坊包。
 
 官方专用服务器走 `GetDedicatedServerKeyV3("dota2_rpg_leaderboard_v1")`。正式发布前必须取得该插件在官方服务器上的真实密钥并配到 Worker；本机生成的外部配置不会自动出现在 Valve 服务器上，Cloudflare 登录授权也不包含 Valve 密钥。切换密钥时要同步所有自行托管服务器。不得把生产密钥写进插件、客户端事件、公共日志或 Git。
 
 Cloudflare 后台源代码与运维文件位于本机 `backend/leaderboard-worker/`，按项目要求不提交到 Git。迁移、部署和运维说明保留在该目录的 README。
+
+## 首次绑定官方专服
+
+正式条目为 [团战模拟器EX（3799645167）](https://steamcommunity.com/sharedfiles/filedetails/?id=3799645167)，公开发布者 SteamID 为 `76561198046228394`。
+
+运维人员先在私有后台开启有效期 48 小时的配对窗口，再把当前插件更新到该条目。发布者使用这个 Steam 账号从游廊进入该地图的官方服务器大厅；无需通关。地图加载完成后，服务器直接读取 V3 密钥，通过 HTTPS 发送到私有候选存储。编辑器、本地主机、作弊模式和其他账号不执行取钥；本机 cfg 不参与配对。
+
+成功收到候选后，发布者的界面显示“排行榜专服绑定 · 等待确认”和四组六位十六进制校验码。将完整校验码交给运维人员；此码是按本次窗口及密钥计算的 SHA-256 摘要前 96 位，不含原始密钥。关闭提示不影响游戏，断线重连可从服务器缓存恢复提示。
+
+**候选请求中的 Workshop ID 和 SteamID 均不构成身份认证。不得根据后台最早、唯一或名称匹配的候选自动启用密钥。必须核对发布者从上述真实官方大厅界面提供的完整校验码。** 确认后由私有运维工具更新 Worker Secret 和本机外部 cfg，关闭窗口并删除候选。后续仍须验证真实终局提交。窗口到期自动拒绝取钥；再次测试前由运维重新开启并新建大厅。
+
+后台没有公开候选查询或确认接口，不在返回值和日志中输出密钥。接收最多保存 32 个候选；重复上报返回相同校验码。普通玩家不会看到配对窗口，后台未开启或已关闭时也不会显示。
 
 ## 验证边界
 

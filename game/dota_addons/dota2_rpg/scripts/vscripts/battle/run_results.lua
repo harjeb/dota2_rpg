@@ -61,6 +61,7 @@ function Results.Publish(game, run, player)
 end
 function Results.Resend(game, playerId)
     if playerId ~= game.playerId then return end
+    require("battle.server_pairing").Check(game, playerId, Results.SteamId(safeCall(PlayerResource, "GetSteamAccountID", playerId)))
     Results.Publish(game, ensure(game), safeCall(PlayerResource, "GetPlayer", playerId))
 end
 

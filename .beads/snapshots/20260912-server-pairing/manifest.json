@@ -1,0 +1,14 @@
+{
+  "created_at": "2026-09-12T15:14:00.352536+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-h816 only; other issues unchanged",
+  "counts": {
+    "issues": 1,
+    "dependencies": 1,
+    "events": 3
+  },
+  "issue_status": "in_progress",
+  "workshop_id": "3799645167",
+  "evidence": "20 backend tests, 89 offline regression groups, remote pairing intake/retry/closure/no-auto-authorization, three Dota UI resources compiled and installed",
+  "remaining": "User uploads original Workshop item, enters official lobby and supplies HUD confirmation code; then privately bind key and verify real terminal submission. Backend excluded from Git."
+}

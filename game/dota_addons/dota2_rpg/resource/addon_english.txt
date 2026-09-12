@@ -3,6 +3,9 @@
 	"Language"	"English"
 	"Tokens"
 	{
+        "dota2_rpg_pairing_title" "Leaderboard server pairing · Awaiting confirmation"
+        "dota2_rpg_pairing_hint" "Send the code above to the developer to finish pairing. It does not contain the server key. This message does not confirm activation."
+        "dota2_rpg_pairing_close" "Code noted · Dismiss"
         "dota2_rpg_run_score_clear" "Campaign cleared · Final score"
         "dota2_rpg_run_score_failed" "Campaign ended · Final score"
         "dota2_rpg_run_score_breakdown" "Hearts × stages %s1  +  Time %s2  +  Clear bonus %s3"

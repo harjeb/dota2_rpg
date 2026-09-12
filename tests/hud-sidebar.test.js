@@ -818,3 +818,24 @@ reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner
 reconnected.subscriptions.rpg_leaderboard_result(Object.assign({}, summary, {settlement_generation:42,cleared:0,status:"error"}));
 assert(panel(reconnected,"RunSpeedrunRank").text.includes("rank_clear_only") && !visible(reconnected,"RunRecordMessage"), "failed runs stay off speedrun and network errors cannot invent records");
 console.log("PASS terminal leaderboard UI: persistence, authoritative response, records, late events, reconnect and failure");
+
+var pairing = runHud();
+assert(!visible(pairing,"LeaderboardPairingPanel"), "pairing notice is hidden for normal play");
+var initialRequests = pairing.sentEvents.filter(function(e) { return e.name === "rpg_request_battle_state"; }).length;
+pairing.subscriptions.rpg_battle_state({phase:"setup",ready:0,owner_player_id:-1});
+pairing.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:0});
+pairing.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:0});
+assert(pairing.sentEvents.filter(function(e) { return e.name === "rpg_request_battle_state"; }).length === initialRequests + 1, "late owner assignment requests cached state once without a broadcast loop");
+var candidate = {status:"awaiting_confirmation",workshop_id:"3799645167",code:"0123456789abcdef01234567"};
+pairing.subscriptions.rpg_server_pairing(Object.assign({},candidate,{code:"raw-secret"}));
+pairing.subscriptions.rpg_server_pairing(Object.assign({},candidate,{workshop_id:"1"}));
+assert(!visible(pairing,"LeaderboardPairingPanel"), "invalid pairing data is ignored");
+pairing.subscriptions.rpg_server_pairing(candidate);
+assert(visible(pairing,"LeaderboardPairingPanel") && panel(pairing,"LeaderboardPairingCode").text === "012345-6789ab-cdef01-234567", "pairing shows only the formatted confirmation code");
+assert(!visible(pairing,"BattleResult"), "pairing does not create a false terminal result");
+click(pairing,"LeaderboardPairingClose");
+pairing.subscriptions.rpg_server_pairing(candidate);
+assert(!visible(pairing,"LeaderboardPairingPanel"), "dismissed code stays closed on cached resend");
+pairing.subscriptions.rpg_server_pairing(Object.assign({},candidate,{code:"aaaaaaaaaaaaaaaaaaaaaaaa"}));
+assert(visible(pairing,"LeaderboardPairingPanel"), "new pairing code can be displayed");
+console.log("PASS private server pairing notice: validation, code-only display and dismissal");

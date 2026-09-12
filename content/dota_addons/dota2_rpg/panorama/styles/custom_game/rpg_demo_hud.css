@@ -1000,6 +1000,11 @@
 .RunRankStatus.RankError { color: #f0ac88; }
 .RunRankRow { color: #e3e9ec; font-size: 20px; margin-top: 7px; }
 .RunRecordMessage { color: #ffd970; font-size: 20px; font-weight: bold; margin-top: 12px; padding: 8px; background-color: #60542655; }
+.LeaderboardPairingPanel { horizontal-align: center; vertical-align: top; margin-top: 120px; width: 430px; padding: 18px; flow-children: down; background-color: #17232cf5; border: 1px solid #c5ac69; z-index: 50; }
+.LeaderboardPairingPanel Label { width: 100%; white-space: normal; }
+.PairingTitle { color: #ead59e; font-size: 22px; }
+#LeaderboardPairingCode { color: #ffffff; font-size: 21px; margin-top: 12px; margin-bottom: 12px; }
+.PairingHint { color: #b8c6d0; font-size: 16px; }
 .RunRankHint { color: #9ca8ae; font-size: 14px; margin-top: 10px; }
 
 .ReplayRunButton
