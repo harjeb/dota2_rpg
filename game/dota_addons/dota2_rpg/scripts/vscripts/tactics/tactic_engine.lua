@@ -329,7 +329,8 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
     elseif spec.target_mode == "unit" or spec.target_mode == "self" then
         -- A centered point is a location, not a native friendly unit target.
         if spec.self_centered_point then
-            return ctx.caster:GetAbsOrigin(), ctx.caster, nil
+            local destination = require("tactics/neutral_spells").SelfPoint(ctx.caster)
+            return destination, ctx.caster, destination == nil and "invalid_native_location" or nil
         end
         local target, reason = self.selector:SelectUnit(rule, spec, ctx)
         return target, target, reason

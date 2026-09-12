@@ -137,4 +137,28 @@ accept=true;time=7.5;Summons.OnThink(battle)
 assert(#imageOrders==5,"a rejected attack order can retry")
 Summons.Clear(battle)
 assert(image.removed and not tb.removed and not commander.removed,"stage cleanup removes managed illusions and retains real heroes")
-print("summon-behavior tests passed: native shared-commander illusion ownership, nearest attacks and uninterrupted pursuit")
+-- Enemy Raise Dead uses a registered neutral owner, not player controllability.
+local troll=unit(200,"npc_dota_neutral_dark_troll_warlord",3,700,nil,1)
+local skeleton=unit(201,"npc_dota_dark_troll_warlord_skeleton_warrior",3,650,nil,1)
+skeleton.IsControllableByAnyPlayer=function() return false end
+local summonOrders,prepared={},0
+local trollBattle={phase="fight",battleManager={teamHeroes={[2]={hero},[3]={troll}}},
+    PrepareEnemyCreep=function(_,u,level)
+        assert(u==skeleton and level==1); prepared=prepared+1
+    end,
+    tacticBridge={orderGate={Execute=function(_,o) summonOrders[#summonOrders+1]=o;return true end}}}
+assert(not Summons.OnSpawn(trollBattle,skeleton),"a skeleton name alone cannot fabricate its owner")
+assert(Summons.TrackEnemySummon(trollBattle,skeleton),"unowned skeleton is still covered by cleanup")
+skeleton.owner=troll
+FindUnitsInRadius=function() return {skeleton,hero,troll} end
+Summons.OnThink(trollBattle)
+assert(trollBattle.managedSummons[skeleton] and prepared==1,"late native ownership admits and initializes the campaign skeleton")
+assert(#summonOrders==1 and summonOrders[1].TargetIndex==hero.id,"enemy skeleton receives an attack against the opposing team")
+Summons.OnSpawn(trollBattle,skeleton)
+assert(prepared==1,"repeat spawn registration does not reinitialize native skills")
+local impostor=unit(202,skeleton.name,3,650,other,1)
+impostor.IsControllableByAnyPlayer=skeleton.IsControllableByAnyPlayer
+assert(not Summons.OnSpawn(trollBattle,impostor),"other uncontrollable summons keep native behavior")
+Summons.Clear(trollBattle)
+assert(skeleton.removed and not troll.removed and not hero.removed,"battle end removes the skeleton and preserves the roster")
+print("summon-behavior tests passed: illusion ownership, campaign Troll skeletons, nearest attacks and cleanup")

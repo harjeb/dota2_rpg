@@ -66,17 +66,26 @@ end
 local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestral_spirit=true}
 function Summons.OnSpawn(game,unit)
     if not valid(unit) or call(unit,"IsTempestDouble")==true or excluded[call(unit,"GetUnitName")] then return false end
-    -- Native projectiles, attached parasites and stationary hero soldiers own
-    -- their own behavior. Do not disable their acquisition or redirect them.
-    if call(unit,"IsControllableByAnyPlayer")==false then return false end
-    if call(unit,"IsRealHero")==true and call(unit,"IsIllusion")~=true and call(unit,"IsClone")~=true then return false end
     local owner=Summons.ResolveOwner(game,unit)
+    local campaignSkeleton=call(unit,"GetUnitName")=="npc_dota_dark_troll_warlord_skeleton_warrior"
+        and call(unit,"GetTeamNumber")== (DOTA_TEAM_BADGUYS or 3)
+        and call(owner,"GetUnitName")=="npc_dota_neutral_dark_troll_warlord"
+    -- Native projectiles, attached parasites and stationary hero soldiers own
+    -- their own behavior. The reviewed campaign skeleton is a creature owned
+    -- by a registered Troll, even when no player can control the enemy team.
+    if call(unit,"IsControllableByAnyPlayer")==false and not campaignSkeleton then return false end
+    if call(unit,"IsRealHero")==true and call(unit,"IsIllusion")~=true and call(unit,"IsClone")~=true then return false end
     if not owner or call(owner,"GetTeamNumber")~=call(unit,"GetTeamNumber") then return false end
     local name=call(unit,"GetUnitName")
     local healing=name=="npc_dota_juggernaut_healing_ward"
     local attack=tonumber(call(unit,"GetAttackCapability"))
     if not healing and (attack==nil or attack==(DOTA_UNIT_CAP_NO_ATTACK or 0)) then return false end
     game.managedSummons=game.managedSummons or {}
+    if campaignSkeleton and not game.managedSummons[unit] then
+        -- The spell creates this unit outside the ordinary stage-spawn path.
+        -- Apply the same native level/ability initialization as campaign creeps.
+        call(game,"PrepareEnemyCreep",unit,call(unit,"GetLevel") or 1)
+    end
     game.managedSummons[unit]={owner=owner,healing=healing,nextOrder=0}
     call(unit,"SetIdleAcquire",false)
     call(unit,"SetAcquisitionRange",0)
@@ -88,8 +97,8 @@ local function is_registered(game,unit)
     end
     return false
 end
--- 敌方召唤物（蛇棒、地狱火等）不属于受管召唤物：本模块只给玩家方下达指令。
--- 但它们同样必须在战斗结束时消失，否则会活到下一关，甚至打死准备区里的小精灵。
+-- 敌方召唤物不一定进入指令托管，但无论可控性与归属是否已就绪，
+-- 都必须在战斗结束时消失，否则会活到下一关，甚至打死准备区里的小精灵。
 -- 只登记"非本关登记的敌方非英雄单位"，登记过的敌人和玩家单位一律不动。
 -- 注意：npc_spawned 在 CreateUnitByName 期间同步触发，早于 battleManager:RegisterHero，
 -- 所以 is_registered 在生成瞬间必然为假。除登记外还要看项目自己的敌方标记

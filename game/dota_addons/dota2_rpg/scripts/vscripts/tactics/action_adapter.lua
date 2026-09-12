@@ -594,6 +594,10 @@ function ActionAdapter:IssueOrder(caster, spec, target_or_point, ctx)
     if (spec.cast_type == "unit" or spec.kind == "attack") and not self:IsValidTarget(caster, spec, target_or_point) then
         return false, "invalid_native_target"
     end
+    if spec.self_centered_point then
+        target_or_point = NeutralSpells.SelfPoint(caster)
+        if target_or_point == nil then return false, "invalid_native_location" end
+    end
     if spec.cast_type == "point" and spec.source ~= nil and spec.source.CastFilterResultLocation ~= nil then
         local point = target_or_point ~= nil and target_or_point.GetAbsOrigin ~= nil
             and target_or_point:GetAbsOrigin() or target_or_point

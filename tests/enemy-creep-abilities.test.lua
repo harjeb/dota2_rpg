@@ -140,4 +140,12 @@ local heroish = newCreep("npc_dota_hero_axe", 1, { talent })
 game:PrepareEnemyCreep(heroish, 3)
 assertEqual(talent.level, 0, "special_bonus talent placeholders must never be levelled on creeps")
 
+-- Native Troll leaves Ability1 empty; scanning must continue through that hole.
+local raiseDead = newAbility("dark_troll_warlord_raise_dead", 1)
+local troll = newCreep("npc_dota_neutral_dark_troll_warlord", 6, {})
+function troll:GetAbilityCount() return 3 end
+function troll:GetAbilityByIndex(index) if index == 1 then return raiseDead end end
+game:PrepareEnemyCreep(troll, 6)
+assertEqual(raiseDead.level, 1, "the active spell after an empty native slot must be unlocked")
+
 print(string.format("[enemy-creep-abilities] ok assertions=%d", xpAsserts))

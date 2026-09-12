@@ -1,0 +1,33 @@
+{
+  "marker": "neutral-skills-v2",
+  "scope": "file deployment only; no gameplay executed",
+  "destination": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-neutral-skills-v2-backup-20260912-164713",
+  "matched": 6,
+  "files": [
+    {
+      "path": "scripts/npc/npc_units_custom.txt",
+      "sha256": "c520cda71d9f8e07c5de7ce8cbb74da1bf728823b2ef942a2822e30b02bea677"
+    },
+    {
+      "path": "scripts/vscripts/addon_game_mode.lua",
+      "sha256": "3e0e2ab9f14234236720f1860d7e548c7b620c0b2716be685fd5530b345de3aa"
+    },
+    {
+      "path": "scripts/vscripts/battle/summon_behavior.lua",
+      "sha256": "942be5126b052ef5b34ccda1e1c00ad9ef875503cef5dcd0114d14350b5a4a8a"
+    },
+    {
+      "path": "scripts/vscripts/tactics/action_adapter.lua",
+      "sha256": "21559a14a461955a0014db43ce35eb214c27c31f011c1c9d3e800d0ee85c5b6c"
+    },
+    {
+      "path": "scripts/vscripts/tactics/neutral_spells.lua",
+      "sha256": "687708101602db2ec7f6c24a678265579809252426470945f8eb630e4d07f5a9"
+    },
+    {
+      "path": "scripts/vscripts/tactics/tactic_engine.lua",
+      "sha256": "6420ad9826270bc0159a559dd6ed45e5e59b9c6ab78f5314aedbff120c11ece6"
+    }
+  ]
+}

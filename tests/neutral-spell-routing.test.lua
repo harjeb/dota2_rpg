@@ -10,6 +10,7 @@ local vm = {}
 function Vector(x, y, z) return setmetatable({x=x,y=y or 0,z=z or 0}, vm) end
 vm.__sub = function(a,b) return Vector(a.x-b.x,a.y-b.y,a.z-b.z) end
 vm.__index = {Length2D=function(p) return math.sqrt(p.x*p.x+p.y*p.y) end}
+local origin, facing, filtered, reject = Vector(0), Vector(1), nil, false
 local name, mask, radius = 'ogre_bruiser_ogre_smash', 0x10008050, 200
 local source = {
     GetAbilityName=function() return name end,
@@ -24,12 +25,14 @@ local source = {
     IsCooldownReady=function() return true end,
     CastFilterResultLocation=function(_,p)
         assert(p.GetAbsOrigin==nil, 'native location filter must receive a Vector')
-        return p.x==0 and 0 or 1
+        filtered = p
+        return reject and 1 or 0
     end,
     entindex=function() return 10 end,
 }
 local caster = {
-    GetAbsOrigin=function() return Vector(0) end,
+    GetAbsOrigin=function() return origin end,
+    GetForwardVector=function() return facing end,
     GetUnitName=function() return 'npc_dota_neutral_ogre_mauler' end,
     IsAlive=function() return true end,
     GetTeamNumber=function() return 3 end,
@@ -52,7 +55,20 @@ local spec = assert(engine.actions:Resolve(caster,rule.action,ctx))
 assert(spec.target_mode=='self' and spec.cast_type=='point', 'ogre self point does not depend on missing enum or effective range bonus')
 local point = assert(engine:ResolveRuleTarget(rule,spec,ctx))
 assert(engine.actions:Issue(caster,spec,point,ctx))
-assert(orders[1].OrderType==5 and orders[1].Position.x==0, 'ogre issues its own location')
+assert(orders[1].OrderType==5 and orders[1].Position.x==16, 'ogre keeps a nonzero forward cursor')
+assert(filtered == orders[1].Position, 'validate the exact submitted cursor')
+-- Opening approach: the caster moves beyond the previously resolved point.
+-- Refresh at submission so the old self position never becomes a rear cursor.
+origin, facing = Vector(80,40,5), Vector(0,2)
+assert(engine.actions:Issue(caster,spec,point,ctx))
+assert(orders[2].Position.x==80 and orders[2].Position.y==56 and orders[2].Position.z==5,
+    'moving Ogre uses its latest position and normalized current facing')
+reject = true
+local ok, reason = engine.actions:Issue(caster,spec,point,ctx)
+assert(not ok and reason=='invalid_native_location' and #orders==2, 'native location rejection still prevents cast')
+reject, facing = false, Vector(0)
+assert(not engine.actions:Issue(caster,spec,point,ctx) and #orders==2, 'unknown facing cannot issue a zero-direction cursor')
+origin, facing = Vector(0), Vector(1)
 name, mask = 'centaur_khan_war_stomp', 4
 radius = 250
 rule = EnemyRules.CreateForUnit(caster,{})[1]
@@ -62,7 +78,14 @@ ctx.count_enemies_around=function(_,r) assert(r==250); return 0 end
 assert(not engine.conditions:EvaluateUseConditions(rule.use_conditions,ctx), 'distant enemy cannot trigger opening stomp')
 ctx.count_enemies_around=function() return 1 end
 assert(engine.conditions:EvaluateUseConditions(rule.use_conditions,ctx), 'near enemy enables stomp')
+name, mask, radius = 'big_thunder_lizard_slam', 4, 350
+rule = EnemyRules.CreateForUnit(caster,{})[1]
+assert(rule.use_conditions[1].radius==350, 'thunder lizard slam uses native radius, not arena-wide presence')
+ctx.count_enemies_around=function(_,r) assert(r==350); return 0 end
+assert(not engine.conditions:EvaluateUseConditions(rule.use_conditions,ctx), 'thunder lizard cannot slam distant enemies')
+ctx.count_enemies_around=function() return 1 end
+assert(engine.conditions:EvaluateUseConditions(rule.use_conditions,ctx))
 name, mask = 'dawnbreaker_fire_wreath', 4294967296+16+262144
 spec = assert(engine.actions:Resolve(caster,{kind='ability',name=name},ctx))
 assert(spec.target_mode=='point', 'self-cast permission does not turn directional spells into centered casts')
-print('PASS: neutral native-radius gate, ogre self position, location filter and directional isolation')
+print('PASS: neutral native-radius gates, Ogre forward cursor refresh, native rejection and directional isolation')

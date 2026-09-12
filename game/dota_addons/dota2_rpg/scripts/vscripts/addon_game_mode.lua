@@ -477,7 +477,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-pursuit-v1 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
