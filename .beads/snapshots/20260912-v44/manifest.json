@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-09-12T09:34:17.247137+08:00",
+  "source": "bd sql / local Dolt",
+  "counts": {
+    "issues": 160,
+    "dependencies": 89,
+    "comments": 4,
+    "events": 379,
+    "labels": 0,
+    "config": 13
+  },
+  "completed_issues": [
+    "dota2_rpg-oqj"
+  ],
+  "native_followup": "dota2_rpg-hic",
+  "evidence": "UI44:liveUI43 RealTime niltrace;76/76 mockedtests,verify-addon,3nativeUIresources compiled,127sourcecopiesequal;no nativeUI44playthrough."
+}

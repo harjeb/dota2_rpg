@@ -411,7 +411,10 @@ readyStages.ch03 = true; callbacks[3].done(true); callbacks[3].done(true)
 assert(#spawned == beforeStage + 5 and not spawnGame.stageLoading and not spawnGame.stageLoadError)
 assert(spawnGame:BuildBattleState().ready == 1, "ready published only after actual enemy assembly")
 spawnGame.currentLevelId = "ch02"; spawnGame:SpawnLevelEnemies("ch02")
-assert(prefetched[#prefetched] == "ch03", "completed current stage warms exactly the next stage")
+assert(prefetched[#prefetched] == "ch03", "remaining chapters are queued")
+prefetched = {}
+spawnGame:PreloadNextLevel("ch01")
+assert(table.concat(prefetched,",")=="ch02,ch03", "game entry queues ALL future chapters in order")
 -- A fresh debug run/settlement cannot be overwritten by the old campaign request.
 for _, field in ipairs({"ruleGeneration", "settlementGeneration"}) do
     readyStages.ch03 = nil; spawnGame.currentLevelId = "ch03"
@@ -455,7 +458,43 @@ assert(not spawnGame:SpawnLevelEnemies("ch01") and partial.removed,
 FindClearSpaceForUnit = clearSpace
 spawnGame:OnStartBattle(nil,{})
 assert(not spawnGame.stageLoadError and not spawnGame.stageLoading)
-print("PASS: deferred stage spawn, latest intent, retries, battle gate, debug/replay guards and next-stage prefetch")
+-- Run the production InitGameMode cache adapter, deliberately with no RealTime.
+-- This used to throw on both startup Prefetch and ch01 -> ch02 Request.
+do
+    local file=assert(io.open(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua","r"))
+    local source=file:read("*a");file:close()
+    local adapter=assert(source:match('(self%.stagePrecache = StagePrecache%.new.-)\n\t%-%- 经济'))
+    local jobs, now, loads = {}, 0, {}
+    local priorRules, priorRealTime=GameRules,RealTime
+    RealTime=nil
+    GameRules={GetGameTime=function() return now end}
+    local gameMode={SetContextThink=function(_,_,cb,delay) jobs[#jobs+1]={cb=cb,at=now+delay} end}
+    local init=assert(loadstring(adapter))
+    setfenv(init,setmetatable({self=spawnGame,StagePrecache=require("battle.stage_precache"),gameMode=gameMode,
+        RuntimeLog={WriteCritical=function() end},DoUniqueString=function(s) return s end,
+        PrecacheUnitByNameAsync=function(name,cb) loads[#loads+1]=name;cb() end,
+        PrecacheItemByNameAsync=function(name,cb) loads[#loads+1]=name;cb() end},{__index=_G}))
+    spawnGame.dataLoader.GetAllLevels=function() return {ch01={enemies={{unit="npc_dota_neutral_ogre_mauler"}}},ch03={enemies={{unit="npc_dota_hero_lion"}}}} end
+    -- Give ch02 a different native unit so the demand path is not a cache hit.
+    local nativeLevels=spawnGame.dataLoader:GetAllLevels()
+    nativeLevels.ch02={enemies={{unit="npc_dota_hero_axe"}}}
+    spawnGame.dataLoader.GetAllLevels=function() return nativeLevels end
+    init()
+    spawnGame:PreloadNextLevel("ch01")
+    spawnGame.currentLevelId="ch02"
+    assert(not spawnGame:SpawnLevelEnemies("ch02") and spawnGame.stageLoading)
+    local loops=0
+    while #jobs>0 do
+        loops=loops+1;assert(loops<100)
+        table.sort(jobs,function(a,b) return a.at<b.at end)
+        local job=table.remove(jobs,1);now=job.at;job.cb()
+    end
+    assert(spawnGame.stagePrecache:IsReady("ch03"), "background continues through all future stages")
+    assert(spawnGame.preparedEnemyLevel=="ch02" and not spawnGame.stageLoading and spawnGame:BuildBattleState().ready==1,
+        "actual stage2 spawn finishes without RealTime")
+    spawnGame.stagePrecache=nil;GameRules=priorRules;RealTime=priorRealTime
+end
+print("PASS: deferred stage spawn, retries, all-stage prefetch and production adapter without RealTime")
 
 -- Exercise the actual spawn -> auto-level -> equipment -> BossScaling path.
 -- Only the native unit API is simulated; no stub replaces the Boss module.

@@ -21,7 +21,8 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
 
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 var resultLayout = rootLayout.children.filter(function (node) { return node.attrs.id === "BattleResult"; })[0];
-if (!resultLayout || !resultLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
+var settlementLayout = resultLayout.children.find(function (node) { return node.attrs.id === "SettlementPanel"; });
+if (!settlementLayout || !settlementLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
     throw new Error("loot must share the victory settlement card");
 }
 
@@ -91,9 +92,12 @@ function runHud() {
     var localStorageCalls = 0;
 
     // Unknown IDs return null as they do in Panorama; never invent missing live controls.
-    for (var match of layoutSource.matchAll(/\bid="([^"]+)"/g)) {
-        panels["#" + match[1]] = createPanel(match[1]);
+    var actualRoot = instantiateSnippet(rootLayout, null);
+    function register(node) {
+        if (node.id) { panels["#" + node.id] = node; }
+        node.children.forEach(register);
     }
+    register(actualRoot);
     function panorama(selector) {
         return panels[selector] || null;
     }
@@ -111,8 +115,13 @@ function runHud() {
     var rootPanel = createPanel("HudRoot");
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
-    panorama.Localize = function (token) { return token; };
-    panorama.Schedule = function (_, callback) { callback(); };
+    panorama.Localize = function (token) {
+        return token === "#dota2_rpg_reward_xp" ? "XP %s1 (active %s2 / bench %s3)" : token;
+    };
+    var timers = [];
+    panorama.Schedule = function (delay, callback) {
+        if (delay === 3) { timers.push(callback); } else { callback(); }
+    };
     panorama.LocalStorage = {
         Get: function () { localStorageCalls++; return "null"; },
         Set: function () { localStorageCalls++; }
@@ -148,6 +157,7 @@ function runHud() {
     }
 
     return {
+        timers: timers,
         context: context,
         panels: panels,
         createdPanels: createdPanels,
@@ -257,3 +267,50 @@ assert(panel(loadingHud, "StartBattleLabel").text === "#dota2_rpg_start_battle",
 click(loadingHud, "StartBattleButton");
 assert(loadingHud.sentEvents.length === sentBefore + 2, "ready stage can start");
 console.log("PASS actual HUD stage preload: waiting, failure, single retry and readiness");
+
+function visible(h, id) {
+    var node = panel(h, id);
+    while (node) { if (node.BHasClass("Hidden")) { return false; } node = node.parent; }
+    return true;
+}
+var rewards = runHud();
+var victory = {winner:"radiant", settlement_generation:21, gold:123, xp_per_active_hero:45,
+    xp_per_bench_hero:12, loot_text:"item_blink;item_branches"};
+rewards.subscriptions.rpg_settlement(victory);
+assert(visible(rewards,"RewardLabel") && visible(rewards,"LootPopupItems"), "gold XP and equipment visible simultaneously through actual XML ancestors");
+assert(panel(rewards,"RewardLabel").text.includes("123") && panel(rewards,"RewardLabel").text.includes("active 45 / bench 12"), "summary contains gold and XP");
+assert(panel(rewards,"LootPopupItems").children.length === 2 && rewards.timers.length === 1, "one frame and one timer for all rewards");
+var firstTimer = rewards.timers[0];
+click(rewards,"LootPopupConfirm");
+rewards.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",settlement_generation:21});
+rewards.subscriptions.rpg_settlement(victory);
+assert(!visible(rewards,"RewardLabel") && !visible(rewards,"LootPopupItems") && rewards.timers.length === 1, "late phase and duplicate settlement cannot resurrect confirmed summary");
+rewards.subscriptions.rpg_settlement({winner:"radiant",settlement_generation:22,gold:9,xp_pool:8,loot_text:""});
+firstTimer();
+assert(visible(rewards,"RewardLabel") && !visible(rewards,"LootPopup"), "stale timer cannot close newer no-loot summary");
+rewards.timers[1]();
+assert(!visible(rewards,"BattleResult"), "auto-close removes entire nonterminal frame");
+rewards.subscriptions.rpg_settlement({winner:"dire",settlement_generation:23,life_reward_gold:77,life_reward_items:"item_branches",life_reward_pending:1});
+assert(visible(rewards,"LootPopupItems") && panel(rewards,"RewardLabel").text.includes("77"), "death relief items and gold share defeat summary");
+rewards.timers[2]();
+rewards.subscriptions.rpg_battle_state({phase:"result",winner:"dire",run_failed:1,replay_available:1,owner_player_id:0,settlement_generation:23});
+assert(visible(rewards,"ReplayRunButton") && !visible(rewards,"SettlementPanel"), "late terminal state preserves replay without resurrecting summary");
+rewards.subscriptions.rpg_settlement(victory);
+assert(!visible(rewards,"SettlementPanel"), "stale settlement ignored even before newer battle generation");
+click(rewards,"ReplayRunButton");
+assert(rewards.sentEvents.some(function(e) { return e.name === "rpg_replay_run"; }), "replay remains usable after auto-close");
+console.log("PASS actual XML unified settlement lifecycle: simultaneous rewards, single timer, confirm, no-loot, relief, terminal and stale messages");
+
+var terminalRewards = runHud();
+terminalRewards.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",replay_available:1,owner_player_id:0,settlement_generation:30});
+terminalRewards.subscriptions.rpg_settlement({winner:"radiant",settlement_generation:30,gold:50,xp_pool:10,loot_text:"item_blink"});
+click(terminalRewards,"LootPopupConfirm");
+terminalRewards.timers[0]();
+assert(visible(terminalRewards,"ReplayRunButton") && !visible(terminalRewards,"SettlementPanel"), "terminal victory replay survives both confirm and expired timer");
+terminalRewards.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:31});
+terminalRewards.subscriptions.rpg_settlement({winner:"dire",settlement_generation:32});
+assert(visible(terminalRewards,"SettlementPanel") && !visible(terminalRewards,"LootPopup"), "plain defeat has one confirmable summary without equipment");
+terminalRewards.subscriptions.rpg_battle_state({phase:"result",settlement_generation:30,winner:"radiant",replay_available:1,owner_player_id:0});
+assert(!visible(terminalRewards,"ReplayRunButton"), "stale phase cannot restore previous terminal controls");
+terminalRewards.timers[1]();
+assert(!visible(terminalRewards,"BattleResult"), "plain defeat auto-closes entire frame");

@@ -1561,7 +1561,7 @@
         resultLabel.text = $.Localize(token);
         resultPanel.SetHasClass("RadiantVictory", winnerClass === "RadiantVictory");
         resultPanel.SetHasClass("DireVictory", winnerClass === "DireVictory");
-        resultPanel.SetHasClass("Hidden", false);
+        // Visibility belongs to the settlement lifecycle, not asynchronous phase messages.
     }
 
     function eventArray(value) {
@@ -1695,6 +1695,7 @@
         replayGeneration = generation;
         $("#ReplayRunButton").SetHasClass("Hidden", !available);
         $("#ReplayRunHint").SetHasClass("Hidden", !available);
+        $("#BattleResult").SetHasClass("Hidden", !available && $("#SettlementPanel").BHasClass("Hidden"));
         $("#ReplayRunButton").enabled = available && replayRequested !== generation;
         $("#ReplayRunLabel").text = $.Localize("#dota2_rpg_replay_chapter_one");
     }
@@ -1708,7 +1709,8 @@
 
     function onBattleState(data) {
         if (!acceptRuleGeneration(data)) { return; }
-        if (data.settlement_generation !== undefined && Number(data.settlement_generation) < replayGeneration) { return; }
+        if (data.settlement_generation !== undefined &&
+            Number(data.settlement_generation) < Math.max(replayGeneration, lastSettlementGeneration)) { return; }
         updateReplay(data);
         updateBattleCountdown(data);
         updateRunLives(data);
@@ -1815,18 +1817,19 @@
     }
 
     var lootPopupGeneration = 0;
+    var lastSettlementGeneration = -1;
 
     function closeLootPopup() {
         lootPopupGeneration++;
         $("#LootPopup").SetHasClass("Hidden", true);
-        $("#LootPopup").SetHasClass("LootPopupShowing", false);
+        $("#SettlementPanel").SetHasClass("Hidden", true);
+        $("#BattleResult").SetHasClass("Hidden", $("#ReplayRunButton").BHasClass("Hidden"));
     }
 
     function showLootPopup(items) {
-        closeLootPopup();
         var list = $("#LootPopupItems");
         list.RemoveAndDeleteChildren();
-        if (!items.length) { return; }
+        $("#LootPopup").SetHasClass("Hidden", !items.length);
         items.forEach(function (name) {
             var card = $.CreatePanel("Panel", list, "");
             card.AddClass("LootItemCard");
@@ -1837,19 +1840,20 @@
             label.text = damageName(name);
             label.hittest = false;
         });
-        var generation = lootPopupGeneration;
-        var popup = $("#LootPopup");
-        popup.SetHasClass("Hidden", false);
-        popup.SetHasClass("LootPopupShowing", true);
-        $.Schedule(3, function () {
-            if (generation === lootPopupGeneration) { closeLootPopup(); }
-        });
+
     }
 
     function onSettlement(settlement) {
         if (settlement && settlement.settlement_generation !== undefined &&
             Number(settlement.settlement_generation) < replayGeneration) { return; }
-        if (settlement) { updateResult(settlement.winner); }
+        if (!settlement) { return; }
+        if (settlement.settlement_generation !== undefined) {
+            var settlementGeneration = Number(settlement.settlement_generation);
+            if (settlementGeneration <= lastSettlementGeneration) { return; }
+            lastSettlementGeneration = settlementGeneration;
+        }
+        closeLootPopup();
+        updateResult(settlement.winner);
         var reward = grantSettlement(settlement);
         var rewardLabel = $("#RewardLabel");
         if (settlement && settlement.winner === "radiant" && reward) {
@@ -1881,6 +1885,12 @@
             showLootPopup(reliefItems);
             rewardLabel.text = failureParts.join("   ");
         }
+        $("#SettlementPanel").SetHasClass("Hidden", false);
+        $("#BattleResult").SetHasClass("Hidden", false);
+        var generation = lootPopupGeneration;
+        $.Schedule(3, function () {
+            if (generation === lootPopupGeneration) { closeLootPopup(); }
+        });
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
         renderItemShop();

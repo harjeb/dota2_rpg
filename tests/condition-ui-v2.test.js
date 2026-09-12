@@ -21,7 +21,8 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
 
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 var resultLayout = rootLayout.children.filter(function (node) { return node.attrs.id === "BattleResult"; })[0];
-if (!resultLayout || !resultLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
+var settlementLayout = resultLayout.children.find(function (node) { return node.attrs.id === "SettlementPanel"; });
+if (!settlementLayout || !settlementLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
     throw new Error("loot must share the victory settlement card");
 }
 

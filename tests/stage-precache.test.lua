@@ -53,6 +53,17 @@ local function fixture(mode)
     f.cache=Cache.new(stages,f.options)
     return f
 end
+-- Entry queues all future stages, yet starts only one resource per yield.
+-- Background order is deterministic; shared ch02/ch03 resources load once.
+local all=fixture(function(_,cb) cb() end)
+for _,id in ipairs({"ch02","ch03","ch04","ch05"}) do all.cache:Prefetch(id) end
+assert(#all.loads==0, "queuing the campaign does not synchronously load it")
+all.drain()
+assert(#all.loads==5)
+assert(all.loads[1].name=="npc_dota_next" and all.loads[2].name=="item_next")
+assert(all.loads[3].name=="npc_dota_future" and all.loads[4].name=="item_future" and all.loads[5].name=="npc_dota_foreground")
+for _,id in ipairs({"ch02","ch03","ch04","ch05"}) do assert(all.cache:IsReady(id)) end
+for i=2,#all.loads do assert(all.loads[i].at-all.loads[i-1].at>=0.099) end
 local f=fixture()
 assert(f.cache:IsReady("ch01") and not f.cache:IsReady("ch02"))
 local done=0

@@ -702,7 +702,7 @@ function latestLootTimer() {
     return lootHud.scheduled.filter(function (timer) { return timer.delay === 3; }).slice(-1)[0];
 }
 settleLoot("radiant", "item_blink;item_magic_wand;");
-assert(!lootPopup.BHasClass("Hidden") && lootPopup.BHasClass("LootPopupShowing"), "victory loot starts popup animation");
+assert(!lootPopup.BHasClass("Hidden") && !lootHud.panels["#SettlementPanel"].BHasClass("Hidden"), "victory loot shares the visible settlement");
 var lootCards = lootHud.panels["#LootPopupItems"].children;
 assert(lootCards.length === 2 && lootCards[0].children[0].itemname === "item_blink"
     && lootCards[1].children[0].itemname === "item_magic_wand", "popup shows every received item with a native icon");
@@ -730,4 +730,4 @@ settleLoot("timeout", "item_blink");
 assert(lootPopup.BHasClass("Hidden"), "timeout cannot show loot popup");
 assert(!lootHud.sentEvents.some(function (event) { return /loot|reward|settlement/.test(event.name); }),
     "popup display and confirmation never grant rewards again");
-console.log("PASS: victory loot icons, animation state, confirm, 3-second dismissal and stale timer isolation");
+console.log("PASS: integrated victory loot icons, confirm, 3-second dismissal and stale timer isolation");

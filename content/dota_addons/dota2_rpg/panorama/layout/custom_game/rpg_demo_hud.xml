@@ -146,16 +146,18 @@
 			</Panel>
 		</Panel>
 		<Panel id="BattleResult" class="BattleResult Hidden" hittest="true">
-			<Label id="BattleResultLabel" />
-			<Label id="RewardLabel" />
-			<Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
-			<Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
-			<Panel id="LootPopup" class="LootPopup Hidden" hittest="true">
-				<Label class="LootPopupTitle" text="#dota2_rpg_loot_title" />
-				<Panel id="LootPopupItems" class="LootPopupItems" />
-				<Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
-				<Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
-			</Panel>
+            <Panel id="SettlementPanel" class="SettlementPanel Hidden">
+                <Label id="BattleResultLabel" />
+                <Label id="RewardLabel" />
+                <Panel id="LootPopup" class="LootPopup Hidden" hittest="true">
+                    <Label class="LootPopupTitle" text="#dota2_rpg_loot_title" />
+                    <Panel id="LootPopupItems" class="LootPopupItems" />
+                </Panel>
+                <Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
+                <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
+            </Panel>
+            <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
+            <Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
 		</Panel>
 		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
 		<Panel id="RuleSettings" class="RuleSettings Hidden">

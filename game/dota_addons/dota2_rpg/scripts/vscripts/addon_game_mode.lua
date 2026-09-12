@@ -221,11 +221,12 @@ local function BuildHeroActionSlots(hero)
 end
 
 function Precache(context)
-	local started = RealTime and RealTime() or 0
+	local started = type(RealTime) == "function" and RealTime() or nil
 	local levels = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
 	local startup = StagePrecache.Startup(context, levels)
-	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v43-20260912 level=%s units=%d items=%d elapsed=%.3f",
-		tostring(startup.levelId), #startup.units, #startup.items, RealTime and (RealTime() - started) or 0))
+	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v44-20260912 level=%s units=%d items=%d elapsed=%s",
+		tostring(startup.levelId), #startup.units, #startup.items,
+		started and string.format("%.3f", RealTime() - started) or "unavailable"))
 end
 
 function Activate()
@@ -234,7 +235,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v43-20260912") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v44-20260912") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -265,7 +266,9 @@ function CDota2RpgDemo:InitGameMode()
 	self.orderedLevels = levelIds
 	self.currentLevelId = levelIds[1] or "ch01"
 	self.stagePrecache = StagePrecache.new(self.dataLoader:GetAllLevels(), {
-		now = function() return RealTime() end,
+		-- SetContextThink and this timeout share the game clock. RealTime
+		-- is absent in the live Dota Lua VM, despite its DLL registration text.
+		now = function() return GameRules:GetGameTime() end,
 		log = function(message) RuntimeLog.WriteCritical("StagePrecache " .. message) end,
 		schedule = function(callback, delay)
 			gameMode:SetContextThink(DoUniqueString("RpgStagePrecache"), function()
@@ -425,7 +428,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v43-20260912 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2744,11 +2747,12 @@ end
 
 function CDota2RpgDemo:PreloadNextLevel(levelId)
 	if self.stagePrecache == nil or (self.skillDebug and self.skillDebug.active) then return end
-	for index, id in ipairs(self.orderedLevels or {}) do
-		if id == levelId and self.orderedLevels[index + 1] then
-			self.stagePrecache:Prefetch(self.orderedLevels[index + 1])
-			return
-		end
+	-- Queue the entire remaining campaign after entry, but do not load it
+	-- synchronously. The cache yields between resources and prioritizes demand.
+	local upcoming = false
+	for _, id in ipairs(self.orderedLevels or {}) do
+		if upcoming then self.stagePrecache:Prefetch(id) end
+		if id == levelId then upcoming = true end
 	end
 end
 

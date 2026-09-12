@@ -58,7 +58,7 @@
 		"dota2_rpg_v2_approach_title" "When target is out of range"
 		"dota2_rpg_v2_approach_wait" "Wait for target to enter range"
 		"dota2_rpg_v2_approach_chase" "Approach target automatically"
-		"dota2_rpg_build_tag"			"UI version 43"
+		"dota2_rpg_build_tag"			"UI version 44"
 		"dota2_rpg_loading_battlefield"	"Loading the battlefield…"
 		"npc_rpg_skill_test_target"		"Skill test target"
 		"dota2_rpg_lives_title" "Lives remaining"

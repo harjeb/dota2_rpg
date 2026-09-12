@@ -53,11 +53,11 @@ function M.Startup(context, levels)
         if kind == "units" then load = PrecacheUnitByNameSync else load = PrecacheItemByNameSync end
         assert(type(load) == "function", "missing startup precache API: " .. kind)
         for _, name in ipairs(result[kind]) do
-            local started = RealTime and RealTime() or 0
+            local started = type(RealTime) == "function" and RealTime() or nil
             assert(load(name, context) ~= false, "startup precache failed: " .. name)
             result.ready[name] = true
-            print(string.format("[RPGPrecache] startup_resource %s elapsed=%.3f", name,
-                RealTime and (RealTime() - started) or 0))
+            print(string.format("[RPGPrecache] startup_resource %s elapsed=%s", name,
+                started and string.format("%.3f", RealTime() - started) or "unavailable"))
         end
     end
     return result
@@ -154,7 +154,8 @@ function M.new(levels, options)
         for _, foreground in ipairs({true, false}) do
             for _, s in pairs(stages) do
                 if s.pending and s.foreground == foreground
-                    and (not chosen or (foreground and s.priority > chosen.priority)) then chosen = s end
+                    and (not chosen or (foreground and s.priority > chosen.priority)
+                        or (not foreground and s.priority < chosen.priority)) then chosen = s end
             end
             if chosen then break end
         end
@@ -205,6 +206,8 @@ function M.new(levels, options)
         if not s or ready(s) or s.pending then return end
         -- A failed background resource requires an explicit foreground retry.
         for _, r in ipairs(s.resources) do if type(states[r.name]) == "table" then return end end
+        serial = serial + 1
+        s.priority = serial -- Background stages retain campaign enqueue order.
         s.pending, s.foreground, s.started = true, false, options.now()
         status(s, "prefetch")
         wake()
