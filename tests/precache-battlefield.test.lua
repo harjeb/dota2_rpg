@@ -48,7 +48,8 @@ require = function(moduleName)
         or moduleName == "battle.item_cooldowns" or moduleName == "battle.campaign_loot"
         or moduleName == "data.campaign_loot_catalog"
         or moduleName == "issue_fixes.runtime_log"
-        or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy" then
+        or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy"
+        or moduleName == "battle.hero_model_precache" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end
 	-- Keep the independent debug event installer out of this focused spawn fixture.
@@ -470,8 +471,10 @@ do
     GameRules={GetGameTime=function() return now end}
     local gameMode={SetContextThink=function(_,_,cb,delay) jobs[#jobs+1]={cb=cb,at=now+delay} end}
     local init=assert(loadstring(adapter))
+    -- 运行期预加载（单位/物品/模型）都无法生效：原版要求地图加载期的上下文。
+    -- 敌方英雄模型在 Precache(context) 里加载（见 battle/hero_model_precache），这里只提交请求。
     setfenv(init,setmetatable({self=spawnGame,StagePrecache=require("battle.stage_precache"),gameMode=gameMode,
-        RuntimeLog={WriteCritical=function() end},DoUniqueString=function(s) return s end,
+        RuntimeLog={Write=function() end,WriteCritical=function() end},DoUniqueString=function(s) return s end,
         PrecacheUnitByNameAsync=function(name,cb) loads[#loads+1]=name;cb() end,
         PrecacheItemByNameAsync=function(name,cb) loads[#loads+1]=name;cb() end},{__index=_G}))
     spawnGame.dataLoader.GetAllLevels=function() return {ch01={enemies={{unit="npc_dota_neutral_ogre_mauler"}}},ch03={enemies={{unit="npc_dota_hero_lion"}}}} end
@@ -492,6 +495,7 @@ do
     assert(spawnGame.stagePrecache:IsReady("ch03"), "background continues through all future stages")
     assert(spawnGame.preparedEnemyLevel=="ch02" and not spawnGame.stageLoading and spawnGame:BuildBattleState().ready==1,
         "actual stage2 spawn finishes without RealTime")
+    assert(#loads>0, "on-demand unit and item precache uses the async native API")
     spawnGame.stagePrecache=nil;GameRules=priorRules;RealTime=priorRealTime
 end
 print("PASS: deferred stage spawn, retries, all-stage prefetch and production adapter without RealTime")

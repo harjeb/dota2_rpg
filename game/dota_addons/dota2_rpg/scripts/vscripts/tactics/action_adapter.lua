@@ -18,7 +18,15 @@ local function release_fallback_target(caster)
     NeutralAttack.Release(caster)
 end
 
-local function own_attack_target(caster, spec, target)
+-- moves 表示这个动作会把单位带走（接近后再施放）。会移动单位的动作必须先放弃追击，
+-- 否则强迫攻击会和位移指令互相拉扯；但"原地施法"不移动单位，此时 Release 会
+-- SetForceAttackTarget(nil)，中立单位一旦失去攻击目标就被原版返营拖回营地，
+-- 等回退逻辑重新咬住目标再往前走——观感就是"往前一下往后一下"
+-- （实机证据：半人马可汗自施放战争践踏，x 坐标 309→331→310 往复）。
+local function own_attack_target(caster, spec, target, moves)
+    if not moves and spec.kind == "ability" and NeutralAttack.IsNeutral(caster) then
+        return
+    end
     if spec.kind ~= "attack" or not NeutralAttack.IsNeutral(caster) then
         release_fallback_target(caster)
     end
@@ -552,7 +560,7 @@ function ActionAdapter:Issue(caster, spec, target_or_point, ctx)
         local ok, result = pcall(spec.source.CastFilterResultLocation, spec.source, target_or_point)
         if not ok or result ~= (UF_SUCCESS or 0) then return false, "invalid_native_location" end
     end
-    own_attack_target(caster, spec, target_or_point)
+    own_attack_target(caster, spec, target_or_point, false)
     local custom = self.custom[spec.logical_id]
     if custom ~= nil and custom.Issue ~= nil then
         return custom:Issue(caster, spec, target_or_point, ctx, self.order_gate)
@@ -620,7 +628,7 @@ function ActionAdapter:IssueApproach(caster, spec, target_or_point)
             or not VectorTarget.IsDescriptor(target_or_point) then return false, "invalid_vector_target" end
         target_or_point = target_or_point.primary
     end
-    own_attack_target(caster, spec, target_or_point)
+    own_attack_target(caster, spec, target_or_point, true)
     local order = {
         UnitIndex = caster:entindex(),
         Queue = false,

@@ -249,4 +249,47 @@ for _, name in ipairs({"npc_dota_hero_faceless_void", "npc_dota_hero_axe"}) do
     assert(not adapter:CanExecute(caster, spec, {}), "Void is not immune to unrelated native stuns")
     controlled.IsStunned = false
 end
+-- 中立单位"原地施法"不得放弃追击：Release 会 SetForceAttackTarget(nil)，中立单位
+-- 失去攻击目标后由原版返营拖回营地，回退逻辑再把它拉回来，观感是"往前一下往后一下"。
+-- 实机证据：半人马可汗自施放战争践踏，x 坐标 309→331→310 往复（攻击目标 4689→-1→4689）。
+do
+    local released, lastValue = 0, "unset"
+    local neutral = {
+        GetUnitName = function() return "npc_dota_neutral_centaur_khan" end,
+        GetAbsOrigin = function() return origin end,
+        IsAlive = function() return true end,
+        IsNull = function() return false end,
+        entindex = function() return 900 end,
+        SetForceAttackTarget = function(_, value) released = released + 1; lastValue = value end,
+    }
+    local target = { GetAbsOrigin = function() return point end, IsAlive = function() return true end,
+        GetTeamNumber = function() return 2 end, IsNull = function() return false end }
+    local neutralAdapter = Adapter.new({ Execute = function() return true end })
+    local selfCast = { kind = "ability", logical_id = "centaur_khan_war_stomp", source = source, cast_type = "none" }
+
+    neutral.rpg_tactic_force_target = target
+    neutralAdapter:Issue(neutral, selfCast, nil, {})
+    assert(released == 0 and neutral.rpg_tactic_force_target == target,
+        "an in-place cast keeps the neutral attack order alive")
+
+    neutralAdapter:IssueApproach(neutral, selfCast, nil)
+    assert(released == 1 and lastValue == nil and neutral.rpg_tactic_force_target == nil,
+        "an action that moves the unit still releases the neutral pursuit")
+
+    -- 非中立施法者行为不变：原地施法依旧清理追击归属。
+    local hero = {
+        GetUnitName = function() return "npc_dota_hero_axe" end,
+        GetAbsOrigin = function() return origin end,
+        IsAlive = function() return true end,
+        IsNull = function() return false end,
+        entindex = function() return 901 end,
+        SetForceAttackTarget = function() released = released + 1 end,
+    }
+    hero.rpg_tactic_force_target = target
+    released = 0
+    neutralAdapter:Issue(hero, selfCast, nil, {})
+    assert(released == 1 and hero.rpg_tactic_force_target == nil,
+        "non-neutral casters keep the previous in-place behaviour")
+end
+
 print("action-adapter tests passed")

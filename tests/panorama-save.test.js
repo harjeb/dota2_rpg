@@ -478,9 +478,13 @@ assert(/\.NativeShopHint\s*\{/.test(cssSource)
     && /\.ItemUnequipBtn\s*\{/.test(cssSource)
     && /\.ItemScrollBuyBtn\s*\{/.test(cssSource),
     "native-shop hint, target, scroll, and unequip controls must have dedicated visible styles");
-assert(/MAX_STASH_SLOTS\s*=\s*15/.test(hudSource)
-    && /shopState\.stock\.length\s*<\s*MAX_STASH_SLOTS/.test(hudSource),
-    "equipment UI must account for inventory, backpack, and native stash slots 0 through 14");
+assert(/NEUTRAL_ITEM_SLOT\s*=\s*16/.test(hudSource)
+    && /shopState\.neutralStock\[/.test(hudSource)
+    && /shopState\.stashFreeSlots\s*>\s*0/.test(hudSource)
+    && /shopState\.neutralSlotFree/.test(hudSource)
+    && /itemSlot\s*>\s*NEUTRAL_ITEM_SLOT/.test(hudSource)
+    && /targetHasNeutralSlot\(target\)/.test(hudSource),
+    "equipment UI must cover inventory, backpack, native stash 0..14 and the dedicated neutral slot 16");
 assert(hud.sentEvents.some(function (event) {
     return event.name === "rpg_native_purchase_target" && event.payload.unit_index === 503;
 }), "Panorama must tell the server which active or bench hero is selected for native purchases");

@@ -850,12 +850,26 @@
     }
 
     // ---------------- 英雄商店 + 阵容（服务端权威，事件镜像） ----------------
-    var MAX_STASH_SLOTS = 15; // 0..8 inventory/backpack + 9..14 native remote-purchase stash
+    // 原版专属槽位：15 = 回城卷轴，16 = 中立装备。中立装备每个单位只有一个专属槽，
+    // 不占物品栏/背包/储藏栏，因此它既不能按 0..14 的容量判断，也不能被 0..14 的枚举显示。
+    var NEUTRAL_ITEM_SLOT = 16;
+    var NATIVE_TP_SLOT = 15; // 回城卷轴槽：本模式不提供该装备，面板也不展示它
+
+    function targetHasNeutralSlot(target) {
+        var slots = (target && target.inventorySlots) || [];
+        for (var slotIndex = 0; slotIndex < slots.length; slotIndex++) {
+            if (Number(slots[slotIndex]) === NEUTRAL_ITEM_SLOT) { return false; }
+        }
+        return true;
+    }
     var shopState = {
         gold: 500,
         offers: [],
         owned: [],
         lineup: [],
+        neutralStock: {},
+        stashFreeSlots: 0,
+        neutralSlotFree: true,
         bench_slots: 0,
         costs: { hero: 500, refresh: 20, bench_slot: 200, bench_slot_max: 5, lineup_max: 5 },
         free_recruit_choices: 2
@@ -957,6 +971,16 @@
         shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
         shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
         shopState.stock = splitList(data.stock_text);
+        // 中立装备按实体 ID 单独标记：面板要靠它决定用哪种容量去判断能否交付。
+        shopState.neutralStock = {};
+        var neutralStockEntries = splitList(data.stock_neutral_text);
+        for (var neutralStockIndex = 0; neutralStockIndex < neutralStockEntries.length; neutralStockIndex++) {
+            if (neutralStockEntries[neutralStockIndex]) {
+                shopState.neutralStock[neutralStockEntries[neutralStockIndex]] = true;
+            }
+        }
+        shopState.stashFreeSlots = Number(data.stash_free_slots !== undefined ? data.stash_free_slots : 0);
+        shopState.neutralSlotFree = Number(data.neutral_slot_free !== undefined ? data.neutral_slot_free : 1) !== 0;
         shopState.inventories = {};
         var invEntries = splitList(data.inventories_text);
         for (var invIndex = 0; invIndex < invEntries.length; invIndex++) {
@@ -1244,11 +1268,14 @@
 
         for (var itemIndex = 0; itemIndex < target.inventory.length; itemIndex++) {
             (function (itemName, itemId, itemSlot, index) {
-                if (!itemName || itemSlot < 0 || itemSlot > 14) { return; }
+                // 15 是回城卷轴槽：本模式不需要回城卷轴，面板不展示也不转交它。
+                if (!itemName || itemSlot < 0 || itemSlot > NEUTRAL_ITEM_SLOT || itemSlot === NATIVE_TP_SLOT) { return; }
                 var row = $.CreatePanel("Panel", equipped, "Equipped_" + target.name + "_" + index);
                 row.AddClass("ItemEquippedRow");
                 createItemIcon(row, itemName);
-                var slotSuffix = itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]" : (itemSlot >= 6 ? " [背包 " + itemSlot + "]" : "");
+                var slotSuffix = itemSlot === NEUTRAL_ITEM_SLOT ? "（中立）"
+                    : (itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]"
+                        : (itemSlot >= 6 ? " [背包 " + itemSlot + "]" : ""));
                 createLabel(row, "ItemRowName", itemDisplayName(itemName) + slotSuffix);
                 var unequip = $.CreatePanel("Button", row, "Unequip_" + target.name + "_" + index);
                 unequip.AddClass("ItemRowBtn");
@@ -1262,7 +1289,8 @@
                         slot: itemSlot
                     });
                 });
-                unequip.enabled = phase === "setup" && shopState.stock.length < MAX_STASH_SLOTS && Boolean(itemId);
+                unequip.enabled = phase === "setup" && Boolean(itemId)
+                    && (itemSlot === NEUTRAL_ITEM_SLOT ? shopState.neutralSlotFree : shopState.stashFreeSlots > 0);
                 createItemSellButton(row, target.name, itemName, itemId);
             }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "",
                 Number(target.inventorySlots[itemIndex] !== undefined ? target.inventorySlots[itemIndex] : itemIndex), itemIndex));
@@ -1296,10 +1324,11 @@
                 var itemName = parts[0];
                 // 新协议是 name|entityId；兼容已热重载但尚未重开地图的旧 name|cost|entityId。
                 var itemId = parts.length >= 3 ? parts[2] : (parts[1] || "");
+                var isNeutralItem = shopState.neutralStock[itemId] === true;
                 var row = $.CreatePanel("Panel", stockList, "Stock" + index);
                 row.AddClass("ItemRow");
                 createItemIcon(row, itemName);
-                createLabel(row, "ItemRowName", itemDisplayName(itemName));
+                createLabel(row, "ItemRowName", itemDisplayName(itemName) + (isNeutralItem ? "（中立）" : ""));
                 var equip = $.CreatePanel("Button", row, "Equip" + index);
                 equip.AddClass("ItemRowBtn");
                 equip.AddClass("ItemEquipBtn");
@@ -1313,7 +1342,8 @@
                         });
                     }
                 });
-                equip.enabled = phase === "setup" && Boolean(target) && targetHasSpace && Boolean(itemId);
+                equip.enabled = phase === "setup" && Boolean(target) && Boolean(itemId)
+                    && (isNeutralItem ? targetHasNeutralSlot(target) : targetHasSpace);
                 createItemSellButton(row, "__stash", itemName, itemId);
             }(stock[stockIndex], stockIndex));
         }

@@ -54,10 +54,11 @@ function Vector(x, y, z)
     return { x = x, y = y, z = z }
 end
 
+local NEUTRAL_ITEM_SLOT = 16 -- Native dedicated neutral slot; not inventory/backpack/stash.
 local Item = {}
 Item.__index = Item
-function Item.new(name)
-    return allocate(setmetatable({ name = name, charges = 0, secondary = 0 }, Item))
+function Item.new(name, neutral)
+    return allocate(setmetatable({ name = name, charges = 0, secondary = 0, neutral = neutral }, Item))
 end
 function Item:IsNull() return not self.valid end
 function Item:entindex() return self.index end
@@ -83,7 +84,7 @@ function Unit:IsNull() return not self.valid end
 function Unit:entindex() return self.index end
 function Unit:GetItemInSlot(slot) return self.inventory[slot] end
 function Unit:TakeItem(item)
-    for slot = 0, 15 do
+    for slot = 0, NEUTRAL_ITEM_SLOT do
         if self.inventory[slot] == item then
             self.inventory[slot] = nil
             return item
@@ -97,6 +98,12 @@ function Unit:RemoveItem(item)
 end
 function Unit:AddItem(item)
     assert(IsValidEntity(item), "cannot attach a deleted native item")
+    -- Native behaviour: neutral items fit only the dedicated neutral slot, one per unit.
+    if item.neutral then
+        if self.inventory[NEUTRAL_ITEM_SLOT] ~= nil then return nil end
+        self.inventory[NEUTRAL_ITEM_SLOT] = item
+        return item
+    end
     for slot = 0, 15 do
         if self.inventory[slot] == nil then
             self.inventory[slot] = item
@@ -146,6 +153,42 @@ do
     local full_ok = service:Transfer(0, source, second, target)
     assert_equal(full_ok, false, "full inventory rejected")
     assert_equal(source.inventory[0], second, "rejected item remains in source")
+end
+
+-- Neutral drops live in the native dedicated neutral slot (16). That slot is not
+-- inventory/backpack/stash, so a hero with a full 0..8 still accepts one neutral item,
+-- and the transfer must be verified in slot 16 instead of being rolled back.
+do
+    local Transfer = require("issue_fixes.inventory_transfer")
+    local service = Transfer.new({
+        get_phase = function() return "PREPARE" end,
+        is_roster_hero = function() return true end,
+    })
+    local source, target = Unit.new(), Unit.new()
+    local neutral = Item.new("item_occult_bracelet", true)
+    source.inventory[NEUTRAL_ITEM_SLOT] = neutral
+    for slot = 0, 8 do target.inventory[slot] = Item.new("full_" .. slot) end
+
+    assert_equal(service:Transfer(0, source, neutral, target), true,
+        "neutral item reaches a hero with a full inventory")
+    assert_equal(target.inventory[NEUTRAL_ITEM_SLOT], neutral,
+        "same neutral handle attached to the dedicated slot")
+    assert_equal(source.inventory[NEUTRAL_ITEM_SLOT], nil, "source neutral slot released")
+    assert(neutral.valid, "neutral item entity never destroyed")
+
+    local second = Item.new("item_enhancement_alert", true)
+    source.inventory[NEUTRAL_ITEM_SLOT] = second
+    local ok, code = service:Transfer(0, source, second, target)
+    assert_equal(ok, false, "one neutral item per hero")
+    assert_equal(code, "neutral_slot_full", "neutral capacity reported")
+    assert_equal(source.inventory[NEUTRAL_ITEM_SLOT], second,
+        "rejected neutral item stays in the warehouse")
+
+    local ordinary = Item.new("item_blink")
+    source.inventory[0] = ordinary
+    assert_equal(service:Transfer(0, source, ordinary, target), false,
+        "ordinary gear still needs an inventory slot")
+    assert_equal(source.inventory[0], ordinary, "rejected ordinary gear stays in the warehouse")
 end
 
 -- Native TakeItem detaches; rejected attachments must preserve the original item,

@@ -1,4 +1,4 @@
-﻿param(
+param(
     [string]$DotaPath = "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta"
 )
 
@@ -291,7 +291,7 @@ $scrollItemText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addon
 if ($scrollItemText -match '"ItemPurchasable"\s+"1"') {
     throw "project scrolls must not be natively purchasable; panel stock limits are server-authoritative"
 }
-foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'MAX_STASH_SLOTS', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target', 'rpg_item_sell', 'OnItemSell', 'ItemSellNotice')) {
+foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'NEUTRAL_ITEM_SLOT', 'stock_neutral_text', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target', 'rpg_item_sell', 'OnItemSell', 'ItemSellNotice')) {
     if (($javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
         throw "Native shop / scroll-only wiring is missing: $nativeShopPattern"
     }

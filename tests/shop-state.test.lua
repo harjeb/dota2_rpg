@@ -61,6 +61,7 @@ require = function(name)
 		["patches.recruitment_patch"] = moduleRoot .. "patches/recruitment_patch.lua",
 		["patches.progression_patch"] = moduleRoot .. "patches/progression_patch.lua",
 		["patches.enemy_items_patch"] = moduleRoot .. "patches/enemy_items_patch.lua",
+		["battle.hero_model_precache"] = moduleRoot .. "battle/hero_model_precache.lua",
 	}
 	if localModules[name] ~= nil then
 		return dofile(localModules[name])
@@ -1300,10 +1301,14 @@ assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
 	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 9,
 }), "prepare order filter must allow moving a hero item into the native remote-purchase stash")
+assert(equipmentGame:ValidatePrepareOrder({
+	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
+	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 16,
+}), "prepare order filter must allow moving into the dedicated neutral slot 16")
 assert(not equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_ITEM,
-	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 15,
-}), "prepare order filter must reject moving a hero item beyond the native stash")
+	units = { ["0"] = 501 }, entindex_ability = equippedBlink:GetEntityIndex(), entindex_target = 17,
+}), "prepare order filter must reject moving a hero item beyond the carrier slots")
 assert(equipmentGame:ValidatePrepareOrder({
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_MOVE_TO_POINT,
 	units = { ["0"] = 502 }, position_x = -200, position_y = 10,

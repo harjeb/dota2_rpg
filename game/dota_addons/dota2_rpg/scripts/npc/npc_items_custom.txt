@@ -2,6 +2,13 @@
 {
 	"Version" "1"
 
+	// 本模式不需要回城卷轴：从原版商店下架，其余原版定义保持不变。
+	// 掉落池也在 scripts/author-campaign-loot.py 里同时排除，死亡后不会再掉出来。
+	"item_tpscroll"
+	{
+		"ItemPurchasable" "0"
+	}
+
 	// Keep the native Shard; only remove its initial shop availability delay.
 	"item_aghanims_shard"
 	{

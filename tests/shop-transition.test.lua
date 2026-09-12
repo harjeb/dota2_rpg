@@ -19,6 +19,7 @@ require = function(name)
         ["battle.enemy_diagnostics"] = true,
         ["battle.enemy_scaling"] = true,
         ["battle.stage_precache"] = true,
+        ["battle.hero_model_precache"] = true,
         ["battle.campaign_loot"] = true,
         ["data.campaign_loot_catalog"] = true,
         ["battle.boss_scaling"] = true,

@@ -7,7 +7,11 @@ InventoryTransfer.__index = InventoryTransfer
 
 local DEFAULT_FIRST_SLOT = 0
 local DEFAULT_LAST_HERO_SLOT = 8 -- 0..5 inventory, 6..8 backpack
-local DEFAULT_LAST_SOURCE_SLOT = 15
+local DEFAULT_LAST_SOURCE_SLOT = 16 -- 0..14 plus the dedicated neutral slot
+-- Native dedicated neutral slot. Capacity is one per carrier and it is not part
+-- of inventory/backpack/stash, so 0..8 tells nothing about whether a neutral
+-- item fits. The source slot decides: the engine put it there, so it is neutral.
+local DEFAULT_NEUTRAL_SLOT = 16
 
 local function is_valid(handle)
     if handle == nil then
@@ -143,6 +147,7 @@ function InventoryTransfer.new(options)
         on_success = options.on_success,
         hero_last_slot = options.hero_last_slot or DEFAULT_LAST_HERO_SLOT,
         source_last_slot = options.source_last_slot or DEFAULT_LAST_SOURCE_SLOT,
+        neutral_slot = options.neutral_slot or DEFAULT_NEUTRAL_SLOT,
         event_name = options.event_name or "rpg_transfer_warehouse_item",
         on_error = options.on_error,
         listener_installed = false,
@@ -206,7 +211,7 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         return self:Fail(player_id, "not_owned", "目标不是玩家当前拥有的英雄。")
     end
 
-    local source_has_item = contains_exact_item(
+    local source_has_item, source_slot = contains_exact_item(
         source_unit,
         source_item,
         self.source_last_slot
@@ -215,14 +220,26 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         return self:Fail(player_id, "source_mismatch", "装备不在仓库小精灵库存中。")
     end
 
+    -- The native engine routes neutral items into the dedicated neutral slot, so
+    -- the slot the item currently occupies is the authoritative neutral signal.
+    local neutral = source_slot == self.neutral_slot
+    -- Ordinary gear must land in the hero's own inventory/backpack; landing in the
+    -- native stash stays a rollback. A neutral item lands in the dedicated slot 16.
+    local verify_last = neutral and self.neutral_slot or self.hero_last_slot
+
     -- Reject before detaching. This avoids AddItem dropping the item on the ground.
     -- Auto-combine with a completely full inventory is intentionally not attempted;
     -- the player can first free one inventory/backpack slot.
-    if not has_free_hero_slot(target_hero, self.hero_last_slot) then
+    if neutral then
+        -- One neutral item per carrier, and it never consumes an inventory slot.
+        if is_valid(safe_call(target_hero, "GetItemInSlot", nil, self.neutral_slot)) then
+            return self:Fail(player_id, "neutral_slot_full", "目标英雄已有中立装备。")
+        end
+    elseif not has_free_hero_slot(target_hero, self.hero_last_slot) then
         return self:Fail(player_id, "inventory_full", "目标英雄物品栏与背包已满。")
     end
 
-    local target_before = inventory_fingerprint(target_hero, self.hero_last_slot)
+    local target_before = inventory_fingerprint(target_hero, verify_last)
     local original_name = item_name(source_item)
     local original_index = item_entindex(source_item)
 
@@ -238,11 +255,11 @@ function InventoryTransfer:Transfer(player_id, source_unit, source_item, target_
         target_hero:AddItem(source_item)
     end)
 
-    local target_after = inventory_fingerprint(target_hero, self.hero_last_slot)
+    local target_after = inventory_fingerprint(target_hero, verify_last)
     local target_has_item = contains_exact_item(
         target_hero,
         source_item,
-        self.hero_last_slot
+        verify_last
     )
 
     -- target_after may change while the original handle is consumed by stacking or

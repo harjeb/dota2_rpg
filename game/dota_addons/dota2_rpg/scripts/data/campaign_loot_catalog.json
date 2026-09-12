@@ -3,9 +3,9 @@
   "neutral_sha256": "0935ad39d72909cd2800d62d083e55406b2a8eb85049373c1a4392bcf907a8d5",
   "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nAll recipe scrolls and Roshan's Banner are excluded by campaign policy.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
   "counts": {
-    "standard": 187,
+    "standard": 186,
     "special": 16,
-    "excluded": 273,
+    "excluded": 274,
     "neutral": 49,
     "neutral_enhancement": 19
   },
@@ -11325,9 +11325,9 @@
     },
     {
       "name": "item_tpscroll",
-      "category": "standard",
-      "excluded_reason": null,
-      "delivery": "item_tpscroll",
+      "category": null,
+      "excluded_reason": "Campaign policy: the mode has no Town Portal Scroll",
+      "delivery": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_CHANNELLED | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",

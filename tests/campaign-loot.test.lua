@@ -3,7 +3,7 @@ local modules = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 package.path = modules .. "?.lua;" .. package.path
 local Loot = require("battle.campaign_loot")
 local Lives = require("battle.run_lives")
-assert(#Loot.Catalog == 271)
+assert(#Loot.Catalog == 270)
 local config = {pool="all_items", items={{chance=.35},{chance=.30},{chance=.20}}}
 local calls = 0
 local function zero(a,b) calls=calls+1; if a then return b end; return 0 end
@@ -12,12 +12,27 @@ assert(#Loot.Roll(config,function() return .35 end)==0, "strict boundary")
 assert(#Loot.Roll(nil,zero)==0)
 config.items[4]={chance=1}
 assert(#Loot.Roll(config,zero)==3,"bounded even with extra rows")
+-- 掉落默认必须走引擎原生随机：原版 Lua VM 的 math.random 起手是可重复序列，
+-- 用它会让每一局的掉落顺序完全相同（实机反馈"掉落全是固定顺序"）。
+do
+    local native = 0
+    RandomInt = function(a, b) native = native + 1; return b end
+    local picked = Loot.Roll({pool="all_items", items={{chance=1},{chance=1},{chance=1}}})
+    assert(#picked == 3, "all three gates pass with the native engine RNG")
+    assert(native == 6, "three gates plus three catalog picks use RandomInt, got " .. native)
+    assert(picked[1] == Loot.Catalog[#Loot.Catalog], "the catalog index comes from the native roll")
+    RandomInt = nil
+    local fallback = Loot.Roll({pool="all_items", items={{chance=1},{chance=1},{chance=1}}})
+    assert(#fallback == 3, "standalone Lua hosts still roll without the engine RNG")
+end
+
 local index={}
 for i,r in ipairs(Loot.Catalog) do index[r.name]=i end
 assert(index.item_ward_observer and index.item_aegis)
 assert(not index.item_roshans_banner)
 for name in pairs(index) do assert(not name:match('^item_recipe_')) end
 assert(not index.item_recipe_phase_boots and not index.item_stout_shield)
+assert(not index.item_tpscroll, 'the mode has no Town Portal Scroll to drop')
 local slots, added, full = {}, 0, false
 local filler={GetCurrentCharges=function() return 1 end}
 local stash={IsNull=function() return false end, GetItemInSlot=function(_,i) return full and filler or slots[i] end}
@@ -35,6 +50,42 @@ assert(#Lives.Ensure(game).pendingCampaignLoot==3)
 full=false
 assert(Loot.Flush(game)==0 and added==3)
 Loot.Flush(game); assert(added==3,"no duplicate delivery")
+
+-- 中立装备进原版专属中立槽 16：它不占物品栏/背包/储藏栏，所以 0..14 全满时
+-- 仍必须照常交付；中立槽被占用时不得发起创建，否则引擎会把新实体丢到地上。
+assert(Loot.IsNeutralName("item_occult_bracelet") and Loot.IsNeutralName("item_enhancement_alert"))
+assert(not Loot.IsNeutralName("item_blink") and not Loot.IsNeutralName(nil))
+do
+    local calls, neutralHeld = 0, false
+    local neutralStash = {
+        IsNull = function() return false end,
+        GetItemInSlot = function(_, slot)
+            if slot == 16 then return neutralHeld and filler or nil end
+            return filler
+        end,
+    }
+    local neutralGame = {
+        GetStashUnit = function() return neutralStash end,
+        StashAddItem = function(_, name)
+            calls = calls + 1
+            assert(name == "item_occult_bracelet")
+            neutralHeld = true
+            return true
+        end,
+    }
+    local function pend(name)
+        Lives.Ensure(neutralGame).pendingCampaignLoot = {{name = name, delivery = name}}
+    end
+    pend("item_occult_bracelet")
+    assert(Loot.Flush(neutralGame) == 0 and calls == 1,
+        "neutral reward delivers while 0..14 are full")
+    pend("item_occult_bracelet")
+    assert(Loot.Flush(neutralGame) == 1 and calls == 1,
+        "occupied neutral slot defers the reward instead of creating a stray item")
+    pend("item_blink")
+    assert(Loot.Flush(neutralGame) == 1 and calls == 1,
+        "ordinary reward still needs a real 0..14 slot")
+end
 game.StashAddItem=function() added=added+1; return false end
 Loot.Award(game,config,choose("item_blink")); local prior=added
 Loot.Flush(game); assert(added==prior,"ambiguous native failure cannot duplicate a consumed grant")
