@@ -665,7 +665,7 @@
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
-                    }, {getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
+                    }, {isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -847,7 +847,8 @@
             Object.keys(original).forEach(function(key) { delete original[key]; });
             Object.keys(next).forEach(function(key) { original[key]=next[key]; });
             renderSide(side); sendRuleToServer(side,heroIndex,index);
-        },{abilityName:getActionDetail(side,heroIndex,actionKey),
+        },{isCurrent:function() { return editIsCurrent() && getActionDetail(side,heroIndex,actionKey)===chosenActionDetail; },
+            abilityName:getActionDetail(side,heroIndex,actionKey),
             getCapability:function() { return getRuleCapability(side,heroIndex,actionKey); },
             actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function() { return targetActors(side,heroIndex); },
             readOnly:!canEditHeroRules(side,heroIndex)});
@@ -1211,6 +1212,8 @@
         if (data.lineup_max !== undefined) {
             shopState.costs.lineup_max = Number(data.lineup_max);
         }
+        shopState.shardCost = Math.max(0, Number(data.shard_cost) || 1400);
+        shopState.shardHeroes = splitList(data.shard_heroes_text);
         shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
         shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
         shopState.stock = splitList(data.stock_text);
@@ -1481,6 +1484,20 @@
         notice.SetHasClass("Error", !success);
     }
 
+    function inventoryCell(list, index) {
+        var pair;
+        if (index % 2 === 0) {
+            pair = $.CreatePanel("Panel", list, "");
+            pair.AddClass("ItemInventoryPair");
+            for (var column = 0; column < 2; column++) {
+                $.CreatePanel("Panel", pair, "").AddClass("ItemInventoryCell");
+            }
+        } else {
+            pair = list.GetChild(list.GetChildCount() - 1);
+        }
+        return pair.GetChild(index % 2);
+    }
+
     function renderItemTarget(target) {
         var label = $("#ItemTargetLabel");
         var heroes = $("#ItemTargetHeroes");
@@ -1517,11 +1534,12 @@
             return;
         }
 
+        var renderedItems = 0;
         for (var itemIndex = 0; itemIndex < target.inventory.length; itemIndex++) {
             (function (itemName, itemId, itemSlot, index) {
                 // 15 是回城卷轴槽：本模式不需要回城卷轴，面板不展示也不转交它。
                 if (!itemName || itemSlot < 0 || itemSlot > NEUTRAL_ITEM_SLOT || itemSlot === NATIVE_TP_SLOT) { return; }
-                var row = $.CreatePanel("Panel", equipped, "Equipped_" + target.name + "_" + index);
+                var row = $.CreatePanel("Panel", inventoryCell(equipped, renderedItems++), "Equipped_" + target.name + "_" + index);
                 row.AddClass("ItemEquippedRow");
                 row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
@@ -1580,7 +1598,7 @@
                 // 新协议是 name|entityId；兼容已热重载但尚未重开地图的旧 name|cost|entityId。
                 var itemId = parts.length >= 3 ? parts[2] : (parts[1] || "");
                 var isNeutralItem = shopState.neutralStock[itemId] === true;
-                var row = $.CreatePanel("Panel", stockList, "Stock" + index);
+                var row = $.CreatePanel("Panel", inventoryCell(stockList, index), "Stock" + index);
                 row.AddClass("ItemRow");
                 row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
@@ -1604,7 +1622,7 @@
             }(stock[stockIndex], stockIndex));
         }
 
-        // Only experience scrolls are purchased here; equipment is bought in the native shop.
+        // Scrolls and Shard use explicit purchases, independent of native Wisp selection.
         var scrollList = $("#ScrollShopList");
         scrollList.RemoveAndDeleteChildren();
         for (var scrollIndex = 0; scrollIndex < scrollDefs.length; scrollIndex++) {
@@ -1633,6 +1651,25 @@
                 use.enabled = phase === "setup" && def.stockCount > 0 && Boolean(target);
             }(scrollDefs[scrollIndex]));
         }
+        var shardOwned = target && (shopState.shardHeroes || []).indexOf(target.name) >= 0;
+        var shardCost = shopState.shardCost || 1400;
+        var shardRow = $.CreatePanel("Panel", scrollList, "ShardShopRow");
+        shardRow.AddClass("ItemRow");
+        createItemIcon(shardRow, "item_aghanims_shard");
+        createLabel(shardRow, "ItemRowName", $.Localize("#dota2_rpg_shard_shop_name"));
+        createLabel(shardRow, "ItemRowCost", shardCost + "g");
+        var shardBuy = $.CreatePanel("Button", shardRow, "ShardBuyButton");
+        shardBuy.AddClass("ItemRowBtn");
+        shardBuy.AddClass("ItemScrollBuyBtn");
+        createLabel(shardBuy, "", $.Localize(shardOwned
+            ? "#dota2_rpg_shard_owned" : "#dota2_rpg_scroll_buy"));
+        shardBuy.enabled = phase === "setup" && Boolean(target) && !shardOwned && shopState.gold >= shardCost;
+        shardBuy.SetPanelEvent("onactivate", function () {
+            var selected = getSelectedEquipmentTarget();
+            if (phase !== "setup" || !target || !selected || selected.name !== target.name || !shardBuy.enabled) { return; }
+            shardBuy.enabled = false;
+            GameEvents.SendCustomGameEventToServer("rpg_shard_buy", { hero: target.name });
+        });
     }
 
     function updateScrollLabels() {

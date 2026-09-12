@@ -95,4 +95,28 @@ assert(accepted==false and active.shard and not wisp.shard and game.gold==before
 assert(#game.nativePurchaseOrderContexts==0 and #game.pendingNativePurchases==0,"no later event may double debit")
 assert(not env.CDota2RpgDemo.ValidatePrepareOrder(game,{issuer_player_id_const=0,order_type=16,units={}}))
 assert(game.gold==before-1400,"unitless repeated order cannot charge again")
-print("shard purchase tests passed: roster authorization, native grant, exact debit, failures, stock, duplicates, reentry, persistence and actual order-filter routing")
+-- Exercise the actual custom shop entry point independently of native shop selection.
+local buySource=assert(source:match('(function CDota2RpgDemo:OnShardBuy%b().-)\nfunction CDota2RpgDemo:'))
+local buyChunk=assert(loadstring(buySource)); setfenv(buyChunk,env); buyChunk()
+function game:BroadcastShopState() self.shopBroadcasts=(self.shopBroadcasts or 0)+1 end
+local buy=env.CDota2RpgDemo.OnShardBuy
+active.shard=nil; game.heroData.active.purchased_shard=nil; now=4; game.synced=false
+local startingGold=game.gold
+game.nativePurchaseSelectionHero="__wisp"
+buy(game,nil,{hero="active"}); buy(game,nil,{PlayerID=1,hero="active"})
+assert(game.gold==startingGold and not game.synced,"missing/wrong issuer never uses the owner as fallback")
+buy(game,nil,{PlayerID=0,hero="__wisp"})
+assert(game.gold==startingGold and not wisp.shard)
+buy(game,nil,{PlayerID=0,hero="active",price=1})
+assert(game.gold==startingGold-1400 and game.synced and active.shard and not wisp.shard,"custom purchase ignores native commander selection and client price")
+local broadcasts=game.shopBroadcasts
+buy(game,nil,{PlayerID=0,hero="active"})
+assert(game.gold==startingGold-1400 and game.shopBroadcasts==broadcasts+1,"duplicate does not charge and refreshes shop state")
+assert(Shards.Has(game,"active",active) and Shards.Has(game,"active",nil))
+assert(not Shards.Has(game,"enemy",enemy) and Shards.COST==1400)
+-- Native/quality upgrades disable the shop just like purchases; no second charge.
+bench.nativeShard=true; bench.shard=nil; game.heroData.bench.purchased_shard=nil
+assert(Shards.Has(game,"bench",bench)); now=5
+buy(game,nil,{PlayerID=0,hero="bench"})
+assert(game.gold==startingGold-1400)
+print("shard purchase tests passed: roster authorization, native/custom grant, exact debit, failures, stock, duplicates, reentry, persistence and actual order-filter routing")

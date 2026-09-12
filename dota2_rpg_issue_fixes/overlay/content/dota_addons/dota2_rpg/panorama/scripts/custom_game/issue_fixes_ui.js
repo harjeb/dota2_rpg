@@ -177,6 +177,58 @@
         return output;
     }
 
+    // Keep the catalog's readers and draft alive while metadata is refreshed.
+    // Reopening the dialog here would discard text not yet read by Apply.
+    function installConditionRefresh() {
+        if (typeof RpgConditionCatalog === "undefined") { return; }
+        var originalOpen = RpgConditionCatalog.open;
+        var active = null;
+        function update() {
+            if (!active || active.root.BHasClass("Hidden")) { return; }
+            var current = !active.options.isCurrent || active.options.isCurrent();
+            var capability = current && active.options.getCapability();
+            active.apply.enabled = !!capability && !active.options.readOnly;
+            active.button.enabled = current && !active.options.readOnly;
+            if (capability && active.error.text === RpgAbilityCapabilities.message("capability_unavailable")) {
+                active.error.text = "";
+            }
+        }
+        RpgConditionCatalog.open = function (rule, initial, onApply, options) {
+            originalOpen(rule, initial, onApply, options);
+            var apply = $("#RuleSettingsApply");
+            var refresh = $("#V2RefreshCapability");
+            if (!refresh) {
+                refresh = $.CreatePanel("Button", apply.GetParent() || $("#RuleSettings"), "V2RefreshCapability");
+                refresh.AddClass("V2Button");
+                refresh.AddClass("RpgConditionRefresh");
+                var caption = $.CreatePanel("Label", refresh, "");
+                caption.text = $.Localize("#dota2_rpg_v2_refresh_capability");
+                caption.hittest = false;
+                if (apply.GetParent() && apply.GetParent().MoveChildBefore) {
+                    apply.GetParent().MoveChildBefore(refresh, apply);
+                }
+            }
+            options = options || {};
+            refresh.visible = !!options.getCapability && !options.readOnly;
+            refresh.hittest = refresh.visible;
+            active = options.getCapability ? {root:$("#RuleSettings"), apply:apply,
+                error:$("#RuleSettingsError"), button:refresh, options:options} : null;
+            var binding = active;
+            refresh.SetPanelEvent("onactivate", function () {
+                if (!binding || active !== binding || binding.root.BHasClass("Hidden") || options.readOnly
+                    || options.isCurrent && !options.isCurrent()) { return; }
+                GameEvents.SendCustomGameEventToServer("rpg_request_battle_state", {});
+                update();
+            });
+            update();
+        };
+        // Run after the HUD has consumed the matching slot revision. The capability
+        // cache itself rejects old revisions and checks the hero/rule/action key.
+        ["rpg_action_capability", "rpg_hero_slots"].forEach(function (event) {
+            GameEvents.Subscribe(event, function () { $.Schedule(0.0, update); });
+        });
+    }
+
     function installKnownPanels() {
         var actionBound = bindActionPanel({});
         var shopBound = makeHeroShopTransparent(null);
@@ -198,5 +250,6 @@
         GameUI.CustomUIConfig().RpgIssueFixUI = api;
     }
 
+    installConditionRefresh();
     $.Schedule(0.0, installKnownPanels);
 }());

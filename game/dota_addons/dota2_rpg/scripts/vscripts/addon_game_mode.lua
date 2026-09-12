@@ -453,6 +453,9 @@ function CDota2RpgDemo:InitGameMode()
 	CustomGameEventManager:RegisterListener("rpg_scroll_buy", function(eventSourceIndex, payload)
 		return self:OnScrollBuy(eventSourceIndex, payload)
 	end)
+	CustomGameEventManager:RegisterListener("rpg_shard_buy", function(eventSourceIndex, payload)
+		return self:OnShardBuy(eventSourceIndex, payload)
+	end)
 	CustomGameEventManager:RegisterListener("rpg_scroll_use", function(eventSourceIndex, payload)
 		return self:OnScrollUse(eventSourceIndex, payload)
 	end)
@@ -966,6 +969,19 @@ function CDota2RpgDemo:OnScrollBuy(_, payload)
 	self.scrollPurchases[kind] = (self.scrollPurchases[kind] or 0) + 1
 	self.scrollStock[kind] = (self.scrollStock[kind] or 0) + 1
 	self:BroadcastShopState()
+end
+
+function CDota2RpgDemo:OnShardBuy(_, payload)
+	-- PlayerID is injected by the engine; never infer an absent issuer from the owner.
+	if type(payload) ~= "table" or tonumber(payload.PlayerID) ~= self.playerId
+		or type(payload.hero) ~= "string" then return end
+	local bought, message = ShardPurchase.Purchase(self, tonumber(payload.PlayerID), payload.hero)
+	ShardPurchase.Notify(self, message)
+	if bought then
+		self:SyncLiveEquipmentState(true)
+	else
+		self:BroadcastShopState()
+	end
 end
 
 function CDota2RpgDemo:OnScrollUse(_, payload)
@@ -4180,11 +4196,13 @@ function CDota2RpgDemo:BroadcastShopState()
 	end
 	local inventoryParts = {}
 	local equippedParts = {}
+	local shardHeroes = {}
 	local heroEntityIndices = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
 		local d = self.heroData[heroName]
 		table.insert(inventoryParts, heroName .. ":" .. table.concat((d ~= nil and d.inventory) or {}, ","))
 		local hero = self:FindOwnedHeroUnit(heroName)
+		if ShardPurchase.Has(self, heroName, hero) then table.insert(shardHeroes, heroName) end
 		local heroItems = {}
 		if hero ~= nil and hero.GetEntityIndex ~= nil then
 			heroEntityIndices[heroName] = hero:GetEntityIndex()
@@ -4212,6 +4230,8 @@ function CDota2RpgDemo:BroadcastShopState()
 		lineup_text = table.concat(self.lineup, ";"),
 		bench_slots = self.benchSlots,
 		refresh_cost = self:GetRefreshCost(),
+		shard_cost = ShardPurchase.COST,
+		shard_heroes_text = table.concat(shardHeroes, ";"),
 		scroll_low_remaining = self:GetScrollRemaining("low"),
 		scroll_high_remaining = self:GetScrollRemaining("high"),
 		scroll_low_stock = self.scrollStock.low or 0,

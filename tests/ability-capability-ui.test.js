@@ -16,7 +16,8 @@ api.receive({hero_index:42,rule_key:hero,revision:1,action_id:cap.name,capabilit
 function updates(){return hud.sentEvents.filter(e=>e.name==='rpg_update_rule');}
 click(hud,'RadiantRuleSettings0');
 assert(!panel(hud,'V2TeamSelectOption_team_enemy').enabled,'native enemy choice disabled');
-['V2ToggleSelect','V2AutocastSelect','V2CastSelect','V2VariantSelect','V2ModifierAck','V2RefreshCapability','V2Preset0','V2CapabilitySummary','V2PresetPreview0','V2Preview','V2StatePolicySelect','V2TypesSelect'].forEach(id => assert(!panel(hud,id), 'simplified heal editor omits '+id));
+['V2ToggleSelect','V2AutocastSelect','V2CastSelect','V2VariantSelect','V2ModifierAck','V2Preset0','V2CapabilitySummary','V2PresetPreview0','V2Preview','V2StatePolicySelect','V2TypesSelect'].forEach(id => assert(!panel(hud,id), 'simplified heal editor omits '+id));
+assert(panel(hud,'V2RefreshCapability').visible && panel(hud,'V2RefreshCapability').enabled, 'manual capability refresh remains available');
 assert(!panel(hud,'V2AoeSelectOption_2'),'unproven splash count is unavailable');
 assert(panel(hud,'RuleSettingsError').text.includes('target_team_incompatible'));
 click(hud,'RuleSettingsApply');assert.equal(updates().length,0,'invalid restored rule is not silently rewritten/saved');

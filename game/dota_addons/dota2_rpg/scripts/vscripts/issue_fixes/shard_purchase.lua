@@ -5,10 +5,17 @@
 local Shards = {}
 local MODIFIER = "modifier_item_aghanims_shard"
 local COST, RESTOCK = 1400, 1
+Shards.COST = COST
 
 local function hasShard(hero)
     if hero.HasShard ~= nil then return hero:HasShard() == true end
-    return hero:HasModifier(MODIFIER)
+    return hero.HasModifier ~= nil and hero:HasModifier(MODIFIER) == true
+end
+
+function Shards.Has(game, name, hero)
+    local data = game.heroData and game.heroData[name]
+    return (data and data.purchased_shard == true)
+        or (hero ~= nil and (hero.IsNull == nil or not hero:IsNull()) and hasShard(hero)) or false
 end
 
 function Shards.Restore(game, name, hero)

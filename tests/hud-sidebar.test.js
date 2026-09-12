@@ -532,6 +532,46 @@ assert(panel(hud, "DamageUnits").children.length === 1, "enemy DPS remains avail
 assert(panel(hud, "DamageTargets").children[0].text.indexOf("601") >= 0, "enemy target breakdown remains available");
 console.log("HUD sidebar tests passed");
 
+// Inventory rows contain two fixed cells, including an odd last item. Scrollbar
+// width no longer decides whether a 50%-wide card wraps onto a separate line.
+{
+    const equipment = runHud();
+    const axe = "npc_dota_hero_axe", lion = "npc_dota_hero_lion";
+    const state = {rule_generation:1, gold:5000, lineup_text:axe, owned_text:axe+";"+lion,
+        hero_entity_indices:{[axe]:501,[lion]:503}, commander_index:502,
+        stock_text:"item_branches|101;item_blink|102;item_blade_mail|103",
+        equipped_text:axe+":item_branches|201|0,item_tpscroll|999|15,item_blink|202|1,item_blade_mail|203|2;"+lion+":",
+        stash_free_slots:9, shard_cost:1400, shard_heroes_text:""};
+    equipment.subscriptions.rpg_battle_state({phase:"setup"});
+    equipment.subscriptions.rpg_shop_state(state);
+    for (const id of ["ItemStockList","ItemEquippedList"]) {
+        const pairs = panel(equipment,id).children;
+        assert(pairs.length===2 && pairs.every(p=>p.BHasClass("ItemInventoryPair") && p.children.length===2),
+            "three displayed items occupy two explicit two-column rows: "+id);
+        assert(pairs[0].children.every(cell=>cell.children.length===1) && pairs[1].children[0].children.length===1
+            && pairs[1].children[1].children.length===0,"odd inventory keeps its empty second cell");
+    }
+    click(equipment,"Equip1");
+    const transfer = equipment.sentEvents.filter(e=>e.name==="rpg_item_equip").at(-1);
+    assert(transfer.payload.hero===axe && transfer.payload.item_index==="102","nested cards retain the exact item transfer target");
+    assert(panel(equipment,"ShardBuyButton").enabled,"selected hero can purchase Shard with enough gold");
+    click(equipment,"ShardBuyButton"); click(equipment,"ShardBuyButton");
+    let buys = equipment.sentEvents.filter(e=>e.name==="rpg_shard_buy");
+    assert(buys.length===1 && buys[0].payload.hero===axe && !('price' in buys[0].payload),"explicit selected-hero purchase sends no client price and guards double click");
+    equipment.subscriptions.rpg_shop_state(Object.assign({},state,{gold:3600,shard_heroes_text:axe}));
+    assert(!panel(equipment,"ShardBuyButton").enabled && panel(equipment,"ShardBuyButton").children[0].text==="#dota2_rpg_shard_owned", "authoritative upgrade disables duplicate purchase");
+    click(equipment,"ItemTarget_"+lion);
+    assert(panel(equipment,"ShardBuyButton").enabled,"a bench hero has its own upgrade state");
+    click(equipment,"ShardBuyButton");
+    buys = equipment.sentEvents.filter(e=>e.name==="rpg_shard_buy");
+    assert(buys.length===2 && buys[1].payload.hero===lion,"bench selection purchases for that hero, never commander");
+    equipment.subscriptions.rpg_shop_state(Object.assign({},state,{gold:1399,shard_heroes_text:axe}));
+    assert(!panel(equipment,"ShardBuyButton").enabled,"unaffordable upgrade is disabled");
+    equipment.subscriptions.rpg_battle_state({phase:"fight"}); click(equipment,"ShardBuyButton");
+    assert(equipment.sentEvents.filter(e=>e.name==="rpg_shard_buy").length===2,"no combat purchase");
+}
+console.log("PASS explicit two-column inventory and selected hero Shard purchase");
+
 // The native ShopButton subtree matches this installation's decompiled
 // dota_hud_quick_buy.xml. Load all actual addon scripts above, not a stub bridge.
 function mountNativeShop(h) {

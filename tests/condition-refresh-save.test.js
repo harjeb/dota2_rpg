@@ -22,7 +22,12 @@ function edit(hud, switching) {
     choice(hud,"V2_use0","self_hp_pct_gte"); input(hud,"V2_use0_value",77);
 }
 function refresh(hud, snapshot) {
-    assert(!panel(hud,"V2RefreshCapability"), "manual capability refresh is removed");
+    const button = panel(hud,"V2RefreshCapability");
+    assert(button && button.visible && button.hittest && button.enabled, "manual refresh is visible and clickable");
+    const before = hud.sentEvents.filter(e => e.name === "rpg_request_battle_state").length;
+    click(hud,"V2RefreshCapability");
+    assert.equal(hud.sentEvents.filter(e => e.name === "rpg_request_battle_state").length, before + 1,
+        "refresh requests authoritative battle/capability state exactly once");
     hud.subscriptions.rpg_hero_slots(snapshot);
 }
 for (const switching of [false,true]) {
@@ -127,5 +132,51 @@ for (const switching of [false,true]) {
     click(hud,'RadiantRuleSettings0');
     assert.equal(panel(hud,'V2_target0_value').text,'61','reopen does not reapply recommendation');
     click(hud,'RuleSettingsClose');
+}
+// Newly equipped item is advertised before its authoritative contract arrives.
+{
+    const {hud, snapshot} = setup();
+    const api = hud.context.RpgAbilityCapabilities, receive = api.receive;
+    api.receive = event => { if (event.action_id !== "item_blink") receive(event); };
+    snapshot.actions_text += ";item_blink";
+    hud.subscriptions.rpg_hero_slots(snapshot);
+    api.receive = receive;
+    const pending = [];
+    hud.context.$.Schedule = (delay, callback) => { pending.push(callback); };
+    const flush = () => { while (pending.length) pending.shift()(); };
+    click(hud,"RadiantActionSelect0"); click(hud,"ActionOpt_Radiant0_item_blink");
+    choice(hud,"V2_use0","self_hp_pct_gte"); input(hud,"V2_use0_value",77);
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"new equipment waits for real metadata");
+    assert.equal(panel(hud,"RuleSettingsError").text,"capability_unavailable");
+    click(hud,"V2RefreshCapability");
+    assert.equal(updates(hud).length,0,"refresh never saves a draft");
+    const cap = JSON.parse(JSON.stringify(api.get(42,"attack",hero,2)));
+    cap.name="item_blink"; cap.mode="point"; cap.support="generic";
+    cap.cast.point=1; cap.cast_preferences.point=1;
+    const event = {hero_index:42,rule_key:hero,revision:2,action_id:"item_blink",capability:cap};
+    hud.subscriptions.rpg_action_capability(Object.assign({},event,{revision:1})); flush();
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"old capability cannot unlock new equipment");
+    hud.subscriptions.rpg_action_capability(Object.assign({},event,{hero_index:99})); flush();
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"another hero cannot unlock new equipment");
+    hud.subscriptions.rpg_action_capability(Object.assign({},event,{action_id:"item_force_staff",capability:Object.assign({},cap,{name:"item_force_staff"})})); flush();
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"another item cannot unlock this draft");
+    hud.subscriptions.rpg_action_capability(Object.assign({},event,{rule_key:"npc_dota_hero_lion"})); flush();
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"mixed hero identity cannot unlock this draft");
+    hud.subscriptions.rpg_action_capability(event); flush();
+    assert.equal(panel(hud,"RuleSettingsApply").enabled,true,"matching response enables the first Apply");
+    assert.equal(panel(hud,"RuleSettingsError").text,"");
+    assert.equal(panel(hud,"V2_use0_value").text,"77","asynchronous responses preserve unsaved input");
+    click(hud,"RuleSettingsApply");
+    assert.equal(updates(hud).length,1);
+    assert.equal(updates(hud)[0].payload.action_id,"item_blink");
+    assert.equal(updates(hud)[0].payload.hero_index,42);
+    assert.equal(updates(hud)[0].payload.use_condition_1_value,.77);
+    click(hud,"RadiantRuleSettings0");
+    assert.equal(panel(hud,"V2_use0_value").text,"77","new equipment draft persists on first save");
+    const oldRefresh = panel(hud,"V2RefreshCapability").events.onactivate;
+    click(hud,"RuleSettingsClose"); click(hud,"RadiantRuleSettings0");
+    const before = hud.sentEvents.length;
+    oldRefresh();
+    assert.equal(hud.sentEvents.length,before,"a replaced dialog's callback cannot refresh the new dialog");
 }
 console.log("PASS: first settings/action-switch saves survive equivalent refresh snapshots regardless of object key order; stale hero/action/changed/reordered/deleted rules and condition/priority array order remain protected; legacy hit gate removed and nearby counts preserved");
