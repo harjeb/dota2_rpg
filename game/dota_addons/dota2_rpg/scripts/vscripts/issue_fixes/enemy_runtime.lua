@@ -202,13 +202,14 @@ function EnemyRuntime:RemovePrepareRestrictions(unit)
         end
     end
 
-    safe_call(unit, "SetIdleAcquire", nil, not is_native_neutral(unit))
-    safe_call(unit, "SetAcquisitionRange", nil, self.acquisition_range)
+    safe_call(unit, "SetIdleAcquire", nil, not unit.rpg_debug_manual_cast and not is_native_neutral(unit))
+    safe_call(unit, "SetAcquisitionRange", nil, unit.rpg_debug_manual_cast and 0 or self.acquisition_range)
     safe_call(unit, "SetForceAttackTarget", nil, nil)
     NeutralAttack.Release(unit)
 end
 
 function EnemyRuntime:IssueAttack(unit, target)
+    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or not NeutralAttack.ValidTarget(unit, target) then return false end
     local function execute()
@@ -224,6 +225,7 @@ function EnemyRuntime:IssueAttack(unit, target)
 end
 
 function EnemyRuntime:IssueAttackMove(unit)
+    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if not is_alive(unit) or self.fight_center == nil then return false end
 
@@ -236,6 +238,7 @@ function EnemyRuntime:IssueAttackMove(unit)
 end
 
 function EnemyRuntime:CanFallbackOrder(unit)
+    if is_valid(unit) and unit.rpg_debug_manual_cast then return false end
     if not is_alive(unit) then return false end
     if SustainedCast.ActiveAbility(unit) then return false end
     if NeutralAttack.HasTactic(unit) then return false end

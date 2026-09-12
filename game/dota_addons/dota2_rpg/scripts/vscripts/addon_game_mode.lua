@@ -3607,8 +3607,8 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 				end
 				hero:SetHealth(hero:GetMaxHealth())
 				hero:SetMana(hero:GetMaxMana())
-				hero:SetIdleAcquire(true)
-				hero:SetAcquisitionRange(BATTLE_ACQUISITION_RANGE)
+				hero:SetIdleAcquire(not hero.rpg_debug_manual_cast)
+				hero:SetAcquisitionRange(hero.rpg_debug_manual_cast and 0 or BATTLE_ACQUISITION_RANGE)
 			end
 		end
 	end
@@ -3616,8 +3616,8 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	-- 野怪关的敌方小怪没有规则行，也要解除开战前的静止状态
 	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
 		if TacticEngine.IsValidUnit(unit) and unit:IsAlive() then
-			unit:SetIdleAcquire(true)
-			unit:SetAcquisitionRange(BATTLE_ACQUISITION_RANGE)
+			unit:SetIdleAcquire(not unit.rpg_debug_manual_cast)
+			unit:SetAcquisitionRange(unit.rpg_debug_manual_cast and 0 or BATTLE_ACQUISITION_RANGE)
 		end
 	end
 

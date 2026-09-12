@@ -276,6 +276,7 @@ test("one level 30 hero, one 50000 HP target and 99999 gold; callback idempotenc
     local enemy=g.battleManager.teamHeroes[3][1]; eq(enemy.name,Debug.UNIT)
     assert(require("tactics.neutral_attack").IsNeutral(enemy), "test creep uses persistent attack ownership instead of repeated attack orders")
     eq(enemy.hp,50000); eq(enemy.maxHP,50000); eq(enemy.baseHP,50000)
+    eq(enemy.rpg_debug_manual_cast,true)
     eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,true)
     local spawns=g.rosterSpawns; f.loads[1].fn(); f.loads[2].fn(); eq(g.rosterSpawns,spawns)
     eq(g.dataLoader:GetLevel(Debug.LEVEL).reward.gold,0)
@@ -344,6 +345,21 @@ test("normal wrappers preserve receiver arguments returns and install idempotenc
         a,b=g[name](g,6,"body"); eq(a,name); eq(b,44); eq(g.calls[name][1],6); eq(g.calls[name][2],"body")
     end
 end)
+test("manual diagnostic flag suppresses both real script AI order paths",function()
+    local f,g=fixture(); f:enter()
+    local enemy=g.battleManager.teamHeroes[3][1]
+    eq(enemy.rpg_debug_manual_cast,true)
+    -- Empty engine receiver proves the early guard never evaluates rules/fallback.
+    require("tactics.tactic_engine"):EvaluateUnit(enemy,{},0)
+    local runtime=require("issue_fixes.enemy_runtime").new({execute_order=function() error("debug AI issued order") end})
+    eq(runtime:IssueAttack(enemy,g.battleManager.teamHeroes[2][1]),false)
+    eq(runtime:IssueAttackMove(enemy),false)
+    eq(runtime:CanFallbackOrder(enemy),false)
+    enemy.SetIdleAcquire=function(self,v) self.idleAcquire=v end
+    enemy.SetAcquisitionRange=function(self,v) self.acquisition=v end
+    runtime:RemovePrepareRestrictions(enemy)
+    eq(enemy.idleAcquire,false); eq(enemy.acquisition,0)
+end)
 test("manual stomp exception is exact and passes the real combat filter",function()
     local f,g=fixture(); f:enter(); g.phase="fight"
     DOTA_UNIT_ORDER_CAST_NO_TARGET=8
@@ -359,7 +375,21 @@ test("manual stomp exception is exact and passes the real combat filter",functio
         validate_prepare_order=function() return false end,
     })
     local order={issuer_player_id_const=7,order_type=8,units={["0"]=901},entindex_ability=902}
+    local originalTrace=Debug.TraceTarget
+    local events={}
+    Debug.TraceTarget=function(_,_,event) events[#events+1]=event end
     eq(filter:Filter(order),true)
+    for _,delay in ipairs({0.05,0.2,0.5,1,2}) do
+        local timer=f.thinks["RpgSkillDebugCastAfter_" .. tostring(delay)]
+        assert(timer); timer.fn()
+    end
+    eq(#events,6)
+    local stale=f.thinks.RpgSkillDebugCastAfter_1.fn
+    eq(filter:Filter(order),true)
+    local n=#events; stale(); eq(#events,n,"old click observation discarded")
+    g.phase="result"; f.thinks.RpgSkillDebugCastAfter_1.fn(); eq(#events,n)
+    g.phase="fight"
+    Debug.TraceTarget=originalTrace
     order.issuer_player_id_const=8; eq(filter:Filter(order),false); order.issuer_player_id_const=7
     order.entindex_ability=903; eq(filter:Filter(order),false); order.entindex_ability=902
     order.order_type=4; eq(filter:Filter(order),false); order.order_type=8

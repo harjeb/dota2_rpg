@@ -218,6 +218,7 @@ function TacticEngine:IsBusy(unit)
 end
 
 function TacticEngine:EvaluateUnit(unit, state, current_time)
+    if unit.rpg_debug_manual_cast then return end
     if self.get_phase() ~= "FIGHT" then
         return
     end
