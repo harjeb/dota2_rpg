@@ -277,7 +277,8 @@ test("one level 30 hero, one 50000 HP target and 99999 gold; callback idempotenc
     assert(require("tactics.neutral_attack").IsNeutral(enemy), "test creep uses persistent attack ownership instead of repeated attack orders")
     eq(enemy.hp,50000); eq(enemy.maxHP,50000); eq(enemy.baseHP,50000)
     eq(enemy.rpg_debug_manual_cast,true)
-    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,true)
+    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,false)
+    eq(enemy.rpg_debug_auto_stomp,true)
     local spawns=g.rosterSpawns; f.loads[1].fn(); f.loads[2].fn(); eq(g.rosterSpawns,spawns)
     eq(g.dataLoader:GetLevel(Debug.LEVEL).reward.gold,0)
     for _,name in ipairs({"OnShopBuy","OnShopRefresh","OnBenchBuy","OnLineupSet","OnSelectLevel"}) do g[name](g); eq(g.calls[name],nil) end
@@ -291,7 +292,8 @@ test("reset retains authored rules equipment learned skills and talents; refresh
     f:emit("reset",{PlayerID=7})
     eq(g.ruleGeneration,1,"reset keeps the current rule generation")
     local enemy=g.battleManager.teamHeroes[3][1]
-    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,true)
+    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,false)
+    eq(enemy.rpg_debug_manual_cast,true); eq(enemy.rpg_debug_auto_stomp,true)
     local new=g.battleManager.teamHeroes[2][1]; assert(new~=old and old.removed)
     eq(new.abilities[1].level,4); eq(new.abilities[2].level,1); eq(new.items[0],item)
     eq(new.abilities[1].remaining,0); eq(new.abilities[2].remaining,0); eq(item.remaining,0)

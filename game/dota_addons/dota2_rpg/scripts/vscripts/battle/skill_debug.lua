@@ -363,9 +363,10 @@ function Debug.Install(game)
                 unit:SetBaseDamageMin(state(self).damage); unit:SetBaseDamageMax(state(self).damage)
                 unit.rpg_debug_manual_cast = true
                 unit.rpg_debug_auto_stomp = true
-                -- Diagnostic experiment only: keep enemy team/owner unchanged.
-                unit:SetControllableByPlayer(self.playerId, true)
-                Log.Write("SkillDebug target_controllable player=" .. tostring(self.playerId)
+                -- Single-variable comparison: revoke control, retain spell-only AI.
+                -- Enemy team and owner remain unchanged.
+                unit:SetControllableByPlayer(self.playerId, false)
+                Log.Write("SkillDebug target_controllable requested=false player=" .. tostring(self.playerId)
                     .. " unit=" .. unit:GetUnitName())
                 Debug.TraceTarget(self, unit, "spawn")
             end
