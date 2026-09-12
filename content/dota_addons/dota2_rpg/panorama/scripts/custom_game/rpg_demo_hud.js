@@ -1278,6 +1278,7 @@
                 if (!itemName || itemSlot < 0 || itemSlot > NEUTRAL_ITEM_SLOT || itemSlot === NATIVE_TP_SLOT) { return; }
                 var row = $.CreatePanel("Panel", equipped, "Equipped_" + target.name + "_" + index);
                 row.AddClass("ItemEquippedRow");
+                row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
                 var slotSuffix = itemSlot === NEUTRAL_ITEM_SLOT ? "（中立）"
                     : (itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]"
@@ -1333,6 +1334,7 @@
                 var isNeutralItem = shopState.neutralStock[itemId] === true;
                 var row = $.CreatePanel("Panel", stockList, "Stock" + index);
                 row.AddClass("ItemRow");
+                row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
                 createLabel(row, "ItemRowName", itemDisplayName(itemName) + (isNeutralItem ? "（中立）" : ""));
                 var equip = $.CreatePanel("Button", row, "Equip" + index);
@@ -1707,7 +1709,8 @@
         var remaining = Math.max(0, Math.ceil(limit - Math.max(0, Number(data.battle_time) || 0)));
         if (data.phase === "setup") { remaining = Math.ceil(limit); }
         var seconds = remaining % 60;
-        $("#BattleCountdown").text = Math.floor(remaining / 60) + ":" + (seconds < 10 ? "0" : "") + seconds;
+        $("#BattleCountdown").text = $.Localize("#dota2_rpg_remaining_time") + " "
+            + Math.floor(remaining / 60) + ":" + (seconds < 10 ? "0" : "") + seconds;
         $("#BattleCountdown").SetHasClass("CountdownUrgent", remaining <= 10);
     }
 

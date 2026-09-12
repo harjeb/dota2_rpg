@@ -373,9 +373,8 @@ assert(itemTarget && itemTarget.text.indexOf("axe") >= 0,
     "equipment panel must keep a visible selected-hero target");
 assert(itemTarget.text.indexOf("1/6") >= 0,
     "equipment target must show the live number of equipped slots");
-assert(/id="NativeShopHint"/.test(layoutSource)
-    && layoutSource.indexOf("#dota2_rpg_native_shop_hint") >= 0,
-    "equipment panel must direct ordinary item purchases to the native Dota shop");
+assert(!/id="NativeShopHint"/.test(layoutSource),
+    "equipment panel omits the removed native-shop guidance box");
 assert(!hud.createdPanels.some(function (p) { return p.id === "BuyEquip0" || p.id === "Store0"; }),
     "scroll-only panel must not expose custom ordinary-item purchase controls");
 var scrollBuy = hud.createdPanels.filter(function (p) { return p.id === "ScrollBuyBtn_low"; })[0];
@@ -467,17 +466,15 @@ assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&
     !/id="DireRules"/.test(layoutSource),
     "both action lists must accept wheel and pointer input");
-assert(/id="NativeShopHint"/.test(layoutSource)
-    && /id="ItemTargetLabel"/.test(layoutSource)
+assert(/id="ItemTargetLabel"/.test(layoutSource)
     && /id="ItemTargetHeroes"/.test(layoutSource)
     && /id="ItemEquippedList"/.test(layoutSource)
     && /id="ScrollShopList"/.test(layoutSource),
-    "equipment UI must expose native-shop guidance, persistent target, and scroll-only management regions");
-assert(/\.NativeShopHint\s*\{/.test(cssSource)
-    && /\.ItemTargetRow\s*\{/.test(cssSource)
+    "equipment UI must expose persistent target and scroll management regions");
+assert(/\.ItemTargetRow\s*\{/.test(cssSource)
     && /\.ItemUnequipBtn\s*\{/.test(cssSource)
     && /\.ItemScrollBuyBtn\s*\{/.test(cssSource),
-    "native-shop hint, target, scroll, and unequip controls must have dedicated visible styles");
+    "target, scroll, and unequip controls must have dedicated visible styles");
 assert(/NEUTRAL_ITEM_SLOT\s*=\s*16/.test(hudSource)
     && /shopState\.neutralStock\[/.test(hudSource)
     && /shopState\.stashFreeSlots\s*>\s*0/.test(hudSource)

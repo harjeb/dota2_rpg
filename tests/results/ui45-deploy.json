@@ -1,0 +1,46 @@
+{
+  "version": "UI45",
+  "scope": "offline tests and native Panorama resource compilation; no gameplay or screenshots",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui45-backup-20260912-170305",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.xml",
+      "sha256": "5226c35e9e80ad16d1d5eb4090630e962415b39877163fc92bfb167a2c7523f4"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.css",
+      "sha256": "62123c6a09594421b0825d6d4a70e414d9914f07cd7e574b7c2f35b6e73c331b"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js",
+      "sha256": "27b025867a6f4b41f540d728e7b41a960b268ea3407cb518c6636a4d2a59edd8"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "2f0eec4474c69775bef9d80870fdb890b5804402d1969f5e341542f2c03a2d66"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "84653177ba838e1b5c409b1f45dbf01a77511d6e6e7af36ed4bc952d23e24b91"
+    }
+  ],
+  "compiled_files": [
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.vxml_c",
+      "sha256": "e38501cd58b6aa65d0fb6a327ba24068e230be5fbdeaec0395358411aa1e4035"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.vcss_c",
+      "sha256": "69d3685eb40278afb581a8e7ae228410278bea113f26b9c0b96e3429fd2dbe33"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.vjs_c",
+      "sha256": "69537c8d9b3decf8e1a4fa2ed89512b9732b78aa04f28e3b5c39a781b501e7cd"
+    }
+  ],
+  "compile_logs": [
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui45-backup-20260912-170305\\rpg_demo_hud.xml.compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui45-backup-20260912-170305\\rpg_demo_hud.css.compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui45-backup-20260912-170305\\rpg_demo_hud.js.compile.log"
+  ]
+}

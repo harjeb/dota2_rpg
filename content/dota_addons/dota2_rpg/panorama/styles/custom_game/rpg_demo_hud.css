@@ -4,7 +4,7 @@
 	height: 100%;
 }
 
-#RunLivesPanel { width: 330px; height: fit-children; horizontal-align: left; vertical-align: top; margin-left: 18px; margin-top: 14px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
+#RunLivesPanel { width: 330px; height: fit-children; horizontal-align: left; vertical-align: top; margin-left: 18px; margin-top: 72px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
 #RunLivesTitle { font-size: 16px; color: #e6d3d5; }
 #RunLivesRow, #RunHearts { width: fit-children; height: 34px; flow-children: right; }
 .RunHeart { width: 32px; height: 34px; font-family: Arial; font-size: 29px; color: #f46d82; text-align: center; }
@@ -32,16 +32,6 @@
 	margin-top: 2px;
 	font-size: 10px;
 	color: #8fc98f;
-}
-
-#BattleTitle
-{
-	horizontal-align: center;
-	font-family: titleFont;
-	font-size: 22px;
-	font-weight: bold;
-	color: #f3ead9;
-	letter-spacing: 0px;
 }
 
 #BattleScore
@@ -79,7 +69,8 @@
 #LevelProgress
 {
 	horizontal-align: center;
-	font-size: 15px;
+	font-family: titleFont;
+	font-size: 22px;
 	font-weight: bold;
 	color: #d7b85a;
 }
@@ -1219,18 +1210,6 @@
 	margin-top: 8px;
 }
 
-.NativeShopHint
-{
-	width: 100%;
-	margin-top: 3px;
-	padding: 3px 5px;
-	font-size: 11px;
-	color: #9fb7c6;
-	background-color: #17232b;
-	border: 1px solid #3b596a;
-	text-overflow: shrink;
-}
-
 .ItemSellNotice
 {
 	width: 100%;
@@ -1312,9 +1291,9 @@
 .ItemEquippedList
 {
 	width: 100%;
-	height: 102px;
+	height: 146px;
 	overflow: squish scroll;
-	flow-children: down;
+	flow-children: right-wrap;
 	margin-top: 3px;
 	background-color: #111820;
 	border: 1px solid #34414a;
@@ -1333,7 +1312,8 @@
 
 .ItemStockList
 {
-	height: 112px;
+	height: 146px;
+	flow-children: right-wrap;
 }
 
 .ItemRow
@@ -1352,6 +1332,20 @@
 	border-right: 1px solid #2a333b;
 }
 
+/* Two inventory cards per row; details above, transfer/sell controls below. */
+.ItemInventoryCard
+{
+	width: 50%;
+	height: 70px;
+	flow-children: none;
+	border-right: 1px solid #2a333b;
+	border-bottom: 1px solid #2a333b;
+}
+.ItemInventoryCard .ItemIcon { vertical-align: top; margin-top: 4px; }
+.ItemInventoryCard .ItemRowName { width: 74%; height: 32px; vertical-align: top; margin: 3px 0px 0px 34px; white-space: normal; }
+.ItemInventoryCard .ItemRowBtn { width: 46%; horizontal-align: left; vertical-align: bottom; margin: 0px 0px 4px 3px; }
+.ItemInventoryCard .ItemSellBtn { horizontal-align: right; margin: 0px 3px 4px 0px; }
+
 .ItemIcon
 {
 	width: 26px;
@@ -1369,11 +1363,6 @@
 	font-size: 12px;
 	color: #dfe6e9;
 	text-overflow: shrink;
-}
-
-.ItemEquippedRow .ItemRowName
-{
-	width: fill-parent-flow(1.0);
 }
 
 .ItemRowCost
@@ -1531,16 +1520,19 @@
 .ActionIcon.UnavailableAction { saturation: 0; border-color: #9a6657; }
 
 /* The sidebar stops above the native HUD; each expanded body scrolls independently. */
-#RightSidebar { width: 352px; height: 66%; horizontal-align: right; vertical-align: top; margin-top: 100px; margin-right: 20px; flow-children: down; }
+#RightSidebar { width: 352px; height: 69%; horizontal-align: right; vertical-align: top; margin-top: 72px; margin-right: 20px; flow-children: down; }
 #RightSidebar .DamagePanel, #RightSidebar .ItemShopPanel { width: 100%; height: fill-parent-flow(1); min-height: 42px; horizontal-align: left; vertical-align: top; margin: 0px; padding: 8px; flow-children: down; background-color: #111820f5; border: 1px solid #657078; }
+#RightSidebar .DamagePanel { height: fill-parent-flow(1.2); }
 #RightSidebar .ItemShopPanel { margin-top: 8px; }
+#ItemShopPanel .SidePanelHeader { height: 40px; }
+#EquipmentTitle { height: 38px; font-family: titleFont; font-size: 30px; font-weight: bold; color: #e8d289; text-shadow: 0px 2px 6px 3 #000000; }
 .SidePanelHeader { width: 100%; height: 28px; flow-children: right; }
 .SidePanelHeader .DamageTitle, .SidePanelHeader .LineupHeader { width: fill-parent-flow(1); vertical-align: center; }
 .SidePanelToggle { width: 28px; height: 26px; background-color: #304451; border: 1px solid #657078; }
 .SidePanelToggle Label { horizontal-align: center; vertical-align: center; font-size: 22px; color: #ffffff; }
 .SidePanelToggle:hover { brightness: 1.5; }
 .SidePanelBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; }
-#RightSidebar .SidePanelMinimized { height: 44px; }
+#RightSidebar .SidePanelMinimized { height: 56px; }
 #BattleCountdown { horizontal-align: center; color: #e8dba0; font-size: 24px; font-weight: bold; }
 #BattleCountdown.CountdownUrgent { color: #ff7777; }
 

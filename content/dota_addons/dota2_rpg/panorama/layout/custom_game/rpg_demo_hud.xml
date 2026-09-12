@@ -29,11 +29,10 @@
 			<Label id="RunLivesHint" text="#dota2_rpg_lives_hint" />
 		</Panel>
 		<Panel id="BattleHeader">
-			<Label id="BattleTitle" text="#dota2_rpg_battle_title" />
-			<Label id="LevelProgress" text="1/20" />
+			<Label id="LevelProgress" text="第 1 / 30 关" />
 			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
 			<Label id="WalletBalance" text="" hittest="false" />
-			<Label id="BattleCountdown" text="2:00" hittest="false" />
+			<Label id="BattleCountdown" text="#dota2_rpg_countdown_initial" hittest="false" />
 			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
 		</Panel>
 
@@ -124,13 +123,12 @@
 			</Panel>
 			<Panel id="ItemShopPanel" class="ItemShopPanel">
 				<Panel class="SidePanelHeader">
-					<Label class="LineupHeader" text="#dota2_rpg_item_shop" />
+					<Label id="EquipmentTitle" class="LineupHeader" text="#dota2_rpg_item_shop" />
 					<Button id="EquipmentToggle" class="SidePanelToggle">
 						<Label id="EquipmentToggleLabel" text="−" />
 					</Button>
 				</Panel>
 				<Panel id="EquipmentBody" class="SidePanelBody">
-					<Label id="NativeShopHint" class="NativeShopHint" text="#dota2_rpg_native_shop_hint" />
 					<Label id="ItemSellNotice" class="ItemSellNotice Hidden" text="" />
 					<Label id="ItemTransferNotice" class="ItemSellNotice Hidden" text="" />
 					<Panel class="ItemTargetRow">

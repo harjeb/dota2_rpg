@@ -116,6 +116,7 @@ function runHud() {
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) {
+        if (token === "#dota2_rpg_remaining_time") { return "剩余时间"; }
         return token === "#dota2_rpg_reward_xp" ? "XP %s1 (active %s2 / bench %s3)" : token;
     };
     var timers = [];
@@ -183,7 +184,7 @@ var sidebar = rootLayout.children.filter(function (node) { return node.attrs.id 
 assert(sidebar.children[0].attrs.id === "DamagePanel" && sidebar.children[1].attrs.id === "ItemShopPanel", "equipment follows DPS in the same sidebar");
 assert(!/Hidden/.test(sidebar.children[0].attrs.class), "DPS defaults visible");
 assert(!/Hidden/.test(sidebar.children[1].attrs.class), "equipment defaults visible");
-assert(/height:\s*66%/.test(cssSource) && /margin-top:\s*100px/.test(cssSource), "sidebar reserves bottom HUD space");
+assert(/#RightSidebar\s*\{[^}]*height:\s*69%[^}]*margin-top:\s*72px/s.test(cssSource), "sidebar sits below debug controls and reserves bottom HUD space");
 assert(/\.SidePanelBody\s*\{[^}]*overflow:\s*squish scroll/s.test(cssSource), "both bodies scroll");
 ["setup", "battle", "fight", "finished", "setup"].forEach(function (phase) {
     hud.subscriptions.rpg_battle_state({phase: phase, ready: 1, battle_time: 17, time_limit: 120});
@@ -196,17 +197,17 @@ assert(!panel(hud, "DamageBody").BHasClass("Hidden"), "DPS remains expanded");
 click(hud, "DamageToggle");
 hud.subscriptions.rpg_battle_state({phase: "fight", battle_time: 111, time_limit: 120});
 assert(panel(hud, "DamageBody").BHasClass("Hidden") && panel(hud, "EquipmentBody").BHasClass("Hidden"), "phase update respects both minimized states");
-assert(panel(hud, "BattleCountdown").text === "0:09" && panel(hud, "BattleCountdown").BHasClass("CountdownUrgent"), "countdown uses authoritative battle time");
+assert(panel(hud, "BattleCountdown").text === "剩余时间 0:09" && panel(hud, "BattleCountdown").BHasClass("CountdownUrgent"), "countdown uses authoritative battle time");
 click(hud, "DamageToggle"); click(hud, "EquipmentToggle");
 assert(!panel(hud, "DamageBody").BHasClass("Hidden") && !panel(hud, "EquipmentBody").BHasClass("Hidden"), "both restore independently");
 hud.subscriptions.rpg_damage_stats({elapsed: 119.1, units: []});
-assert(panel(hud, "BattleCountdown").text === "0:01", "periodic DPS events advance countdown without a phase broadcast");
+assert(panel(hud, "BattleCountdown").text === "剩余时间 0:01", "periodic DPS events advance countdown without a phase broadcast");
 hud.subscriptions.rpg_damage_stats({elapsed: 121, units: []});
-assert(panel(hud, "BattleCountdown").text === "0:00", "countdown clamps at zero");
+assert(panel(hud, "BattleCountdown").text === "剩余时间 0:00", "countdown clamps at zero");
 hud.subscriptions.rpg_battle_state({phase: "result", battle_time: 0, time_limit: 120});
-assert(panel(hud, "BattleCountdown").text === "0:00", "settlement does not reset elapsed time");
+assert(panel(hud, "BattleCountdown").text === "剩余时间 0:00", "settlement does not reset elapsed time");
 hud.subscriptions.rpg_battle_state({phase: "setup", battle_time: 130, time_limit: 120});
-assert(panel(hud, "BattleCountdown").text === "2:00", "next setup resets countdown");
+assert(panel(hud, "BattleCountdown").text === "剩余时间 2:00", "next setup resets countdown");
 hud.subscriptions.rpg_enemy_roster({units: [{id: 501, name: "npc_dota_hero_lion"}]});
 hud.subscriptions.rpg_hero_slots({slot_key: "dire_1", hero_name: "npc_dota_hero_lion", hero_index: 501, rules_ready: 1, can_edit: 0});
 assert(!hud.createdPanels.some(function(p) { return /^Dire/.test(p.id); }), "enemy updates never create editor panels");
