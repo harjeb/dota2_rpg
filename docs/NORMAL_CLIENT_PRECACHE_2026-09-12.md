@@ -1,6 +1,6 @@
 # Normal client stage preparation investigation — 2026-09-12
 
-Issue: `dota2_rpg-bpgb` (in progress; compatibility repair deployed locally, Workshop/native acceptance pending).
+Issue: `dota2_rpg-bpgb` (closed after user-confirmed ordinary-client acceptance).
 
 User reports missing resources and the HUD remaining at “正在准备本关资源” in ordinary Dota, outside Tools. No game process was launched/stopped, and no gameplay commands or screenshots were taken. The user subsequently supplied the current console transcript; the repair and its limits are recorded below.
 
@@ -52,6 +52,12 @@ Both local copies were backed up, replaced via adjacent staging files, and hash 
 - `steamapps/workshop/content/570/3799645167/3799645167.vpk`
 - `steamapps/common/dota 2 beta/game/dota_addons/vpks/3799645167/3799645167.vpk`
 
-See `tests/results/safe-errors-v1-workshop-deploy.json` for backup/staging paths and verification. No Steam manifest/publish metadata or remote Workshop item was changed. The user can leave the active map and re-enter in the ordinary client to check for `safe-errors-v1`; if the existing process retains the old mount, a subsequent user-run client restart may be needed. Steam may later restore the published package during a download/update. Native package acceptance and gameplay repair remain unverified; this completes local packaging issue `dota2_rpg-zuau`, while `dota2_rpg-bpgb` remains in progress.
+See `tests/results/safe-errors-v1-workshop-deploy.json` for backup/staging paths and verification. No Steam manifest/publish metadata or remote Workshop item was changed. The user can leave the active map and re-enter in the ordinary client to check for `safe-errors-v1`; if the existing process retains the old mount, a subsequent user-run client restart may be needed. Steam may later restore the published package during a download/update. Native package acceptance and gameplay repair were still unverified immediately after deployment; local packaging issue `dota2_rpg-zuau` was completed at that point.
+
+## User-confirmed ordinary-client acceptance
+
+After the two local Workshop VPK copies were replaced, the user reported: “可以了 确实 修复了”. This confirms the repaired local package works in the user's ordinary-client reproduction and resolves the reported blocking issue. `dota2_rpg-bpgb` is therefore closed. The agent did not launch/stop Dota, issue gameplay commands, or capture screenshots. No follow-up environment diagnostic was provided, so the exact retail debug-library restriction remains unmeasured; the acceptance establishes the observed behavior, not that internal mechanism.
+
+The remotely published Workshop item is still unchanged. Local acceptance applies to the installed patched VPK, and a later Steam download can replace it with the published version. Publishing this revision is a separate follow-up for persistent distribution. Before the user's planned upload, all 105 repository game-addon files were verified byte-for-byte against `game/dota_addons/dota2_rpg/`; the three repaired Lua files also match the accepted local VPK. The installed addon directory is ready as the source for the existing upload workflow.
 
 `condump` did not create a discoverable file in this session; the user's pasted console history provided the evidence. For another capture, pasted output is sufficient. A subsequent user-run session can also use `-console -condebug` while retaining existing launch options and omitting `-tools`.
