@@ -82,11 +82,41 @@ function Summons.OnSpawn(game,unit)
     call(unit,"SetAcquisitionRange",0)
     return true
 end
+local function is_registered(game,unit)
+    for _,team in pairs(game.battleManager and game.battleManager.teamHeroes or {}) do
+        for _,member in ipairs(team) do if member==unit then return true end end
+    end
+    return false
+end
+-- 敌方召唤物（蛇棒、地狱火等）不属于受管召唤物：本模块只给玩家方下达指令。
+-- 但它们同样必须在战斗结束时消失，否则会活到下一关，甚至打死准备区里的小精灵。
+-- 只登记"非本关登记的敌方非英雄单位"，登记过的敌人和玩家单位一律不动。
+-- 注意：npc_spawned 在 CreateUnitByName 期间同步触发，早于 battleManager:RegisterHero，
+-- 所以 is_registered 在生成瞬间必然为假。除登记外还要看项目自己的敌方标记
+-- （enemyRuleIndex），否则本关野怪会在准备阶段被当成召唤物清掉。
+function Summons.TrackEnemySummon(game,unit)
+    if not valid(unit) then return false end
+    if call(unit,"GetTeamNumber")~=(DOTA_TEAM_BADGUYS or 3) then return false end
+    if call(unit,"IsRealHero")==true then return false end
+    -- enemyRuleIndex 是字段不是方法，不能用 call（它只转发函数）。
+    if unit.enemyRuleIndex~=nil then return false end
+    if is_registered(game,unit) then return false end
+    game.enemySummons=game.enemySummons or {}
+    game.enemySummons[unit]=true
+    return true
+end
+function Summons.ClearEnemySummons(game)
+    for unit in pairs(game.enemySummons or {}) do
+        if valid(unit) then call(unit,"RemoveSelf") end
+    end
+    game.enemySummons={}
+end
 local function issue(game,order)
     local gate=game.tacticBridge and game.tacticBridge.orderGate
     return gate~=nil and gate:Execute(order)==true
 end
 function Summons.Clear(game)
+    Summons.ClearEnemySummons(game)
     for unit in pairs(game.managedSummons or {}) do
         if valid(unit) then
             call(unit,"SetIdleAcquire",false)
@@ -114,6 +144,7 @@ function Summons.OnThink(game)
                 DOTA_UNIT_TARGET_FLAG_INVULNERABLE or 0,FIND_ANY_ORDER or 0,false)
             for _,unit in ipairs(ok and units or {}) do
                 if not (game.managedSummons or {})[unit] then Summons.OnSpawn(game,unit) end
+                Summons.TrackEnemySummon(game,unit)
             end
         end
     end

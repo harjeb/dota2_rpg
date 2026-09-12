@@ -54,6 +54,30 @@ Summons.Clear(game)
 assert(ward.removed and wolf.removed and late.removed and not hero.removed and not other.removed)
 assert(not clone.removed and clone.acquire==false,"real hero clones are stopped; native owner lifecycle removes them")
 assert(next(game.managedSummons)==nil)
+
+-- 敌方召唤物（蛇棒、地狱火等）不进指令托管，但必须被清掉：它们曾经活到下一关，
+-- 还在准备阶段把指挥官小精灵打死。
+local enemyWard=unit(20,"npc_dota_shadow_shaman_ward",3,0,other,1)
+local enemyInfernal=unit(21,"npc_dota_warlock_golem",3,0,other,1)
+local registeredEnemy=unit(22,"npc_dota_neutral_centaur_khan",3,0,nil,1)
+table.insert(game.battleManager.teamHeroes[3],registeredEnemy) -- 本关登记过的敌人
+assert(Summons.TrackEnemySummon(game,enemyWard) and Summons.TrackEnemySummon(game,enemyInfernal),
+    "enemy summons enter the cleanup list")
+assert(not Summons.TrackEnemySummon(game,registeredEnemy),"a registered stage enemy is never tracked")
+-- 生成顺序回归：npc_spawned 在 CreateUnitByName 期间同步触发，早于 RegisterHero。
+-- 项目自己的敌方标记是"这不是召唤物"的持久依据，登记与否都要挡住；
+-- 而生成瞬间标记尚未写入的那一窗，由 OnNpcSpawned 的 stageLoading 闸门负责（见 addon_game_mode）。
+local stageEnemy=unit(23,"npc_dota_neutral_ogre_mauler",3,0,nil,1)
+stageEnemy.enemyRuleIndex=1
+assert(not Summons.TrackEnemySummon(game,stageEnemy),
+    "the project enemy marker keeps a stage enemy out of the cleanup list")
+assert(not Summons.TrackEnemySummon(game,wolf),"player summons keep the order-driven path instead")
+assert(not Summons.TrackEnemySummon(game,other),"enemy heroes are never tracked")
+Summons.Clear(game)
+assert(enemyWard.removed and enemyInfernal.removed,"enemy summons are removed at battle end")
+assert(not registeredEnemy.removed,"the registered enemy survives cleanup")
+assert(not stageEnemy.removed,"a marked stage enemy survives cleanup")
+assert(next(game.enemySummons)==nil,"the enemy cleanup list is drained")
 -- Native Conjure Image observed in the shared-commander game: Wisp owner,
 -- player ID -1, controllable, no clone source and no direct roster ownership.
 local player=unit(100,"player",2,0,nil,0)

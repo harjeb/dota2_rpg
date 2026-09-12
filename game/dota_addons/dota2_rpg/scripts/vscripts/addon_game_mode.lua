@@ -656,6 +656,14 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	-- Native doubles are combat summons, never the hidden player commander.
 	if TempestDouble.OnSpawn(self, unit, BATTLE_ACQUISITION_RANGE) then return end
     if SpecialTargets.OnSpawn(self, unit) then return end
+    -- 敌方召唤物（蛇棒、地狱火等）不参与指令托管，但必须进清理名单，
+    -- 否则会活到下一关、甚至打死准备区里的小精灵。
+    -- 组装关卡阵容时必须跳过：npc_spawned 在 CreateUnitByName 期间同步触发，
+    -- 早于 battleManager:RegisterHero，此刻本关野怪还没登记，会被误判成"敌方召唤物"
+    -- 并随准备阶段每 tick 的 Summons.Clear 一起被 RemoveSelf，导致场上没有野怪、开局即胜。
+    if not self.stageLoading then
+        SummonBehavior.TrackEnemySummon(self, unit)
+    end
     if SummonBehavior.OnSpawn(self, unit) then return end
 	if RespawnPolicy.OnSpawn(self, unit) then return end
 	if not TacticEngine.IsValidUnit(unit) or not unit:IsRealHero() then
@@ -693,6 +701,9 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	end
 	if unit:GetUnitName() == PLAYER_PLACEHOLDER_HERO then
 		self.placeholderHero = unit
+		-- 指挥官只是背包/控制载体，全程不应受伤：无敌是常驻状态，
+		-- 而不是"战斗中才开"。准备阶段残留的敌方召唤物曾经把它打死。
+		self:EnsureCommanderProtected()
 		-- The commander is an inventory/control carrier only. Hide it explicitly
 		-- instead of relying on the out-of-bounds position.
 		if unit.AddNoDraw ~= nil then
@@ -1164,6 +1175,21 @@ end
 
 -- 某个载体的原版专属中立槽当前持有的实体（没有则返回 nil）。
 -- 该槽容量固定为 1，且不占用物品栏/背包/储藏栏。
+-- 指挥官（小精灵）全程无敌：它在战场上只是携带金币/装备的载体，被任何来源打死
+-- 都会破坏钱包、库存与转交。开战时加、切关/重开时也保持，不再摘掉。
+function CDota2RpgDemo:EnsureCommanderProtected()
+	local commander = self.placeholderHero
+	if commander == nil or not TacticEngine.IsValidUnit(commander) then
+		return false
+	end
+	if commander.AddNewModifier ~= nil then
+		pcall(function()
+			commander:AddNewModifier(commander, nil, "modifier_invulnerable", {})
+		end)
+	end
+	return true
+end
+
 function CDota2RpgDemo:GetNeutralSlotItem(unit)
 	if unit == nil or unit.GetItemInSlot == nil then
 		return nil
@@ -3565,10 +3591,8 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 	end
 	self.tacticBridge:ResetState()
 	self.battleManager:ResetBattleStats()
-	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
-		-- 战斗中玩家小精灵无敌，避免被敌方波及
-		self.placeholderHero:AddNewModifier(self.placeholderHero, nil, "modifier_invulnerable", {})
-	end
+	-- 战斗中玩家小精灵无敌，避免被敌方波及
+	self:EnsureCommanderProtected()
 	self.damageStats = DamageStats.new()
 	local damageUnits = {}
 	for _, team in ipairs({ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS }) do
@@ -3719,9 +3743,7 @@ function CDota2RpgDemo:OnReplayRun(_, payload)
 	end
 	self.currentLevelId = "ch01"
 	self.phase = "setup"
-	if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
-		self.placeholderHero:RemoveModifierByName("modifier_invulnerable")
-	end
+	self:EnsureCommanderProtected()
 	self:SpawnLevelEnemies(self.currentLevelId)
 	self:RespawnPlayerRoster()
 	self:SpawnBattleBarrier()
@@ -3872,9 +3894,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		lifecycle.Event(self, "reset_begin", "from=" .. tostring(settlement.level) .. " to=" .. tostring(self.currentLevelId))
 		self.phase = "setup"
 		self.winner = ""
-		if self.placeholderHero ~= nil and TacticEngine.IsValidUnit(self.placeholderHero) then
-			self.placeholderHero:RemoveModifierByName("modifier_invulnerable")
-		end
+		self:EnsureCommanderProtected()
 		self:SpawnLevelEnemies(self.currentLevelId)
 		self:RespawnPlayerRoster()
 		self:SpawnBattleBarrier()
