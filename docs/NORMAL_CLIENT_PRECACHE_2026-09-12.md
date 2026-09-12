@@ -1,8 +1,8 @@
 # Normal client stage preparation investigation — 2026-09-12
 
-Issue: `dota2_rpg-bpgb` (open, diagnosis awaiting current console dump).
+Issue: `dota2_rpg-bpgb` (in progress; compatibility repair deployed locally, Workshop/native acceptance pending).
 
-User reports missing resources and the HUD remaining at “正在准备本关资源” in ordinary Dota, outside Tools. No game process was launched/stopped, no gameplay commands or screenshots were taken, and no speculative runtime changes were made.
+User reports missing resources and the HUD remaining at “正在准备本关资源” in ordinary Dota, outside Tools. No game process was launched/stopped, and no gameplay commands or screenshots were taken. The user subsequently supplied the current console transcript; the repair and its limits are recorded below.
 
 ## Verified evidence
 
@@ -27,8 +27,18 @@ The user also reports “正在获取英雄列表” in the skill-debug panel. `
 
 The request listener is installed near the end of `InitGameMode`, after recruitment and tactic-bridge installation. It ignores requests unless the engine-supplied PlayerID equals the initialized game owner; publication also requires `PlayerResource:GetPlayer` to return a player. An empty catalog can produce the same UI placeholder. No current console dump was present on the follow-up check. These paths narrow the investigation but do not establish which one failed in the reported session.
 
-## Required evidence to continue
+## Current user-supplied console evidence
 
-In the current ordinary-client console run `condump`. The installed engine includes the command and output filename pattern `condump%03d.txt` (its help mentions `.log`, but its filename format is `.txt`). Inspect the newly written file under `game/dota/` for Lua stack traces, `[RPGTrace]`, `[RPGPrecache]`, `StagePrecache`, `stage observer failure` and resource errors. Console availability and whether it contains remote-server Lua messages must be assessed from that actual output.
+The current ordinary-client transcript identifies Workshop addon `3799645167`. It contains completed first-stage precache (`startup_complete ... level=ch01`), all debug listener registrations, and `Shop + lineup + TacticEngine initialized`. PlayerID 0's wallet initialization also completed. `Script Runtime Error: error in error handling` occurs after that wallet message, at PRE_GAME, and again near GAME_IN_PROGRESS. Therefore a blanket failure to download the addon or finish InitGameMode is no longer the leading explanation. The transcript includes missing optional resources, localization, and team-assignment warnings, but does not prove they caused either stuck panel.
 
-If console dumping is unavailable or lacks startup history, add `-console -condebug` to the existing Steam launch options for a subsequent user-run ordinary-client reproduction. Retain the existing launch options and omit `-tools`. Do not infer a successful gameplay fix from offline mocks or unchanged deployment hashes.
+Both affected paths evaluated `debug.traceback` before entering `xpcall`: enemy spawn sets `stageLoading=true` immediately before this expression, while the debug request uses it before publishing the hero list. `RunLifecycleStep` used it too, so it could fail before protecting the scheduled upkeep. A missing debug table/function reproduces the stuck-loading/no-reply failure in offline tests. A traceback function that throws masks an original callback error. The transcript does not expose the original error or prove which debug facilities the retail VM provides; this is a concrete compatibility defect and diagnostic repair, not yet a confirmed complete native fix. The connect callback's original exception also remains unidentified.
+
+## Repair and validation: safe-errors-v1
+
+All six unguarded error-handler arguments in `addon_game_mode.lua` and `battle/skill_debug.lua` now use `RuntimeLog.Traceback`. It safely converts the original error and attempts optional traceback formatting inside `pcall`. Missing, non-callable, throwing debug facilities, and error objects with throwing `__tostring` retain a printable fallback. Existing successful return values and failure cleanup remain intact. Startup prints `safe-errors-v1 debug/traceback=<types>` so the next ordinary-client log can identify the revision and available facilities.
+
+All 86 offline groups pass. Actual spawn and lifecycle methods were tested with debug absent, an empty debug table, a non-function traceback, and a throwing traceback: successful spawns complete, failed spawns clear loading and report `spawn_failed`, and later lifecycle steps still run. The real debug listener returns its hero catalog under the same restrictions. Existing lifecycle fault tests continue verifying stack traces when supported.
+
+The three modified Lua sources were backed up, copied to the installed loose addon, and SHA-256 verified; see `tests/results/safe-errors-v1-deploy.json`. The UI remains build 50. The downloaded Steam Workshop VPK was not changed, and the active map was not restarted or reloaded. Repack/publish the installed addon through the existing Workshop workflow, then reproduce in a new ordinary-client session. Confirm `safe-errors-v1` appears and check enemy preparation plus the debug catalog. If either still fails, collect the new original `StagePrecache`, `BattleLifecycle`, or `SkillDebug` error; do not infer native acceptance from the offline suite.
+
+`condump` did not create a discoverable file in this session; the user's pasted console history provided the evidence. For another capture, pasted output is sufficient. A subsequent user-run session can also use `-console -condebug` while retaining existing launch options and omitting `-tools`.

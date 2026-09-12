@@ -1,8 +1,26 @@
 local RuntimeLog = {}
 local writes = 0
 
+-- Retail VScript may restrict debug facilities. Never let diagnostic formatting
+-- interrupt the protected operation or replace its original error.
+function RuntimeLog.Traceback(err)
+    local okText, text = pcall(tostring, err)
+    if not okText then text = "Lua error (message unavailable)" end
+    local okTrace, trace = pcall(function()
+        if type(debug) == "table" and type(debug.traceback) == "function" then
+            return debug.traceback(text, 2)
+        end
+    end)
+    if okTrace and type(trace) == "string" then return trace end
+    return text
+end
+
 function RuntimeLog.StartSession(build)
     RuntimeLog.Write("BUILD " .. tostring(build) .. "; console=console.log (launch with -condebug)")
+    local ok, facility = pcall(function()
+        return type(debug) .. "/" .. (type(debug) == "table" and type(debug.traceback) or "unavailable")
+    end)
+    RuntimeLog.Write("safe-errors-v1 debug/traceback=" .. (ok and facility or "restricted"))
 end
 
 -- Reserved for errors already throttled by their lifecycle caller; a late-round

@@ -31,6 +31,7 @@ local JinadaIncome = require("issue_fixes/jinada_income")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
+local Traceback = RuntimeLog.Traceback or tostring
 local okItems = pcall(require, "items") -- item_lua 经验卷轴的 OnSpellStart
 local okProgression, ProgressionData = pcall(require, "data.progression_data")
 local okRecruitmentPatch, RecruitmentPatch = pcall(require, "patches.recruitment_patch")
@@ -2884,7 +2885,7 @@ function CDota2RpgDemo:AwaitEnemyResources(levelId)
 			return
 		end
 		if ok then
-			local spawned, err = xpcall(function() self:SpawnLevelEnemies(levelId) end, debug.traceback)
+			local spawned, err = xpcall(function() self:SpawnLevelEnemies(levelId) end, Traceback)
 			if not spawned then
 				self.stageLoading, self.stageLoadError = false, "spawn_failed"
 				RuntimeLog.WriteCritical("StagePrecache spawn_failed level=" .. tostring(levelId) .. " error=" .. tostring(err))
@@ -2915,7 +2916,7 @@ function CDota2RpgDemo:SpawnLevelEnemies(levelId)
 	self.stageLoading = true -- Also guard native spawn callbacks until the whole roster exists.
 	self.preparedEnemyLevel = nil
 	local created = {}
-	local ok, result = xpcall(function() return self:AssembleLevelEnemies(levelId, created) end, debug.traceback)
+	local ok, result = xpcall(function() return self:AssembleLevelEnemies(levelId, created) end, Traceback)
 	self.stageLoading = false
 	if not ok or not result then
 		self.stageLoadError = "spawn_failed"
@@ -3723,7 +3724,7 @@ end
 -- Native unit handles can fail during death/reincarnation and removal. Keep
 -- independent upkeep failures from cancelling the scheduled think or deadline.
 function CDota2RpgDemo:RunLifecycleStep(name, callback)
-	local ok, result = xpcall(callback, debug.traceback)
+	local ok, result = xpcall(callback, Traceback)
 	if not ok then
 		self.lifecycleErrors = self.lifecycleErrors or {}
 		local now = GameRules:GetGameTime()
@@ -3804,7 +3805,7 @@ function CDota2RpgDemo:OnReplayRun(_, payload)
 		or (self.skillDebug and (self.skillDebug.active or self.skillDebug.pending)) then return false end
 	self.settlementGeneration = self.settlementGeneration + 1
 	self.phase = "restarting" -- claim before native callbacks/reentrant events
-	local resetOk, resetError = xpcall(function() require("battle.fresh_run").Reset(self) end, debug.traceback)
+	local resetOk, resetError = xpcall(function() require("battle.fresh_run").Reset(self) end, Traceback)
 	if not resetOk then
 		-- Destructive cleanup is intentionally not rolled back. Keep combat
 		-- locked and offer a new-generation retry instead of stranding restarting.

@@ -8,8 +8,12 @@ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS = 2,3
 function IsValidEntity(u) return u ~= nil and not u.invalid end
 local nativeRequire = require
 local logs = {}
+local runtimeLog = nativeRequire("issue_fixes.runtime_log")
+runtimeLog.Write = function(message) logs[#logs+1]=message end
+runtimeLog.WriteCritical = runtimeLog.Write
 local hooks = { OnThink = function() end, Clear = function() end }
 require = function(name)
+    if name == "issue_fixes.runtime_log" then return runtimeLog end
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
         or name == "battle.item_cooldowns"
         or name == "battle.fresh_run" or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end

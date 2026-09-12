@@ -4,7 +4,9 @@
 local root = arg and arg[1] or "game/dota_addons/dota2_rpg/scripts/vscripts"
 package.path = root .. "/?.lua;" .. package.path
 local noop = function() end
-package.loaded["issue_fixes.runtime_log"] = {Write=noop}
+local runtimeLog = require("issue_fixes.runtime_log")
+runtimeLog.Write = noop
+package.loaded["issue_fixes.runtime_log"] = runtimeLog
 package.loaded["issue_fixes.hero_lifecycle_log"] = {Remove=function(_, u) u:RemoveSelf() end}
 package.loaded["issue_fixes.hero_ability_policy"] = {GetSlotCount=function(u) return #u.abilities end}
 for _, name in ipairs({"battle.tempest_double", "tactics.special_targets", "battle.summon_behavior", "issue_fixes.tiny_tree"}) do
@@ -210,6 +212,20 @@ test("failed pending entry and cancellation preserve generation and rule stores"
         eq(g.battleManager.teamRules,teamRules,action .. " preserves team rules")
         eq(g.tacticBridge.ruleService.state.rules,serviceRules,action .. " preserves service rules")
         assert(not g.skillDebug.pending and not g.skillDebug.active)
+    end
+end)
+
+test("catalog request survives restricted debug facilities",function()
+    local originalDebug = debug
+    for _, restricted in ipairs({false, {}, {traceback=false},
+        {traceback=function() error("traceback denied") end}}) do
+        local f,g=fixture()
+        debug = restricted or nil
+        local ok, err = pcall(function() f:emit("request",{PlayerID=7}) end)
+        debug = originalDebug
+        assert(ok, tostring(err))
+        eq(f.events[#f.events].payload.heroes_text,
+            HERO..";npc_dota_hero_drow_ranger;npc_dota_hero_sven")
     end
 end)
 

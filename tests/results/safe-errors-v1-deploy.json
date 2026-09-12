@@ -1,0 +1,22 @@
+{
+  "marker": "safe-errors-v1",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-backup-20260912-190228",
+  "scope": "installed loose addon only; Steam Workshop archive not updated; running game untouched",
+  "files": [
+    {
+      "file": "game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua",
+      "sha256": "bb8e62dfc064e89a5d78a5cde85c43a01cf75d63a7f81e7cf94bee1b456c8b02",
+      "matched": true
+    },
+    {
+      "file": "game/dota_addons/dota2_rpg/scripts/vscripts/battle/skill_debug.lua",
+      "sha256": "39f6f058319c385c13ca4c3b4f6ff2446effa15f5522f5bc96ffe433afe8ac87",
+      "matched": true
+    },
+    {
+      "file": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/runtime_log.lua",
+      "sha256": "af7b8381b6263652dc910313e8fb46ed6a05f89eef361e8a6c05e31b4c8c2953",
+      "matched": true
+    }
+  ]
+}

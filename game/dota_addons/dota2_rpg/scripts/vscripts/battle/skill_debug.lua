@@ -1,6 +1,7 @@
 -- Player-operated sandbox. Enter/exit start fresh runs; a test reset keeps its build.
 local Debug = { LEVEL = "skill_test", UNIT = "npc_rpg_skill_test_target", HP = 50000, GOLD = 99999 }
 local Log = require("issue_fixes.runtime_log")
+local Traceback = Log.Traceback or tostring
 local Lifecycle = require("issue_fixes.hero_lifecycle_log")
 local Policy = require("issue_fixes.hero_ability_policy")
 local RespawnPolicy = require("battle.respawn_policy")
@@ -15,7 +16,7 @@ end
 local function state(game) return game.skillDebug end
 local function safe(game, name, fn)
     if game.RunLifecycleStep then return game:RunLifecycleStep("debug_" .. name, fn) end
-    local ok, err = xpcall(fn, debug.traceback)
+    local ok, err = xpcall(fn, Traceback)
     if not ok then Log.Write("SkillDebug step=" .. name .. " error=" .. tostring(err)) end
     return ok, err
 end
@@ -441,7 +442,7 @@ function Debug.Install(game)
     local function listen(event, action)
         CustomGameEventManager:RegisterListener(event, function(_, payload)
             if not owner(game, payload) then return end
-            local ok, accepted, err = xpcall(function() return action(payload) end, debug.traceback)
+            local ok, accepted, err = xpcall(function() return action(payload) end, Traceback)
             if not ok then
                 Log.Write("SkillDebug event=" .. event .. " error=" .. tostring(accepted))
                 state(game).pending = false

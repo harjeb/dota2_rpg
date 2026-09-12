@@ -572,6 +572,40 @@ for _, case in ipairs(bossCases) do
 end
 print("PASS: all three Boss tiers reach actual spawn/level/equipment/rule registration with full HP and no compounding")
 
+local RuntimeLog = require("issue_fixes.runtime_log")
+local originalDebug = debug
+for _, restricted in ipairs({false, {}, {traceback=false},
+    {traceback=function() error("traceback denied") end}}) do
+    debug = restricted or nil
+    local ran, broadcasts = 0, 0
+    local game=setmetatable({phase="setup", currentLevelId="ch01",
+        AwaitEnemyResources=function() return true end,
+        AssembleLevelEnemies=function() ran=ran+1; return true end,
+        PreloadNextLevel=function() end,
+        BroadcastBattleState=function() broadcasts=broadcasts+1 end,
+    },CDota2RpgDemo)
+    local ok, err = pcall(function()
+        assert(game:SpawnLevelEnemies("ch01") and ran==1)
+        assert(game.stageLoading==false and game.preparedEnemyLevel=="ch01")
+        game.AssembleLevelEnemies=function() error("original spawn failure") end
+        assert(game:SpawnLevelEnemies("ch01")==false)
+        assert(game.stageLoading==false and game.stageLoadError=="spawn_failed" and broadcasts==1)
+        local stepOk, message = game:RunLifecycleStep("restricted_test",function() error("original upkeep failure") end)
+        assert(not stepOk and message:find("original upkeep failure",1,true))
+        local nextOk, value = game:RunLifecycleStep("next_step",function() return 42 end)
+        assert(nextOk and value==42)
+        local handlerOk, handlerMessage=xpcall(function() error("original handler failure") end,RuntimeLog.Traceback)
+        assert(not handlerOk and handlerMessage:find("original handler failure",1,true))
+        local badText=setmetatable({}, {__tostring=function() error("bad tostring") end})
+        assert(type(RuntimeLog.Traceback(badText))=="string")
+    end)
+    debug = originalDebug
+    assert(ok, tostring(err))
+end
+assert(RuntimeLog.Traceback("trace retained"):find("stack traceback",1,true),
+    "ordinary debug traceback remains available when supported")
+print("PASS: restricted debug keeps spawn/loading cleanup and lifecycle errors functional")
+
 -- Exercise the actual npc_spawned routing: a real-hero native double must not
 -- reach commander hiding, ownership reassignment or roster preparation.
 local copy = {
