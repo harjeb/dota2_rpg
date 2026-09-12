@@ -21,6 +21,12 @@ These checks establish deployment contents, not which archive manifest an alread
 
 `battle/stage_precache.lua` logs resource start/completion/failure and stage observer failure. Timeout is 30 seconds on the game scheduler after the native call returns; it cannot interrupt a blocking native call. A callback observer exception can also prevent the final battle-state broadcast. These are diagnostic possibilities, not established causes of this incident.
 
+## Additional symptom: skill debug hero list
+
+The user also reports “正在获取英雄列表” in the skill-debug panel. `skill_debug.js` sends `rpg_debug_request` both on script initialization and whenever the panel opens. The server listener in `battle/skill_debug.lua` calls `Debug.Publish`, which reads the already-loaded hero pool plus `debug_heroes.kv` and returns `rpg_debug_state`. It does not wait for hero models or stage precache. Therefore repeated list loading is additional evidence to investigate server initialization, event dispatch, player identity and reply delivery before attributing both symptoms to missing models.
+
+The request listener is installed near the end of `InitGameMode`, after recruitment and tactic-bridge installation. It ignores requests unless the engine-supplied PlayerID equals the initialized game owner; publication also requires `PlayerResource:GetPlayer` to return a player. An empty catalog can produce the same UI placeholder. No current console dump was present on the follow-up check. These paths narrow the investigation but do not establish which one failed in the reported session.
+
 ## Required evidence to continue
 
 In the current ordinary-client console run `condump`. The installed engine includes the command and output filename pattern `condump%03d.txt` (its help mentions `.log`, but its filename format is `.txt`). Inspect the newly written file under `game/dota/` for Lua stack traces, `[RPGTrace]`, `[RPGPrecache]`, `StagePrecache`, `stage observer failure` and resource errors. Console availability and whether it contains remote-server Lua messages must be assessed from that actual output.
