@@ -4,7 +4,8 @@
 	height: 100%;
 }
 
-#RunLivesPanel { width: 330px; height: fit-children; horizontal-align: left; vertical-align: top; margin-left: 18px; margin-top: 72px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
+/* Centered header half-width 280 + gap 12 + lives half-width 140. */
+#RunLivesPanel { width: 280px; height: fit-children; horizontal-align: center; vertical-align: top; transform: translateX(432px); margin-top: 14px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
 #RunLivesTitle { font-size: 16px; color: #e6d3d5; }
 #RunLivesRow, #RunHearts { width: fit-children; height: 34px; flow-children: right; }
 .RunHeart { width: 32px; height: 34px; font-family: Arial; font-size: 29px; color: #f46d82; text-align: center; }

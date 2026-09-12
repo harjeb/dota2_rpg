@@ -1,0 +1,24 @@
+{
+  "version": "UI46",
+  "scope": "Existing HUD sidebar regression passed; native CSS compiled. No gameplay or screenshots.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui46-backup-20260912-171147",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.css",
+      "sha256": "1fbd676542ffa2a5a0e067a22e2ac2bfc17f680492ca54ea528b417696372588"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "0f6c9e9e4772dee257eec69ea7f25be68de4679b3fc713d73518d55245029ad0"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "84a78b5de8f65d05fa9a57e6b7c00119280db411977b297e61a14c37606ba194"
+    }
+  ],
+  "compiled_file": {
+    "path": "game/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.vcss_c",
+    "sha256": "0a05372d9a2324854deb944462de64fa42de39af865d11c33706f7cfe5e7a40e"
+  },
+  "compile_log": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui46-backup-20260912-171147\\hud-css-compile.log"
+}
