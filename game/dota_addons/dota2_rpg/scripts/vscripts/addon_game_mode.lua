@@ -26,6 +26,7 @@ local SkillDebug = require("battle.skill_debug")
 local RespawnPolicy = require("battle.respawn_policy")
 local ItemSales = require("issue_fixes/item_sales")
 local ShardPurchase = require("issue_fixes/shard_purchase")
+local GrisGris = require("issue_fixes/gris_gris")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -477,7 +478,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 gris-gris-v1 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 
@@ -2398,6 +2399,7 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 			item = candidate
 		end
 	end
+	if self:IsLiveItem(item) and item:GetAbilityName() == GrisGris.ITEM then return end
 	if self:MoveHeroItemToStash(hero, item) then
 		self:SyncLiveEquipmentState(true)
 	end
@@ -2618,6 +2620,7 @@ function CDota2RpgDemo:CaptureHeroInventoryForRespawn(hero)
 	if not TacticEngine.IsValidUnit(hero) or hero.GetItemInSlot == nil then
 		return
 	end
+	GrisGris.Capture(self, hero)
 	self:SyncHeroInventoryFromUnit(hero)
 	for slot = 0, CARRIER_LAST_SLOT do
 		local item = hero:GetItemInSlot(slot)
@@ -2647,6 +2650,7 @@ function CDota2RpgDemo:RestoreHeroInventoryToUnit(heroName, hero)
 		return
 	end
 	ShardPurchase.Restore(self, heroName, hero)
+	GrisGris.BeforeRestore(self, hero)
 	local priorInventory = heroData.inventory or {}
 	local priorStates = heroData.inventory_states or {}
 	local priorEntities = heroData.inventory_entities or {}
@@ -2708,6 +2712,7 @@ function CDota2RpgDemo:RestoreHeroInventoryToUnit(heroName, hero)
 	heroData.inventory_states = restoredStates
 	heroData.inventory_entities = restoredEntities
 	-- 以新单位的真实槽位再校准一次，尤其覆盖原版堆叠合并后只剩一个实体的情况。
+	GrisGris.Reconcile(self, hero)
 	self:SyncHeroInventoryFromUnit(hero)
 end
 
@@ -3316,7 +3321,8 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		end
 	end
 	-- 原版购买/出售有时是玩家级订单，不携带 units；其余物品操作必须来自一个明确载体。
-	if sourceCount > 1 or ((not isPurchase and not isSell and not isDisassemble) and sourceCount ~= 1) then
+	if sourceCount > 1 or ((not isPurchase and not isSell and not isDisassemble
+		and orderType ~= DOTA_UNIT_ORDER_CONSUME_ITEM) and sourceCount ~= 1) then
 		return false
 	end
 	if isPurchase and source ~= nil then
@@ -3342,6 +3348,19 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 			end
 		end
 		return false
+	end
+
+	if orderType == DOTA_UNIT_ORDER_CONSUME_ITEM then
+		local item = EntIndexToHScript(tonumber(filterTable.entindex_ability) or -1)
+		if self:IsLiveItem(item) and item:GetAbilityName() == GrisGris.ITEM then
+			local holder = self:FindEquipmentItemHolder(item)
+			if holder then
+				ItemSales.Sell(self, { PlayerID = issuerPlayerId,
+					hero = holder:GetUnitName(), item = GrisGris.ITEM,
+					item_index = tonumber(filterTable.entindex_ability) })
+			end
+			return false
+		end
 	end
 
 	if orderType == DOTA_UNIT_ORDER_EJECT_ITEM_FROM_STASH
@@ -3440,6 +3459,11 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		local lastSlot = CARRIER_LAST_SLOT
         if holder == nil or not self:IsEquipmentCarrier(holder)
             or not self:IsItemHeldBy(holder, item, 0, lastSlot) then return false end
+        if isSell and item:GetAbilityName() == GrisGris.ITEM then
+            ItemSales.Sell(self, { PlayerID = issuerPlayerId, hero = holder:GetUnitName(),
+                item = GrisGris.ITEM, item_index = itemIndex })
+            return false
+        end
         if isSell then
             -- Native HUD may use the assigned Wisp as issuer even when the
             -- inspected item is held by a roster hero. The exact owned entity,
@@ -3478,6 +3502,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		if not isTransferableItem(item) or not self:IsItemHeldBy(source, item, 0, lastSlot) then
 			return false
 		end
+		if item:GetAbilityName() == GrisGris.ITEM and (isDrop or isGive) then return false end
 		if isDrop then
 			return true -- 明确持有的物品才可丢到地面
 		end
@@ -3673,6 +3698,7 @@ function CDota2RpgDemo:OnEntityKilled(event)
 	local killed = EntIndexToHScript(event.entindex_killed or -1)
 	-- Classify native death before statistics/broadcasts, including late events.
 	RespawnPolicy.OnKilled(self, killed)
+	GrisGris.OnKilled(self, killed)
 	if self.phase ~= "fight" then
 		return
 	end
@@ -3713,6 +3739,7 @@ end
 function CDota2RpgDemo:OnThink()
 	self:RunLifecycleStep("tempest_think", function() TempestDouble.OnThink(self) end)
 	self:RunLifecycleStep("summon_think", function() SummonBehavior.OnThink(self) end)
+	self:RunLifecycleStep("gris_gris_think", function() GrisGris.OnThink(self) end)
 	self:RunLifecycleStep("tiny_tree_think", function() TinyTree.OnThink(self) end)
 	self:RunLifecycleStep("enemy_diagnostics", function() EnemyDiagnostics.OnThink(self) end)
 	self:RunLifecycleStep("roster_upkeep", function()
@@ -4091,6 +4118,7 @@ function CDota2RpgDemo:BroadcastShopState()
 		neutral_slot_free = neutralSlotTaken and 0 or 1,
 		inventories_text = table.concat(inventoryParts, ";"),
 		equipped_text = table.concat(equippedParts, ";"),
+		gris_gris_gold = GrisGris.Gold(self),
 		hero_entity_indices = heroEntityIndices,
 		cost_bench_slot = self.shopCosts.bench_slot,
 		bench_slot_max = self.shopCosts.bench_slot_max,

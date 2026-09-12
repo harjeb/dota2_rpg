@@ -984,6 +984,7 @@
         }
         shopState.stashFreeSlots = Number(data.stash_free_slots !== undefined ? data.stash_free_slots : 0);
         shopState.neutralSlotFree = Number(data.neutral_slot_free !== undefined ? data.neutral_slot_free : 1) !== 0;
+        shopState.grisGrisGold = Math.max(0, Number(data.gris_gris_gold) || 0);
         shopState.inventories = {};
         var invEntries = splitList(data.inventories_text);
         for (var invIndex = 0; invIndex < invEntries.length; invIndex++) {
@@ -1187,7 +1188,8 @@
         var button = $.CreatePanel("Button", row, "Sell_" + row.id);
         button.AddClass("ItemRowBtn");
         button.AddClass("ItemSellBtn");
-        createLabel(button, "", $.Localize("#dota2_rpg_item_sell"));
+        createLabel(button, "", $.Localize(itemName === "item_grisgris"
+            ? "#dota2_rpg_gris_gris_redeem" : "#dota2_rpg_item_sell"));
         button.enabled = phase === "setup" && validId && !pendingItemSales[entityId];
         button.SetPanelEvent("onactivate", function () {
             if (phase !== "setup" || !validId || pendingItemSales[entityId]) {
@@ -1286,7 +1288,10 @@
                 var slotSuffix = itemSlot === NEUTRAL_ITEM_SLOT ? "（中立）"
                     : (itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]"
                         : (itemSlot >= 6 ? " [背包 " + itemSlot + "]" : ""));
-                createLabel(row, "ItemRowName", itemDisplayName(itemName) + slotSuffix);
+                var itemLabel = itemName === "item_grisgris"
+                    ? $.Localize("#dota2_rpg_gris_gris_saved").replace("{gold}", String(shopState.grisGrisGold || 0))
+                    : itemDisplayName(itemName) + slotSuffix;
+                createLabel(row, "ItemRowName", itemLabel);
                 var unequip = $.CreatePanel("Button", row, "Unequip_" + target.name + "_" + index);
                 unequip.AddClass("ItemRowBtn");
                 unequip.AddClass("ItemUnequipBtn");
@@ -1299,7 +1304,7 @@
                         slot: itemSlot
                     });
                 });
-                unequip.enabled = phase === "setup" && Boolean(itemId)
+                unequip.enabled = itemName !== "item_grisgris" && phase === "setup" && Boolean(itemId)
                     && (itemSlot === NEUTRAL_ITEM_SLOT ? shopState.neutralSlotFree : shopState.stashFreeSlots > 0);
                 createItemSellButton(row, target.name, itemName, itemId);
             }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "",

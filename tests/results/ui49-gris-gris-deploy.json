@@ -1,0 +1,40 @@
+{
+  "version": "UI49 Witch Doctor Gris-Gris bank",
+  "scope": "85/85 offline regressions passed; native HUD JS compiled; six deployed sources hash verified. No gameplay or screenshots.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui49-gris-gris-backup-20260912-180321",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js",
+      "sha256": "6f58572323a27984cc4adbf3da565951aa65790ee793819d4784ddd277aa3466"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "7ce1ae86ed4752231e9d6b46862b0c560386839c5e676c337fbea186453a52d8"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "2a8343f71c386c9101d9bfd215014d3c9d6df9db97c8d79bbb7cc8cb28c1d3c9"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua",
+      "sha256": "24970979ff4c708105b66ddde3a92fb254c02f4dced0d3bac45b690ef87bd788"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/item_sales.lua",
+      "sha256": "b2fc214dfc014288bc7746471099c98a944e35c033e36ce08659f8173c4e53cd"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/gris_gris.lua",
+      "sha256": "6b7dc61f9911fd5d93cba8eb47ab3e488754e0d5c6c5603244970afaf7707129"
+    }
+  ],
+  "compiled_files": [
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.vjs_c",
+      "sha256": "ad4eba4deabcd1e02f3f96bc832424e246d5be0e18d13884bae81e9f9fbe6c93"
+    }
+  ],
+  "compile_logs": [
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui49-gris-gris-backup-20260912-180321\\rpg_demo_hud.js-compile.log"
+  ]
+}

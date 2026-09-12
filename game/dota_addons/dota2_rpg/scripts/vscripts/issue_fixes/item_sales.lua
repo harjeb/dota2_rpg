@@ -1,5 +1,5 @@
--- Explicit panel selling uses the native transaction, including refund windows,
--- charges and item restrictions. Never manufacture a second refund in Lua.
+-- Explicit panel selling uses native transactions; Gris-Gris is a consumable
+-- savings bank with roster persistence and a shared-wallet redemption adapter.
 local Sales = {}
 
 function Sales.HasPendingPurchase(game)
@@ -26,7 +26,12 @@ function Sales.Sell(game, payload)
     local holder = payload.hero == "__stash" and game:GetStashUnit()
         or (type(payload.hero) == "string" and game:FindOwnedHeroUnit(payload.hero) or nil)
     if holder == nil or not game:IsEquipmentCarrier(holder)
-        or not game:IsItemHeldBy(holder, item, 0, 14) then return false, "not_owned", 0 end
+        or not game:IsItemHeldBy(holder, item, 0, 16) then return false, "not_owned", 0 end
+    if game:IsItemHeldBy(holder, item, 15, 15) then return false, "not_owned", 0 end
+    if payload.item == "item_grisgris" then
+        if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
+        return require("issue_fixes/gris_gris").Redeem(game, holder, item)
+    end
     if item.IsSellable == nil or holder.SellItem == nil then return false, "unavailable", 0 end
     local checked, sellable = pcall(item.IsSellable, item)
     if not checked or not sellable then return false, "not_sellable", 0 end

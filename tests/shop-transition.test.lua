@@ -28,6 +28,7 @@ require = function(name)
         ["issue_fixes.runtime_log"] = true,
         ["battle/summon_behavior"] = true,
         ["issue_fixes/tiny_tree"] = true,
+        ["issue_fixes/gris_gris"] = true,
         ["issue_fixes/shard_purchase"] = true,
         ["issue_fixes/item_sales"] = true,
         ["issue_fixes/hero_precache"] = true,
