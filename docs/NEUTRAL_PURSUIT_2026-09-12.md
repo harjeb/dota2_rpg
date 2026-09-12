@@ -1,6 +1,8 @@
 # Neutral pursuit and centered spell correction
 
-User acceptance remains pending. Build log marker: `neutral-pursuit-v1`.
+User confirmed all three fixes resolved on 2026-09-12: nearby-enemy gating for
+Khan stomp, active pursuit with stalled-target recovery, and Ogre self-position
+casting with corrected location validation. Build log marker: `neutral-pursuit-v1`.
 
 The user reports an opening stomp at spawn, pursuit only after a hero attacks,
 and Ogre Smash never firing. Earlier Khan cooldown/stun observations establish
@@ -56,9 +58,9 @@ location filter input, directional isolation, ordinary custom-creature attacks,
 stale target recovery, and protected control windows. These tests use native API
 doubles and do not prove game execution.
 
-After the user reloads the addon, acceptance requires opening pursuit before any
-hero attack, no distant opening stomp, and Ogre finishing its 2.8-second cast
-and entering cooldown. `rule_executed` alone means order submission only.
+The user confirmed the three reported issues resolved on 2026-09-12. This is
+user-reported acceptance; no new native timing or cooldown trace was collected
+by the agent. `rule_executed` alone means order submission only.
 Later native neutral classes remain a separate follow-up; this patch does not
 claim their abilities now work. No client launch, shutdown or gameplay commands.
 
