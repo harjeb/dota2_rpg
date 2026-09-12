@@ -1,0 +1,29 @@
+{
+  "marker": "safe-errors-v1",
+  "workshop_id": "3799645167",
+  "scope": "local downloaded Workshop archive and Dota mount cache only; no upload or game process/commands; native loading unverified",
+  "original_sha256": "531e8585c74776d2f59401bfdd2e9fca5b7592d8311c4ad6254a96281e6a76ec",
+  "sha256": "65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f",
+  "archive_bytes": 15303304,
+  "entries": 137,
+  "modified_entries": [
+    "scripts/vscripts/addon_game_mode.lua",
+    "scripts/vscripts/battle/skill_debug.lua",
+    "scripts/vscripts/issue_fixes/runtime_log.lua"
+  ],
+  "unchanged_entries": 134,
+  "verification": "Source2Viewer-CLI --vpk_verify Success; independent extraction of all 137 payloads matches expected originals/replacements",
+  "staged_archive": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\3799645167.vpk",
+  "targets": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\backup-20260912-190905\\0\\3799645167.vpk",
+      "sha256": "65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\backup-20260912-190905\\1\\3799645167.vpk",
+      "sha256": "65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f"
+    }
+  ]
+}

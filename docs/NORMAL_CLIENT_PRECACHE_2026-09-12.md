@@ -41,4 +41,17 @@ All 86 offline groups pass. Actual spawn and lifecycle methods were tested with 
 
 The three modified Lua sources were backed up, copied to the installed loose addon, and SHA-256 verified; see `tests/results/safe-errors-v1-deploy.json`. The UI remains build 50. The downloaded Steam Workshop VPK was not changed, and the active map was not restarted or reloaded. Repack/publish the installed addon through the existing Workshop workflow, then reproduce in a new ordinary-client session. Confirm `safe-errors-v1` appears and check enemy preparation plus the debug catalog. If either still fails, collect the new original `StagePrecache`, `BattleLifecycle`, or `SkillDebug` error; do not infer native acceptance from the offline suite.
 
+## Local ordinary-client package deployment
+
+The user subsequently authorized repacking and placing the repair into the ordinary client's local Workshop files. `scripts/patch-workshop-vpk.py` now creates a separate unsigned, self-contained VPK v2 from an existing package plus explicitly selected source replacements. It rejects nonempty signatures and external archive entries, checks every payload CRC, preserves unselected payloads, and writes standard MD5 archive/chunk checksums. The installed original uses Blake3 chunk records; independent Source2Viewer validation accepts the regenerated standard MD5 records.
+
+The new archive contains 137 entries, with only the three repaired Lua files changed and the other 134 payloads preserved exactly. Source2Viewer-CLI `--vpk_verify` returned `Success`; independent extraction of every entry matches the expected original/replacement payloads. Archive size is 15,303,304 bytes; SHA-256 is `65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f`.
+
+Both local copies were backed up, replaced via adjacent staging files, and hash verified:
+
+- `steamapps/workshop/content/570/3799645167/3799645167.vpk`
+- `steamapps/common/dota 2 beta/game/dota_addons/vpks/3799645167/3799645167.vpk`
+
+See `tests/results/safe-errors-v1-workshop-deploy.json` for backup/staging paths and verification. No Steam manifest/publish metadata or remote Workshop item was changed. The user can leave the active map and re-enter in the ordinary client to check for `safe-errors-v1`; if the existing process retains the old mount, a subsequent user-run client restart may be needed. Steam may later restore the published package during a download/update. Native package acceptance and gameplay repair remain unverified; this completes local packaging issue `dota2_rpg-zuau`, while `dota2_rpg-bpgb` remains in progress.
+
 `condump` did not create a discoverable file in this session; the user's pasted console history provided the evidence. For another capture, pasted output is sufficient. A subsequent user-run session can also use `-console -condebug` while retaining existing launch options and omitting `-tools`.
