@@ -113,7 +113,11 @@ function runHud() {
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) { return token; };
-    panorama.Schedule = function (_, callback) { callback(); };
+    var scheduled = [];
+    panorama.Schedule = function (delay, callback) {
+        if (delay === 0.25) { scheduled.push(callback); }
+        else { callback(); }
+    };
     panorama.LocalStorage = {
         Get: function () { localStorageCalls++; return "null"; },
         Set: function () { localStorageCalls++; }

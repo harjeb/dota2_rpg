@@ -12,6 +12,7 @@
 		<include src="file://{resources}/scripts/custom_game/panorama_rule_sync.js" />
 		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
 		<include src="file://{resources}/scripts/custom_game/rule_diagnostics.js" />
+		<include src="file://{resources}/scripts/custom_game/native_shop_wallet.js" />
         <include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />

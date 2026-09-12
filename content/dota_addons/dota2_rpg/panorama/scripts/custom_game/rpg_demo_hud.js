@@ -906,7 +906,10 @@
     }
 
     function updateWalletLabel(gold) {
-        $("#WalletBalance").text = $.Localize("#dota2_rpg_wallet_balance") + " " + Math.max(0, Math.floor(Number(gold) || 0));
+        var balance = Math.max(0, Math.floor(Number(gold) || 0));
+        $("#WalletBalance").text = $.Localize("#dota2_rpg_wallet_balance") + " " + balance;
+        var nativeWallet = GameUI.CustomUIConfig().RpgNativeShopWallet;
+        if (nativeWallet) { nativeWallet.updateGold(balance); }
     }
 
     function updateShopEconomyLabels(gold) {

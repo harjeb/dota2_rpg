@@ -110,7 +110,7 @@ function runHud(options) {
     panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) { return token; };
     panorama.Schedule = function (delay, callback) {
-        if (options.deferTimers) { scheduled.push({ delay: delay, callback: callback }); }
+        if (options.deferTimers || delay === 0.25) { scheduled.push({ delay: delay, callback: callback }); }
         else { callback(); }
     };
     panorama.LocalStorage = {

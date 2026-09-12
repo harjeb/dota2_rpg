@@ -1,0 +1,46 @@
+{
+  "version": "UI48 native shop wallet display",
+  "scope": "83/83 offline regressions passed; native XML and two JS resources compiled; five deployed sources hash verified. No gameplay or screenshots.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui48-wallet-backup-20260912-173448",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.xml",
+      "sha256": "7ef2301b52d155818845f53bf3d62301a3b940fe8e309fee4a9e9f54a7fd692c"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/native_shop_wallet.js",
+      "sha256": "0445ca9286ddffe04d7dc77a3a47e67f47c642f341d8bd42d40c0d361ad85f1d"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js",
+      "sha256": "16161881047dd57f2a4b2eada2ef2298ba6cb908d2d70a1e07a29212087e52c4"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "0fb3336f602726fcb3d95166b3c04f2072c22ea55ac3b83ac521c5df5d1e9844"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "99b84222cd7701aa5a0c7b1e8693d09c3b53664f918e7b61d445c882c73e96cd"
+    }
+  ],
+  "compiled_files": [
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.vxml_c",
+      "sha256": "811055b7fd61ae65c718c58b07a1940025e46fcaac25030d4afc86e9b87d3e66"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/native_shop_wallet.vjs_c",
+      "sha256": "869f9467282ed27e6bbf05a492e9ccb26af987a71cb06155e924170621ee9a0e"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.vjs_c",
+      "sha256": "86164f8fe0bf91f299de31b666dc7c49c75ed47462a8b3fffbeb120b80aca373"
+    }
+  ],
+  "compile_logs": [
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui48-wallet-backup-20260912-173448\\rpg_demo_hud.xml-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui48-wallet-backup-20260912-173448\\native_shop_wallet.js-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui48-wallet-backup-20260912-173448\\rpg_demo_hud.js-compile.log"
+  ]
+}

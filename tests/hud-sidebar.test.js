@@ -113,6 +113,9 @@ function runHud() {
         return panel;
     };
     var rootPanel = createPanel("HudRoot");
+    var nativeRoot = createPanel("DotaHud");
+    rootPanel.parent = nativeRoot;
+    nativeRoot.children.push(rootPanel);
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
     panorama.Localize = function (token) {
@@ -120,8 +123,11 @@ function runHud() {
         return token === "#dota2_rpg_reward_xp" ? "XP %s1 (active %s2 / bench %s3)" : token;
     };
     var timers = [];
+    var walletTimers = [];
     panorama.Schedule = function (delay, callback) {
-        if (delay === 3) { timers.push(callback); } else { callback(); }
+        if (delay === 3) { timers.push(callback); }
+        else if (delay === 0.25) { walletTimers.push(callback); }
+        else { callback(); }
     };
     panorama.LocalStorage = {
         Get: function () { localStorageCalls++; return "null"; },
@@ -158,6 +164,8 @@ function runHud() {
     }
 
     return {
+        nativeRoot: nativeRoot,
+        walletTimers: walletTimers,
         timers: timers,
         context: context,
         panels: panels,
@@ -216,6 +224,44 @@ click(hud, "DamageEnemy");
 assert(panel(hud, "DamageUnits").children.length === 1, "enemy DPS remains available");
 assert(panel(hud, "DamageTargets").children[0].text.indexOf("601") >= 0, "enemy target breakdown remains available");
 console.log("HUD sidebar tests passed");
+
+// The native ShopButton subtree matches this installation's decompiled
+// dota_hud_quick_buy.xml. Load all actual addon scripts above, not a stub bridge.
+function mountNativeShop(h) {
+    var controls = createPanel("ShopCourierControls");
+    var button = createPanel("ShopButton");
+    var label = createPanel("GoldLabel");
+    label.text = "500";
+    label.AddClass("ShopButtonValueLabel");
+    label.SetParent(button);
+    button.SetParent(controls);
+    controls.SetParent(h.nativeRoot);
+    var clicks = 0;
+    button.SetPanelEvent("onactivate", function () { clicks++; });
+    return { controls: controls, button: button, label: label, clicks: function () { return clicks; } };
+}
+var walletHud = runHud();
+walletHud.subscriptions.rpg_shop_state({gold: 360}); // 500 - a 140-gold purchase
+var nativeShop = mountNativeShop(walletHud); // Valve creates the HUD after the broadcast
+walletHud.walletTimers.shift()();
+assert(nativeShop.label.text === "360" && panel(walletHud, "WalletBalance").text.endsWith(" 360"), "late native shop receives the latest top HUD balance");
+[220, 0, 70, 1045].forEach(function (gold) {
+    walletHud.subscriptions.rpg_shop_state({gold: gold});
+    assert(nativeShop.label.text === String(gold) && panel(walletHud, "WalletBalance").text.endsWith(" " + gold), "purchase, zero balance, sale refund and reward update both displays: " + gold);
+});
+nativeShop.label.text = "500"; // simulate a native refresh restoring its stale binding
+walletHud.walletTimers.shift()();
+assert(nativeShop.label.text === "1045", "native refresh cannot leave the old balance visible");
+nativeShop.button.events.onactivate();
+assert(nativeShop.clicks() === 1 && nativeShop.label.BHasClass("ShopButtonValueLabel"), "native shop click handler and label style survive synchronization");
+walletHud.nativeRoot.children = walletHud.nativeRoot.children.filter(function (p) { return p !== nativeShop.controls; });
+nativeShop = mountNativeShop(walletHud); // portrait/HUD replacement, no new server message
+walletHud.walletTimers.shift()();
+assert(nativeShop.label.text === "1045", "rebuilt native HUD uses the cached authoritative balance");
+walletHud.subscriptions.rpg_shop_state({gold: 500, rule_generation: 2});
+walletHud.subscriptions.rpg_shop_state({gold: 99999, rule_generation: 1});
+assert(nativeShop.label.text === "500" && panel(walletHud, "WalletBalance").text.endsWith(" 500"), "new-run wallet updates both displays and stale generations update neither");
+console.log("PASS native shop/top wallet: delayed creation, purchases, zero, refund, reward, refresh, rebuild and run generation");
 
 // Execute actual XML controls and all shipped scripts across terminal replays.
 [0, 1].forEach(function (failed) {
