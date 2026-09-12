@@ -89,6 +89,9 @@ function runHud() {
     var sentEvents = [];
     var subscriptions = {};
     var nativeSelections = [];
+    var lastPortraitUnit = 503;
+    var unhandledEvents = {};
+    var messages = [];
     var localStorageCalls = 0;
 
     // Unknown IDs return null as they do in Panorama; never invent missing live controls.
@@ -117,7 +120,13 @@ function runHud() {
     rootPanel.parent = nativeRoot;
     nativeRoot.children.push(rootPanel);
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
+    var nativeRootTraverse = nativeRoot.FindChildTraverse;
+    nativeRoot.FindChildTraverse = function (id) {
+        return panorama("#" + id) || nativeRootTraverse.call(this, id);
+    };
+    panorama.Msg = function (message) { messages.push(message); };
     panorama.GetContextPanel = function () { return rootPanel; };
+    panorama.RegisterForUnhandledEvent = function (name, callback) { unhandledEvents[name] = callback; };
     panorama.Localize = function (token) {
         if (token === "#dota2_rpg_remaining_time") { return "剩余时间"; }
         return token === "#dota2_rpg_reward_xp" ? "XP %s1 (active %s2 / bench %s3)" : token;
@@ -136,9 +145,13 @@ function runHud() {
 
     var customConfig = {};
     var context = {
+        eval: function () { throw new Error("Code generation from strings disallowed"); },
         GameUI: {
             CustomUIConfig: function () { return customConfig; },
-            SelectUnit: function (index, additive) { nativeSelections.push({ index: index, additive: additive }); }
+            SelectUnit: function (index, additive) {
+                nativeSelections.push({ index: index, additive: additive });
+                lastPortraitUnit = index;
+            }
         },
         console: console,
         $: panorama,
@@ -153,7 +166,7 @@ function runHud() {
         },
         Players: {
             GetLocalPlayer: function () { return 0; },
-            GetLocalPlayerPortraitUnit: function () { return 503; }
+            GetLocalPlayerPortraitUnit: function () { return lastPortraitUnit; }
         }
     };
     // Load the scripts in the same order as the real HUD layout.
@@ -172,6 +185,9 @@ function runHud() {
         createdPanels: createdPanels,
         sentEvents: sentEvents,
         nativeSelections: nativeSelections,
+        unhandledEvents: unhandledEvents,
+        messages: messages,
+        setPortraitUnit: function (index) { lastPortraitUnit = index; },
         subscriptions: subscriptions,
         getLocalStorageCalls: function () { return localStorageCalls; }
     };
@@ -184,6 +200,10 @@ function assert(condition, message) {
 }
 
 function panel(hud, id) { return hud.panels["#" + id]; }
+function setPortrait(hud, index) { hud.setPortraitUnit(index); }
+// 0.25 秒定时器现在同时包含钱包同步和商店开合轮询，按顺序单个取用不再可靠；
+// 统一跑完当前这一批，语义仍是"一次刷新"。
+function tick(hud) { hud.walletTimers.splice(0).forEach(function (callback) { callback(); }); }
 function click(hud, id) { var p = panel(hud, id); assert(p && p.events.onactivate, "clickable actual panel " + id); p.events.onactivate(); }
 
 var hud = runHud();
@@ -199,6 +219,170 @@ assert(/\.SidePanelBody\s*\{[^}]*overflow:\s*squish scroll/s.test(cssSource), "b
     assert(!panel(hud, "DamagePanel").BHasClass("Hidden"), "DPS visible through " + phase);
     assert(!panel(hud, "ItemShopPanel").BHasClass("Hidden"), "equipment visible through " + phase);
 });
+// 实机日志确认：选中非小精灵单位时客户端不下发原版购买订单。打开原版商店期间必须
+// 临时选中小精灵，关闭时还原；交付目标由面板目标与服务端保持，物品仍进英雄。
+var shopHud = runHud();
+shopHud.subscriptions.rpg_battle_state({ phase: "setup" });
+shopHud.subscriptions.rpg_shop_state({
+    rule_generation: 1, gold: 500, lineup_text: "npc_dota_hero_axe",
+    owned_text: "npc_dota_hero_axe", hero_entity_indices: { npc_dota_hero_axe: 501 },
+    commander_index: 502
+});
+shopHud.nativeSelections.length = 0;
+shopHud.unhandledEvents.DOTAHUDShopOpened();
+assert(shopHud.nativeSelections.length === 1 && shopHud.nativeSelections[0].index === 502,
+    "opening the native shop must temporarily select the commander");
+shopHud.unhandledEvents.DOTAHUDShopClosed();
+assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[1].index === 503,
+    "closing the native shop must restore the previously selected unit");
+shopHud.nativeSelections.length = 0;
+shopHud.unhandledEvents.DOTAHUDShopOpened();
+shopHud.unhandledEvents.DOTAHUDShopClosed();
+assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[0].index === 502
+    && shopHud.nativeSelections[1].index === 503, "the shop selection swap must be repeatable");
+// 已经选中小精灵时不做切换；战斗阶段一律不动选中单位。
+setPortrait(shopHud, 502);
+shopHud.nativeSelections.length = 0;
+shopHud.unhandledEvents.DOTAHUDShopOpened();
+shopHud.unhandledEvents.DOTAHUDShopClosed();
+assert(shopHud.nativeSelections.length === 0, "an already selected commander must not be swapped");
+shopHud.subscriptions.rpg_battle_state({ phase: "fight" });
+setPortrait(shopHud, 503);
+shopHud.nativeSelections.length = 0;
+shopHud.unhandledEvents.DOTAHUDShopOpened();
+assert(shopHud.nativeSelections.length === 0, "no selection swap outside preparation");
+console.log("PASS native shop selection swap: open selects the commander, close restores the hero, setup only");
+
+// 实机里 DOTAHUDShopOpened/DOTAHUDShopClosed 没有派发，主判定改成轮询引擎的 IsShopOpen。
+var pollHud = runHud();
+pollHud.subscriptions.rpg_battle_state({ phase: "setup" });
+pollHud.subscriptions.rpg_shop_state({
+    rule_generation: 1, gold: 500, lineup_text: "npc_dota_hero_axe",
+    owned_text: "npc_dota_hero_axe", hero_entity_indices: { npc_dota_hero_axe: 501 },
+    commander_index: 502
+});
+setPortrait(pollHud, 503);
+var shopOpenNow = false;
+pollHud.context.GameUI.IsShopOpen = function () { return shopOpenNow; };
+pollHud.nativeSelections.length = 0;
+tick(pollHud);
+assert(pollHud.nativeSelections.length === 0, "a closed shop must not swap the selection");
+shopOpenNow = true;
+tick(pollHud);
+assert(pollHud.nativeSelections.length === 1 && pollHud.nativeSelections[0].index === 502,
+    "polling an open shop must select the commander");
+shopOpenNow = false;
+tick(pollHud);
+assert(pollHud.nativeSelections.length === 2 && pollHud.nativeSelections[1].index === 503,
+    "polling a closed shop must restore the hero");
+setPortrait(pollHud, 502);
+pollHud.nativeSelections.length = 0;
+shopOpenNow = true;
+tick(pollHud);
+assert(pollHud.nativeSelections.length === 0, "an already selected commander is never re-swapped");
+// 查询接口缺失时不做任何切换，也不能抛错。
+var blindHud = runHud();
+blindHud.subscriptions.rpg_battle_state({ phase: "setup" });
+blindHud.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502 });
+blindHud.nativeSelections.length = 0;
+tick(blindHud);
+assert(blindHud.nativeSelections.length === 0, "a missing shop query must not change the selection");
+console.log("PASS native shop poll: IsShopOpen swap, restore, repeat and missing API");
+
+// Valve's actual shop CSS hides the root with transform/opacity. Grid size can stay
+// positive while closed, or zero on another tab while open. Only ShopOpen is relevant.
+function mountShopState(h) {
+    var shop = createPanel("shop");
+    shop.paneltype = "DOTAHUDShop";
+    shop.SetParent(h.nativeRoot);
+    var main = createPanel("Main");
+    main.SetParent(shop);
+    var grid = createPanel("GridMainShop");
+    grid.SetParent(main);
+    return { shop: shop, grid: grid };
+}
+var gridHud = runHud();
+gridHud.subscriptions.rpg_battle_state({ phase: "setup" });
+gridHud.subscriptions.rpg_shop_state({
+    rule_generation: 1, lineup_text: "npc_dota_hero_axe", owned_text: "npc_dota_hero_axe",
+    hero_entity_indices: { npc_dota_hero_axe: 501 }, commander_index: 502
+});
+// First poll before Valve mounts the shop must recover on a later poll.
+tick(gridHud);
+assert(gridHud.messages.some(function (m) { return m.indexOf("GameUI=missing") >= 0; }),
+    "diagnostics must not use eval, which Panorama disables");
+var statePanel = mountShopState(gridHud);
+setPortrait(gridHud, 503);
+gridHud.nativeSelections.length = 0;
+tick(gridHud);
+assert(gridHud.nativeSelections.length === 0, "a closed root with a laid-out grid must not swap");
+assert(gridHud.messages.some(function (m) { return m.indexOf("selection swap armed") >= 0; }),
+    "late native HUD creation must recover from unavailable state");
+// Reproduce unavailable APIs, without relying on them to observe the shop.
+function unavailableShopApi() { throw new Error("native query unavailable"); }
+gridHud.context.GameUI.IsShopOpen = unavailableShopApi;
+gridHud.context.Game = { IsShopOpen: unavailableShopApi };
+gridHud.context.Players.IsShopOpen = unavailableShopApi;
+statePanel.shop.AddClass("ShopOpen");
+statePanel.grid.actuallayoutwidth = 0;
+statePanel.grid.actuallayoutheight = 0;
+tick(gridHud);
+assert(gridHud.nativeSelections.length === 1 && gridHud.nativeSelections[0].index === 502,
+    "ShopOpen must select commander even with collapsed main tab and throwing APIs");
+// Event + poll duplication must not erase the saved hero when commander is selected.
+gridHud.unhandledEvents.DOTAHUDShopOpened();
+tick(gridHud);
+statePanel.shop.SetHasClass("ShopOpen", false);
+statePanel.grid.actuallayoutwidth = 420;
+statePanel.grid.actuallayoutheight = 300;
+tick(gridHud);
+assert(gridHud.nativeSelections.length === 2 && gridHud.nativeSelections[1].index === 503,
+    "close restores the hero despite duplicate opens and unchanged positive grid size");
+// The actual panel state wins over a stale API result in either direction.
+gridHud.context.GameUI.IsShopOpen = function () { return false; };
+statePanel.shop.AddClass("ShopOpen");
+tick(gridHud);
+assert(gridHud.nativeSelections[2].index === 502, "ShopOpen overrides stale API false");
+setPortrait(gridHud, 501);
+gridHud.sentEvents.length = 0;
+tick(gridHud);
+assert(gridHud.nativeSelections[3].index === 502,
+    "selecting another hero while open must keep the shop usable and closable");
+assert(gridHud.sentEvents.some(function (e) {
+    return e.name === "rpg_native_purchase_target" && e.payload.unit_index === 501;
+}), "the newly selected hero must be published as recipient before swapping to commander");
+gridHud.context.GameUI.IsShopOpen = function () { return true; };
+statePanel.shop.SetHasClass("ShopOpen", false);
+tick(gridHud);
+assert(gridHud.nativeSelections[4].index === 501, "closing restores the latest hero despite stale API true");
+// A player selection made during close must survive restoration.
+statePanel.shop.AddClass("ShopOpen");
+tick(gridHud);
+setPortrait(gridHud, 504);
+var selectionCount = gridHud.nativeSelections.length;
+statePanel.shop.SetHasClass("ShopOpen", false);
+tick(gridHud);
+assert(gridHud.nativeSelections.length === selectionCount, "closing cannot override a manual selection");
+statePanel.shop.AddClass("ShopOpen");
+tick(gridHud);
+gridHud.subscriptions.rpg_battle_state({ phase: "fight" });
+statePanel.shop.SetHasClass("ShopOpen", false);
+gridHud.unhandledEvents.DOTAHUDShopClosed();
+selectionCount = gridHud.nativeSelections.length;
+gridHud.subscriptions.rpg_battle_state({ phase: "setup" });
+tick(gridHud);
+assert(gridHud.nativeSelections.length === selectionCount, "phase changes discard stale restoration");
+statePanel.shop.AddClass("ShopOpen");
+setPortrait(gridHud, 501);
+tick(gridHud);
+gridHud.subscriptions.rpg_shop_state({ rule_generation: 2, commander_index: 602 });
+statePanel.shop.SetHasClass("ShopOpen", false);
+setPortrait(gridHud, 602);
+selectionCount = gridHud.nativeSelections.length;
+tick(gridHud);
+assert(gridHud.nativeSelections.length === selectionCount, "new runs cannot restore an old hero entity");
+console.log("PASS native shop root: real ShopOpen class, API failures, repeat, reselection, restore and lifecycle");
+
 click(hud, "EquipmentToggle");
 assert(panel(hud, "EquipmentBody").BHasClass("Hidden"), "equipment minimizes");
 assert(!panel(hud, "DamageBody").BHasClass("Hidden"), "DPS remains expanded");
@@ -243,20 +427,20 @@ function mountNativeShop(h) {
 var walletHud = runHud();
 walletHud.subscriptions.rpg_shop_state({gold: 360}); // 500 - a 140-gold purchase
 var nativeShop = mountNativeShop(walletHud); // Valve creates the HUD after the broadcast
-walletHud.walletTimers.shift()();
+tick(walletHud);
 assert(nativeShop.label.text === "360" && panel(walletHud, "WalletBalance").text.endsWith(" 360"), "late native shop receives the latest top HUD balance");
 [220, 0, 70, 1045].forEach(function (gold) {
     walletHud.subscriptions.rpg_shop_state({gold: gold});
     assert(nativeShop.label.text === String(gold) && panel(walletHud, "WalletBalance").text.endsWith(" " + gold), "purchase, zero balance, sale refund and reward update both displays: " + gold);
 });
 nativeShop.label.text = "500"; // simulate a native refresh restoring its stale binding
-walletHud.walletTimers.shift()();
+tick(walletHud);
 assert(nativeShop.label.text === "1045", "native refresh cannot leave the old balance visible");
 nativeShop.button.events.onactivate();
 assert(nativeShop.clicks() === 1 && nativeShop.label.BHasClass("ShopButtonValueLabel"), "native shop click handler and label style survive synchronization");
 walletHud.nativeRoot.children = walletHud.nativeRoot.children.filter(function (p) { return p !== nativeShop.controls; });
 nativeShop = mountNativeShop(walletHud); // portrait/HUD replacement, no new server message
-walletHud.walletTimers.shift()();
+tick(walletHud);
 assert(nativeShop.label.text === "1045", "rebuilt native HUD uses the cached authoritative balance");
 walletHud.subscriptions.rpg_shop_state({gold: 500, rule_generation: 2});
 walletHud.subscriptions.rpg_shop_state({gold: 99999, rule_generation: 1});

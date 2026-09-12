@@ -236,6 +236,7 @@
     var lastNativePurchaseHero = "";
     var selectedEquipmentHeroName = "";
     var heroEntityIndices = {};
+    var commanderIndex = -1;
     var ruleGeneration = 0;
 
     function acceptRuleGeneration(data) {
@@ -257,6 +258,9 @@
         selectedHeroIndex.Radiant = 0;
         selectedEquipmentHeroName = "";
         heroEntityIndices = {};
+        commanderIndex = -1;
+        shopPortraitSwap = null;
+        shopOpenLast = false;
         lastNativePurchaseTarget = -1;
         lastNativePurchaseHero = "";
         saveData = loadSave();
@@ -286,6 +290,160 @@
         var unitIndex = Number(heroEntityIndices[heroName] || -1);
         if (phase === "setup" && unitIndex > 0 && GameUI.SelectUnit) {
             GameUI.SelectUnit(unitIndex, false);
+        }
+    }
+
+    // 实机日志确认：选中上阵/待命英雄时点原版商店购买，客户端连订单都不下发
+    // （控制台里没有 Native order signature），选中小精灵才正常。所以在原版商店
+    // 打开期间把选中临时切到小精灵，关闭时还原。交付目标由 sendNativePurchaseHero
+    // 与服务端保持（服务端不会因为选中小精灵而改写目标），物品仍然进玩家选中的英雄。
+    var shopPortraitSwap = null;
+
+    function onNativeShopOpened() {
+        if (phase !== "setup" || typeof GameUI === "undefined" || !GameUI.SelectUnit
+            || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) {
+            return;
+        }
+        var portrait = Number(Players.GetLocalPlayerPortraitUnit());
+        if (!(commanderIndex > 0) || !(portrait > 0) || portrait === commanderIndex) {
+            return;
+        }
+        // 商店打开后改选英雄也必须重新切换；先同步交付目标，再改变头像。
+        syncNativePurchaseTarget(true);
+        shopPortraitSwap = portrait;
+        GameUI.SelectUnit(commanderIndex, false);
+    }
+
+    function onNativeShopClosed() {
+        var restore = shopPortraitSwap;
+        shopPortraitSwap = null;
+        if (restore === null || !(restore > 0) || typeof GameUI === "undefined" || !GameUI.SelectUnit) {
+            return;
+        }
+        // 只在选中仍是小精灵时还原，避免覆盖玩家在商店里自己改选的单位。
+        var portrait = typeof Players !== "undefined" && Players.GetLocalPlayerPortraitUnit
+            ? Number(Players.GetLocalPlayerPortraitUnit()) : -1;
+        if (phase === "setup" && portrait === commanderIndex) {
+            GameUI.SelectUnit(restore, false);
+        }
+    }
+
+    // 原生 HUD 的 DOTAHUDShopOpened/DOTAHUDShopClosed 实机没有派发（用户确认打开商店时
+    // 选中没有切换），所以改用引擎自带的查询接口轮询："Ask whether the in game shop is
+    // open." 只要它在，无论鼠标点还是快捷键打开商店都能覆盖。
+    function shopDiag(message) {
+        if (typeof $ !== "undefined" && typeof $.Msg === "function") {
+            $.Msg("[Dota2Rpg] " + message);
+        }
+    }
+
+    // 原生 CSS 用 DOTAHUDShop.ShopOpen 控制 transform/opacity，关闭不会清零网格尺寸。
+    // GridMainShop 只是定位锚点，开合必须读取其 DOTAHUDShop 祖先的状态类。
+    function nativeShopPanel() {
+        try {
+            if (typeof $ === "undefined" || !$.GetContextPanel) {
+                return null;
+            }
+            var root = $.GetContextPanel();
+            if (!root || !root.GetParent) {
+                return null;
+            }
+            while (root.GetParent && root.GetParent()) {
+                root = root.GetParent();
+            }
+            if (!root.FindChildTraverse) {
+                return null;
+            }
+            var panel = root.FindChildTraverse("GridMainShop");
+            while (panel) {
+                if (panel.paneltype === "DOTAHUDShop" && panel.BHasClass) {
+                    return panel;
+                }
+                panel = panel.GetParent ? panel.GetParent() : null;
+            }
+            return null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function probeBool(object, name) {
+        try {
+            if (object && typeof object[name] === "function") {
+                var value = object[name]();
+                return typeof value === "boolean" ? String(value) : "invalid";
+            }
+            return object ? "missing" : "no-namespace";
+        } catch (error) {
+            return "threw";
+        }
+    }
+
+    function shopProbeReport() {
+        var shop = nativeShopPanel();
+        // Panorama 禁止 eval；直接传命名空间，避免探测本身制造三条 threw。
+        return "GameUI=" + probeBool(typeof GameUI !== "undefined" ? GameUI : null, "IsShopOpen")
+            + " Game=" + probeBool(typeof Game !== "undefined" ? Game : null, "IsShopOpen")
+            + " Players=" + probeBool(typeof Players !== "undefined" ? Players : null, "IsShopOpen")
+            + " shopPanel=" + (shop ? "DOTAHUDShop" : "missing")
+            + " source=" + (shop ? "ShopOpen-class" : "API");
+    }
+
+    function nativeShopIsOpen() {
+        var shop = nativeShopPanel();
+        if (shop) {
+            return shop.BHasClass("ShopOpen");
+        }
+        var probes = [
+            probeBool(typeof GameUI !== "undefined" ? GameUI : null, "IsShopOpen"),
+            probeBool(typeof Game !== "undefined" ? Game : null, "IsShopOpen"),
+            probeBool(typeof Players !== "undefined" ? Players : null, "IsShopOpen")
+        ];
+        if (probes.indexOf("true") >= 0) { return true; }
+        return probes.indexOf("false") >= 0 ? false : null;
+    }
+
+    var shopProbeLogged = false;
+    var shopOpenKnown = null;
+    var shopOpenLast = false;
+
+    function updateNativeShopState(open) {
+        if (phase !== "setup") {
+            shopPortraitSwap = null;
+            shopOpenLast = false;
+            return;
+        }
+        if (open !== shopOpenLast) {
+            shopOpenLast = open;
+            shopDiag(open ? "native shop opened" : "native shop closed");
+        }
+        if (open) {
+            // 每次都检查头像：商店打开后点英雄也要保持原生商店可操作。
+            onNativeShopOpened();
+        } else {
+            onNativeShopClosed();
+        }
+    }
+
+    function watchNativeShop() {
+        $.Schedule(0.25, watchNativeShop);
+        if (!shopProbeLogged) {
+            shopProbeLogged = true;
+            shopDiag("shop probe " + shopProbeReport());
+        }
+        if (phase !== "setup") {
+            updateNativeShopState(false);
+            return;
+        }
+        var open = nativeShopIsOpen();
+        var available = open !== null;
+        if (available !== shopOpenKnown) {
+            shopOpenKnown = available;
+            shopDiag(available ? "shop state available; selection swap armed"
+                : "shop state unavailable; selection swap disabled");
+        }
+        if (available) {
+            updateNativeShopState(open);
         }
     }
 
@@ -953,6 +1111,7 @@
         shopState.lineup = splitList(data.lineup_text);
         // Entity indices are replaced on every roster rebuild, including bench units.
         heroEntityIndices = data.hero_entity_indices || {};
+        commanderIndex = Number(data.commander_index !== undefined ? data.commander_index : -1);
         if (shopState.lineup.length
             && (!selectedEquipmentHeroName || shopState.owned.indexOf(selectedEquipmentHeroName) < 0)) {
             selectedEquipmentHeroName = shopState.lineup[Math.min(selectedHeroIndex.Radiant, shopState.lineup.length - 1)];
@@ -1777,6 +1936,7 @@
         updateRunLives(data);
         var previousPhase = phase;
         phase = data.phase || "setup";
+        if (phase !== "setup") { updateNativeShopState(false); }
         if (phase !== "setup") { $("#RuleSettings").SetHasClass("Hidden", true); }
         var fighting = phase === "fight" || phase === "battle";
         if (fighting && previousPhase !== "fight" && previousPhase !== "battle") {
@@ -2040,6 +2200,12 @@
         }
     });
     wireShopButtons();
+    if ($.RegisterForUnhandledEvent) {
+        // 事件与轮询共用状态处理，重复打开信号不能清掉待还原的英雄。
+        $.RegisterForUnhandledEvent("DOTAHUDShopOpened", function () { updateNativeShopState(true); });
+        $.RegisterForUnhandledEvent("DOTAHUDShopClosed", function () { updateNativeShopState(false); });
+    }
+    $.Schedule(0.25, watchNativeShop);
     wireSidePanel("DamagePanel", "DamageBody", "DamageToggle", "DamageToggleLabel");
     wireSidePanel("ItemShopPanel", "EquipmentBody", "EquipmentToggle", "EquipmentToggleLabel");
     renderDamage();

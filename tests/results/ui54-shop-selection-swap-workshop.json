@@ -1,0 +1,21 @@
+{
+  "version": "UI54 shop-selection-swap (build tag 54)",
+  "staged": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui54-shop-select-backup\\3799645167-b54.vpk",
+  "sha256": "b2dab7cce0660c60e9afc256a6a28f08be614c403736865f0c0bf2073d6e7fe0",
+  "targets": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "sha256_before": "9441460292c55d73358e87a39a218e60666e9cc632c677b2615a42c974072b03",
+      "sha256_after": "b2dab7cce0660c60e9afc256a6a28f08be614c403736865f0c0bf2073d6e7fe0",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui54-shop-select-backup\\before-20260912-205333\\0\\3799645167.vpk",
+      "matches_staged": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "sha256_before": "9441460292c55d73358e87a39a218e60666e9cc632c677b2615a42c974072b03",
+      "sha256_after": "b2dab7cce0660c60e9afc256a6a28f08be614c403736865f0c0bf2073d6e7fe0",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui54-shop-select-backup\\before-20260912-205333\\1\\3799645167.vpk",
+      "matches_staged": true
+    }
+  ]
+}

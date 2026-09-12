@@ -1,0 +1,34 @@
+{
+  "version": "UI55 shop-open polling (build tag 55)",
+  "scope": "87/87 offline groups passed; one Panorama JS compiled (1 compiled, 0 failed); local Workshop package repacked; no game launched or stopped; Steam manifest untouched; no remote upload.",
+  "finding": "UI54's DOTAHUDShopOpened/DOTAHUDShopClosed listeners never fired in-engine; the selection was not swapped when the shop opened.",
+  "change": [
+    "rpg_demo_hud.js: poll the engine shop-open query (IsShopOpen, confirmed in the installed client.dll) every 0.25s during setup and drive the UI54 swap/restore from that; native events kept only as a secondary signal.",
+    "resource/addon_*.txt: build tag 54 -> 55 so the user can tell whether the new package is mounted."
+  ],
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\scripts\\vscripts\\addon_game_mode.lua",
+      "sha256": "96f0885e3ab4f8b491047c981f176d11327d24ce7082ff8b5c7c8bf3f86bf565"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "79cb76c9c0acea7ff9943fbcac54750b97377bdbbcfe12eabbc02093885c904e"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_schinese.txt",
+      "sha256": "d29c3b53a456d903c3c12e88b85926bfb4ecaa1f468b8b31f7a0e1f28f604570"
+    }
+  ],
+  "workshop_package": {
+    "record": "tests/results/ui55-shop-open-poll-workshop.json",
+    "entries": 137,
+    "changed_entries": 4,
+    "sha256": "4515df4dacebf6c01c04059060001f8b9373ada07f9b007f704ee701cf3719c5"
+  },
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "workshop_packages_modified": true,
+  "remote_upload": false,
+  "open_question": "Whether GameUI.IsShopOpen()/Players.IsShopOpen() is callable from a custom HUD in the ordinary client is unverified; the HUD logs which case applies."
+}

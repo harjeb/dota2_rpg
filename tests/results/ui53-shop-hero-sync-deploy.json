@@ -1,0 +1,26 @@
+{
+  "version": "UI53 native-player-hero-sync-v1",
+  "scope": "87/87 offline regression groups passed; no game launched or stopped; Steam manifest untouched; no remote upload.",
+  "finding": "The published Workshop package (publish_time 19:12:43) still carried dota_easybuy and neither UI51's native-shop-range-v1 nor UI52; console.log shows no client start after 16:10, so neither revision had ever run on the user's machine.",
+  "change": [
+    "addon_game_mode.lua: SyncNativePlayerHero / EnsureNativePlayerHero publish the selected equipment carrier (commander fallback) through PlayerResource:SetSelectedHero with read-back verification.",
+    "addon_game_mode.lua: SetNativePurchaseSelection no longer clears a live roster-hero delivery target when the commander is selected."
+  ],
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\scripts\\vscripts\\addon_game_mode.lua",
+      "sha256": "cb948e526479d8bda9db31d5e1cf2d0ed96169663f32c0adb2f36bd201d1ed97",
+      "matches_repo": true
+    }
+  ],
+  "workshop_package": {
+    "file": "tests/results/ui53-shop-hero-sync-workshop.json",
+    "entries": 137,
+    "changed_entries": 14,
+    "sha256": "158ce6060511c216ae3b289cb49d9e5a97540a94ce25c534abaa2e3d1a345f2c"
+  },
+  "offline_tests": "87/87 passed (LUA_BIN lua5.1 portable)",
+  "native_gameplay_tested": false,
+  "workshop_packages_modified": true,
+  "remote_upload": false
+}

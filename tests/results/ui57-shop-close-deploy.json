@@ -1,0 +1,32 @@
+{
+  "version": "UI57 native shop close and hero reselection",
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\content\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.js",
+      "sha256": "ded7a9a0a1b5d5308f6b74609066a211fe931b78c2eecc66742554c44ff24746",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui57-shop-close-qf1eesqj\\addon-before\\content\\panorama\\scripts\\custom_game\\rpg_demo_hud.js"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_english.txt",
+      "sha256": "5183f89b1ca0d5cc851b40a699cac6bafacd1c497d379037fa1258c10f572fff",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui57-shop-close-qf1eesqj\\addon-before\\game\\resource\\addon_english.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_schinese.txt",
+      "sha256": "2b843159eafa8b9b4d9947080f081bf8f12c0a07c384ee680b9fb4d4d88a873c",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui57-shop-close-qf1eesqj\\addon-before\\game\\resource\\addon_schinese.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "324cae159c762b62c4de98c4d218ca7c0ec61e43f80b3a54cb25306861709509",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui57-shop-close-qf1eesqj\\addon-before\\game\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c"
+    }
+  ],
+  "compiler_log": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui57-shop-close-qf1eesqj\\compile.log",
+  "compiler_result": "1 compiled, 0 failed",
+  "workshop_record": "tests/results/ui57-shop-close-workshop.json",
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "remote_upload": false,
+  "steam_manifest_modified": false
+}

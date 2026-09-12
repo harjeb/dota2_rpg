@@ -1,0 +1,20 @@
+{
+  "staged": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-shop-hero-sync-20260912\\3799645167.vpk",
+  "sha256": "158ce6060511c216ae3b289cb49d9e5a97540a94ce25c534abaa2e3d1a345f2c",
+  "targets": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "sha256_before": "845bc7e7c1c47fb595cb8f954dfc29eb9bb8246d89e2f52ab21d69b2885a1391",
+      "sha256_after": "158ce6060511c216ae3b289cb49d9e5a97540a94ce25c534abaa2e3d1a345f2c",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-shop-hero-sync-20260912\\before-20260912-202826\\0\\3799645167.vpk",
+      "matches_staged": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "sha256_before": null,
+      "sha256_after": "158ce6060511c216ae3b289cb49d9e5a97540a94ce25c534abaa2e3d1a345f2c",
+      "backup": null,
+      "matches_staged": true
+    }
+  ]
+}

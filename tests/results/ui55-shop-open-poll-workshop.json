@@ -1,0 +1,21 @@
+{
+  "version": "UI55 shop-open polling",
+  "staged": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui55-shop-poll\\3799645167.vpk",
+  "sha256": "4515df4dacebf6c01c04059060001f8b9373ada07f9b007f704ee701cf3719c5",
+  "targets": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "sha256_before": "b2dab7cce0660c60e9afc256a6a28f08be614c403736865f0c0bf2073d6e7fe0",
+      "sha256_after": "4515df4dacebf6c01c04059060001f8b9373ada07f9b007f704ee701cf3719c5",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui55-shop-poll\\before-20260912-205703\\0\\3799645167.vpk",
+      "matches_staged": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "sha256_before": "b2dab7cce0660c60e9afc256a6a28f08be614c403736865f0c0bf2073d6e7fe0",
+      "sha256_after": "4515df4dacebf6c01c04059060001f8b9373ada07f9b007f704ee701cf3719c5",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui55-shop-poll\\before-20260912-205703\\1\\3799645167.vpk",
+      "matches_staged": true
+    }
+  ]
+}

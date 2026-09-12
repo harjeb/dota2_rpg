@@ -1,0 +1,33 @@
+{
+  "version": "UI54 shop-selection-swap",
+  "scope": "87/87 offline groups passed; one Panorama JS compiled (1 compiled, 0 failed); local Workshop package repacked; no game launched or stopped; Steam manifest untouched; no remote upload.",
+  "finding": "User console log at the failing purchase contains no Native order signature: the client never issues a purchase order for units other than the player's own hero. NativeShopRange ready confirms physical shop range exists.",
+  "change": [
+    "rpg_demo_hud.js: subscribe DOTAHUDShopOpened/DOTAHUDShopClosed, temporarily select the commander while the shop is open and restore the previous unit on close (setup phase only).",
+    "addon_game_mode.lua: rpg_shop_state publishes commander_index."
+  ],
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\scripts\\vscripts\\addon_game_mode.lua",
+      "sha256": "96f0885e3ab4f8b491047c981f176d11327d24ce7082ff8b5c7c8bf3f86bf565",
+      "matches_repo": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "b90ac32638a6f72e21242a27e272d2c6d432661b7c5b675c15a29490d7d7ab11",
+      "compiled_from": "content\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.js",
+      "compiled_from_sha256": "90fa5b8ada38286bf0b527072d23fbbc798bde3fd35150ea875582070edf2545"
+    }
+  ],
+  "workshop_package": {
+    "record": "tests/results/ui54-shop-selection-swap-workshop.json",
+    "entries": 137,
+    "changed_entries": 3,
+    "sha256": "9441460292c55d73358e87a39a218e60666e9cc632c677b2615a42c974072b03"
+  },
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "workshop_packages_modified": true,
+  "remote_upload": false,
+  "open_question": "DOTAHUDShopOpened/DOTAHUDShopClosed dispatch was not observed in-engine; only the symbol names were confirmed in the installed client.dll."
+}

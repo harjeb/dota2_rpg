@@ -1,0 +1,33 @@
+{
+  "version": "UI56 shop probe widening (build tag 56)",
+  "scope": "87/87 offline groups passed; one Panorama JS compiled (1 compiled, 0 failed); local Workshop package repacked; no game launched or stopped; Steam manifest untouched; no remote upload.",
+  "finding": "GameUI.IsShopOpen and Players.IsShopOpen are both unavailable in the ordinary client. The user also reports the native shop cannot be closed while a roster hero is selected: the whole panel is inert unless the commander is the portrait unit, so buying and closing share one root cause.",
+  "change": [
+    "rpg_demo_hud.js: probe GameUI.IsShopOpen, Game.IsShopOpen, Players.IsShopOpen in order, then fall back to the native shop grid panel GridMainShop layout size; log a one-time probe report and every open/close transition.",
+    "resource/addon_*.txt: build tag 55 -> 56."
+  ],
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\content\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.js",
+      "sha256": "95ecd71473ac71d3eca81ca8abb7aef330000d7740b69eb7cd03b5692dd1da77"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "e7aed24461c4123ba0dad59d7815e0a3951de50cc0064c29a2f8a14977a41339"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_schinese.txt",
+      "sha256": "cb39bac7c5d533f352315ede0d4d701ce05cca3b7bd2563df35af1e32de5e39e"
+    }
+  ],
+  "workshop_package": {
+    "record": "tests/results/ui56-shop-probe-workshop.json",
+    "entries": 137,
+    "changed_entries": 4,
+    "sha256": "5b2f8e15a48b74231d9328d4d663ce68dc14033b50cc6669a7edc044a48510d1"
+  },
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "workshop_packages_modified": true,
+  "remote_upload": false
+}

@@ -711,6 +711,8 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 		end
 	end
 	self.playerId = math.max(self.playerId, ownerId)
+	-- 玩家英雄就是小精灵：显式同步一次，让 F1 与原版商店的"我的英雄"绑定成立。
+	self:EnsureNativePlayerHero()
 	-- npc_spawned may precede PlayerResource's starting-gold initialization;
 	-- wallet initialization belongs to player_connect_full, never this callback.
 	unit:SetRespawnsDisabled(true)
@@ -1550,16 +1552,99 @@ function CDota2RpgDemo:ResolveNativePurchaseRecipient(key)
 	return self:FindOwnedHeroUnit(key)
 end
 
+-- 原版商店的购买点击资格由客户端"这个单位是不是玩家自己的英雄"决定。项目用
+-- CreateUnitByName 生成的上阵/待命英雄没有经过引擎选人流程，客户端不把它们算作
+-- 玩家英雄：选中它们时购买点击完全没有反应，既不产生订单也没有错误提示。
+-- 把 PlayerResource 的 selected hero 跟随当前选中的装备载体，客户端就会允许为该
+-- 英雄下单。订单仍由 ValidatePrepareOrder 改派给小精灵执行，再按
+-- nativePurchaseSelectionHero 交付给同一名英雄，因此价格、库存、合成与扣款规则不变。
+function CDota2RpgDemo:SyncNativePlayerHero(unit)
+	if PlayerResource == nil or PlayerResource.SetSelectedHero == nil then
+		return false
+	end
+	local playerId = tonumber(self.playerId)
+	if playerId == nil or playerId < 0 or not self:IsEquipmentCarrier(unit) then
+		return false
+	end
+	local index = unit.GetEntityIndex ~= nil and tonumber(unit:GetEntityIndex()) or nil
+	local unitName = unit.GetUnitName ~= nil and unit:GetUnitName() or ""
+	if index == nil or type(unitName) ~= "string" or unitName == "" then
+		return false
+	end
+	-- 只在实体真的换了才调用；阵容重建后实体索引不同，会自动重新同步。
+	if self.nativeSelectedHeroIndex == index then
+		return true
+	end
+	local called = pcall(function() PlayerResource:SetSelectedHero(playerId, unitName) end)
+	if not called then
+		return false
+	end
+	self.nativeSelectedHeroIndex = index
+	-- 读回校验：接口存在但没有生效时必须留下可定位日志，不能假设商店已经放开。
+	local verified = true
+	if PlayerResource.GetSelectedHeroEntity ~= nil then
+		local ok, current = pcall(function() return PlayerResource:GetSelectedHeroEntity(playerId) end)
+		verified = ok and current ~= nil and current.GetUnitName ~= nil
+			and current:GetUnitName() == unitName
+	end
+	if verified then
+		print(string.format("[Dota2Rpg] Native player hero synced for the native shop: %s index=%d.",
+			unitName, index))
+	elseif not self.nativeSelectedHeroWarned then
+		self.nativeSelectedHeroWarned = true
+		print("[Dota2Rpg] WARNING: PlayerResource:SetSelectedHero did not take effect; " ..
+			"the native shop may still refuse roster heroes.")
+	end
+	return verified
+end
+
+-- 阵容重建会销毁旧英雄实体。选中目标失效时退回玩家小精灵，避免客户端继续持有
+-- 一个已删除的英雄句柄。每个准备阶段 tick 调用一次，实体没换时是常数开销。
+function CDota2RpgDemo:EnsureNativePlayerHero()
+	local index = tonumber(self.nativeSelectedHeroIndex)
+	if index ~= nil then
+		local unit = EntIndexToHScript(index)
+		local live = unit ~= nil and self:IsEquipmentCarrier(unit)
+		if live and IsValidEntity ~= nil then
+			live = IsValidEntity(unit) and true or false
+		end
+		if live then
+			return true
+		end
+		self.nativeSelectedHeroIndex = nil
+	end
+	return self:SyncNativePlayerHero(self:GetStashUnit())
+end
+
+-- 仍然存活的上阵/待命英雄交付目标；选中指挥官不算一次目标变更。
+function CDota2RpgDemo:HasLiveNativePurchaseTarget()
+	local key = self.nativePurchaseSelectionHero
+	if key == nil or key == "" or key == "__wisp" then
+		return false
+	end
+	local hero = self:FindOwnedHeroUnit(key)
+	return hero ~= nil and self:IsEquipmentCarrier(hero)
+end
+
 function CDota2RpgDemo:SetNativePurchaseSelection(unit)
 	if not self:IsEquipmentCarrier(unit) then
 		self.nativePurchaseSelectionHero = "__wisp"
+		self:SyncNativePlayerHero(self:GetStashUnit())
 		return false
 	end
 	if not self:BindEquipmentCarrierToPlayer(unit) then
 		self.nativePurchaseSelectionHero = "__wisp"
+		self:SyncNativePlayerHero(self:GetStashUnit())
 		return false
 	end
-	self.nativePurchaseSelectionHero = self:GetNativePurchaseRecipientKey(unit)
+	local key = self:GetNativePurchaseRecipientKey(unit)
+	-- 选中小精灵是为了让原版商店能点（客户端只认玩家自己的英雄），不代表
+	-- "这次购买进小精灵"。只要还选着上阵/待命英雄，就保留它作为交付目标，
+	-- 购买后自动交付，不需要再手动转交。
+	if key ~= "__wisp" or not self:HasLiveNativePurchaseTarget() then
+		self.nativePurchaseSelectionHero = key
+	end
+	self:SyncNativePlayerHero(unit)
 	return true
 end
 
@@ -3762,6 +3847,7 @@ function CDota2RpgDemo:OnThink()
 
 		if self.phase == "setup" then
 			self:SyncGoldFromPlayer()
+			self:EnsureNativePlayerHero()
 			self:ReconcileNativePurchaseOrders()
 			-- Capture native TRAIN_ABILITY results before a later roster rebuild.
 			local abilitiesChanged = self:SyncRosterAbilities()
@@ -4127,6 +4213,10 @@ function CDota2RpgDemo:BroadcastShopState()
 		equipped_text = table.concat(equippedParts, ";"),
 		gris_gris_gold = GrisGris.Gold(self),
 		hero_entity_indices = heroEntityIndices,
+		-- 客户端只为"玩家自己的英雄"下发原版购买订单；HUD 打开商店时需要把选中
+		-- 临时切到小精灵，再在关闭时还原，所以必须知道它的实体索引。
+		commander_index = (stash ~= nil and stash.GetEntityIndex ~= nil)
+			and stash:GetEntityIndex() or -1,
 		cost_bench_slot = self.shopCosts.bench_slot,
 		bench_slot_max = self.shopCosts.bench_slot_max,
 		lineup_max = self.shopCosts.lineup_max,

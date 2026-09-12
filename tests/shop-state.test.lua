@@ -1255,6 +1255,62 @@ assert(equipmentGame:ValidatePrepareOrder({
 }), "prepare order filter must allow an affordable empty-units native purchase during setup")
 function fieldedHero:GetEntityIndex() return 501 end
 function wisp:GetEntityIndex() return 502 end
+
+-- 原版商店的购买点击资格取决于客户端是否把选中单位当作"玩家自己的英雄"。
+-- 项目生成的英雄不经过引擎选人流程，不同步的话选中它们时点击购买不会产生任何订单
+-- （用户反馈：点了完全没反应）。这里锁定 小精灵 <-> 当前载体 的同步契约。
+function benchHero:GetEntityIndex() return 503 end
+local nativeSelectedHero = nil
+local selectedHeroCalls = {}
+PlayerResource.SetSelectedHero = function(_, playerId, heroName)
+	selectedHeroCalls[#selectedHeroCalls + 1] = { playerId = playerId, name = heroName }
+	nativeSelectedHero = { GetUnitName = function() return heroName end }
+end
+PlayerResource.GetSelectedHeroEntity = function() return nativeSelectedHero end
+assert(equipmentGame:SyncNativePlayerHero(fieldedHero),
+	"selecting a roster hero must publish it as the player's own native hero")
+assertEqual(selectedHeroCalls[#selectedHeroCalls].name, "npc_dota_hero_axe",
+	"the native shop must follow the selected roster hero")
+assertEqual(selectedHeroCalls[#selectedHeroCalls].playerId, 0, "native hero sync must use the authoritative player id")
+assert(equipmentGame:SyncNativePlayerHero(fieldedHero) and #selectedHeroCalls == 1,
+	"re-selecting the same entity must not repeat the native call")
+assert(equipmentGame:EnsureNativePlayerHero(), "a live selection must survive the per-tick upkeep check")
+equipmentGame:SetNativePurchaseSelection(benchHero)
+assertEqual(equipmentGame.nativePurchaseSelectionHero, "npc_dota_hero_lion",
+	"purchase selection still tracks the delivery recipient")
+assertEqual(selectedHeroCalls[#selectedHeroCalls].name, "npc_dota_hero_lion",
+	"purchase target selection must also sync the native shop hero")
+-- 阵容重建会销毁旧实体；此时必须退回玩家小精灵，而不是留下失效句柄。
+entities[503] = nil
+assert(equipmentGame:EnsureNativePlayerHero(), "destroyed roster entities must fall back to the commander")
+assertEqual(selectedHeroCalls[#selectedHeroCalls].name, "npc_dota_hero_wisp",
+	"the fallback native hero must be the player's commander")
+assert(not equipmentGame:SyncNativePlayerHero(nil),
+	"an invalid carrier must never be published as the player's hero")
+assert(equipmentGame:EnsureNativePlayerHero(), "missing carriers must not wedge the upkeep fallback")
+-- 恢复实体映射，后续既有的原版购买用例仍依赖 503 指向待命英雄。
+entities[503] = benchHero
+-- 选中小精灵只是为了能点开原版商店，不能把已选定的英雄交付目标清掉，
+-- 否则用户依然要"先买给小精灵再手动转交"。
+assert(equipmentGame:SetNativePurchaseSelection(wisp), "the commander must remain a valid shop carrier")
+assertEqual(equipmentGame.nativePurchaseSelectionHero, "npc_dota_hero_lion",
+	"selecting the commander must not clear the chosen hero delivery target")
+assertEqual(selectedHeroCalls[#selectedHeroCalls].name, "npc_dota_hero_wisp",
+	"the commander selection still has to publish the native shop hero")
+-- 没有存活英雄目标时才回落到指挥官。
+local savedBench, savedTeamHeroes = equipmentGame.benchUnits,
+	equipmentGame.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]
+equipmentGame.benchUnits = {}
+equipmentGame.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
+assert(equipmentGame:SetNativePurchaseSelection(wisp), "commander shopping must survive an empty roster")
+assertEqual(equipmentGame.nativePurchaseSelectionHero, "__wisp",
+	"an empty roster must fall back to the commander as the delivery target")
+equipmentGame.benchUnits = savedBench
+equipmentGame.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = savedTeamHeroes
+assert(equipmentGame:SetNativePurchaseSelection(benchHero),
+	"hero delivery target must be selectable again after the roster returns")
+assertEqual(equipmentGame.nativePurchaseSelectionHero, "npc_dota_hero_lion",
+	"a roster hero selection must always win over the commander fallback")
 local benchPurchaseOrder = {
 	issuer_player_id_const = 0, order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM,
 	units = { ["0"] = 503 }, itemname = "item_prepare_bench",
