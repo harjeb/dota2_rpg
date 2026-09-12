@@ -300,7 +300,6 @@
     // 与服务端保持（服务端不会因为选中小精灵而改写目标），物品仍然进玩家选中的英雄。
     var shopPortraitSwap = null;
     var shopClosePending = null;
-    var nativeShopButton = null;
 
     function onNativeShopOpened() {
         if (phase !== "setup" || typeof GameUI === "undefined" || !GameUI.SelectUnit
@@ -338,27 +337,8 @@
         });
     }
 
-    function wireNativeShopToggle() {
-        var root = nativeShopPanel();
-        if (!root || typeof $.DispatchEvent !== "function") { return; }
-        while (root.GetParent && root.GetParent()) { root = root.GetParent(); }
-        var controls = root.FindChildTraverse("ShopCourierControls");
-        var button = controls && controls.FindChildTraverse("ShopButton");
-        if (!button || button === nativeShopButton) { return; }
-        nativeShopButton = button;
-        // 原按钮使用 DOTAHUDToggleShop。临时切换单位后，以可见开合状态明确关闭，
-        // 避免 toggle 的焦点/选择状态分支消耗第一次点击；其它按钮事件保持原样。
-        button.SetPanelEvent("onactivate", function () {
-            // 连续重开/关闭可能发生在两次轮询之间，旧动画的计时不能用于新关闭。
-            shopClosePending = null;
-            if (phase === "setup" && nativeShopIsOpen() === true) {
-                shopDiag("native shop close requested");
-                $.DispatchEvent("DOTAShopHideShop");
-            } else {
-                $.DispatchEvent("DOTAHUDToggleShop");
-            }
-        });
-    }
+    // UI58 接管原生 ShopButton 后实机出现一开即关。开合完全交给 Valve；
+    // 此脚本仅观察状态、同步购买目标和在关闭后还原英雄，不派发开合事件。
 
     function onNativeShopEvent(open) {
         var observed = nativeShopIsOpen();
@@ -466,7 +446,6 @@
 
     function watchNativeShop() {
         $.Schedule(0.25, watchNativeShop);
-        wireNativeShopToggle();
         if (!shopProbeLogged) {
             shopProbeLogged = true;
             shopDiag("shop probe " + shopProbeReport());

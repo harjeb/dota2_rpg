@@ -432,9 +432,10 @@ function mountNativeShop(h) {
     button.SetPanelEvent("onactivate", function () { clicks++; });
     return { controls: controls, button: button, label: label, clicks: function () { return clicks; } };
 }
-// Exercise one button click with a native close transition still in flight. A selection
-// during that transition reopens this simulated native shop, exposing the old race.
-function closeFixture(suppressNativeEvents) {
+// Keep native default activation separate from a script callback. The previous fixture
+// modeled ONLY the replacement callback, hiding UI58's possible second shop action.
+// Both activation orders are exercised; this is a regression model, not engine tracing.
+function closeFixture(suppressNativeEvents, callbackFirst) {
     var h = runHud();
     h.subscriptions.rpg_battle_state({ phase: "setup" });
     h.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502 });
@@ -458,18 +459,35 @@ function closeFixture(suppressNativeEvents) {
             state.shop.SetHasClass("ShopOpen", !state.shop.BHasClass("ShopOpen"));
         }
     };
+    function activate(button) {
+        if (callbackFirst) { button.events.onactivate(); }
+        var wasOpen = state.shop.BHasClass("ShopOpen");
+        closing = wasOpen;
+        if (wasOpen && !suppressNativeEvents) { h.unhandledEvents.DOTAHUDShopClosed(); }
+        state.shop.SetHasClass("ShopOpen", !wasOpen);
+        if (!callbackFirst) { button.events.onactivate(); }
+    }
+    var originalActivate = controls.button.events.onactivate;
     poll(h);
-    controls.button.events.onactivate();
-    poll(h);
-    assert(dispatched[0] === "DOTAHUDToggleShop" && h.context.Players.GetLocalPlayerPortraitUnit() === 502,
-        "closed native button retains Valve's open action and selects commander");
+    activate(controls.button);
+    assert(state.shop.BHasClass("ShopOpen"), "one native opening click must stay open after activation");
+    poll(h); finishClose(h); poll(h);
+    assert(state.shop.BHasClass("ShopOpen") && h.context.Players.GetLocalPlayerPortraitUnit() === 502,
+        "one native opening click must stay open through selection swap and later polls");
+    assert(controls.button.events.onactivate === originalActivate && dispatched.length === 0,
+        "addon must preserve original activation and never dispatch a second shop action");
     return { h: h, state: state, controls: controls, dispatched: dispatched,
+        activate: activate, click: function () { activate(controls.button); },
         endAnimation: function () { closing = false; } };
 }
 var once = closeFixture();
-once.controls.button.events.onactivate();
-assert(once.dispatched.join(",") === "DOTAHUDToggleShop,DOTAShopHideShop",
-    "one close click must issue exactly one explicit native hide");
+once.h.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502, gold: 360 });
+poll(once.h); finishClose(once.h);
+assert(once.state.shop.BHasClass("ShopOpen") && once.controls.label.text === "360",
+    "purchase wallet update must leave the shop open");
+once.click();
+assert(once.controls.clicks() === 2 && once.dispatched.length === 0,
+    "opening and closing each use exactly the native activation without addon shop dispatch");
 poll(once.h);
 assert(once.h.nativeSelections.length === 1 && !once.state.shop.BHasClass("ShopOpen"),
     "close polling must not restore selection during the native transition");
@@ -483,13 +501,13 @@ once.h.unhandledEvents.DOTAHUDShopOpened();
 assert(once.h.nativeSelections.length === 2, "late opened event cannot override a closed root");
 ["manual", "reopen", "phase", "generation"].forEach(function (scenario) {
     var f = closeFixture();
-    f.controls.button.events.onactivate();
+    f.click();
     poll(f.h);
     f.endAnimation();
     var count = f.h.nativeSelections.length;
     if (scenario === "manual") { setPortrait(f.h, 504); }
     if (scenario === "reopen") {
-        f.controls.button.events.onactivate();
+        f.click();
         // No intervening poll: the delayed callback must re-read the actual root.
     }
     if (scenario === "phase") {
@@ -503,42 +521,40 @@ assert(once.h.nativeSelections.length === 2, "late opened event cannot override 
     assert(f.h.nativeSelections.length === count, "pending restore respects " + scenario);
     if (scenario === "reopen") {
         poll(f.h);
-        f.controls.button.events.onactivate(); poll(f.h);
+        f.click(); poll(f.h);
         f.endAnimation(); finishClose(f.h);
         assert(f.h.nativeSelections.length === count + 1 && f.h.nativeSelections[count].index === 503,
             "reopening preserves the recipient for the next completed close");
     }
 });
-// Live builds may emit no shop events. Reopen and close between polls must not reuse
-// the first close's timer during a second native animation.
-var rapid = closeFixture(true);
-rapid.controls.button.events.onactivate();
-poll(rapid.h);
-rapid.endAnimation();
-rapid.controls.button.events.onactivate();
-rapid.controls.button.events.onactivate();
-finishClose(rapid.h);
-assert(rapid.h.nativeSelections.length === 1 && !rapid.state.shop.BHasClass("ShopOpen"),
-    "no-event rapid reopen/close invalidates the first close timer");
-poll(rapid.h);
-rapid.endAnimation();
-finishClose(rapid.h);
-assert(rapid.h.nativeSelections.length === 2 && rapid.h.nativeSelections[1].index === 503,
-    "second no-event close gets its own delay and restores the saved hero");
-// A new HUD button gets wired, and its tooltip/right-click callbacks survive.
+// Cover live builds with no opened/closed events, and either default/callback order.
+[false, true].forEach(function (callbackFirst) {
+    var nativeOnly = closeFixture(true, callbackFirst);
+    nativeOnly.click(); poll(nativeOnly.h);
+    assert(nativeOnly.h.nativeSelections.length === 1, "no-event close still defers restoration");
+    nativeOnly.endAnimation(); finishClose(nativeOnly.h);
+    assert(nativeOnly.h.nativeSelections[1].index === 503 && nativeOnly.dispatched.length === 0,
+        "no-event close restores without any scripted shop action");
+});
+// Native HUD replacement must also leave activation, tooltip and right-click untouched.
 var rebuilt = closeFixture();
 rebuilt.h.nativeRoot.children = rebuilt.h.nativeRoot.children.filter(function (p) { return p !== rebuilt.controls.controls; });
 var replacement = mountNativeShop(rebuilt.h);
 var rightClicks = 0;
 replacement.button.SetPanelEvent("oncontextmenu", function () { rightClicks++; });
+var replacementActivate = replacement.button.events.onactivate;
 poll(rebuilt.h);
 replacement.button.events.oncontextmenu();
-replacement.button.events.onactivate();
-assert(rightClicks === 1 && rebuilt.dispatched[1] === "DOTAShopHideShop", "rebuilt button closes once and retains other events");
+rebuilt.activate(replacement.button);
+assert(rightClicks === 1 && replacement.clicks() === 1 && rebuilt.dispatched.length === 0
+    && replacement.button.events.onactivate === replacementActivate,
+    "rebuilt native button retains activation and other events");
+rebuilt.endAnimation();
 rebuilt.h.subscriptions.rpg_battle_state({ phase: "fight" });
-replacement.button.events.onactivate();
-assert(rebuilt.dispatched[2] === "DOTAHUDToggleShop", "outside setup use Valve's original toggle action");
-console.log("PASS native shop single close: explicit hide, deferred restore, stale events, reopen, lifecycle and rebuilt button");
+rebuilt.activate(replacement.button);
+assert(replacement.clicks() === 2 && rebuilt.state.shop.BHasClass("ShopOpen"),
+    "native activation also remains untouched outside setup");
+console.log("PASS native shop activation preserved: stays open, purchase update, deferred restore, events, lifecycle and HUD rebuild");
 
 var walletHud = runHud();
 walletHud.subscriptions.rpg_shop_state({gold: 360}); // 500 - a 140-gold purchase

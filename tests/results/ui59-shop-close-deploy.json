@@ -1,0 +1,32 @@
+{
+  "version": "UI59 preserve native shop activation and deferred restore",
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\content\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.js",
+      "sha256": "4e560979c90ed58c5f976ccb24ba12c20287d4d26ca5c3bbc87d357942577ddf",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui59-shop-close-93x29rdx\\addon-before\\content\\panorama\\scripts\\custom_game\\rpg_demo_hud.js"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_english.txt",
+      "sha256": "b3df85ee3594ca7b72af2d6637405bdc7dd4beda2b68fc38837eb9317395f75f",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui59-shop-close-93x29rdx\\addon-before\\game\\resource\\addon_english.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_schinese.txt",
+      "sha256": "449ea075673943f21b14a146ebcf576df91a42bf5052fa3c58dfac56906e7baf",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui59-shop-close-93x29rdx\\addon-before\\game\\resource\\addon_schinese.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "cfd73ff147b6cc8d903d96d66bba740efbb3eb65ee67ea7e7ab31d5e06723cbc",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui59-shop-close-93x29rdx\\addon-before\\game\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c"
+    }
+  ],
+  "compiler_log": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui59-shop-close-93x29rdx\\compile.log",
+  "compiler_result": "1 compiled, 0 failed",
+  "workshop_record": "tests/results/ui59-shop-close-workshop.json",
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "remote_upload": false,
+  "steam_manifest_modified": false
+}
