@@ -293,6 +293,10 @@ function Debug.Install(game)
             for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
                 unit:SetBaseMaxHealth(Debug.HP); unit:SetMaxHealth(Debug.HP); unit:SetHealth(Debug.HP)
                 unit:SetBaseDamageMin(state(self).damage); unit:SetBaseDamageMax(state(self).damage)
+                -- Diagnostic experiment only: keep enemy team/owner unchanged.
+                unit:SetControllableByPlayer(self.playerId, true)
+                Log.Write("SkillDebug target_controllable player=" .. tostring(self.playerId)
+                    .. " unit=" .. unit:GetUnitName())
             end
         end
         return result

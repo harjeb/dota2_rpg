@@ -44,6 +44,9 @@ local function unit(name)
     function u:IsReincarnating() return self.reincarnating==true end
     function u:SetRespawnsDisabled(value) self.respawnsDisabled=value end
     function u:GetUnitName() return self.name end
+    function u:SetControllableByPlayer(playerId, enabled)
+        self.controllingPlayerId, self.controlEnabled = playerId, enabled
+    end
     function u:RemoveSelf() self.removed=true end
     function u:RemoveModifierByName(name) self.removedModifier=name end
     function u:GetItemInSlot(slot) return self.items[slot] end
@@ -273,6 +276,7 @@ test("one level 30 hero, one 50000 HP target and 99999 gold; callback idempotenc
     local enemy=g.battleManager.teamHeroes[3][1]; eq(enemy.name,Debug.UNIT)
     assert(require("tactics.neutral_attack").IsNeutral(enemy), "test creep uses persistent attack ownership instead of repeated attack orders")
     eq(enemy.hp,50000); eq(enemy.maxHP,50000); eq(enemy.baseHP,50000)
+    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,true)
     local spawns=g.rosterSpawns; f.loads[1].fn(); f.loads[2].fn(); eq(g.rosterSpawns,spawns)
     eq(g.dataLoader:GetLevel(Debug.LEVEL).reward.gold,0)
     for _,name in ipairs({"OnShopBuy","OnShopRefresh","OnBenchBuy","OnLineupSet","OnSelectLevel"}) do g[name](g); eq(g.calls[name],nil) end
@@ -285,6 +289,8 @@ test("reset retains authored rules equipment learned skills and talents; refresh
     local item=cooldown("item_blink"); old.items[0]=item; g.gold=2; g.phase="fight"
     f:emit("reset",{PlayerID=7})
     eq(g.ruleGeneration,1,"reset keeps the current rule generation")
+    local enemy=g.battleManager.teamHeroes[3][1]
+    eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,true)
     local new=g.battleManager.teamHeroes[2][1]; assert(new~=old and old.removed)
     eq(new.abilities[1].level,4); eq(new.abilities[2].level,1); eq(new.items[0],item)
     eq(new.abilities[1].remaining,0); eq(new.abilities[2].remaining,0); eq(item.remaining,0)
@@ -321,6 +327,7 @@ test("exit from fight creates fresh normal run and restores recruitment and gold
     eq(#g.lineup,0); eq(#g.battleManager.teamHeroes[2],0); eq(#g.battleManager.teamHeroes[3],2)
     eq(g.battleManager.teamHeroes[3][1].name,"normal_enemy"); eq(g:OnShopBuy(4,"purchase"),"OnShopBuy")
     eq(g.calls.OnShopBuy[2],"purchase")
+    for _,enemy in ipairs(g.battleManager.teamHeroes[3]) do eq(enemy.controllingPlayerId,nil) end
 end)
 test("settlement reset callback cannot reset a later normal run",function()
     local f,g=fixture(); f:enter(); g:OnStartBattle(); g:EndBattle("good")
@@ -330,6 +337,7 @@ end)
 test("normal wrappers preserve receiver arguments returns and install idempotence",function()
     local f,g=fixture(); local wrapped=g.EndBattle; Debug.Install(g); eq(g.EndBattle,wrapped)
     eq(g.dataLoader:GetLevel("ch02").id,"ch02"); eq(g:SpawnLevelEnemies("ch01"),"spawn-return")
+    for _,enemy in ipairs(g.battleManager.teamHeroes[3]) do eq(enemy.controllingPlayerId,nil) end
     local a,b=g:OnStartBattle(9,"payload"); eq(a,"start-return"); eq(b,42); eq(g.startArgs[1],9); eq(g.startArgs[2],"payload")
     a,b=g:EndBattle("normal",2); eq(a,"end-return"); eq(b,43); eq(g.endArgs[2],2); eq(g.normalAwards,1)
     for _,name in ipairs({"OnShopBuy","OnShopRefresh","OnBenchBuy","OnLineupSet","OnSelectLevel"}) do
