@@ -16,9 +16,8 @@ for _, row in ipairs(Catalog) do
     end
 end
 
--- 关卡强度 -> 允许的最高掉落档位：30 章 / 5 档，约每 6 章升一档。
--- 实际抽取在 [档位-1, 档位] 区间内，既贴合关卡强度又保留变化；未知关卡不做过滤，
--- 保持旧行为（例如离线测试里没有关卡号的调用）。
+-- 普通装备每关提高价格区间；中立装备按原生 1..5 档递进。
+-- 未知关卡保留完整目录，供不带战役关卡的调用使用。
 local CHAPTERS_PER_POWER = 6
 local MAX_POWER = 5
 local stage_pools = {}
@@ -35,20 +34,27 @@ function Loot.StageFromLevel(levelId)
     return digits
 end
 
+function Loot.PriceRange(stage)
+    local number = tonumber(stage)
+    if number == nil or number <= 0 then return nil end
+    local maximum = math.min(30, math.max(1, math.ceil(number))) * 250
+    return math.min(6000, math.max(1, maximum - 1000)), maximum
+end
+
 function Loot.PoolForStage(stage)
     local ceiling = Loot.PowerCeiling(stage)
     if ceiling == nil then return Catalog end
-    if stage_pools[ceiling] ~= nil then return stage_pools[ceiling] end
-    local floor = math.max(1, ceiling - 1)
+    local minimum, maximum = Loot.PriceRange(stage)
+    if stage_pools[maximum] ~= nil then return stage_pools[maximum] end
     local pool = {}
     for _, row in ipairs(Catalog) do
-        local power = tonumber(row.power) or 1
-        if power >= floor and power <= ceiling then
+        local cost = tonumber(row.cost) or 0
+        if (row.category == "standard" and cost >= minimum and cost <= maximum)
+            or (row.category ~= "standard" and row.power == ceiling) then
             pool[#pool + 1] = row
         end
     end
-    if #pool == 0 then pool = Catalog end
-    stage_pools[ceiling] = pool
+    stage_pools[maximum] = pool
     return pool
 end
 
@@ -56,7 +62,7 @@ function Loot.IsNeutralName(itemName)
     return itemName ~= nil and NeutralNames[itemName] == true
 end
 
--- Exactly three independent gates, with one uniform catalog draw per success.
+-- Exactly three independent drop gates; progression only changes item selection.
 -- Catalog size changes breadth, never the number of reward rolls.
 -- 原版 Lua VM 的 math.random 起手就是可重复序列（与 addon_game_mode.lua 里商店
 -- 随机数同一原因），所以掉落过去每局都是同一条顺序。战斗逻辑统一走引擎原生 RandomInt，
@@ -71,17 +77,57 @@ local function NativeRandom(first, last)
     return math.random()
 end
 
-function Loot.Roll(config, random, stage)
+-- 超过 6000 的装备属于同一顶级档，避免最高价的大根 5 垄断后期保底。
+function Loot.ProgressValue(row)
+    return math.min(tonumber(row.cost) or 0, 6000)
+end
+
+-- 85% 普通装备，15% 当档中立/特殊奖励，避免零售价物品挤占装备掉落。
+-- 普通装备的 90% 走价值保底：优先超过本局最高掉落价值，到达关卡上限则同价。
+-- 顶级装备允许同档轮换；其余 10% 在当前价格区间自由抽取，回落不会降低保底。
+local function ProgressionPick(pool, random, history)
+    local equipment, bonus = {}, {}
+    for _, row in ipairs(pool) do
+        local target = row.category == "standard" and equipment or bonus
+        target[#target + 1] = row
+    end
+    if #bonus > 0 and (#equipment == 0 or random() >= 0.85) then
+        return bonus[random(1, #bonus)]
+    end
+    local choices = equipment
+    if random() < 0.90 then
+        local better, equal, best = {}, {}, {}
+        local highest = math.min(tonumber(history.highestEquipmentCost) or 0, 6000)
+        local bestCost = 0
+        for _, row in ipairs(equipment) do
+            local value = Loot.ProgressValue(row)
+            if value > highest then better[#better + 1] = row
+            elseif value == highest then equal[#equal + 1] = row end
+            if value > bestCost then bestCost, best = value, {} end
+            if value == bestCost then best[#best + 1] = row end
+        end
+        -- 回选早期关卡时仍遵守该关上限；正常推进总有 >= 历史最高价的候选。
+        choices = #better > 0 and better or (#equal > 0 and equal or best)
+    end
+    local row = choices[random(1, #choices)]
+    history.highestEquipmentCost = math.max(tonumber(history.highestEquipmentCost) or 0, row.cost)
+    return row
+end
+
+function Loot.Roll(config, random, stage, history)
     random = random or NativeRandom
     local rewards = {}
     if type(config) ~= "table" or config.pool ~= "all_items" then return rewards end
     local pool = Loot.PoolForStage(stage)
+    local progressing = Loot.PowerCeiling(stage) ~= nil
+    history = history or {}
     for index = 1, 3 do
         local entry = (config.items or {})[tostring(index)] or (config.items or {})[index]
         local chance = type(entry) == "table" and tonumber(entry.chance) or 0
         chance = math.max(0, math.min(1, chance or 0))
         if random() < chance then
-            rewards[#rewards + 1] = pool[random(1, #pool)]
+            rewards[#rewards + 1] = progressing and ProgressionPick(pool, random, history)
+                or pool[random(1, #pool)]
         end
     end
     return rewards
@@ -145,8 +191,10 @@ end
 
 function Loot.Award(game, config, random)
     local names = {}
-    RunLives.Ensure(game).pendingCampaignLoot = RunLives.Ensure(game).pendingCampaignLoot or {}
-    for _, row in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId))) do
+    local state = RunLives.Ensure(game)
+    state.pendingCampaignLoot = state.pendingCampaignLoot or {}
+    state.campaignLootProgress = state.campaignLootProgress or {}
+    for _, row in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId), state.campaignLootProgress)) do
         names[#names + 1] = row.delivery
         if row.delivery == "item_aegis" then
             -- Native Aegis is not droppable: existing life-reward delivery

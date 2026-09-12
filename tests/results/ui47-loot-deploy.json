@@ -1,0 +1,32 @@
+{
+  "version": "UI47 + campaign loot progression",
+  "scope": "83/83 offline regressions passed; native CSS compiled; five deployed sources hash verified. No gameplay or screenshots.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui47-loot-backup-20260912-172019",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.css",
+      "sha256": "c9fa4b8ffe8332f2b4dfbdf2241973adb5deac041e55cce44e982c81ff314464"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "fbdf2113b0082c5c2778c3b852b2465f2b60256d2e026170837339de8aa38c8d"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "8ead66c2c1c5c547e78b03916cbda66d27c2dbaaf41dfb74bf1332c5eec61a9f"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/battle/campaign_loot.lua",
+      "sha256": "fb49d2dfbdd85707cb1140a2f2719f485f0662da202ba3c0c0182099e5195e51"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/data/campaign_loot_catalog.lua",
+      "sha256": "e4ce8117a8b266b23fb72773261224c31bb0f173b8f5e24a8bc4db6018dc58e3"
+    }
+  ],
+  "compiled_file": {
+    "path": "game/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.vcss_c",
+    "sha256": "fc4caa728d0d8a25bec93c256fcbf8085482376b0c767150eca478aca246b3c6"
+  },
+  "compile_log": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui47-loot-backup-20260912-172019\\hud-css-compile.log"
+}

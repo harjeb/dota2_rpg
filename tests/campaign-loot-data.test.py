@@ -59,6 +59,10 @@ class CatalogTests(unittest.TestCase):
         lua = author.LUA.read_text(encoding='utf-8')
         for name in pool:
             self.assertIn('name = "' + name + '"', lua)
+        # Runtime progression must use native total prices, including zero-cost neutrals.
+        self.assertEqual(lua, author.LF.join(author.HEADER + [author.row_line(r) for r in c['items'] if r['category']] + ['}']) + author.LF)
+        for row in pool.values():
+            self.assertIn('cost = ' + str(int(row['schema'].get('ItemCost', '0') or 0)) + ', category = "' + row['category'] + '"', author.row_line(row))
         self.assertNotIn('item_recipe_', lua)
         self.assertNotIn('item_roshans_banner', lua)
         # 中立装备只有带标记才能在交付/转交时走专属中立槽(16),而不是 0..14。

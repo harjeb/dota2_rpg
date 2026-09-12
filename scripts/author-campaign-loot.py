@@ -115,6 +115,8 @@ HEADER = [
 def row_line(row):
     fields = [', neutral = true'] if row['category'] in ('neutral', 'neutral_enhancement') else []
     fields.append(', power = ' + str(row.get('power') or 1))
+    fields.append(', cost = ' + str(int(row['schema'].get('ItemCost', '0') or 0)))
+    fields.append(', category = "' + row['category'] + '"')
     return '    { name = "' + row['name'] + '", delivery = "' + row['delivery'] + '"' + ''.join(fields) + ' },'
 
 

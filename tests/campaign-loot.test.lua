@@ -18,10 +18,20 @@ for stage = 1, 30 do
     previous = ceiling
     local pool = Loot.PoolForStage(stage)
     assert(#pool > 0, "stage " .. stage .. " has a non-empty pool")
+    local minimum, maximum = Loot.PriceRange(stage)
+    local equipmentCount, bonusCount = 0, 0
     for _, row in ipairs(pool) do
         assert(tonumber(row.power) >= 1 and tonumber(row.power) <= ceiling,
             "stage " .. stage .. " pool stays within its ceiling")
+        if row.category == "standard" then
+            equipmentCount = equipmentCount + 1
+            assert(row.cost >= minimum and row.cost <= maximum, "ordinary drops stay in the stage price window")
+        else
+            bonusCount = bonusCount + 1
+            assert(row.power == ceiling, "neutral and special rewards no longer roll a lower tier")
+        end
     end
+    assert(equipmentCount > 0 and bonusCount > 0, "both reward categories exist at every stage")
 end
 assert(#Loot.PoolForStage(nil) == #Loot.Catalog, "an unknown stage keeps the full pool")
 local function poolHas(pool, name)
@@ -39,7 +49,96 @@ for stage = 1, 30 do
         assert(tonumber(row.power) <= ceiling, "stage " .. stage .. " never exceeds its ceiling")
     end
 end
+-- A high early roll cannot collapse the next protected reward, and a rare low
+-- roll never lowers the run's remembered price. Exact 90% boundary is unprotected.
+do
+    local single = {pool="all_items", items={{chance=1}}}
+    local function picker(protection)
+        local step = 0
+        return function(a, b)
+            if a then return b end
+            step = step + 1
+            if step == 3 then return protection end
+            return 0
+        end
+    end
+    local history = {highestEquipmentCost=1500}
+    local equal = Loot.Roll(single, picker(.899999), 6, history)[1]
+    assert(equal.cost == 1500, "at the stage ceiling the protected drop holds its price")
+    local low = Loot.Roll(single, picker(.90), 6, history)[1]
+    assert(low.cost < 1500 and low.cost >= 500, "rare variation stays inside the current stage window")
+    assert(history.highestEquipmentCost == 1500, "a low roll does not erase the high-water mark")
+    local upgrade = Loot.Roll(single, picker(0), 7, history)[1]
+    assert(upgrade.cost > 1500 and upgrade.cost <= 1750, "the next stage prefers a strictly more expensive option")
+    assert(#Loot.Roll({pool="all_items",items={}}, picker(0), 30, history) == 0)
+    assert(history.highestEquipmentCost == upgrade.cost, "failed gates do not advance price history")
+    local topNames = {}
+    for pick = 1, 9 do
+        local row = Loot.Roll(single, function(a, b)
+            if a then return pick end
+            return 0
+        end, 30, {highestEquipmentCost=7400})[1]
+        assert(row.cost > 6000, "top-tier protection cannot return mid-tier gear")
+        topNames[row.name] = true
+    end
+    local unique = 0
+    for _ in pairs(topNames) do unique = unique + 1 end
+    assert(unique == 9, "all nine top-tier items remain eligible after Dagon 5")
+    local replay = Loot.Roll(single, picker(0), 1, history)[1]
+    assert(replay.cost <= 250, "revisiting a lower stage never exceeds its price cap")
+end
+
 local config = {pool="all_items", items={{chance=.35},{chance=.30},{chance=.20}}}
+-- Deterministic multi-run simulation of the real drop gates, tracking adjacent
+-- ordinary rewards across empty stages and neutral rewards, not just pool means.
+do
+    local seed = 20260912
+    local function random(a, b)
+        seed = (seed * 16807) % 2147483647
+        local fraction = (seed - 1) / 2147483646
+        return a and (a + math.floor(fraction * (b - a + 1))) or fraction
+    end
+    local ordinary, total, comparisons, nondecreasing, increasing, valueHolds = 0, 0, 0, 0, 0, 0
+    local sums, counts = {}, {}
+    for run = 1, 1000 do
+        local history, lastCost = {}, nil
+        for stage = 1, 30 do
+            for _, row in ipairs(Loot.Roll(config, random, stage, history)) do
+                total = total + 1
+                if row.category == "standard" then
+                    ordinary = ordinary + 1
+                    sums[stage] = (sums[stage] or 0) + row.cost
+                    counts[stage] = (counts[stage] or 0) + 1
+                    if lastCost then
+                        comparisons = comparisons + 1
+                        if row.cost >= lastCost then nondecreasing = nondecreasing + 1 end
+                        if row.cost > lastCost then increasing = increasing + 1 end
+                        if Loot.ProgressValue(row) >= math.min(lastCost, 6000) then valueHolds = valueHolds + 1 end
+                    end
+                    lastCost = row.cost
+                end
+            end
+        end
+    end
+    assert(total > 24500 and total < 26500, "the existing .85 rewards per victory is preserved")
+    assert(ordinary / total > .83 and ordinary / total < .87, "ordinary equipment dominates with an 85% share")
+    assert(valueHolds / comparisons >= .90, "at least 90% hold or improve value, treating top-tier gear equally")
+    assert(nondecreasing / comparisons >= .85, "even raw prices mostly hold or increase with top-tier variety")
+    assert(increasing / comparisons > .65, "most ordinary rewards strictly improve, not just equal their predecessor")
+    local lastMean = 0
+    for stage = 1, 30 do
+        local mean = sums[stage] / counts[stage]
+        assert(mean > lastMean - 100, "average price cannot regress materially at stage " .. stage)
+        lastMean = mean
+    end
+    for stage = 1, 24 do
+        assert(sums[stage + 6] / counts[stage + 6] > sums[stage] / counts[stage] + 500,
+            "each later chapter gives a substantial price improvement")
+    end
+    print(string.format("Loot simulation: %d runs, %d rewards, ordinary %.2f%%, value holds %.2f%%, price holds %.2f%%, strictly higher %.2f%%; stage means %.0f -> %.0f gold",
+        1000, total, 100 * ordinary / total, 100 * valueHolds / comparisons, 100 * nondecreasing / comparisons, 100 * increasing / comparisons,
+        sums[1] / counts[1], sums[30] / counts[30]))
+end
 local calls = 0
 local function zero(a,b) calls=calls+1; if a then return b end; return 0 end
 assert(#Loot.Roll(config,zero)==3 and calls==6)
@@ -85,6 +184,24 @@ local game={GetStashUnit=function() return stash end, StashAddItem=function(_,na
 end}
 local function choose(name) return function(a,b) return a and index[name] or 0 end end
 full=true
+-- Award remembers earned prices even when the warehouse is full, and replay
+-- clears the history through the same runLives reset used by ResetSessionState.
+do
+    local progressionGame = {GetStashUnit=game.GetStashUnit, currentLevelId="level_06"}
+    local function highest(a, b) return a or 0 end
+    Loot.Award(progressionGame, config, highest)
+    local state = Lives.Ensure(progressionGame)
+    assert(state.campaignLootProgress.highestEquipmentCost == 1500)
+    assert(#state.pendingCampaignLoot == 3)
+    progressionGame.currentLevelId = "level_07"
+    Loot.Award(progressionGame, config, highest)
+    assert(state.campaignLootProgress.highestEquipmentCost > 1500, "Award carries price history across victories")
+    assert(#state.pendingCampaignLoot == 6, "queued delivery does not prevent progression")
+    progressionGame.runLives = nil
+    progressionGame.currentLevelId = "level_01"
+    Loot.Award(progressionGame, config, highest)
+    assert(Lives.Ensure(progressionGame).campaignLootProgress.highestEquipmentCost <= 250, "a new run resets loot history")
+end
 local names=Loot.Award(game,config,choose("item_blink"))
 assert(#names==3 and names[1]=="item_blink" and added==0)
 assert(#Lives.Ensure(game).pendingCampaignLoot==3)
@@ -206,4 +323,4 @@ for _,winner in ipairs({"radiant","dire","timeout"}) do
     assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink" or ""))
     assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 3 or 0))
 end
-print("PASS campaign loot: real EndBattle, 271 catalog rows, bounded gates, aliases, full stash, retries, ambiguous native delivery")
+print("PASS campaign loot: progression, 266 catalog rows, bounded gates, full stash, retries, ambiguous native delivery")
