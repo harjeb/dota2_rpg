@@ -14,7 +14,9 @@ local function spawnHook(label)
     return {OnSpawn=function(_,u)
         spawnOrder[#spawnOrder+1]=label
         return u and u.summonHook==label
-    end, Clear=function(g) if cleanupCheck then cleanupCheck(g) end end}
+    end, Clear=function(g) if cleanupCheck then cleanupCheck(g) end end,
+        -- 敌方召唤物登记是生产模块新增的接口：替身必须同样提供，否则 OnNpcSpawned 会报错。
+        TrackEnemySummon=function() return false end}
 end
 local hooks={ ["battle.tempest_double"]=spawnHook("double"),
     ["tactics/special_targets"]=spawnHook("special"),

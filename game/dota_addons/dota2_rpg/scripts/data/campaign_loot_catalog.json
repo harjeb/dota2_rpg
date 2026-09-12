@@ -3,9 +3,9 @@
   "neutral_sha256": "0935ad39d72909cd2800d62d083e55406b2a8eb85049373c1a4392bcf907a8d5",
   "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nAll recipe scrolls and Roshan's Banner are excluded by campaign policy.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
   "counts": {
-    "standard": 186,
-    "special": 16,
-    "excluded": 274,
+    "standard": 184,
+    "special": 14,
+    "excluded": 278,
     "neutral": 49,
     "neutral_enhancement": 19
   },
@@ -15,6 +15,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_abyssal_blade",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -50,6 +51,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_aegis",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "Model": "models/props_gameplay/aegis.vmdl",
@@ -79,6 +81,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_aeon_disk",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "105.0 125.0 145.0 165.0",
@@ -104,6 +107,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_aether_lens",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2275",
@@ -120,9 +124,10 @@
     },
     {
       "name": "item_aghanims_shard",
-      "category": "standard",
-      "excluded_reason": null,
-      "delivery": "item_aghanims_shard_roshan",
+      "category": null,
+      "excluded_reason": "Campaign policy: dropped shards only exist as the inert Roshan consumable",
+      "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1400",
@@ -139,9 +144,10 @@
     },
     {
       "name": "item_aghanims_shard_roshan",
-      "category": "special",
-      "excluded_reason": null,
-      "delivery": "item_aghanims_shard_roshan",
+      "category": null,
+      "excluded_reason": "Campaign policy: dropped shards only exist as the inert Roshan consumable",
+      "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "1400",
@@ -160,6 +166,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -182,6 +189,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ancient_janggo",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "ItemPermanent": "1",
@@ -214,6 +222,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_angels_demise",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -245,6 +254,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -263,6 +273,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_arcane_blink",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES | DOTA_ABILITY_BEHAVIOR_OVERSHOOT",
         "AbilityCastRange": "1400",
@@ -292,6 +303,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_arcane_boots",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "55.0",
@@ -325,6 +337,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "60.0",
@@ -350,6 +363,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_armlet",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "AbilityCooldown": "0.0",
@@ -377,6 +391,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -397,6 +412,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_ash_legion_shield",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "40.0",
@@ -418,6 +434,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_assault",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastRange": "1200",
@@ -445,6 +462,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -464,6 +482,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -484,6 +503,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_basher",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitDamageType": "DAMAGE_TYPE_PHYSICAL",
@@ -511,6 +531,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_belt_of_strength",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -526,6 +547,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_bfury",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetType": "DOTA_UNIT_TARGET_TREE | DOTA_UNIT_TARGET_CUSTOM",
@@ -565,6 +587,7 @@
       "category": null,
       "excluded_reason": "Hero-created/bound mechanic; arbitrary commander grant lacks originating hero state",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_UNSWAPPABLE",
         "FightRecapLevel": "1",
@@ -589,6 +612,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_black_king_bar",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "2",
@@ -615,6 +639,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -640,6 +665,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blade_mail",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "AbilityCooldown": "25.0",
@@ -665,6 +691,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blade_of_alacrity",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -680,6 +707,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blades_of_attack",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -695,6 +723,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blight_stone",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -715,6 +744,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blink",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES | DOTA_ABILITY_BEHAVIOR_OVERSHOOT",
         "AbilityCastRange": "1200",
@@ -739,6 +769,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blitz_knuckles",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -754,6 +785,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_blood_grenade",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -796,6 +828,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_bloodstone",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "FightRecapLevel": "2",
@@ -831,6 +864,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_bloodthorn",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -870,6 +904,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -893,6 +928,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_boots",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "Model": "models/props_gameplay/boots_of_speed.vmdl",
@@ -912,6 +948,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_boots_of_bearing",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "ItemPermanent": "1",
@@ -947,6 +984,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_boots_of_elves",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -962,6 +1000,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_bottle",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -1001,6 +1040,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -1034,6 +1074,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_bracer",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "505",
@@ -1055,6 +1096,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_branches",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "Model": "models/props_gameplay/branch.vmdl",
@@ -1076,6 +1118,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_broadsword",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -1091,6 +1134,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -1110,6 +1154,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_buckler",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastRange": "1200",
@@ -1131,6 +1176,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -1156,6 +1202,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_butterfly",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "5450",
@@ -1176,6 +1223,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1208,6 +1256,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -1231,6 +1280,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_chainmail",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -1249,6 +1299,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_chasm_stone",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "900",
@@ -1265,6 +1316,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_cheese",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/cheese.vmdl",
@@ -1294,6 +1346,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_chipped_vest",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -1313,6 +1366,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_circlet",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "155",
@@ -1329,6 +1383,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_clarity",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -1361,6 +1416,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_claymore",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1350",
@@ -1376,6 +1432,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_cloak",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "900",
@@ -1392,6 +1449,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_cloak_of_flames",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "ItemCost": "0",
@@ -1422,6 +1480,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1446,6 +1505,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_conjurers_catalyst",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "ItemCost": "0",
@@ -1477,6 +1537,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_consecrated_wraps",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -1512,6 +1573,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1200",
@@ -1531,6 +1593,7 @@
       "category": null,
       "excluded_reason": "Legacy courier purchase consumable; current standard couriers are automatic",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemDeclarations": "DECLARE_PURCHASES_TO_TEAMMATES",
@@ -1552,6 +1615,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityCooldown": "12",
@@ -1574,6 +1638,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_crellas_crozier",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "FightRecapLevel": "1",
@@ -1612,6 +1677,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_crimson_guard",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "SpellDispellableType": "SPELL_DISPELLABLE_NO",
@@ -1648,6 +1714,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_crippling_crossbow",
+      "power": 2,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
@@ -1678,6 +1745,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_crown",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -1694,6 +1762,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_cyclone",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -1724,6 +1793,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_dagger_of_ristul",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30.0",
@@ -1746,6 +1816,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dagon",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1780,6 +1851,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dagon_2",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1814,6 +1886,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dagon_3",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1848,6 +1921,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dagon_4",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1882,6 +1956,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dagon_5",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -1915,6 +1990,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_dandelion_amulet",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "12",
@@ -1939,6 +2015,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_defiant_shell",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemIsNeutralActiveDrop": "1",
@@ -1960,6 +2037,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_demon_edge",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2200",
@@ -1976,6 +2054,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_demonicon",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "80",
@@ -1999,6 +2078,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_desolator",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "3500",
@@ -2023,6 +2103,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_desolator_2",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2046,6 +2127,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_devastator",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "SpellImmunityType": "SPELL_IMMUNITY_ENEMIES_YES",
@@ -2074,6 +2156,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_dezun_bloodrite",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2095,6 +2178,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_diadem",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -2110,6 +2194,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_diffusal_blade",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -2147,6 +2232,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_disperser",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_AOE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -2188,6 +2274,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_divine_regalia",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2208,6 +2295,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2223,6 +2311,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_dormant_curio",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2240,6 +2329,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE",
         "ItemCost": "0",
@@ -2261,6 +2351,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dragon_lance",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1900",
@@ -2280,6 +2371,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2298,6 +2390,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_duelist_gloves",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2320,6 +2413,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_dust",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/dust.vmdl",
@@ -2357,6 +2451,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_eagle",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2800",
@@ -2373,6 +2468,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_echo_sabre",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "FightRecapLevel": "1",
@@ -2401,6 +2497,7 @@
       "category": null,
       "excluded_reason": "Hero-created/bound mechanic; arbitrary commander grant lacks originating hero state",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_UNSWAPPABLE",
         "FightRecapLevel": "1",
@@ -2425,6 +2522,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -2452,6 +2550,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2471,6 +2570,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_enchanted_mango",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -2503,6 +2603,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "4.0",
@@ -2523,6 +2624,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_enchanters_bauble",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2548,6 +2650,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_energy_booster",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "800",
@@ -2564,6 +2667,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_alert",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2584,6 +2688,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_audacious",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2604,6 +2709,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2623,6 +2729,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_brawny",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2643,6 +2750,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_crude",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2663,6 +2771,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2681,6 +2790,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2701,6 +2811,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_evolved",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2719,6 +2830,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_feverish",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2738,6 +2850,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2758,6 +2871,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_fleetfooted",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2776,6 +2890,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_greedy",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2799,6 +2914,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_hulking",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2819,6 +2935,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_keen_eyed",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2839,6 +2956,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_manic",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2859,6 +2977,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_mystical",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2879,6 +2998,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_nimble",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2899,6 +3019,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_quickened",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2919,6 +3040,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2939,6 +3061,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2959,6 +3082,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_timeless",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2978,6 +3102,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_titanic",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -2998,6 +3123,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_tough",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3018,6 +3144,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_vampiric",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3038,6 +3165,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3058,6 +3186,7 @@
       "category": "neutral_enhancement",
       "excluded_reason": null,
       "delivery": "item_enhancement_vital",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3076,6 +3205,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3095,6 +3225,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_essence_distiller",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -3138,6 +3269,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_essence_ring",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "25.0",
@@ -3163,6 +3295,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemPurchasable": "0",
@@ -3189,6 +3322,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ethereal_blade",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY | DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3224,6 +3358,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "60.0",
@@ -3243,6 +3378,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3263,6 +3399,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3281,6 +3418,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_faerie_fire",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3311,6 +3449,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_falcon_blade",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1125",
@@ -3329,6 +3468,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_fallen_sky",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "AbilityCastRange": "1200",
@@ -3377,6 +3517,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_famango",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3409,6 +3550,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_flask",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3442,6 +3584,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_flayers_bota",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "65",
@@ -3473,6 +3616,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "AbilityCooldown": "5.0",
@@ -3494,6 +3638,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_fluffy_hat",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "250",
@@ -3510,6 +3655,7 @@
       "category": null,
       "excluded_reason": "Legacy courier purchase consumable; current standard couriers are automatic",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemDeclarations": "DECLARE_PURCHASES_TO_TEAMMATES",
@@ -3530,6 +3676,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_foragers_health",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3561,6 +3708,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_foragers_kit",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3588,6 +3736,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_foragers_mana",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3617,6 +3766,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_foragers_stats",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3644,6 +3794,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH | DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -3671,6 +3822,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "0",
@@ -3697,6 +3849,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_force_staff",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH | DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -3726,6 +3879,7 @@
       "category": null,
       "excluded_reason": "Hero-created/bound mechanic; arbitrary commander grant lacks originating hero state",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "Model": "models/props_gameplay/gold_bag.vmdl",
@@ -3744,6 +3898,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3767,6 +3922,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30.0",
@@ -3791,6 +3947,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_gauntlets",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "140",
@@ -3807,6 +3964,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_gem",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE",
         "AbilityCastRange": "300",
@@ -3850,6 +4008,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ghost",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "FightRecapLevel": "1",
@@ -3872,6 +4031,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_giant_maul",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "15",
@@ -3897,6 +4057,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -3923,6 +4084,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_glimmer_cape",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_MOVEMENT",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -3951,6 +4113,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_gloves",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -3966,6 +4129,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -3984,6 +4148,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_great_famango",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -4016,6 +4181,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_greater_crit",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "5100",
@@ -4035,6 +4201,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -4062,6 +4229,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_greater_famango",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -4095,6 +4263,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -4114,6 +4283,7 @@
       "category": null,
       "excluded_reason": "Hero-created/bound mechanic; arbitrary commander grant lacks originating hero state",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_UNSWAPPABLE",
         "FightRecapLevel": "1",
@@ -4138,6 +4308,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -4159,6 +4330,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_guardian_greaves",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "1",
@@ -4199,6 +4371,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_gungir",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -4237,6 +4410,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_gunpowder_gauntlets",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "10",
@@ -4263,6 +4437,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_hand_of_midas",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -4297,6 +4472,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_harmonizer",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -4321,6 +4497,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_harpoon",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY | DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -4358,6 +4535,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "10.0",
@@ -4388,6 +4566,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_headdress",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "425",
@@ -4410,6 +4589,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_heart",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "5200",
@@ -4429,6 +4609,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_heavens_halberd",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -4458,6 +4639,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_heavy_blade",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -4491,6 +4673,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_helm_of_iron_will",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "975",
@@ -4507,6 +4690,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_helm_of_the_dominator",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -4546,6 +4730,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_helm_of_the_overlord",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -4584,6 +4769,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -4607,6 +4793,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_holy_locket",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -4653,6 +4840,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "60.0",
@@ -4677,6 +4865,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET |  DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -4700,6 +4889,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_hurricane_pike",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH | DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -4738,6 +4928,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_hydras_breath",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "0",
@@ -4773,6 +4964,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_hyperstone",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2000",
@@ -4789,6 +4981,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_idol_of_screeauk",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30",
@@ -4813,6 +5006,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30.0",
@@ -4838,6 +5032,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "5.0",
@@ -4857,6 +5052,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_infused_raindrop",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastPoint": "0.0",
@@ -4890,6 +5086,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_invis_sword",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "FightRecapLevel": "1",
@@ -4916,6 +5113,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetType": "DOTA_UNIT_TARGET_TREE | DOTA_UNIT_TARGET_CUSTOM",
@@ -4948,6 +5146,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "AbilityCastRange": "400",
@@ -4968,6 +5167,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_javelin",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "900",
@@ -4984,6 +5184,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_jidi_pollen_bag",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "25",
@@ -5009,6 +5210,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_kaya",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2100",
@@ -5028,6 +5230,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_kaya_and_sange",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "4200",
@@ -5052,6 +5255,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -5071,6 +5275,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_kobold_cup",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "40",
@@ -5092,6 +5297,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5115,6 +5321,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_lesser_crit",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2000",
@@ -5133,6 +5340,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_lifesteal",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "900",
@@ -5148,6 +5356,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "0",
@@ -5176,6 +5385,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_lotus_orb",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -5203,6 +5413,7 @@
       "category": null,
       "excluded_reason": "Cast-on-pickup neutral crafting currency; campaign awards actual neutral equipment instead",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "Model": "models/props_gameplay/crystal_shards/crystal_shards.vmdl",
@@ -5233,6 +5444,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_maelstrom",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2950",
@@ -5258,6 +5470,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mage_slayer",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -5284,6 +5497,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_magic_stick",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/magic_wand.vmdl",
@@ -5310,6 +5524,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_magic_wand",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/magic_wand.vmdl",
@@ -5337,6 +5552,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
@@ -5366,6 +5582,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_mana_draught",
+      "power": 2,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
@@ -5393,6 +5610,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "AbilityCastRange": "200",
@@ -5415,6 +5633,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_manta",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityCooldown": "34.0",
@@ -5449,6 +5668,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mantle",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "140",
@@ -5465,6 +5685,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "0",
@@ -5490,6 +5711,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mask_of_madness",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "FightRecapLevel": "1",
@@ -5520,6 +5742,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5539,6 +5762,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_medallion_of_courage",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -5567,6 +5791,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mekansm",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "2",
@@ -5599,6 +5824,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_metamorphic_mandible",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30",
@@ -5625,6 +5851,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_meteor_hammer",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_CHANNELLED",
         "AbilityUnitDamageType": "DAMAGE_TYPE_MAGICAL",
@@ -5670,6 +5897,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5690,6 +5918,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_miniboss_minion_summoner",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -5726,6 +5955,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_minotaur_horn",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "40.0",
@@ -5749,6 +5979,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5768,6 +5999,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5791,6 +6023,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mithril_hammer",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1600",
@@ -5806,6 +6039,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mjollnir",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -5847,6 +6081,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_monkey_king_bar",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "5000",
@@ -5868,6 +6103,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_moon_shard",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -5890,6 +6126,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/muerta_minigame_guns.vmdl",
         "ModelScale": "10",
@@ -5935,6 +6172,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityName": "item_tombstone",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_CHANNELLED | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
@@ -5962,6 +6200,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -5982,6 +6221,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_mystic_staff",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2800",
@@ -5998,6 +6238,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCastPoint": "0.0",
@@ -6038,6 +6279,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCastPoint": "0.0",
@@ -6078,6 +6320,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCastPoint": "0.0",
@@ -6116,6 +6359,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6136,6 +6380,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6156,6 +6401,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "60.0",
@@ -6180,6 +6426,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_null_talisman",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "505",
@@ -6200,6 +6447,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_nullifier",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -6230,6 +6478,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_oblivion_staff",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1625",
@@ -6247,6 +6496,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_occult_bracelet",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6268,6 +6518,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6287,6 +6538,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_octarine_core",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "4900",
@@ -6308,6 +6560,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE ",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -6335,6 +6588,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE ",
         "AbilityCastAnimation": "ACT_INVALID",
@@ -6361,6 +6615,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_NOT_LEARNABLE | DOTA_ABILITY_BEHAVIOR_CHANNELLED  | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING",
         "AbilityCastAnimation": "ACT_DOTA_GENERIC_CHANNEL_1",
@@ -6383,6 +6638,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ogre_axe",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -6398,6 +6654,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "ItemCost": "0",
@@ -6430,6 +6687,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_orb_of_corrosion",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -6452,6 +6710,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6472,6 +6731,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_orb_of_frost",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "300",
@@ -6492,6 +6752,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_orb_of_venom",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -6513,6 +6774,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_orchid",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -6545,6 +6807,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "30",
@@ -6568,6 +6831,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_overwhelming_blink",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES | DOTA_ABILITY_BEHAVIOR_OVERSHOOT",
         "AbilityUnitDamageType": "DAMAGE_TYPE_MAGICAL",
@@ -6604,6 +6868,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
@@ -6630,6 +6895,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6651,6 +6917,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "75.0",
@@ -6671,6 +6938,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_partisans_brand",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6691,6 +6959,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_pavise",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -6720,6 +6989,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6742,6 +7012,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_pers",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1400",
@@ -6759,6 +7030,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_phase_boots",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "AbilityCooldown": "8.0",
@@ -6785,6 +7057,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6808,6 +7081,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -6827,6 +7101,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_phylactery",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "9.0",
@@ -6853,6 +7128,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_pipe",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "2",
@@ -6891,6 +7167,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastAnimation": "ACT_DOTA_GENERIC_CHANNEL_1",
@@ -6912,6 +7189,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_platemail",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1400",
@@ -6928,6 +7206,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCastPoint": "0.0",
@@ -6947,6 +7226,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityName": "item_pocket_tower",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
@@ -6963,6 +7243,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_pogo_stick",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "ItemCost": "0",
@@ -6987,6 +7268,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_point_booster",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1200",
@@ -7004,6 +7286,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_polliwog_charm",
+      "power": 1,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
@@ -7027,6 +7310,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_poor_mans_shield",
+      "power": 2,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
@@ -7057,6 +7341,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_possessed_mask",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7075,6 +7360,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_power_treads",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "1400",
@@ -7097,6 +7383,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7117,6 +7404,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_prophets_pendulum",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7139,6 +7427,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_psychic_headband",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -7166,6 +7455,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7183,6 +7473,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
@@ -7211,6 +7502,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "875",
@@ -7228,6 +7520,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_quelling_blade",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetType": "DOTA_UNIT_TARGET_TREE | DOTA_UNIT_TARGET_CUSTOM",
@@ -7253,6 +7546,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7272,6 +7566,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7294,6 +7589,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_radiance",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_IGNORE_INVISIBLE",
         "ItemCost": "4700",
@@ -7322,6 +7618,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_rapier",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_TOGGLE",
         "Model": "models/props_gameplay/divine_rapier.vmdl",
@@ -7351,6 +7648,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_rattlecage",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -7382,6 +7680,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_reaver",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2800",
@@ -7398,6 +7697,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "1275",
         "ItemShopTags": "",
@@ -7413,6 +7713,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1200",
@@ -7429,6 +7730,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "775",
@@ -7445,6 +7747,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "525",
@@ -7461,6 +7764,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7480,6 +7784,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -7496,6 +7801,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "325",
         "ItemShopTags": "",
@@ -7511,6 +7817,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "625",
@@ -7527,6 +7834,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1300",
@@ -7543,6 +7851,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "825",
@@ -7559,6 +7868,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "400",
         "ItemShopTags": "",
@@ -7574,6 +7884,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1450",
@@ -7590,6 +7901,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "1",
@@ -7607,6 +7919,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7623,6 +7936,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "600",
@@ -7639,6 +7953,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7655,6 +7970,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -7670,6 +7986,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -7687,6 +8004,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -7702,6 +8020,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "700",
         "ItemShopTags": "",
@@ -7718,6 +8037,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "300",
         "ItemShopTags": "",
@@ -7734,6 +8054,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1050",
@@ -7750,6 +8071,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -7766,6 +8088,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1100",
@@ -7782,6 +8105,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7798,6 +8122,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7814,6 +8139,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7830,6 +8156,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7846,6 +8173,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7862,6 +8190,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "400",
@@ -7878,6 +8207,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1050",
@@ -7894,6 +8224,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "800",
@@ -7910,6 +8241,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "450",
@@ -7926,6 +8258,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -7942,6 +8275,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -7958,6 +8292,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "900",
         "ItemShopTags": "",
@@ -7975,6 +8310,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "900",
         "ItemShopTags": "",
@@ -7990,6 +8326,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8006,6 +8343,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8024,6 +8362,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "950",
@@ -8040,6 +8379,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "800",
         "ItemShopTags": "",
@@ -8055,6 +8395,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8073,6 +8414,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "900",
@@ -8089,6 +8431,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8107,6 +8450,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1175",
@@ -8123,6 +8467,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8139,6 +8484,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -8155,6 +8501,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1000",
@@ -8171,6 +8518,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8187,6 +8535,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "700",
@@ -8203,6 +8552,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "450",
         "ItemShopTags": "",
@@ -8218,6 +8568,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "1125",
         "ItemShopTags": "",
@@ -8233,6 +8584,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "300",
         "ItemShopTags": "",
@@ -8248,6 +8600,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "1340",
         "ItemShopTags": "",
@@ -8266,6 +8619,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8281,6 +8635,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -8297,6 +8652,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1100",
@@ -8314,6 +8670,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8329,6 +8686,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.mdl",
         "ItemCost": "1",
@@ -8347,6 +8705,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8363,6 +8722,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8378,6 +8738,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -8394,6 +8755,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8410,6 +8772,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8426,6 +8789,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8442,6 +8806,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "150",
@@ -8458,6 +8823,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "1",
@@ -8475,6 +8841,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8491,6 +8858,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8509,6 +8877,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "850",
@@ -8525,6 +8894,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8543,6 +8913,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "550",
@@ -8559,6 +8930,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "900",
         "ItemShopTags": "",
@@ -8574,6 +8946,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8590,6 +8963,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1250",
@@ -8608,6 +8982,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8626,6 +9001,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8644,6 +9020,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -8659,6 +9036,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8675,6 +9053,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8691,6 +9070,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "200",
         "ItemShopTags": "",
@@ -8706,6 +9086,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8722,6 +9103,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8738,6 +9120,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -8754,6 +9137,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -8770,6 +9154,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8786,6 +9171,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8802,6 +9188,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -8818,6 +9205,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -8834,6 +9222,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8850,6 +9239,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8868,6 +9258,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -8884,6 +9275,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8899,6 +9291,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "2",
@@ -8916,6 +9309,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8932,6 +9326,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -8947,6 +9342,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -8965,6 +9361,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -8980,6 +9377,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8996,6 +9394,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9011,6 +9410,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -9027,6 +9427,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "700",
@@ -9043,6 +9444,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1250",
@@ -9059,6 +9461,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -9074,6 +9477,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9089,6 +9493,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "500",
@@ -9105,6 +9510,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9120,6 +9526,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -9136,6 +9543,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "550",
@@ -9152,6 +9560,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "600",
@@ -9168,6 +9577,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "900",
@@ -9184,6 +9594,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -9200,6 +9611,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9215,6 +9627,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "2000",
@@ -9231,6 +9644,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -9247,6 +9661,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "1",
         "ItemShopTags": "",
@@ -9269,6 +9684,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9284,6 +9700,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "1600",
         "ItemShopTags": "",
@@ -9299,6 +9716,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "320",
@@ -9315,6 +9733,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -9331,6 +9750,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -9347,6 +9767,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -9363,6 +9784,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "0",
@@ -9384,6 +9806,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1400",
@@ -9400,6 +9823,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -9416,6 +9840,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -9431,6 +9856,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "400",
@@ -9449,6 +9875,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "650",
         "ItemShopTags": "",
@@ -9464,6 +9891,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "ItemCost": "0",
         "ItemShopTags": "",
@@ -9479,6 +9907,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_refresher",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "AbilityCastPoint": "0.0",
@@ -9505,6 +9934,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_refresher_shard",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "2",
@@ -9539,6 +9969,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_relic",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "3400",
@@ -9555,6 +9986,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -9583,6 +10015,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_revenants_brooch",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "SpellImmunityType": "SPELL_IMMUNITY_ENEMIES_NO",
@@ -9604,6 +10037,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_riftshadow_prism",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "27.0",
@@ -9628,6 +10062,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_TOGGLE",
         "AbilityCastRange": "1200",
@@ -9661,6 +10096,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ring_of_basilius",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastRange": "1200",
@@ -9686,6 +10122,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ring_of_health",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "700",
@@ -9706,6 +10143,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ring_of_protection",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "175",
@@ -9725,6 +10163,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ring_of_regen",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "175",
@@ -9744,6 +10183,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ring_of_tarrasque",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1700",
@@ -9763,6 +10203,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE",
@@ -9787,6 +10228,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9812,6 +10254,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9837,6 +10280,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9862,6 +10306,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9887,6 +10332,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9912,6 +10358,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9937,6 +10384,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "IsObsolete": "1",
@@ -9962,6 +10410,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_robe",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -9977,6 +10426,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_rod_of_atos",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -10005,6 +10455,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: no Roshan Banner drops",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE ",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -10040,6 +10491,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -10076,6 +10528,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_royale_with_cheese",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -10110,6 +10563,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10129,6 +10583,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_sange",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2100",
@@ -10147,6 +10602,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_sange_and_yasha",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "4200",
@@ -10172,6 +10628,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_satanic",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "FightRecapLevel": "2",
@@ -10197,6 +10654,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_searing_signet",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "ItemCost": "0",
@@ -10225,6 +10683,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_seeds_of_serenity",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE",
         "ItemCost": "0",
@@ -10258,6 +10717,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "FightRecapLevel": "1",
@@ -10285,6 +10745,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_serrated_shiv",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "1.5",
@@ -10311,6 +10772,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_shadow_amulet",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_MOVEMENT",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -10334,6 +10796,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_shawl",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "450",
@@ -10350,6 +10813,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_sheepstick",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_ENEMY",
@@ -10379,6 +10843,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_shivas_guard",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "FightRecapLevel": "1",
@@ -10415,6 +10880,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_silver_edge",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "FightRecapLevel": "1",
@@ -10447,6 +10913,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10470,6 +10937,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_skadi",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "5900",
@@ -10495,6 +10963,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_slippers",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "140",
@@ -10511,6 +10980,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_smoke_of_deceit",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "Model": "models/props_gameplay/smoke.vmdl",
@@ -10555,6 +11025,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_sobi_mask",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "175",
@@ -10571,6 +11042,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_solar_crest",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -10606,6 +11078,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_soul_booster",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "3000",
@@ -10622,6 +11095,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_soul_ring",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE",
         "AbilityCooldown": "30.0",
@@ -10647,6 +11121,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10666,6 +11141,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_specialists_array",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "0.0",
@@ -10694,6 +11170,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10713,6 +11190,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_spellslinger",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10735,6 +11213,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_sphere",
+      "power": 4,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -10763,6 +11242,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_spider_legs",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "15",
@@ -10786,6 +11266,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_spirit_vessel",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -10828,6 +11309,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_splintmail",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "950",
@@ -10843,6 +11325,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10866,6 +11349,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_staff_of_wizardry",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -10881,6 +11365,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_stonefeather_satchel",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "6",
@@ -10904,6 +11389,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_stormcrafter",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -10934,6 +11420,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "Model": "models/props_gameplay/stout_shield.vmdl",
@@ -10955,6 +11442,7 @@
       "category": null,
       "excluded_reason": "Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityName": "item_super_blink",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
@@ -10974,6 +11462,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_swift_blink",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_DIRECTIONAL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES | DOTA_ABILITY_BEHAVIOR_OVERSHOOT",
         "AbilityCastRange": "1200",
@@ -11002,6 +11491,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_talisman_of_evasion",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1300",
@@ -11018,6 +11508,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_tango",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "Model": "models/props_gameplay/tango.vmdl",
@@ -11051,6 +11542,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_tango_single",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET",
         "Model": "models/props_gameplay/tango.vmdl",
@@ -11082,6 +11574,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11101,6 +11594,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11123,6 +11617,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_tiara_of_selemene",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1700",
@@ -11139,6 +11634,7 @@
       "category": null,
       "excluded_reason": "Hero-created/bound mechanic; arbitrary commander grant lacks originating hero state",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL | DOTA_ABILITY_BEHAVIOR_IGNORE_PSEUDO_QUEUE",
         "Model": "models/heroes/tidehunter/tidehunter_fish_pickup.vmdl",
@@ -11158,6 +11654,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -11173,6 +11670,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -11188,6 +11686,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -11203,6 +11702,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -11218,6 +11718,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "Model": "models/props_gameplay/neutral_box.vmdl",
@@ -11233,6 +11734,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11252,6 +11754,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11271,6 +11774,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11294,6 +11798,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "FightRecapLevel": "1",
@@ -11328,6 +11833,7 @@
       "category": null,
       "excluded_reason": "Campaign policy: the mode has no Town Portal Scroll",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_CHANNELLED | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_CHANNEL | DOTA_ABILITY_BEHAVIOR_ROOT_DISABLES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11362,6 +11868,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_tranquil_boots",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "13.0",
@@ -11392,6 +11899,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_travel_boots",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11420,6 +11928,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_travel_boots_2",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11447,6 +11956,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "ItemCost": "0",
@@ -11467,6 +11977,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "6301",
@@ -11493,6 +12004,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_CHANNELLED | DOTA_ABILITY_BEHAVIOR_IGNORE_BACKSWING",
         "AbilityCastAnimation": "ACT_DOTA_GENERIC_CHANNEL_1",
@@ -11519,6 +12031,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ultimate_orb",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2800",
@@ -11535,6 +12048,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ultimate_scepter",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11553,9 +12067,10 @@
     },
     {
       "name": "item_ultimate_scepter_2",
-      "category": "standard",
-      "excluded_reason": null,
-      "delivery": "item_ultimate_scepter_roshan",
+      "category": null,
+      "excluded_reason": "Campaign policy: Roshan's Aghanim's Scepter does nothing on roster heroes",
+      "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/aghanim_scepter.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
@@ -11567,9 +12082,10 @@
     },
     {
       "name": "item_ultimate_scepter_roshan",
-      "category": "special",
-      "excluded_reason": null,
-      "delivery": "item_ultimate_scepter_roshan",
+      "category": null,
+      "excluded_reason": "Campaign policy: Roshan's Aghanim's Scepter does nothing on roster heroes",
+      "delivery": null,
+      "power": null,
       "schema": {
         "Model": "models/props_gameplay/aghanim_scepter.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
@@ -11588,6 +12104,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_unrelenting_eye",
+      "power": 3,
       "schema": {
         "Model": "models/props_gameplay/neutral_box.vmdl",
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
@@ -11610,6 +12127,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "20.0",
@@ -11631,6 +12149,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11649,6 +12168,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_urn_of_shadows",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_PROC_OTHER_ABILITIES",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_BOTH",
@@ -11690,6 +12210,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "ItemCost": "0",
@@ -11713,6 +12234,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11734,6 +12256,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_vanguard",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1700",
@@ -11756,6 +12279,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_veil_of_discord",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_NO_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_CANCEL_MOVEMENT | DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_IGNORE_CHANNEL",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -11786,6 +12310,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -11806,6 +12331,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_vitality_booster",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "1000",
@@ -11822,6 +12348,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_vladmir",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCastRange": "1200",
@@ -11855,6 +12382,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_void_stone",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "700",
@@ -11871,6 +12399,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_voodoo_mask",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "650",
@@ -11886,6 +12415,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_ward_dispenser",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11921,6 +12451,7 @@
       "category": "special",
       "excluded_reason": null,
       "delivery": "item_ward_observer",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -11960,6 +12491,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_ward_sentry",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -12001,6 +12533,7 @@
       "category": "neutral",
       "excluded_reason": null,
       "delivery": "item_weighted_dice",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -12019,6 +12552,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -12041,6 +12575,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_wind_lace",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "225",
@@ -12061,6 +12596,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_wind_waker",
+      "power": 5,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_DONT_RESUME_ATTACK",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_CUSTOM",
@@ -12092,6 +12628,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_witch_blade",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "AbilityCooldown": "9.0",
@@ -12116,6 +12653,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "0",
@@ -12134,6 +12672,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_wizard_hat",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "250",
@@ -12148,6 +12687,7 @@
       "category": null,
       "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_IMMEDIATE | DOTA_ABILITY_BEHAVIOR_NO_TARGET",
         "AbilityCooldown": "20.0",
@@ -12169,6 +12709,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_wraith_band",
+      "power": 1,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "505",
@@ -12189,6 +12730,7 @@
       "category": null,
       "excluded_reason": "Native IsObsolete=1",
       "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT",
         "SpellImmunityType": "SPELL_IMMUNITY_ENEMIES_NO",
@@ -12233,6 +12775,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_yasha",
+      "power": 2,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "2100",
@@ -12251,6 +12794,7 @@
       "category": "standard",
       "excluded_reason": null,
       "delivery": "item_yasha_and_kaya",
+      "power": 3,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_PASSIVE",
         "ItemCost": "4200",

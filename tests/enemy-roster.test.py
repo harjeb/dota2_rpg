@@ -96,7 +96,7 @@ class EnemyRosterTests(unittest.TestCase):
                   'boss_spell_amp_pct', 'boss_cooldown_reduction_pct']
         expected = {10: (6000, 16.666667, 16.666667, 4.166667),
                     20: (20000, 75, 25, 6.666667),
-                    30: (32000, 100, 33.333333, 8.333333)}
+                    30: (50000, 100, 33.333333, 8.333333)}
         for label, teams in self.teams.items():
             for chapter, team in teams.items():
                 for slot, entry in enumerate(team):
@@ -106,7 +106,7 @@ class EnemyRosterTests(unittest.TestCase):
                             defenses = (float(entry.get('boss_bonus_armor', 0)),
                                         float(entry.get('boss_magic_resistance_bonus_pct', 0)),
                                         float(entry.get('boss_magic_resistance_pct', 0)))
-                            self.assertEqual(defenses, {10: (0, 0, 0), 20: (15, 0, 80), 30: (25, 30, 0)}[chapter])
+                            self.assertEqual(defenses, {10: (0, 0, 0), 20: (15, 0, 80), 30: (100, 80, 0)}[chapter])
                             tags = entry['tags']
                             if isinstance(tags, dict):
                                 tags = list(tags.values())

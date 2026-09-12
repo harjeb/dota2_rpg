@@ -18,17 +18,38 @@ spec.loader.exec_module(native)
 DATA = ROOT / 'game/dota_addons/dota2_rpg/scripts/data'
 LUA = ROOT / 'game/dota_addons/dota2_rpg/scripts/vscripts/data/campaign_loot_catalog.lua'
 SPECIAL = set(('ward_observer cheese famango great_famango greater_famango royale_with_cheese ward_dispenser tango_single ultimate_scepter_roshan aghanims_shard_roshan aegis refresher_shard roshans_banner miniboss_minion_summoner foragers_health foragers_stats foragers_mana').split())
-ALIASES = {'item_aghanims_shard': 'item_aghanims_shard_roshan', 'item_ultimate_scepter_2': 'item_ultimate_scepter_roshan'}
+# 交付别名（普通魔晶/福佑 -> 肉山可转交版本）的两条来源现已被政策排除，
+# 因此当前为空；保留映射结构，将来若要恢复只需改这里。
+ALIASES = {}
+
+# 掉落强度分级：1=最弱、5=最强。关卡按章节推进只抽该关区间内的档位，
+# 避免第一章就掉 6000+ 的成品。数值来自本机物品价格分布（p20/p40/p60/p80）。
+POWER_COST_THRESHOLDS = (1500, 3000, 4500, 6000)
+
+
+def power_from_cost(cost):
+    for index, limit in enumerate(POWER_COST_THRESHOLDS):
+        if cost <= limit:
+            return index + 1
+    return len(POWER_COST_THRESHOLDS) + 1
+
 
 def build(items_bytes, neutral_bytes):
     items = native.parse_kv(items_bytes.decode('utf-8-sig'))['DOTAAbilities']
     rotation = native.parse_kv(neutral_bytes.decode('utf-8-sig'))['neutral_items']['neutral_tiers']
     active = set()
     enhancements = set()
-    for tier in rotation.values():
-        active.update(tier['items'])
+    # 中立装备本身自带 1..5 等级，直接作为掉落强度使用。
+    neutral_power = {}
+    for tier_key, tier in rotation.items():
+        number = int(str(tier_key))
+        for neutral_name in tier['items']:
+            active.add(neutral_name)
+            neutral_power[neutral_name] = number
         for group in tier['enhancements'].values():
-            enhancements.update(group)
+            for neutral_name in group:
+                enhancements.add(neutral_name)
+                neutral_power[neutral_name] = number
     rows = []
     for name, schema in sorted(items.items()):
         if not isinstance(schema, dict):
@@ -40,6 +61,10 @@ def build(items_bytes, neutral_bytes):
             reason = 'Campaign policy: no Roshan Banner drops'
         elif name == 'item_tpscroll':
             reason = 'Campaign policy: the mode has no Town Portal Scroll'
+        elif name in ('item_ultimate_scepter_roshan', 'item_ultimate_scepter_2'):
+            reason = "Campaign policy: Roshan's Aghanim's Scepter does nothing on roster heroes"
+        elif name in ('item_aghanims_shard_roshan', 'item_aghanims_shard'):
+            reason = "Campaign policy: dropped shards only exist as the inert Roshan consumable"
         elif schema.get('IsObsolete') == '1':
             reason = 'Native IsObsolete=1'
         elif name in active:
@@ -62,8 +87,16 @@ def build(items_bytes, neutral_bytes):
                 reason = 'Cast-on-pickup neutral crafting currency; campaign awards actual neutral equipment instead'
             else:
                 reason = 'Event or test-only definition (Muerta event, mutation, pocket entity or super blink); not standard obtainable equipment'
+        power = None
+        if category in ('neutral', 'neutral_enhancement'):
+            power = neutral_power.get(name, 5)
+        elif category is not None:
+            cost = int(schema.get('ItemCost', '0') or 0)
+            # 零价的原生"高级消耗品"（不朽之守护、奶酪、肉山奖励）只应出现在后期关卡。
+            power = power_from_cost(cost) if cost > 0 else 5
         rows.append(dict(name=name, category=category, excluded_reason=reason,
-                         delivery=ALIASES.get(name, name) if category else None, schema=schema))
+                         delivery=ALIASES.get(name, name) if category else None,
+                         power=power, schema=schema))
     return dict(source_sha256=hashlib.sha256(items_bytes).hexdigest(),
                 neutral_sha256=hashlib.sha256(neutral_bytes).hexdigest(),
                 policy=__doc__, counts=dict(Counter(r['category'] or 'excluded' for r in rows)), items=rows)
@@ -80,8 +113,9 @@ HEADER = [
 
 
 def row_line(row):
-    flag = ', neutral = true' if row['category'] in ('neutral', 'neutral_enhancement') else ''
-    return '    { name = "' + row['name'] + '", delivery = "' + row['delivery'] + '"' + flag + ' },'
+    fields = [', neutral = true'] if row['category'] in ('neutral', 'neutral_enhancement') else []
+    fields.append(', power = ' + str(row.get('power') or 1))
+    return '    { name = "' + row['name'] + '", delivery = "' + row['delivery'] + '"' + ''.join(fields) + ' },'
 
 
 def main():

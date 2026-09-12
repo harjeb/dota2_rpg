@@ -16,6 +16,12 @@ class LateCampaignBalanceTests(unittest.TestCase):
                           21: (8.5, 4.5, 42, 70), 26: (11, 6, 56, 75)}
         for chapter, stats in expected_stats.items():
             self.assertEqual(tuple(AUTHOR['NEUTRALS'][chapter][1:]), stats)
+        # 终局 Boss 的血量是手调值：钉住它，避免被顺手改回。
+        self.assertEqual(AUTHOR['BOSSES'][30]['boss_max_health'], 50000)
+        # 终局 Boss 的手调值：钉住它们，避免被顺手改回或漏改两个数据源。
+        self.assertEqual(AUTHOR['BOSSES'][30], dict(boss_max_health=50000,
+                         boss_attack_damage_pct=100, boss_bonus_armor=100,
+                         boss_magic_resistance_bonus_pct=80))
         self.assertEqual(AUTHOR['BOSSES'][20], dict(boss_max_health=20000,
                          boss_attack_damage_pct=75, boss_bonus_armor=15,
                          boss_magic_resistance_bonus_pct=0, boss_magic_resistance_pct=80))

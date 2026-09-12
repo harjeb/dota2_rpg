@@ -33,12 +33,14 @@ for _, r in ipairs(resources) do
 end
 assert(#byHero["npc_dota_hero_axe"] == 2
     and byHero["npc_dota_hero_axe"][1] == "model:models/heroes/axe/axe.vmdl"
-    and byHero["npc_dota_hero_axe"][2] == "model_folder:models/heroes/axe", "axe loads model and folder")
+    and byHero["npc_dota_hero_axe"][2] == "model_folder:models/heroes/axe",
+    "axe loads its model and its part-model folder")
 assert(byHero["npc_dota_hero_drow_ranger"][1] == "model:models/heroes/drow/drow_base.vmdl"
     and byHero["npc_dota_hero_drow_ranger"][2] == "model_folder:models/heroes/drow",
     "drow folder covers its separate part models")
-assert(byHero["npc_dota_hero_crystal_maiden"] == nil, "heroes without a usable model path are skipped")
-assert(#HeroModel.Resources(levels, nil) == 0, "missing hero model table is safe")
+assert(byHero["npc_dota_hero_crystal_maiden"] == nil,
+    "a hero without a usable model path contributes nothing")
+assert(#HeroModel.Resources(levels, nil) == 0, "a missing hero model table is safe")
 
 -- 原生拒绝只打日志、不抛错；任何一次失败都不能连累整个地图加载。
 local calls, attempted = {}, 0

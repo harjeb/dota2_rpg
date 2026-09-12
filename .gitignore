@@ -43,3 +43,13 @@ dota2_rpg_revised_package/
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Agent workspace memory (local-only, never shared)
+.workbuddy-ai/
+
+# Transient launch/debug artifacts
+.launch_out.txt
+tests/results/proc-state.txt
+tests/results/relaunch-attempt*.txt
+tests/results/restart-step*.txt
+dota2_rpg_revised_package.zip

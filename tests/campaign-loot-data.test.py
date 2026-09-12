@@ -16,7 +16,7 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(c['items']), 544)
         self.assertEqual(len({r['name'] for r in c['items']}), 544)
         pool = {r['name']: r for r in c['items'] if r['category']}
-        self.assertEqual(len(pool), 270)
+        self.assertEqual(len(pool), 266)
         self.assertNotIn('item_roshans_banner', pool)
         # 本模式不需要回城卷轴：既不进掉落池，也从原版商店下架。
         self.assertNotIn('item_tpscroll', pool)
@@ -29,8 +29,28 @@ class CatalogTests(unittest.TestCase):
         self.assertIn('item_enhancement_quickened', pool)
         self.assertNotIn('item_keen_optic', pool)  # neutral flag alone is not current rotation
         self.assertNotIn('item_recipe_phase_boots', pool)
-        self.assertEqual(pool['item_aghanims_shard']['delivery'], 'item_aghanims_shard_roshan')
-        self.assertEqual(len({r['delivery'] for r in pool.values()}), 268)
+        # 肉山版 A 杖（含 blessing 别名）对上阵英雄无效，两条来源一起排除。
+        self.assertNotIn('item_ultimate_scepter_roshan', pool)
+        self.assertNotIn('item_ultimate_scepter_2', pool)
+        self.assertIn('item_ultimate_scepter', pool)
+        # 掉落强度分级：每行都必须带 1..5 的档位，且标准装备按价格分档。
+        for name, row in pool.items():
+            self.assertIn(row['power'], (1, 2, 3, 4, 5), name)
+        for name, row in pool.items():
+            if row['category'] != 'standard':
+                continue
+            cost = int(row['schema'].get('ItemCost', '0') or 0)
+            self.assertEqual(row['power'], author.power_from_cost(cost), name)
+        limits = author.POWER_COST_THRESHOLDS
+        cheap = [r for n, r in pool.items() if r['category'] == 'standard' and r['power'] == 1]
+        self.assertTrue(all(int(r['schema'].get('ItemCost', '0')) <= limits[0] for r in cheap))
+        top = [r for n, r in pool.items() if r['category'] == 'standard' and r['power'] == 5]
+        self.assertTrue(all(int(r['schema'].get('ItemCost', '0')) > limits[-1] for r in top))
+        # 掉落池里的魔晶只以无用的肉山消耗品形式存在：两条来源一起排除。
+        self.assertNotIn('item_aghanims_shard', pool)
+        self.assertNotIn('item_aghanims_shard_roshan', pool)
+        self.assertEqual(author.ALIASES, {})
+        self.assertEqual(len({r['delivery'] for r in pool.values()}), 266)
         kv = author.native.parse_kv((author.DATA / 'loot.kv').read_text(encoding='utf-8'))['loot']
         for name, expected in [('loot_basic', .85), ('loot_hero', .85), ('loot_boss', 1.35)]:
             self.assertEqual(kv[name]['pool'], 'all_items')

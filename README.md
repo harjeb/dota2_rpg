@@ -72,11 +72,13 @@ node .\tests\panorama-save.test.js
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-addon.ps1 -Compile
 ```
 
-启动地图并保存本局控制台日志：
+启动地图并保存本局控制台日志（`-KillExisting` 清理旧实例，`-WaitForMap` 等到确认进图）：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\launch-addon.ps1
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\launch-addon.ps1 -KillExisting -WaitForMap
 ```
+
+按脚本输出的 `MAP READY: build=...` 与退出码判断是否真的进图，不要只看命令是否报错。**AI agent 启动地图请先读 [docs/AGENT_LAUNCH_GUIDE.md](docs/AGENT_LAUNCH_GUIDE.md)**（含直连/Steam 两种模式、GPU 会话失败的回退、日志增量读取与故障对照表）。
 
 启动脚本使用 `-condebug`，日志写入 Dota 安装目录的 `game/dota/console.log`。当前引擎已废弃 `AppendToLogFile`，也不再支持 `con_logfile` 命令。日志中的 `BUILD` 标记可核对实际加载版本；`GoldWallet`、`ShopTxn`、`RuleUpdate` 和 `Tactic` 分别记录金币、装备购买、规则保存和执行原因。
 

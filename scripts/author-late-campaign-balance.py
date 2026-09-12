@@ -22,8 +22,8 @@ NEUTRALS = {
 BOSSES = {
     20: dict(boss_max_health=20000, boss_attack_damage_pct=75, boss_bonus_armor=15,
              boss_magic_resistance_bonus_pct=0, boss_magic_resistance_pct=80),
-    30: dict(boss_max_health=32000, boss_attack_damage_pct=100, boss_bonus_armor=25,
-             boss_magic_resistance_bonus_pct=30),
+    30: dict(boss_max_health=50000, boss_attack_damage_pct=100, boss_bonus_armor=100,
+             boss_magic_resistance_bonus_pct=80),
 }
 
 

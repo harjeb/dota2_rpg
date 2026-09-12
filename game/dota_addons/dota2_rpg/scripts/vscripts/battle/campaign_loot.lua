@@ -16,6 +16,42 @@ for _, row in ipairs(Catalog) do
     end
 end
 
+-- 关卡强度 -> 允许的最高掉落档位：30 章 / 5 档，约每 6 章升一档。
+-- 实际抽取在 [档位-1, 档位] 区间内，既贴合关卡强度又保留变化；未知关卡不做过滤，
+-- 保持旧行为（例如离线测试里没有关卡号的调用）。
+local CHAPTERS_PER_POWER = 6
+local MAX_POWER = 5
+local stage_pools = {}
+
+function Loot.PowerCeiling(stage)
+    local number = tonumber(stage)
+    if number == nil or number <= 0 then return nil end
+    return math.max(1, math.min(MAX_POWER, math.ceil(number / CHAPTERS_PER_POWER)))
+end
+
+function Loot.StageFromLevel(levelId)
+    if type(levelId) ~= "string" then return nil end
+    local digits = levelId:match("(%d+)%s*$")
+    return digits
+end
+
+function Loot.PoolForStage(stage)
+    local ceiling = Loot.PowerCeiling(stage)
+    if ceiling == nil then return Catalog end
+    if stage_pools[ceiling] ~= nil then return stage_pools[ceiling] end
+    local floor = math.max(1, ceiling - 1)
+    local pool = {}
+    for _, row in ipairs(Catalog) do
+        local power = tonumber(row.power) or 1
+        if power >= floor and power <= ceiling then
+            pool[#pool + 1] = row
+        end
+    end
+    if #pool == 0 then pool = Catalog end
+    stage_pools[ceiling] = pool
+    return pool
+end
+
 function Loot.IsNeutralName(itemName)
     return itemName ~= nil and NeutralNames[itemName] == true
 end
@@ -35,16 +71,17 @@ local function NativeRandom(first, last)
     return math.random()
 end
 
-function Loot.Roll(config, random)
+function Loot.Roll(config, random, stage)
     random = random or NativeRandom
     local rewards = {}
     if type(config) ~= "table" or config.pool ~= "all_items" then return rewards end
+    local pool = Loot.PoolForStage(stage)
     for index = 1, 3 do
         local entry = (config.items or {})[tostring(index)] or (config.items or {})[index]
         local chance = type(entry) == "table" and tonumber(entry.chance) or 0
         chance = math.max(0, math.min(1, chance or 0))
         if random() < chance then
-            rewards[#rewards + 1] = Catalog[random(1, #Catalog)]
+            rewards[#rewards + 1] = pool[random(1, #pool)]
         end
     end
     return rewards
@@ -82,9 +119,12 @@ function Loot.Flush(game)
             local before, space = inventory(stash)
             -- 中立装备进的是专属中立槽，0..14 满不等于它没位置；反之普通装备
             -- 也不能靠中立槽凑数，否则引擎会把无处安放的实体丢到地上。
-            local neutral_ready = Loot.IsNeutralName(reward.delivery)
-                and stash:GetItemInSlot(NEUTRAL_ITEM_SLOT) == nil
-            if space or neutral_ready then
+            -- 关键是两类装备各看自己的容量：中立槽被占用时属于"暂时没位置"，
+            -- 不能因为 0..14 有空位就去调用（会被拒绝，再被误判成交付不明而永久扣下）。
+            local neutral = Loot.IsNeutralName(reward.delivery)
+            local neutral_ready = neutral and stash:GetItemInSlot(NEUTRAL_ITEM_SLOT) == nil
+            local can_deliver = neutral and neutral_ready or (not neutral and space)
+            if can_deliver then
                 local ok, accepted = pcall(game.StashAddItem, game, reward.delivery)
                 local after = inventory(stash)
                 -- Combining/stacking can invalidate the returned native handle.
@@ -106,7 +146,7 @@ end
 function Loot.Award(game, config, random)
     local names = {}
     RunLives.Ensure(game).pendingCampaignLoot = RunLives.Ensure(game).pendingCampaignLoot or {}
-    for _, row in ipairs(Loot.Roll(config, random)) do
+    for _, row in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId))) do
         names[#names + 1] = row.delivery
         if row.delivery == "item_aegis" then
             -- Native Aegis is not droppable: existing life-reward delivery

@@ -30,6 +30,8 @@ end
 -- 每个英雄需要加载的资源：模型本体 + 它所在的整个目录。
 -- 英雄模型是分件的独立文件（例如 models/heroes/drow/drow_cape.vmdl），
 -- 原版会逐个请求它们，只加载本体不够。
+-- 备注：引擎为敌方英雄请求的界面图标贴图（panorama/images/heroes/icons/<unit>_png.vtex）
+-- 曾经在这里用 kind="texture" 预加载过，实机验证告警依旧，说明该类型进不了缓存，已移除。
 function M.Resources(levels, heroModels)
     local out = {}
     for _, name in ipairs(M.HeroNames(levels)) do

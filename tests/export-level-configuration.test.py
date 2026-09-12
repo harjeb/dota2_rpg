@@ -28,7 +28,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
         row = next(row for row in EXPORT.unit_rows(levels) if row['关卡'] == 'ch20')
         self.assertEqual((row['Boss最终魔抗目标%'], row['Boss魔抗乘算加成%']), (80, 0))
         row = next(row for row in EXPORT.unit_rows(levels) if row['关卡'] == 'ch30')
-        self.assertEqual((row['Boss最终魔抗目标%'], row['Boss魔抗乘算加成%']), ('', 30))
+        self.assertEqual((row['Boss最终魔抗目标%'], row['Boss魔抗乘算加成%']), ('', 80))
 
     def test_live_kv_export_has_all_review_tables_and_real_values(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -67,7 +67,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             for chapter, unit, health, attack, spell, cooldown in [
                 ("ch10", "npc_dota_hero_centaur", 6000, 16.666667, 16.666667, 4.166667),
                 ("ch20", "npc_dota_hero_spirit_breaker", 20000, 75, 25, 6.666667),
-                ("ch30", "npc_dota_hero_skeleton_king", 32000, 100, 33.333333, 8.333333),
+                ("ch30", "npc_dota_hero_skeleton_king", 50000, 100, 33.333333, 8.333333),
             ]:
                 bosses = [row for row in records if row["关卡"] == chapter]
                 self.assertEqual(len(bosses), 1, chapter + " must remain a solo Boss")
@@ -75,7 +75,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
                 self.assertEqual((boss["单位原生ID"], boss["数量"], boss["是否Boss"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
                                  (unit, 1, "是", health, None, attack, spell, cooldown))
                 self.assertEqual((boss['Boss额外护甲'], boss['Boss魔抗乘算加成%'], boss['Boss最终魔抗目标%']),
-                                 {'ch10': (None, None, None), 'ch20': (15, 0, 80), 'ch30': (25, 30, None)}[chapter])
+                                 {'ch10': (None, None, None), 'ch20': (15, 0, 80), 'ch30': (100, 80, None)}[chapter])
             self.assertEqual(boss["等级"], 30)
             for chapter, expected in {'ch11': (4.5, 2.5, 20, 55), 'ch16': (6, 3.5, 30, 62),
                                       'ch21': (8.5, 4.5, 42, 70), 'ch26': (11, 6, 56, 75)}.items():

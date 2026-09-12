@@ -57,6 +57,18 @@ shop(hud, { equipped_text: hero + ':' + SIX_ACTIVE + ',' + NEUTRAL_EQUIPPED, neu
 assert(panel(hud, 'Unequip_' + hero + '_6').enabled === false, 'occupied commander neutral slot blocks unequip');
 assert(panel(hud, 'Equip1').enabled === false, 'occupied commander neutral slot blocks delivery');
 
+// 场景 5：物品名优先走原版本地化 token —— 转交面板不能只显示英文原名。
+hud = runHud();
+var originalLocalize = hud.context.$.Localize;
+hud.context.$.Localize = function (token) {
+    if (token === '#DOTA_Tooltip_ability_item_occult_bracelet') { return '秘术手镯'; }
+    return originalLocalize(token);
+};
+shop(hud);
+assert(stockLabel(hud, 1).indexOf('秘术手镯') >= 0, 'item names use the native localization token');
+assert(stockLabel(hud, 0).indexOf('blink') >= 0, 'missing tokens still fall back to the readable name');
+hud.context.$.Localize = originalLocalize;
+
 // 场景 4：回城卷轴槽（15）不进面板 —— 本模式不提供回城卷轴，商店已下架、
 // 掉落池已排除，面板也不展示、不转交它。
 hud = runHud();
