@@ -1,0 +1,27 @@
+{
+  "requested": "Remove local packages so user can download Workshop again",
+  "workshop_id": "3799645167",
+  "deleted": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "status": "deleted",
+      "sha256_before": "65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\before-user-redownload-20260912-191357\\0\\3799645167.vpk"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "status": "deleted",
+      "sha256_before": "845bc7e7c1c47fb595cb8f954dfc29eb9bb8246d89e2f52ab21d69b2885a1391",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\before-user-redownload-20260912-191357\\1\\3799645167.vpk"
+    },
+    {
+      "path": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\3799645167.vpk",
+      "status": "deleted",
+      "sha256_before": "65843fc57e161a3a0d5a1e1eb569bb6e29fe5479d29b1b9f45cfd0d2e0017d8f",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-safe-errors-v1-workshop\\before-user-redownload-20260912-191357\\2\\3799645167.vpk"
+    }
+  ],
+  "upload_source_preserved": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg",
+  "steam_metadata": "unchanged",
+  "game_process": "untouched"
+}
