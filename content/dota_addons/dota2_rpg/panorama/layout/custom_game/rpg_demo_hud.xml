@@ -144,12 +144,6 @@
 				</Panel>
 			</Panel>
 		</Panel>
-		<Panel id="LeaderboardPairingPanel" class="LeaderboardPairingPanel Hidden" hittest="true">
-			<Label class="PairingTitle" text="#dota2_rpg_pairing_title" />
-			<Label id="LeaderboardPairingCode" />
-			<Label class="PairingHint" text="#dota2_rpg_pairing_hint" />
-			<Button id="LeaderboardPairingClose" class="LootPopupConfirm"><Label text="#dota2_rpg_pairing_close" /></Button>
-		</Panel>
 		<Panel id="BattleResult" class="BattleResult Hidden" hittest="true">
             <Panel id="SettlementPanel" class="SettlementPanel Hidden">
                 <Label id="BattleResultLabel" />

@@ -40,7 +40,11 @@ CustomGameEventManager = {Send_ServerToPlayer=function(_,player,event,payload)
     events[#events+1]={player=player,event=event,data=copy}
 end}
 DoUniqueString = function() return "unique-1" end
-LoadKeyValues = function() return {submit_key="test-only-secret-123456789"} end
+-- A normal listen server has no host configuration or Valve key. Neither
+-- may be read, and uploads must not depend on either API being available.
+LoadKeyValues = function() error("automatic upload must not read a host key") end
+GetDedicatedServerKeyV3 = function() error("no official server key on local hosts") end
+IsDedicatedServer = function() return false end
 Config.endpoint = "https://example.invalid"
 CreateHTTPRequestScriptVM = function(method,url)
     local request={method=method,url=url}
@@ -84,11 +88,12 @@ assert(g.leaderboardRun.payload.run_duration_ms>30*120000)
 Results.SendTerminal(g)
 Results.SendTerminal(g)
 assert(#requests==1 and #events==2)
+assert(requests[1].Authorization==nil and requests[1].method=="POST")
 assert(Json.decode(requests[1].body).steam_id=="76561197960265729")
 requests[1].callback({StatusCode=503})
 assert(#timers==1 and timers[1].delay==2)
 timers[1].fn()
-assert(#requests==2 and requests[2].body==requests[1].body)
+assert(#requests==2 and requests[2].body==requests[1].body and requests[2].Authorization==nil)
 local result={submission_id=g.leaderboardRun.payload.submission_id,rankings={
     score={rank=1,total=7,personal_record=true,global_record=true,first_entry=false},
     speedrun={rank=3,total=4,personal_record=false,global_record=false,first_entry=true},
@@ -124,7 +129,7 @@ before=#events
 pending.callback({StatusCode=500})
 timers[#timers].fn()
 assert(requests[#requests].body==body)
-requests[#requests].callback({StatusCode=401})
+requests[#requests].callback({StatusCode=400})
 assert(#events==before)
 
 local practice=game()

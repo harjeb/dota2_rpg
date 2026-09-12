@@ -61,24 +61,7 @@ function Results.Publish(game, run, player)
 end
 function Results.Resend(game, playerId)
     if playerId ~= game.playerId then return end
-    require("battle.server_pairing").Check(game, playerId, Results.SteamId(safeCall(PlayerResource, "GetSteamAccountID", playerId)))
     Results.Publish(game, ensure(game), safeCall(PlayerResource, "GetPlayer", playerId))
-end
-
-local function secret()
-    -- Optional server-host file lives in game/dota/cfg, OUTSIDE the addon and
-    -- Workshop package. Official dedicated servers use Valve's per-addon key.
-    if LoadKeyValues then
-        local ok, settings = pcall(LoadKeyValues, "cfg/rpg_leaderboard.kv")
-        if ok and type(settings) == "table" then
-            settings = settings.Leaderboard or settings
-            if type(settings.submit_key) == "string" and #settings.submit_key >= 16 then return settings.submit_key end
-        end
-    end
-    if GetDedicatedServerKeyV3 then
-        local ok, value = pcall(GetDedicatedServerKeyV3, Config.key_salt)
-        if ok and type(value) == "string" and #value >= 16 and not value:match("^0+$") then return value end
-    end
 end
 
 local function acceptResponse(run, data)
@@ -103,8 +86,7 @@ end
 function Results.Submit(game, run)
     if run.submitted then return end
     run.submitted = true
-    local key = secret()
-    if type(Config.endpoint) ~= "string" or not Config.endpoint:match("^https://") or not key or not CreateHTTPRequestScriptVM then
+    if type(Config.endpoint) ~= "string" or not Config.endpoint:match("^https://") or not CreateHTTPRequestScriptVM then
         run.result.status = "disabled"
         Results.Publish(game, run)
         return
@@ -146,7 +128,7 @@ function Results.Submit(game, run)
         end
         local ok = pcall(function()
             local request = CreateHTTPRequestScriptVM("POST", Config.endpoint .. "/api/v1/runs")
-            request:SetHTTPRequestHeaderValue("Authorization", "Bearer " .. key)
+            -- Local hosts upload automatically; no shared or per-player key.
             request:SetHTTPRequestAbsoluteTimeoutMS(15000)
             request:SetHTTPRequestRawPostBody("application/json", encoded)
             request:Send(callback)

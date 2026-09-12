@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-12T15:46:10.593448+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-2jo8 and dota2_rpg-h816",
+  "counts": {
+    "issues": 2,
+    "dependencies": 2,
+    "events": 8
+  },
+  "evidence": "20 backend tests, 88 offline test groups, 3 Dota UI compilations, real Cloudflare+D1 no-auth upload/replay/conflict/source/queries and closed pairing; test records removed; 7 addon source copies match installation",
+  "remaining": "Upload original Workshop item and verify full local-host games; no Valve key or Steam authorization required."
+}

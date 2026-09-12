@@ -2311,17 +2311,6 @@
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
     GameEvents.Subscribe("rpg_leaderboard_result", showRunResult);
-    var dismissedPairingCode = "";
-    GameEvents.Subscribe("rpg_server_pairing", function (data) {
-        if (!data || data.status !== "awaiting_confirmation" || String(data.workshop_id) !== "3799645167"
-            || typeof data.code !== "string" || !/^[0-9a-f]{24}$/.test(data.code) || data.code === dismissedPairingCode) return;
-        $("#LeaderboardPairingCode").text = data.code.match(/.{6}/g).join("-");
-        $("#LeaderboardPairingPanel").SetHasClass("Hidden", false);
-    });
-    $("#LeaderboardPairingClose").SetPanelEvent("onactivate", function () {
-        dismissedPairingCode = $("#LeaderboardPairingCode").text.replace(/-/g, "");
-        $("#LeaderboardPairingPanel").SetHasClass("Hidden", true);
-    });
     GameEvents.Subscribe("dota_player_update_selected_unit", function () {
         syncNativePurchaseTarget(true);
     });
