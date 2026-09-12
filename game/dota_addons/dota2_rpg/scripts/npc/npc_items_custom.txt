@@ -17,6 +17,18 @@
 		"ItemInitialStockTimeTurbo" "0"
 	}
 
+	// 肉山盾（不朽盾）：原生未拾取的盾 5 分钟后消失，本模式改成 999 分钟。
+	// 只覆盖普通模式；disappear_time_turbo（加速模式 240 秒）保持原生不动。
+	// tooltip 字段与 disappear_time 的单位都是分钟，两个必须一起改才不会显示矛盾。
+	"item_aegis"
+	{
+		"AbilityValues"
+		{
+			"disappear_time" "59940.0"
+			"disappear_time_minutes_tooltip" "999"
+		}
+	}
+
 	"item_rpg_scroll_low"
 	{
 		"BaseClass" "item_lua"

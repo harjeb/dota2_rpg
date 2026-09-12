@@ -283,6 +283,15 @@ if ($javascript -match 'createConditionEditor|syncThreshold|syncAllRuleInputs|cr
     throw "Removed outer inputs must not be created or synchronized"
 }
 
+# 指挥官（小精灵）无敌必须常驻：切关/重开时摘掉它，准备阶段残留的敌方召唤物
+# （蛇棒、地狱火）就会把它打死，而它是钱包、库存与转交的载体。
+if ($gameModeText -match 'RemoveModifierByName\("modifier_invulnerable"\)') {
+    throw "Commander invulnerability must stay permanent across phases"
+}
+if ($gameModeText -notmatch 'EnsureCommanderProtected') {
+    throw "Commander protection helper is missing"
+}
+
 # 普通装备通过原版商店购买；项目面板提供原生出售包装、双卷轴与转交。
 if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy' -or $hudLayout -match 'ItemCatalogList') {
     throw "Custom ordinary-item catalog/purchase controls must remain removed"
@@ -290,6 +299,17 @@ if ($javascript -match 'item_catalog|rpg_item_buy_equip|rpg_item_buy' -or $hudLa
 $scrollItemText = Get-Content -LiteralPath (Join-Path $repoRoot "game\dota_addons\dota2_rpg\scripts\npc\npc_items_custom.txt") -Raw
 if ($scrollItemText -match '"ItemPurchasable"\s+"1"') {
     throw "project scrolls must not be natively purchasable; panel stock limits are server-authoritative"
+}
+# 肉山盾（不朽盾）未拾取时的消失时间被拉长到 999 分钟；普通模式与 tooltip 必须同步，
+# 且不能顺手改掉加速模式的原生 240 秒。
+if ($scrollItemText -notmatch '"disappear_time"\s+"59940\.0"') {
+    throw "Aegis disappear_time must be 59940.0 seconds (999 minutes)"
+}
+if ($scrollItemText -notmatch '"disappear_time_minutes_tooltip"\s+"999"') {
+    throw "Aegis disappear_time_minutes_tooltip must match disappear_time (999 minutes)"
+}
+if ($scrollItemText -match '"disappear_time_turbo"') {
+    throw "Aegis turbo disappear time must keep its native value"
 }
 foreach ($nativeShopPattern in @('SetUseUniversalShopMode', 'SetCanSellAnywhere', 'dota_item_purchased', 'IsNativeItemShopOrder', 'GetGoldBalance', 'ReadNativeGold', 'EnsureGoldWalletInitialized', 'goldWalletInitialized', 'CanAffordNativePurchase', 'GetPendingNativePurchaseReservation', 'RevertUnpaidNativePurchase', 'SyncRosterAbilities', 'NativeShopHint', 'ScrollShopList', 'RpgRuleSync', 'rpg_update_rule', 'NATIVE_STASH_FIRST_SLOT', 'NATIVE_STASH_LAST_SLOT', 'NormalizeNativeStashItems', 'NEUTRAL_ITEM_SLOT', 'stock_neutral_text', 'BindEquipmentCarrierToPlayer', 'RoutePendingNativePurchases', 'rpg_native_purchase_target', 'rpg_item_sell', 'OnItemSell', 'ItemSellNotice')) {
     if (($javascript + "`n" + $ruleSyncJavascript + "`n" + $hudLayout + "`n" + $gameModeText) -notmatch [regex]::Escape($nativeShopPattern)) {
