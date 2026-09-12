@@ -594,6 +594,10 @@ function TacticBridge:Install()
 		selector = TargetSelector.new(conditionsRegistry),
 		actions = ActionAdapter.new(orderGate),
 		on_debug = function(unit, event, detail)
+            if unit.rpg_debug_auto_stomp and event == "rule_executed"
+                and detail.action_id == "centaur_hoof_stomp" then
+                require("battle.skill_debug").ObserveCast(gameMode, unit, "auto")
+            end
             require("tactics/rule_diagnostics").Publish(unit, Snapshot.HeroKey(gameMode.battleManager,unit), event, detail, GameRules:GetGameTime())
 		end,
 	})

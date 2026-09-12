@@ -349,8 +349,16 @@ test("manual diagnostic flag suppresses both real script AI order paths",functio
     local f,g=fixture(); f:enter()
     local enemy=g.battleManager.teamHeroes[3][1]
     eq(enemy.rpg_debug_manual_cast,true)
-    -- Empty engine receiver proves the early guard never evaluates rules/fallback.
-    require("tactics.tactic_engine"):EvaluateUnit(enemy,{},0)
+    eq(enemy.rpg_debug_auto_stomp,true)
+    local Engine=require("tactics.tactic_engine")
+    enemy.rpg_debug_auto_stomp=false
+    -- The previous manual-only baseline still short-circuits evaluation.
+    Engine:EvaluateUnit(enemy,{},0)
+    enemy.rpg_debug_auto_stomp=true
+    local engine=setmetatable({actions={Resolve=function() return {logical_id="attack"} end}}, {__index=Engine})
+    local ok,why=engine:TryRule(enemy,{}, {}, {action={kind="attack"}},1)
+    eq(ok,false); eq(why,"debug_spell_only")
+    eq(engine:ExecuteFallback(enemy,{},{}),false)
     local runtime=require("issue_fixes.enemy_runtime").new({execute_order=function() error("debug AI issued order") end})
     eq(runtime:IssueAttack(enemy,g.battleManager.teamHeroes[2][1]),false)
     eq(runtime:IssueAttackMove(enemy),false)
@@ -389,6 +397,10 @@ test("manual stomp exception is exact and passes the real combat filter",functio
     local n=#events; stale(); eq(#events,n,"old click observation discarded")
     g.phase="result"; f.thinks.RpgSkillDebugCastAfter_1.fn(); eq(#events,n)
     g.phase="fight"
+    Debug.ObserveCast(g,enemy,"auto")
+    eq(events[#events],"auto_order_submitted")
+    f.thinks.RpgSkillDebugCastAfter_2.fn()
+    assert(events[#events]:match("^auto_after_2_cast_"))
     Debug.TraceTarget=originalTrace
     order.issuer_player_id_const=8; eq(filter:Filter(order),false); order.issuer_player_id_const=7
     order.entindex_ability=903; eq(filter:Filter(order),false); order.entindex_ability=902

@@ -41,6 +41,7 @@ function Debug.TraceTarget(game, unit, event)
         .. " channeling=" .. inspect(unit, "IsChanneling")
         .. " alive=" .. inspect(unit, "IsAlive")
         .. " ai_paused=" .. tostring(unit.rpg_debug_manual_cast == true)
+        .. " auto_stomp=" .. tostring(unit.rpg_debug_auto_stomp == true)
         .. " castable=" .. inspect(ability, "IsFullyCastable")
         .. " hidden=" .. inspect(ability, "IsHidden")
         .. " activated=" .. inspect(ability, "IsActivated")
@@ -67,7 +68,14 @@ function Debug.AllowManualCast(game, order)
     if count ~= 1 then return false end
     local ability = unit:FindAbilityByName("centaur_hoof_stomp")
     if not valid(ability) or tonumber(order.entindex_ability) ~= ability:entindex() then return false end
-    Debug.TraceTarget(game, unit, "manual_cast_allowed")
+    Debug.ObserveCast(game, unit, "manual")
+    return true
+end
+function Debug.ObserveCast(game, unit, source)
+    local s = state(game)
+    if not s or not s.active or game.phase ~= "fight" or not valid(unit)
+        or game.battleManager.teamHeroes[DOTA_TEAM_BADGUYS][1] ~= unit then return end
+    Debug.TraceTarget(game, unit, source == "manual" and "manual_cast_allowed" or "auto_order_submitted")
     s.castSerial = (s.castSerial or 0) + 1
     local serial = s.castSerial
     for _, delay in ipairs({0.05, 0.2, 0.5, 1, 2}) do
@@ -77,7 +85,7 @@ function Debug.AllowManualCast(game, order)
             if current == s and current.active and not current.pending and current.castSerial == serial
                 and game.phase == "fight" and valid(unit)
                 and game.battleManager.teamHeroes[DOTA_TEAM_BADGUYS][1] == unit then
-                Debug.TraceTarget(game, unit, "manual_after_" .. tostring(elapsed) .. "_cast_" .. serial)
+                Debug.TraceTarget(game, unit, source .. "_after_" .. tostring(elapsed) .. "_cast_" .. serial)
             end
             return nil
         end, elapsed)
@@ -354,6 +362,7 @@ function Debug.Install(game)
                 unit:SetBaseMaxHealth(Debug.HP); unit:SetMaxHealth(Debug.HP); unit:SetHealth(Debug.HP)
                 unit:SetBaseDamageMin(state(self).damage); unit:SetBaseDamageMax(state(self).damage)
                 unit.rpg_debug_manual_cast = true
+                unit.rpg_debug_auto_stomp = true
                 -- Diagnostic experiment only: keep enemy team/owner unchanged.
                 unit:SetControllableByPlayer(self.playerId, true)
                 Log.Write("SkillDebug target_controllable player=" .. tostring(self.playerId)

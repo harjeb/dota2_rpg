@@ -218,7 +218,7 @@ function TacticEngine:IsBusy(unit)
 end
 
 function TacticEngine:EvaluateUnit(unit, state, current_time)
-    if unit.rpg_debug_manual_cast then return end
+    if unit.rpg_debug_manual_cast and not unit.rpg_debug_auto_stomp then return end
     if self.get_phase() ~= "FIGHT" then
         return
     end
@@ -340,6 +340,10 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     if spec == nil then
         return false, resolve_reason
     end
+    if unit.rpg_debug_manual_cast and (not unit.rpg_debug_auto_stomp
+        or spec.logical_id ~= "centaur_hoof_stomp") then
+        return false, "debug_spell_only"
+    end
 
     ctx.current_action_id = spec.logical_id
     ctx.current_action_spec = spec
@@ -363,7 +367,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     if spec.logical_id == "sustained_move" then
         return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
     end
-    if Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
+    if not unit.rpg_debug_manual_cast and Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
         state.chase = nil
         state.posture_order = {owns_order=true, expires=ctx.now+self.tick_interval*2}
         -- The next attack must not be suppressed as a duplicate of the order
@@ -376,7 +380,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return self:IssueAction(unit, state, ctx, rule, rule_index, spec, target_or_point, anchor)
     end
 
-    if rule.approach ~= "allow_approach" then
+    if unit.rpg_debug_manual_cast or rule.approach ~= "allow_approach" then
         return false, "out_of_range"
     end
 
@@ -545,6 +549,7 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
 end
 
 function TacticEngine:ExecuteFallback(unit, state, ctx)
+    if unit.rpg_debug_manual_cast then return false end
     local fallback = {
         id = "system_fallback_attack",
         enabled = true,
