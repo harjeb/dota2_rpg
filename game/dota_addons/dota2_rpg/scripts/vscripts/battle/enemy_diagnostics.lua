@@ -18,6 +18,20 @@ local function call(object, key)
     local ok, value = pcall(method, object)
     if ok then return value end
 end
+-- 带参数的安全调用：call() 只转发单个参数，取技能槽需要传 slot。
+local function call_args(object, key, ...)
+    local method = get(object, key)
+    if type(method) ~= "function" then return nil end
+    if key ~= "IsNull" then
+        local null = get(object, "IsNull")
+        if type(null) == "function" then
+            local ok, invalid = pcall(null, object)
+            if not ok or invalid then return nil end
+        end
+    end
+    local ok, value = pcall(method, object, ...)
+    if ok then return value end
+end
 local function text(value)
     if type(value) == "number" then
         if value ~= value or math.abs(value) == math.huge then return "unknown" end
@@ -67,6 +81,34 @@ local function snapshot(game, unit, old, now)
     add("forced", id(forced), true); add("forceddist", distance(p, position(forced)))
     add("range", call(unit, "Script_GetAttackRange"))
     add("active", call(call(unit, "GetCurrentActiveAbility"), "GetAbilityName"), true)
+    -- 临时诊断：野怪技能为什么放不出来 —— 逐个报技能等级/冷却/可施放/蓝量。
+    -- 由 RPG_ENEMY_ABILITY_PROBE 开关控制（默认关闭，避免扰动既有行数断言）。
+    -- 排查完成后应连同开关一起删除（见 docs 或 git log）。
+    if RPG_ENEMY_ABILITY_PROBE then
+        add("unitlv", call(unit, "GetLevel"), true)
+        add("hasSetLevel", type(get(unit, "SetLevel")) == "function" and "1" or "0", true)
+        add("hasHeroLevelUp", type(get(unit, "HeroLevelUp")) == "function" and "1" or "0", true)
+        add("mana", call(unit, "GetMana")); add("maxmana", call(unit, "GetMaxMana"))
+        local count = tonumber(call(unit, "GetAbilityCount")) or 0
+        local parts = {}
+        for slot = 0, math.min(count, 8) - 1 do
+            local ability = call_args(unit, "GetAbilityByIndex", slot)
+            if ability ~= nil then
+                local aname = call(ability, "GetAbilityName")
+                if type(aname) == "string" and aname ~= "" then
+                    parts[#parts+1] = string.format("%s[lv=%s cd=%s cast=%s mana=%s passive=%s hidden=%s]",
+                        aname,
+                        text(call(ability, "GetLevel")),
+                        text(call(ability, "GetCooldownTimeRemaining")),
+                        text(call(ability, "IsFullyCastable")),
+                        text(call(ability, "IsOwnersManaEnough")),
+                        text(call(ability, "IsPassive")),
+                        text(call(ability, "IsHidden")))
+                end
+            end
+        end
+        add("abilities", #parts > 0 and table.concat(parts, "|") or "none", true)
+    end
     local attack = get(get(unit, "rpgTacticsEvents"), "attack")
     local released = num(get(attack, "time"))
     add("releaseage", now and released and math.max(0, now-released))

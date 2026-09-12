@@ -160,7 +160,9 @@ $luaChecks = @(
            'XP_TO_LEVEL',
            'STAGE_XP',
            'RECRUIT_BANDS',
-           'PriceForLevel'
+           'PriceForLevel',
+           'QUALITY_PRICE_MULTIPLIER',
+           'function M\.PriceFor'
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\patches\recruitment_patch.lua";
        Patterns = @(

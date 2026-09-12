@@ -274,7 +274,13 @@ local function rollWithNativeEndpoint(high)
 		assert(not selected[offer.hero], "native draws must be unique")
 		assert(offer.hero ~= "npc_dota_hero_axe", "owned heroes must be excluded")
 		assertEqual(offer.level, 1, "opening recruit level preserved")
-		assertEqual(offer.price, 500, "opening recruit price preserved")
+		-- 售价 = 等级基础价 × 品质倍率（普通 1.0 / 精良 1.2 / 史诗 1.5 / 传说 2.0）。
+		local multipliers = { common = 1.0, fine = 1.2, epic = 1.5, legendary = 2.0 }
+		local expected = 500 * (multipliers[offer.quality] or 1.0)
+		assertEqual(offer.price, math.floor(expected + 0.5),
+			"opening recruit price must include the quality multiplier")
+		assert(offer.quality == "common" or offer.price > 500,
+			"a non-common opening offer must cost more than the common base price")
 		selected[offer.hero] = true
 	end
 	assertEqual(#game.shopOffers, 5, "native shop fills all five offers")

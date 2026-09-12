@@ -3041,23 +3041,37 @@ function CDota2RpgDemo:PrepareEnemyCreep(unit, level)
 	-- 战术 AI 却照常下发（日志里只见 rule_executed、永远没有真正的 cast），
 	-- 表现就是"野怪全都没有技能"。所以这里必须补上 levels.kv 里的等级，
 	-- 并把单位 KV 声明的技能点到满级（野怪技能 MaxLevel 基本都是 1）。
+	--
+	-- 注意：不是所有野怪单位都暴露同一套原生 API。"SetLevel" 在部分
+	-- npc_dota_creep_neutral 基类单位上不存在（例如 npc_dota_neutral_gnoll_assassin），
+	-- 直接调用会抛 "attempt to call method 'SetLevel' (a nil value)"，
+	-- 把整个 AssembleLevelEnemies 干掉 → 触发 enemy_spawn_failed 重试循环。
+	-- 所以这里每一步都先探测方法是否存在，缺失时降级而不是中断。
 	local wantedLevel = math.max(1, math.floor(tonumber(level) or 1))
-	local guard = 0
-	while unit:GetLevel() < wantedLevel and guard < 100 do
-		local before = unit:GetLevel()
-		unit:SetLevel(before + 1)
-		if unit:GetLevel() <= before then break end
-		guard = guard + 1
+	local setLevel = unit.SetLevel
+	local getLevel = unit.GetLevel
+	if type(setLevel) == "function" and type(getLevel) == "function" then
+		local guard = 0
+		while unit:GetLevel() < wantedLevel and guard < 100 do
+			local before = unit:GetLevel()
+			setLevel(unit, before + 1)
+			if unit:GetLevel() <= before then break end
+			guard = guard + 1
+		end
 	end
-	for slot = 0, unit:GetAbilityCount() - 1 do
-		local ability = unit:GetAbilityByIndex(slot)
-		if ability ~= nil and not ability:IsNull() then
-			local maxLevel = ability:GetMaxLevel()
+	-- 技能同样逐个尝试：任一单位技能 API 缺失都不该让整关重试。
+	local abilityCount = unit.GetAbilityCount ~= nil and (tonumber(unit:GetAbilityCount()) or 0) or 0
+	for slot = 0, abilityCount - 1 do
+		local ok, ability = pcall(unit.GetAbilityByIndex, unit, slot)
+		if ok and ability ~= nil and type(ability.IsNull) == "function" and not ability:IsNull() then
+			local maxLevel = type(ability.GetMaxLevel) == "function" and ability:GetMaxLevel() or 0
 			-- 天赋与隐藏占位技能不属于野怪技能组，跳过以免误点。
-			local abilityName = ability:GetAbilityName()
-			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
-			if not isTalent and maxLevel > 0 and ability:GetLevel() < maxLevel then
-				ability:SetLevel(maxLevel)
+			local abilityName = type(ability.GetAbilityName) == "function" and ability:GetAbilityName() or ""
+			local isTalent = string.find(tostring(abilityName), "special_bonus", 1, true) ~= nil
+			local currentLevel = type(ability.GetLevel) == "function" and ability:GetLevel() or 0
+			if not isTalent and maxLevel > 0 and currentLevel < maxLevel
+				and type(ability.SetLevel) == "function" then
+				pcall(ability.SetLevel, ability, maxLevel)
 			end
 		end
 	end

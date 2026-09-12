@@ -35,7 +35,15 @@ M.STAGE_GOLD = {
     15000,
 }
 
--- 价格只由招募等级决定。品质仍决定魔晶/神杖效果，但不再乘价格倍率。
+-- 价格 = 招募等级基础价 × 品质倍率。品质倍率与 DESIGN.md §招募品质 一致：
+-- 普通 1.0 / 精良 1.2 / 史诗 1.5 / 传说 2.0。基础价都能被这两个倍率整除，结果恒为整数。
+M.QUALITY_PRICE_MULTIPLIER = {
+    common = 1.0,
+    fine = 1.2,
+    epic = 1.5,
+    legendary = 2.0,
+}
+
 M.RECRUIT_BANDS = {
     { from_stage = 1,  to_stage = 4,  level = 1, price = 500 },
     { from_stage = 5,  to_stage = 9,  level = 5, price = 900 },
@@ -71,6 +79,21 @@ function M.PriceForLevel(level)
         end
     end
     return nil
+end
+
+-- 品质倍率：未知/缺失品质按普通处理，避免出现 nil 价格。
+function M.QualityMultiplier(quality)
+    return M.QUALITY_PRICE_MULTIPLIER[tostring(quality or "common")] or 1.0
+end
+
+-- 最终售价 = 等级基础价 × 品质倍率。基础价均为整数且倍率只有 1.0/1.2/1.5/2.0，
+-- 乘法结果仍然是整数，不需要额外取整。
+function M.PriceFor(level, quality)
+    local base = M.PriceForLevel(level)
+    if base == nil then
+        return nil
+    end
+    return math.floor(base * M.QualityMultiplier(quality) + 0.5)
 end
 
 function M.XpNeededForNextLevel(level)

@@ -79,5 +79,40 @@ print=function() error("logger unavailable") end
 hero.alive=false; tick(0.2)
 assert(pcall(M.OnThink,nil) and pcall(M.OnThink,{}))
 assert(orders==0,"diagnostics must never submit orders")
+print = function(line) lines[#lines+1]=line end
+-- Ability probe must be inert unless explicitly enabled, and must report per-ability
+-- level/cooldown/castability with a missing native API rather than throwing.
+RPG_ENEMY_ABILITY_PROBE = true
+local probeLines = #lines
+local probe = unit(7,"npc_dota_neutral_centaur_khan")
+probe.GetLevel=function() return 5 end
+probe.SetLevel=nil
+probe.GetAbilityCount=function() return 2 end
+probe.abilities={
+  { name="centaur_khan_war_stomp", level=1, cd=0, castable=true, mana=true, passive=false, hidden=false },
+  { name="neutral_upgrade", level=1, cd=0, castable=false, mana=true, passive=true, hidden=false },
+}
+probe.GetAbilityByIndex=function(self,slot) return self.abilities[slot+1] end
+for _, ability in ipairs(probe.abilities) do
+    ability.GetAbilityName=function(self) return self.name end
+    ability.GetLevel=function(self) return self.level end
+    ability.GetCooldownTimeRemaining=function(self) return self.cd end
+    ability.IsFullyCastable=function(self) return self.castable end
+    ability.IsOwnersManaEnough=function(self) return self.mana end
+    ability.IsPassive=function(self) return self.passive end
+    ability.IsHidden=function(self) return self.hidden end
+    ability.IsNull=function() return false end
+end
+game.battleManager.teamHeroes[3][7]=probe; tick(30)
+assert(#lines>probeLines,"probe must emit a snapshot for the new unit")
+assert(contains("unitlv=5.00") and contains("hasSetLevel=0 hasHeroLevelUp=0"))
+-- text() 把空格转成下划线，所以技能字段之间是 "_" 而不是空格。
+assert(contains("centaur_khan_war_stomp[lv=1.00_cd=0.00_cast=1_mana=1_passive=0_hidden=0]"))
+assert(contains("neutral_upgrade[lv=1.00_cd=0.00_cast=0_mana=1_passive=1_hidden=0]"))
+-- A unit whose ability API is entirely absent must degrade, not raise.
+local bare = unit(8,"npc_dota_neutral_gnoll_assassin")
+game.battleManager.teamHeroes[3][8]=bare; tick(31)
+assert(contains("name=npc_dota_neutral_gnoll_assassin") and contains("abilities=none"))
+RPG_ENEMY_ABILITY_PROBE = nil
 print = nativePrint
-print("PASS: enemy diagnostics roster, throttle, transitions, reuse, malformed getters, logger isolation, no orders")
+print("PASS: enemy diagnostics roster, throttle, transitions, reuse, malformed getters, logger isolation, no orders, ability probe")

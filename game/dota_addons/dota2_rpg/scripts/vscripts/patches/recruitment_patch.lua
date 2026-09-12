@@ -15,9 +15,10 @@ function RecruitmentPatch.Install(GameModeClass)
         return ProgressionData.GetRecruitBand(stage).level
     end
 
-    -- 品质不再改变价格。品质效果与概率可保留。
-    function GameModeClass:PriceFor(level, _quality)
-        return ProgressionData.PriceForLevel(level) or 500
+    -- 售价 = 招募等级基础价 × 品质倍率（普通 1.0 / 精良 1.2 / 史诗 1.5 / 传说 2.0）。
+    -- 品质自带魔晶/神杖效果，同时体现在价格上；UI 只展示最终售价。
+    function GameModeClass:PriceFor(level, quality)
+        return ProgressionData.PriceFor(level, quality) or 500
     end
 
     function GameModeClass:OnShopBuy(_, payload)
