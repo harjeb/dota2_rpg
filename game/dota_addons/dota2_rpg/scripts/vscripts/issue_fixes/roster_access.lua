@@ -15,19 +15,41 @@ local function safe_method(handle, name, ...)
     return pcall(handle[name], handle, ...)
 end
 
-function RosterAccess.EnableNativeShop(options)
-    options = options or {}
-
-    -- Official custom games expose this on GameRules, not GameModeEntity.
+function RosterAccess.EnableNativeShop()
+    -- Universal Shop opens every shop's catalog, but still needs a physical
+    -- shop in range. dota_easybuy also makes purchases free and is unsuitable
+    -- as the ordinary-client access mechanism.
     if GameRules ~= nil and GameRules.SetUseUniversalShopMode ~= nil then
         GameRules:SetUseUniversalShopMode(true)
     end
+end
 
-    -- The official hero_demo uses dota_easybuy so the native shop works without
-    -- standing in a shop trigger. Combat purchase is still blocked by OrderFilter.
-    if options.enable_easy_buy ~= false and SendToServerConsole ~= nil then
-        SendToServerConsole("dota_easybuy 1")
+function RosterAccess.EnsureNativeShopRange(state)
+    if is_valid(state.nativeShopTrigger) then return true end
+    local function failed(reason)
+        if state.nativeShopRangeError ~= reason then
+            print("[Dota2Rpg] NativeShopRange unavailable: " .. reason)
+            state.nativeShopRangeError = reason
+        end
+        return false
     end
+    if type(SpawnDOTAShopTriggerRadiusApproximate) ~= "function" then
+        return failed("shop trigger API missing")
+    end
+    -- Covers the arena, bench (-2300, 0) and hidden commander (-1950, -700).
+    -- This engine entity supplies replicated shop proximity to the native HUD;
+    -- OrderFilter still rejects all purchases outside preparation.
+    local ok, trigger = pcall(SpawnDOTAShopTriggerRadiusApproximate,
+        Vector(-768, 0, 128), 4096)
+    if not ok or not is_valid(trigger) then return failed("shop trigger creation failed") end
+    if not safe_method(trigger, "SetShopType", DOTA_SHOP_HOME or 0) then
+        if UTIL_Remove ~= nil then pcall(UTIL_Remove, trigger) end
+        return failed("shop type assignment failed")
+    end
+    state.nativeShopTrigger = trigger
+    state.nativeShopRangeError = nil
+    print("[Dota2Rpg] NativeShopRange ready native-shop-range-v1 center=-768,0,128 radius=4096")
+    return true
 end
 
 function RosterAccess.AssignToPlayer(hero, player_id)

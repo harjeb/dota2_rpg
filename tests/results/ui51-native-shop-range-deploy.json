@@ -1,0 +1,35 @@
+{
+  "version": "UI51 native-shop-range-v1",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui51-native-shop-backup-20260912-195140",
+  "deployed": [
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/roster_access.lua",
+      "sha256": "804c81809cfd2722c4c9d248a0a81e4c580ae36fc4ec7d5a8eccf12e3b6648ad",
+      "matches": true
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/init.lua",
+      "sha256": "0bf85de728a06966b2e2f381e1b6e90bd67144daaf8c5e3b6235017babd7993d",
+      "matches": true
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/bootstrap.lua",
+      "sha256": "cc21ee29830ce404c1f1e628984a097ba8ad93df40de2f5fa49b27f6ba9c8224",
+      "matches": true
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "a0df8db4df948c7df065a99cd5c029ab19be70a5b276cddb0cb17eaeb81b7fa2",
+      "matches": true
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "566d6cf79a0b948db6e25f5acec6faab332f0813313e07f6ba2a2113c74d102f",
+      "matches": true
+    }
+  ],
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "workshop_packages_modified": false,
+  "remote_upload": false
+}

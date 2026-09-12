@@ -82,13 +82,17 @@ function IssueFixes:Install()
         )
     end
 
-    RosterAccess.EnableNativeShop({ enable_easy_buy = true })
+    RosterAccess.EnableNativeShop()
+    RosterAccess.EnsureNativeShopRange(self)
     self.inventory:InstallEventListener()
     self.arena:LoadBounds()
     self.arena:InstallThink()
 end
 
 function IssueFixes:PrepareRoster(player_id, active_heroes, bench_heroes)
+    -- Retry if installation ran before the engine could spawn the trigger;
+    -- reuse it across stage/debug roster rebuilds.
+    RosterAccess.EnsureNativeShopRange(self)
     RosterAccess.PrepareRoster(player_id, active_heroes, bench_heroes)
 
     self.arena:StartPrepare(active_heroes or {})

@@ -1111,9 +1111,9 @@ do
     local easybuy, universal
     SendToServerConsole = function(command) easybuy = command end
     GameRules.SetUseUniversalShopMode = function(_, enabled) universal = enabled end
-    Roster.EnableNativeShop({ enable_easy_buy = true })
+    Roster.EnableNativeShop()
     assert_equal(universal, true, "universal native shop enabled")
-    assert_equal(easybuy, "dota_easybuy 1", "native easy-buy enabled")
+    assert_equal(easybuy, nil, "native shop must not enable free-buy console mode")
     SendToServerConsole = nil
     local player = {}
     PlayerResource = { GetPlayer = function() return player end }

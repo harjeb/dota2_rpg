@@ -192,6 +192,7 @@ function Bootstrap.Install(class_table)
                     self,
                     rawget(_G, "DOTA_TEAM_GOODGUYS") or 2
                 )
+                RosterAccess.EnsureNativeShopRange(self.issueFixes)
                 self.issueFixes.arena:StartPrepare(players)
             end
             return return_values(results)
