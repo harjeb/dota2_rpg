@@ -3,7 +3,7 @@ local modules = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 package.path = modules .. "?.lua;" .. package.path
 local Loot = require("battle.campaign_loot")
 local Lives = require("battle.run_lives")
-assert(#Loot.Catalog == 351)
+assert(#Loot.Catalog == 271)
 local config = {pool="all_items", items={{chance=.35},{chance=.30},{chance=.20}}}
 local calls = 0
 local function zero(a,b) calls=calls+1; if a then return b end; return 0 end
@@ -14,7 +14,9 @@ config.items[4]={chance=1}
 assert(#Loot.Roll(config,zero)==3,"bounded even with extra rows")
 local index={}
 for i,r in ipairs(Loot.Catalog) do index[r.name]=i end
-assert(index.item_ward_observer and index.item_aegis and index.item_recipe_black_king_bar)
+assert(index.item_ward_observer and index.item_aegis)
+assert(not index.item_roshans_banner)
+for name in pairs(index) do assert(not name:match('^item_recipe_')) end
 assert(not index.item_recipe_phase_boots and not index.item_stout_shield)
 local slots, added, full = {}, 0, false
 local filler={GetCurrentCharges=function() return 1 end}
@@ -82,4 +84,4 @@ for _,winner in ipairs({"radiant","dire","timeout"}) do
     assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink" or ""))
     assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 3 or 0))
 end
-print("PASS campaign loot: real EndBattle, 351 catalog rows, bounded gates, aliases, full stash, retries, ambiguous native delivery")
+print("PASS campaign loot: real EndBattle, 271 catalog rows, bounded gates, aliases, full stash, retries, ambiguous native delivery")

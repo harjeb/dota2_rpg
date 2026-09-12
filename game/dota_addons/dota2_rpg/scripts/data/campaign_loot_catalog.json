@@ -1,14 +1,13 @@
 {
   "source_sha256": "308522003567de5dd08aeee95f350f46990e9251b257ca57eb2b49a49b43aa96",
   "neutral_sha256": "0935ad39d72909cd2800d62d083e55406b2a8eb85049373c1a4392bcf907a8d5",
-  "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nZero-cost recipes are automatic combination rules, not usable recipe scrolls.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
+  "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nAll recipe scrolls and Roshan's Banner are excluded by campaign policy.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
   "counts": {
     "standard": 187,
-    "special": 17,
-    "excluded": 193,
+    "special": 16,
+    "excluded": 273,
     "neutral": 49,
-    "neutral_enhancement": 19,
-    "recipe": 79
+    "neutral_enhancement": 19
   },
   "items": [
     {
@@ -7396,9 +7395,9 @@
     },
     {
       "name": "item_recipe_abyssal_blade",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_abyssal_blade",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "1275",
         "ItemShopTags": "",
@@ -7411,9 +7410,9 @@
     },
     {
       "name": "item_recipe_aeon_disk",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_aeon_disk",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1200",
@@ -7427,9 +7426,9 @@
     },
     {
       "name": "item_recipe_aether_lens",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_aether_lens",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "775",
@@ -7443,9 +7442,9 @@
     },
     {
       "name": "item_recipe_ancient_janggo",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_ancient_janggo",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "525",
@@ -7460,7 +7459,7 @@
     {
       "name": "item_recipe_angels_demise",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7478,9 +7477,9 @@
     },
     {
       "name": "item_recipe_arcane_blink",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_arcane_blink",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -7494,9 +7493,9 @@
     },
     {
       "name": "item_recipe_arcane_boots",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_arcane_boots",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "325",
         "ItemShopTags": "",
@@ -7509,9 +7508,9 @@
     },
     {
       "name": "item_recipe_armlet",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_armlet",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "625",
@@ -7525,9 +7524,9 @@
     },
     {
       "name": "item_recipe_assault",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_assault",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1300",
@@ -7541,9 +7540,9 @@
     },
     {
       "name": "item_recipe_basher",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_basher",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "825",
@@ -7557,9 +7556,9 @@
     },
     {
       "name": "item_recipe_bfury",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_bfury",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "400",
         "ItemShopTags": "",
@@ -7572,9 +7571,9 @@
     },
     {
       "name": "item_recipe_black_king_bar",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_black_king_bar",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1450",
@@ -7588,9 +7587,9 @@
     },
     {
       "name": "item_recipe_blade_mail",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_blade_mail",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "1",
@@ -7606,7 +7605,7 @@
     {
       "name": "item_recipe_bloodstone",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7621,9 +7620,9 @@
     },
     {
       "name": "item_recipe_bloodthorn",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_bloodthorn",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "600",
@@ -7638,7 +7637,7 @@
     {
       "name": "item_recipe_boots_of_bearing",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7653,9 +7652,9 @@
     },
     {
       "name": "item_recipe_bracer",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_bracer",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -7668,9 +7667,9 @@
     },
     {
       "name": "item_recipe_buckler",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_buckler",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "SpellDispellableType": "SPELL_DISPELLABLE_YES",
@@ -7686,7 +7685,7 @@
     {
       "name": "item_recipe_butterfly",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -7700,9 +7699,9 @@
     },
     {
       "name": "item_recipe_consecrated_wraps",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_consecrated_wraps",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "700",
         "ItemShopTags": "",
@@ -7716,9 +7715,9 @@
     },
     {
       "name": "item_recipe_crellas_crozier",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_crellas_crozier",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "300",
         "ItemShopTags": "",
@@ -7732,9 +7731,9 @@
     },
     {
       "name": "item_recipe_crimson_guard",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_crimson_guard",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1050",
@@ -7748,9 +7747,9 @@
     },
     {
       "name": "item_recipe_cyclone",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_cyclone",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -7764,9 +7763,9 @@
     },
     {
       "name": "item_recipe_dagon",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_dagon",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1100",
@@ -7781,7 +7780,7 @@
     {
       "name": "item_recipe_dagon_2",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7797,7 +7796,7 @@
     {
       "name": "item_recipe_dagon_3",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7813,7 +7812,7 @@
     {
       "name": "item_recipe_dagon_4",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7829,7 +7828,7 @@
     {
       "name": "item_recipe_dagon_5",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7845,7 +7844,7 @@
     {
       "name": "item_recipe_desolator",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7860,9 +7859,9 @@
     },
     {
       "name": "item_recipe_devastator",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_devastator",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "400",
@@ -7876,9 +7875,9 @@
     },
     {
       "name": "item_recipe_diffusal_blade",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_diffusal_blade",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1050",
@@ -7892,9 +7891,9 @@
     },
     {
       "name": "item_recipe_disperser",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_disperser",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "800",
@@ -7908,9 +7907,9 @@
     },
     {
       "name": "item_recipe_dragon_lance",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_dragon_lance",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "450",
@@ -7925,7 +7924,7 @@
     {
       "name": "item_recipe_echo_sabre",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -7940,9 +7939,9 @@
     },
     {
       "name": "item_recipe_essence_distiller",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_essence_distiller",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -7957,7 +7956,7 @@
     {
       "name": "item_recipe_eternal_shroud",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "900",
@@ -7973,9 +7972,9 @@
     },
     {
       "name": "item_recipe_ethereal_blade",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_ethereal_blade",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "900",
         "ItemShopTags": "",
@@ -7988,9 +7987,9 @@
     },
     {
       "name": "item_recipe_falcon_blade",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_falcon_blade",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8005,7 +8004,7 @@
     {
       "name": "item_recipe_fallen_sky",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8022,9 +8021,9 @@
     },
     {
       "name": "item_recipe_force_staff",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_force_staff",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "950",
@@ -8038,9 +8037,9 @@
     },
     {
       "name": "item_recipe_glimmer_cape",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_glimmer_cape",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "800",
         "ItemShopTags": "",
@@ -8054,7 +8053,7 @@
     {
       "name": "item_recipe_great_famango",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8071,9 +8070,9 @@
     },
     {
       "name": "item_recipe_greater_crit",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_greater_crit",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "900",
@@ -8088,7 +8087,7 @@
     {
       "name": "item_recipe_greater_famango",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8105,9 +8104,9 @@
     },
     {
       "name": "item_recipe_guardian_greaves",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_guardian_greaves",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1175",
@@ -8121,9 +8120,9 @@
     },
     {
       "name": "item_recipe_gungir",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_gungir",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8137,9 +8136,9 @@
     },
     {
       "name": "item_recipe_hand_of_midas",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_hand_of_midas",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -8153,9 +8152,9 @@
     },
     {
       "name": "item_recipe_harpoon",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_harpoon",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1000",
@@ -8169,9 +8168,9 @@
     },
     {
       "name": "item_recipe_headdress",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_headdress",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8185,9 +8184,9 @@
     },
     {
       "name": "item_recipe_heart",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_heart",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "700",
@@ -8201,9 +8200,9 @@
     },
     {
       "name": "item_recipe_heavens_halberd",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_heavens_halberd",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "450",
         "ItemShopTags": "",
@@ -8216,9 +8215,9 @@
     },
     {
       "name": "item_recipe_helm_of_the_dominator",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_helm_of_the_dominator",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "1125",
         "ItemShopTags": "",
@@ -8231,9 +8230,9 @@
     },
     {
       "name": "item_recipe_helm_of_the_overlord",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_helm_of_the_overlord",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "300",
         "ItemShopTags": "",
@@ -8246,9 +8245,9 @@
     },
     {
       "name": "item_recipe_holy_locket",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_holy_locket",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "1340",
         "ItemShopTags": "",
@@ -8265,7 +8264,7 @@
     {
       "name": "item_recipe_hood_of_defiance",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8279,9 +8278,9 @@
     },
     {
       "name": "item_recipe_hurricane_pike",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_hurricane_pike",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -8295,9 +8294,9 @@
     },
     {
       "name": "item_recipe_hydras_breath",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_hydras_breath",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1100",
@@ -8313,7 +8312,7 @@
     {
       "name": "item_recipe_invis_sword",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8328,7 +8327,7 @@
     {
       "name": "item_recipe_iron_talon",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.mdl",
@@ -8345,9 +8344,9 @@
     },
     {
       "name": "item_recipe_kaya",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_kaya",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8362,7 +8361,7 @@
     {
       "name": "item_recipe_kaya_and_sange",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8376,9 +8375,9 @@
     },
     {
       "name": "item_recipe_lesser_crit",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_lesser_crit",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -8392,9 +8391,9 @@
     },
     {
       "name": "item_recipe_lotus_orb",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_lotus_orb",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "250",
@@ -8409,7 +8408,7 @@
     {
       "name": "item_recipe_maelstrom",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8425,7 +8424,7 @@
     {
       "name": "item_recipe_mage_slayer",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8440,9 +8439,9 @@
     },
     {
       "name": "item_recipe_magic_wand",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_magic_wand",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "150",
@@ -8456,9 +8455,9 @@
     },
     {
       "name": "item_recipe_manta",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_manta",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "1",
@@ -8474,7 +8473,7 @@
     {
       "name": "item_recipe_mask_of_madness",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8490,7 +8489,7 @@
     {
       "name": "item_recipe_medallion_of_courage",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8507,9 +8506,9 @@
     },
     {
       "name": "item_recipe_mekansm",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_mekansm",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "850",
@@ -8523,9 +8522,9 @@
     },
     {
       "name": "item_recipe_meteor_hammer",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_meteor_hammer",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8541,9 +8540,9 @@
     },
     {
       "name": "item_recipe_mjollnir",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_mjollnir",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "550",
@@ -8557,9 +8556,9 @@
     },
     {
       "name": "item_recipe_monkey_king_bar",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_monkey_king_bar",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "900",
         "ItemShopTags": "",
@@ -8573,7 +8572,7 @@
     {
       "name": "item_recipe_moon_shard",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8589,7 +8588,7 @@
     {
       "name": "item_recipe_necronomicon",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8607,7 +8606,7 @@
     {
       "name": "item_recipe_necronomicon_2",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8625,7 +8624,7 @@
     {
       "name": "item_recipe_necronomicon_3",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8642,9 +8641,9 @@
     },
     {
       "name": "item_recipe_null_talisman",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_null_talisman",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -8658,7 +8657,7 @@
     {
       "name": "item_recipe_nullifier",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8674,7 +8673,7 @@
     {
       "name": "item_recipe_oblivion_staff",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8689,9 +8688,9 @@
     },
     {
       "name": "item_recipe_octarine_core",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_octarine_core",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "200",
         "ItemShopTags": "",
@@ -8705,7 +8704,7 @@
     {
       "name": "item_recipe_orb_of_corrosion",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8720,9 +8719,9 @@
     },
     {
       "name": "item_recipe_orchid",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_orchid",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -8736,9 +8735,9 @@
     },
     {
       "name": "item_recipe_overwhelming_blink",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_overwhelming_blink",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -8752,9 +8751,9 @@
     },
     {
       "name": "item_recipe_pavise",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_pavise",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -8769,7 +8768,7 @@
     {
       "name": "item_recipe_pers",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8785,7 +8784,7 @@
     {
       "name": "item_recipe_phase_boots",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8800,9 +8799,9 @@
     },
     {
       "name": "item_recipe_phylactery",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_phylactery",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "200",
@@ -8816,9 +8815,9 @@
     },
     {
       "name": "item_recipe_pipe",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_pipe",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "675",
@@ -8833,7 +8832,7 @@
     {
       "name": "item_recipe_poor_mans_shield",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8849,7 +8848,7 @@
     {
       "name": "item_recipe_power_treads",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8867,7 +8866,7 @@
     {
       "name": "item_recipe_radiance",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -8883,7 +8882,7 @@
     {
       "name": "item_recipe_rapier",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8897,9 +8896,9 @@
     },
     {
       "name": "item_recipe_refresher",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_refresher",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "FightRecapLevel": "2",
@@ -8914,9 +8913,9 @@
     },
     {
       "name": "item_recipe_revenants_brooch",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_revenants_brooch",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8931,7 +8930,7 @@
     {
       "name": "item_recipe_ring_of_aquila",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -8945,9 +8944,9 @@
     },
     {
       "name": "item_recipe_ring_of_basilius",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_ring_of_basilius",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -8963,9 +8962,9 @@
     },
     {
       "name": "item_recipe_rod_of_atos",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_rod_of_atos",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -8978,9 +8977,9 @@
     },
     {
       "name": "item_recipe_sange",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_sange",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "650",
@@ -8995,7 +8994,7 @@
     {
       "name": "item_recipe_sange_and_yasha",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -9010,7 +9009,7 @@
     {
       "name": "item_recipe_satanic",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9025,9 +9024,9 @@
     },
     {
       "name": "item_recipe_sheepstick",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_sheepstick",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "700",
@@ -9041,9 +9040,9 @@
     },
     {
       "name": "item_recipe_shivas_guard",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_shivas_guard",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1250",
@@ -9057,9 +9056,9 @@
     },
     {
       "name": "item_recipe_silver_edge",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_silver_edge",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "250",
         "ItemShopTags": "",
@@ -9073,7 +9072,7 @@
     {
       "name": "item_recipe_skadi",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -9087,9 +9086,9 @@
     },
     {
       "name": "item_recipe_solar_crest",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_solar_crest",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "500",
@@ -9104,7 +9103,7 @@
     {
       "name": "item_recipe_soul_booster",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -9118,9 +9117,9 @@
     },
     {
       "name": "item_recipe_soul_ring",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_soul_ring",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -9134,9 +9133,9 @@
     },
     {
       "name": "item_recipe_specialists_array",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_specialists_array",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "550",
@@ -9150,9 +9149,9 @@
     },
     {
       "name": "item_recipe_sphere",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_sphere",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "600",
@@ -9166,9 +9165,9 @@
     },
     {
       "name": "item_recipe_spirit_vessel",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_spirit_vessel",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "900",
@@ -9182,9 +9181,9 @@
     },
     {
       "name": "item_recipe_swift_blink",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_swift_blink",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1750",
@@ -9199,7 +9198,7 @@
     {
       "name": "item_recipe_tranquil_boots",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -9213,9 +9212,9 @@
     },
     {
       "name": "item_recipe_travel_boots",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_travel_boots",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "2000",
@@ -9230,7 +9229,7 @@
     {
       "name": "item_recipe_travel_boots_2",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9246,7 +9245,7 @@
     {
       "name": "item_recipe_trident",
       "category": null,
-      "excluded_reason": "Not in installed neutral_items.txt current rotation (retired/test/token definition)",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "1",
@@ -9268,7 +9267,7 @@
     {
       "name": "item_recipe_ultimate_scepter",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -9283,7 +9282,7 @@
     {
       "name": "item_recipe_ultimate_scepter_2",
       "category": null,
-      "excluded_reason": "Unsafe commander auto-combination consumes Scepter; transferable Roshan Blessing included instead",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "1600",
@@ -9297,9 +9296,9 @@
     },
     {
       "name": "item_recipe_urn_of_shadows",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_urn_of_shadows",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "320",
@@ -9314,7 +9313,7 @@
     {
       "name": "item_recipe_vanguard",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9329,9 +9328,9 @@
     },
     {
       "name": "item_recipe_veil_of_discord",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_veil_of_discord",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "350",
@@ -9346,7 +9345,7 @@
     {
       "name": "item_recipe_vladmir",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9362,7 +9361,7 @@
     {
       "name": "item_recipe_ward_dispenser",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9382,9 +9381,9 @@
     },
     {
       "name": "item_recipe_wind_waker",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_wind_waker",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "1400",
@@ -9398,9 +9397,9 @@
     },
     {
       "name": "item_recipe_witch_blade",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_witch_blade",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
         "ItemCost": "300",
@@ -9414,9 +9413,9 @@
     },
     {
       "name": "item_recipe_wraith_band",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_wraith_band",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "210",
         "ItemShopTags": "",
@@ -9430,7 +9429,7 @@
     {
       "name": "item_recipe_wraith_pact",
       "category": null,
-      "excluded_reason": "Native IsObsolete=1",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "Model": "models/props_gameplay/recipe.vmdl",
@@ -9447,9 +9446,9 @@
     },
     {
       "name": "item_recipe_yasha",
-      "category": "recipe",
-      "excluded_reason": null,
-      "delivery": "item_recipe_yasha",
+      "category": null,
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
+      "delivery": null,
       "schema": {
         "ItemCost": "650",
         "ItemShopTags": "",
@@ -9463,7 +9462,7 @@
     {
       "name": "item_recipe_yasha_and_kaya",
       "category": null,
-      "excluded_reason": "Zero-cost internal automatic combination formula, not a purchasable recipe scroll",
+      "excluded_reason": "Campaign policy: no recipe scroll drops",
       "delivery": null,
       "schema": {
         "ItemCost": "0",
@@ -10003,9 +10002,9 @@
     },
     {
       "name": "item_roshans_banner",
-      "category": "special",
-      "excluded_reason": null,
-      "delivery": "item_roshans_banner",
+      "category": null,
+      "excluded_reason": "Campaign policy: no Roshan Banner drops",
+      "delivery": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE ",
         "Model": "models/props_gameplay/neutral_box.vmdl",

@@ -224,7 +224,7 @@ function Precache(context)
 	local started = RealTime and RealTime() or 0
 	local levels = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
 	local startup = StagePrecache.Startup(context, levels)
-	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v42-20260912 level=%s units=%d items=%d elapsed=%.3f",
+	print(string.format("[RPGPrecache] startup_complete build=rpg-runtime-v43-20260912 level=%s units=%d items=%d elapsed=%.3f",
 		tostring(startup.levelId), #startup.units, #startup.items, RealTime and (RealTime() - started) or 0))
 end
 
@@ -234,7 +234,7 @@ function Activate()
 end
 
 function CDota2RpgDemo:InitGameMode()
-	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v42-20260912") end
+	if RuntimeLog.StartSession ~= nil then RuntimeLog.StartSession("rpg-runtime-v43-20260912") end
 	if not (okHelpers and okItems and okProgression and okRecruitmentPatch and okProgressionPatch
 		and okEnemyItems and okBridge and okBattle and okData) then
 		error("[Dota2Rpg] required gameplay modules failed to load")
@@ -425,7 +425,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	RuntimeLog.Write("BUILD rpg-runtime-v42-20260912 loaded; log=console.log (-condebug)")
+	RuntimeLog.Write("BUILD rpg-runtime-v43-20260912 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
 

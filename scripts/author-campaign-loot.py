@@ -1,5 +1,5 @@
 """Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.
-Zero-cost recipes are automatic combination rules, not usable recipe scrolls.
+All recipe scrolls and Roshan's Banner are excluded by campaign policy.
 Self-consuming Shard/Blessing use transferable Roshan consumables instead of
 AddItemByName on the commander. Blessing recipe excluded: auto-combination on
 commander can consume Scepter without upgrading a roster hero.
@@ -34,12 +34,12 @@ def build(items_bytes, neutral_bytes):
         if not isinstance(schema, dict):
             continue
         reason, category = None, None
-        if schema.get('IsObsolete') == '1':
+        if name.startswith('item_recipe_') or schema.get('ItemRecipe') == '1':
+            reason = 'Campaign policy: no recipe scroll drops'
+        elif name == 'item_roshans_banner':
+            reason = 'Campaign policy: no Roshan Banner drops'
+        elif schema.get('IsObsolete') == '1':
             reason = 'Native IsObsolete=1'
-        elif name == 'item_recipe_ultimate_scepter_2':
-            reason = 'Unsafe commander auto-combination consumes Scepter; transferable Roshan Blessing included instead'
-        elif schema.get('ItemRecipe') == '1' and int(schema.get('ItemCost', '0')) == 0:
-            reason = 'Zero-cost internal automatic combination formula, not a purchasable recipe scroll'
         elif name in active:
             category = 'neutral'
         elif name in enhancements:
@@ -49,7 +49,7 @@ def build(items_bytes, neutral_bytes):
         elif name.removeprefix('item_') in SPECIAL:
             category = 'special'
         elif schema.get('ItemPurchasable', '1') != '0' and int(schema.get('ItemCost', '0')) > 0:
-            category = 'recipe' if schema.get('ItemRecipe') == '1' else 'standard'
+            category = 'standard'
         else:
             short = name.removeprefix('item_')
             if short in ('black_grimoire', 'eldwurms_edda', 'furion_gold_bag', 'grisgris', 'tidehunter_fish'):

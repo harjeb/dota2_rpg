@@ -16,7 +16,10 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(c['items']), 544)
         self.assertEqual(len({r['name'] for r in c['items']}), 544)
         pool = {r['name']: r for r in c['items'] if r['category']}
-        self.assertEqual(len(pool), 351)
+        self.assertEqual(len(pool), 271)
+        self.assertNotIn('item_roshans_banner', pool)
+        self.assertTrue(all(not name.startswith('item_recipe_') for name in pool))
+        self.assertTrue(all(r['schema'].get('ItemRecipe') != '1' for r in pool.values()))
         for r in c['items']:
             self.assertEqual(bool(r['category']), not bool(r['excluded_reason']))
         self.assertIn('item_ward_observer', pool)
@@ -25,7 +28,7 @@ class CatalogTests(unittest.TestCase):
         self.assertNotIn('item_keen_optic', pool)  # neutral flag alone is not current rotation
         self.assertNotIn('item_recipe_phase_boots', pool)
         self.assertEqual(pool['item_aghanims_shard']['delivery'], 'item_aghanims_shard_roshan')
-        self.assertEqual(len({r['delivery'] for r in pool.values()}), 349)
+        self.assertEqual(len({r['delivery'] for r in pool.values()}), 269)
         kv = author.native.parse_kv((author.DATA / 'loot.kv').read_text(encoding='utf-8'))['loot']
         for name, expected in [('loot_basic', .85), ('loot_hero', .85), ('loot_boss', 1.35)]:
             self.assertEqual(kv[name]['pool'], 'all_items')
@@ -34,6 +37,8 @@ class CatalogTests(unittest.TestCase):
         lua = author.LUA.read_text(encoding='utf-8')
         for name in pool:
             self.assertIn('name = "' + name + '"', lua)
+        self.assertNotIn('item_recipe_', lua)
+        self.assertNotIn('item_roshans_banner', lua)
 
     @unittest.skipUnless(author.native.DEFAULT_VPK.exists(), 'installed native VPK not present')
     def test_installed_native_reproduction(self):
