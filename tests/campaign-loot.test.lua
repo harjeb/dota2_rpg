@@ -299,6 +299,7 @@ DOTA_TEAM_GOODGUYS=2
 DOTA_TEAM_BADGUYS=3
 local originalRequire=require
 require=function(name)
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name=="battle.campaign_loot" then return Loot end
     if name=="battle.run_lives" then return Lives end
     if name=="battle.unit_helpers" then return {IsValidUnit=function() return true end} end

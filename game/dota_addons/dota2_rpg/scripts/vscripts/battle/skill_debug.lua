@@ -194,6 +194,8 @@ local function clear_items(unit)
     end
 end
 local function clear_run(game)
+    require("battle.run_results").Reset(game)
+    require("battle.run_results").Invalidate(game)
     game.enemySpawnRequest = nil
     game.stageLoading, game.stageLoadError = false, nil
     stop(game)

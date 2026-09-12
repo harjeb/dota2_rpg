@@ -1972,6 +1972,57 @@
         });
     }
 
+    var terminalResultVisible = false;
+    var rankGeneration = -1;
+    var rankStatus = "";
+    function rankText(token, values) {
+        var text = $.Localize("#dota2_rpg_" + token);
+        (values || []).forEach(function (value, i) { text = text.replace("%s" + (i + 1), String(value)); });
+        return text;
+    }
+    function resultTime(ms) {
+        var seconds = Math.floor(Math.max(0, Number(ms) || 0) / 1000);
+        return Math.floor(seconds / 60) + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
+    }
+    function showRunResult(data) {
+        var generation = Number(data.settlement_generation);
+        if (!isFinite(generation) || generation < Math.max(replayGeneration, lastSettlementGeneration, rankGeneration)
+            || phase !== "result" || data.score === undefined) { return; }
+        if (generation === rankGeneration && rankStatus === "success" && data.status !== "success") { return; }
+        rankGeneration = generation;
+        rankStatus = String(data.status || "pending");
+        terminalResultVisible = true;
+        var cleared = Number(data.cleared) === 1;
+        $("#RunScoreTitle").text = rankText(cleared ? "run_score_clear" : "run_score_failed");
+        $("#RunScoreValue").text = String(Math.max(0, Math.floor(Number(data.score) || 0)));
+        $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0]);
+        $("#RunMetrics").text = rankText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
+        var status = ["pending", "success", "error", "disabled", "ineligible"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
+        $("#RunRankStatus").text = rankText("rank_" + status);
+        $("#RunRankStatus").SetHasClass("RankError", status === "error" || status === "disabled");
+        var congratulations = [];
+        ["score", "speedrun"].forEach(function (board) {
+            var label = $(board === "score" ? "#RunScoreRank" : "#RunSpeedrunRank");
+            var title = rankText("rank_" + board);
+            if (board === "speedrun" && !cleared) {
+                label.text = title + " · " + rankText("rank_clear_only");
+                return;
+            }
+            var rank = Number(data[board + "_rank"] || 0);
+            label.text = title + " · " + (status === "success" && rank > 0
+                ? rankText("rank_position", [rank, data[board + "_total"] || 0]) : rankText("rank_unavailable"));
+            if (status === "success") {
+                if (Number(data[board + "_global_record"]) === 1) { congratulations.push(rankText("rank_global_record", [title])); }
+                else if (Number(data[board + "_personal_record"]) === 1) { congratulations.push(rankText("rank_personal_record", [title])); }
+                else if (Number(data[board + "_first_entry"]) === 1) { congratulations.push(rankText("rank_first_entry", [title])); }
+            }
+        });
+        $("#RunRecordMessage").text = congratulations.join("\n");
+        $("#RunRecordMessage").SetHasClass("Hidden", !congratulations.length);
+        $("#RunLeaderboard").SetHasClass("Hidden", false);
+        $("#BattleResult").SetHasClass("Hidden", false);
+    }
+
     var replayGeneration = -1;
     var replayRequested = -1;
     function updateReplay(data) {
@@ -1982,7 +2033,7 @@
         replayGeneration = generation;
         $("#ReplayRunButton").SetHasClass("Hidden", !available);
         $("#ReplayRunHint").SetHasClass("Hidden", !available);
-        $("#BattleResult").SetHasClass("Hidden", !available && $("#SettlementPanel").BHasClass("Hidden"));
+        $("#BattleResult").SetHasClass("Hidden", !available && !terminalResultVisible && $("#SettlementPanel").BHasClass("Hidden"));
         $("#ReplayRunButton").enabled = available && replayRequested !== generation;
         $("#ReplayRunLabel").text = $.Localize("#dota2_rpg_replay_chapter_one");
     }
@@ -2028,6 +2079,9 @@
 
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
+            terminalResultVisible = false;
+            rankStatus = "";
+            $("#RunLeaderboard").SetHasClass("Hidden", true);
             setStatus(stageRetryReady ? "#dota2_rpg_stage_failed" : (stageLoading ? "#dota2_rpg_stage_loading" :
                 (serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing")));
             $("#StartBattleLabel").text = $.Localize(stageRetryReady ? "#dota2_rpg_stage_retry" :
@@ -2110,8 +2164,8 @@
     function closeLootPopup() {
         lootPopupGeneration++;
         $("#LootPopup").SetHasClass("Hidden", true);
-        $("#SettlementPanel").SetHasClass("Hidden", true);
-        $("#BattleResult").SetHasClass("Hidden", $("#ReplayRunButton").BHasClass("Hidden"));
+        $("#SettlementPanel").SetHasClass("Hidden", !terminalResultVisible);
+        $("#BattleResult").SetHasClass("Hidden", !terminalResultVisible && $("#ReplayRunButton").BHasClass("Hidden"));
     }
 
     function showLootPopup(items) {
@@ -2175,10 +2229,13 @@
         }
         $("#SettlementPanel").SetHasClass("Hidden", false);
         $("#BattleResult").SetHasClass("Hidden", false);
+        if (Number(settlement.run_complete) === 1) { showRunResult(settlement); }
         var generation = lootPopupGeneration;
-        $.Schedule(3, function () {
-            if (generation === lootPopupGeneration) { closeLootPopup(); }
-        });
+        if (!terminalResultVisible) {
+            $.Schedule(3, function () {
+                if (generation === lootPopupGeneration) { closeLootPopup(); }
+            });
+        }
         updateShopEconomyLabels(shopState.gold);
         updateScrollLabels();
         renderItemShop();
@@ -2208,6 +2265,7 @@
     GameEvents.Subscribe("rpg_damage_stats", onDamageStats);
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
+    GameEvents.Subscribe("rpg_leaderboard_result", showRunResult);
     GameEvents.Subscribe("dota_player_update_selected_unit", function () {
         syncNativePurchaseTarget(true);
     });

@@ -3,6 +3,7 @@
 local Fresh = {}
 local function valid(u) return u ~= nil and (not u.IsNull or not u:IsNull()) end
 function Fresh.Reset(game)
+    require("battle.run_results").Reset(game)
     -- Invalidate closures BEFORE removing entities (native removal can re-enter).
     game.ruleGeneration = (game.ruleGeneration or 0) + 1
     -- Hero precache callbacks capture this exact table: remove pending intents

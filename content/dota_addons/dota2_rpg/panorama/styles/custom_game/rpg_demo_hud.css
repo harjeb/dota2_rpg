@@ -978,7 +978,8 @@
 {
 	width: 560px;
 	height: fit-children;
-	max-height: 700px;
+	max-height: 920px;
+	overflow: squish scroll;
 	flow-children: down;
 	padding: 22px;
 	horizontal-align: center;
@@ -987,6 +988,19 @@
 	border: 2px solid #d3bb73;
 	box-shadow: #000000dd 0px 5px 20px 0px;
 }
+
+.RunLeaderboard { width: 100%; flow-children: down; margin-top: 10px; padding-top: 10px; border-top: 1px solid #6e735e; }
+.RunLeaderboard Label { width: 100%; white-space: normal; }
+.RunScoreTitle { color: #d9ddda; font-size: 20px; text-align: center; }
+.RunScoreValue { color: #ffe5a2; font-size: 38px; font-weight: bold; text-align: center; }
+.RunScoreBreakdown { color: #bac4ca; font-size: 16px; text-align: center; }
+.RunMetrics { color: #d0d8db; font-size: 17px; margin-top: 8px; text-align: center; }
+.RankHeading { color: #e1d3a3; font-size: 20px; margin-top: 14px; }
+.RunRankStatus { color: #acb7c2; font-size: 16px; margin-top: 5px; }
+.RunRankStatus.RankError { color: #f0ac88; }
+.RunRankRow { color: #e3e9ec; font-size: 20px; margin-top: 7px; }
+.RunRecordMessage { color: #ffd970; font-size: 20px; font-weight: bold; margin-top: 12px; padding: 8px; background-color: #60542655; }
+.RunRankHint { color: #9ca8ae; font-size: 14px; margin-top: 10px; }
 
 .ReplayRunButton
 {

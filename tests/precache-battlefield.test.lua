@@ -20,6 +20,7 @@ DOTA_TEAM_BADGUYS = 3
 function IsServer() return true end
 
 require = function(moduleName)
+    if moduleName == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
 	if moduleName == "tactics/ability_catalog" or moduleName == "tactics/rule_snapshot"
 		or moduleName == "tactics/ability_behavior" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName .. ".lua")

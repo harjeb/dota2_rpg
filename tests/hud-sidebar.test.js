@@ -792,3 +792,29 @@ terminalRewards.subscriptions.rpg_battle_state({phase:"result",settlement_genera
 assert(!visible(terminalRewards,"ReplayRunButton"), "stale phase cannot restore previous terminal controls");
 terminalRewards.timers[1]();
 assert(!visible(terminalRewards,"BattleResult"), "plain defeat auto-closes entire frame");
+
+var ranked = runHud();
+ranked.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",run_complete:1,replay_available:1,owner_player_id:0,settlement_generation:40});
+var summary = {winner:"radiant",run_complete:1,cleared:1,settlement_generation:40,status:"pending",score:1456000,
+    core_score:420000,time_bonus_score:36000,clear_bonus_score:1000000,remaining_hearts:5,stage_count:30,total_stages:30,remaining_time_ms:3600000};
+ranked.subscriptions.rpg_settlement(summary);
+assert(visible(ranked,"RunLeaderboard") && panel(ranked,"RunScoreValue").text === "1456000", "terminal summary displays authoritative score");
+assert(ranked.timers.length === 0 && panel(ranked,"RunRankStatus").text === "#dota2_rpg_rank_pending", "terminal does not auto-hide while awaiting network");
+var accepted = Object.assign({}, summary, {status:"success",score_rank:1,score_total:10,score_global_record:1,speedrun_rank:3,speedrun_total:8,speedrun_personal_record:1});
+ranked.subscriptions.rpg_leaderboard_result(accepted);
+assert(visible(ranked,"RunRecordMessage") && panel(ranked,"RunRecordMessage").text.includes("rank_global_record") && panel(ranked,"RunRecordMessage").text.includes("rank_personal_record"), "global and personal records congratulate only after accepted reply");
+ranked.subscriptions.rpg_leaderboard_result(summary);
+assert(panel(ranked,"RunRankStatus").text === "#dota2_rpg_rank_success", "late pending event does not downgrade successful result");
+click(ranked,"LootPopupConfirm");
+assert(visible(ranked,"RunLeaderboard") && visible(ranked,"ReplayRunButton"), "closing loot preserves terminal ranks and replay");
+ranked.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:41});
+ranked.subscriptions.rpg_leaderboard_result(accepted);
+assert(!visible(ranked,"RunLeaderboard") && !visible(ranked,"BattleResult"), "fresh run rejects previous HTTP result");
+var reconnected = runHud();
+reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"radiant",settlement_generation:40});
+reconnected.subscriptions.rpg_leaderboard_result(accepted);
+assert(visible(reconnected,"RunLeaderboard"), "owner reconnect restores summary from cached result without replaying rewards");
+reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"dire",settlement_generation:42});
+reconnected.subscriptions.rpg_leaderboard_result(Object.assign({}, summary, {settlement_generation:42,cleared:0,status:"error"}));
+assert(panel(reconnected,"RunSpeedrunRank").text.includes("rank_clear_only") && !visible(reconnected,"RunRecordMessage"), "failed runs stay off speedrun and network errors cannot invent records");
+console.log("PASS terminal leaderboard UI: persistence, authoritative response, records, late events, reconnect and failure");

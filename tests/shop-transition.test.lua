@@ -10,6 +10,7 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name == "issue_fixes.bootstrap" or name == "battle.skill_debug" then return { Install = function() end } end
     local modules = {
         ["issue_fixes.hero_lifecycle_log"] = true,

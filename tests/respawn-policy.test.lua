@@ -22,6 +22,7 @@ local hooks={ ["battle.tempest_double"]=spawnHook("double"),
     ["tactics/special_targets"]=spawnHook("special"),
     ["battle/summon_behavior"]=spawnHook("summon") }
 require=function(name)
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name=="battle.battle_manager" or name=="battle.unit_helpers" or name=="battle.run_lives"
         or name=="battle.respawn_policy" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
     if hooks[name] then return hooks[name] end

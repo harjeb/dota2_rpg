@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-09-12T14:49:26.972226+00:00",
+  "source": "bd sql / local Dolt (bd sync is no-op; bd dolt push reports no store available)",
+  "counts": {
+    "issues": 201,
+    "dependencies": 109,
+    "comments": 4,
+    "events": 493,
+    "labels": 0,
+    "config": 13
+  },
+  "completed_issues": [
+    "dota2_rpg-k3ir",
+    "dota2_rpg-b1tx"
+  ],
+  "native_followup": "dota2_rpg-h816",
+  "evidence": "88/88 offline regression groups; 18/18 backend tests; remote Workers+D1 submit/replay/conflict/ranks/history/auth verified then test rows removed; 3 native UI resources compiled and addon installed; backend source and secrets excluded from Git; official Valve V3 key pairing and lobby playthrough remain."
+}

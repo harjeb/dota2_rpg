@@ -155,6 +155,18 @@
                 <Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
                 <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
             </Panel>
+            <Panel id="RunLeaderboard" class="RunLeaderboard Hidden">
+                <Label id="RunScoreTitle" class="RunScoreTitle" />
+                <Label id="RunScoreValue" class="RunScoreValue" />
+                <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
+                <Label id="RunMetrics" class="RunMetrics" />
+                <Label class="RankHeading" text="#dota2_rpg_rank_heading" />
+                <Label id="RunRankStatus" class="RunRankStatus" />
+                <Label id="RunScoreRank" class="RunRankRow" />
+                <Label id="RunSpeedrunRank" class="RunRankRow" />
+                <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
+                <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
+            </Panel>
             <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
             <Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
 		</Panel>

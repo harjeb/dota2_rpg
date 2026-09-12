@@ -13,6 +13,7 @@ runtimeLog.Write = function(message) logs[#logs+1]=message end
 runtimeLog.WriteCritical = runtimeLog.Write
 local hooks = { OnThink = function() end, Clear = function() end }
 require = function(name)
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name == "issue_fixes.runtime_log" then return runtimeLog end
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
         or name == "battle.item_cooldowns"

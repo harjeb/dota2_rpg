@@ -30,6 +30,7 @@ local walletLogs = {}
 local failWalletLog = false
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
 	if name == "battle.skill_debug" then return { Install = function() end } end
 	if name == "issue_fixes.runtime_log" then
 		return { Write = function(message)

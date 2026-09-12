@@ -16,6 +16,7 @@ local BossScaling = require("battle.boss_scaling")
 local StagePrecache = require("battle.stage_precache")
 local HeroModelPrecache = require("battle.hero_model_precache")
 local RunLives = require("battle.run_lives")
+local RunResults = require("battle.run_results")
 local CampaignLoot = require("battle.campaign_loot")
 local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
@@ -3664,6 +3665,7 @@ function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
 	local player = PlayerResource:GetPlayer(playerId)
 	if player ~= nil then
 		CustomGameEventManager:Send_ServerToPlayer(player, "rpg_battle_state", self:BuildBattleState())
+		RunResults.Resend(self, playerId)
 	end
 	self:BroadcastShopState()
 	self:BroadcastLevelInfo()
@@ -3681,6 +3683,7 @@ function CDota2RpgDemo:OnSelectLevel(_, payload)
 		return
 	end
 
+	RunResults.Invalidate(self) -- Manually selecting a stage is practice, not a ranked campaign.
 	self.currentLevelId = levelId
 	self:SpawnLevelEnemies(levelId)
 	self:BroadcastLevelInfo()
@@ -3708,6 +3711,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 
 	-- 规则在准备阶段通过 rpg_update_rule 逐条写入当前 Run；这里不再信任客户端
 	-- 的整包旧 payload，也不在开战时覆盖 RuleService 的稳定英雄键。
+	RunResults.StartBattle(self)
 	self.phase = "fight"
 	RespawnPolicy.SetBattleActive(self, true)
 
@@ -3943,6 +3947,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		self:RunLifecycleStep("damage_final_broadcast", function() self:BroadcastDamageStats() end)
 	end
 	local clearTime = self.battleManager:GetBattleTime()
+	-- Capture the actual combat deadline before StopBattle clears the timer.
+	local timeRemaining = self.battleManager.GetTimeRemaining and self.battleManager:GetTimeRemaining() or (120 - clearTime)
+	RunResults.RecordBattle(self, winner == "radiant", clearTime, timeRemaining)
 	local level = self.dataLoader:GetLevel(self.currentLevelId)
 	local timeLimit = tonumber(level ~= nil and level.time_limit or 120) or 120
 	local reward = level ~= nil and level.reward or nil
@@ -4013,6 +4020,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- Keep campaign terminals inside the custom result phase: an official
 	-- SetGameWinner would irreversibly prevent replay in this match.
 	self.runComplete = isFinalWin or self.runFailed
+	if self.runComplete then
+		self:RunLifecycleStep("run_result", function() RunResults.Finish(self, isFinalWin, settlement) end)
+	end
 	self.phase = "result"
 	self.winner = winner
 	self:RunLifecycleStep("battle_stop", function() self.battleManager:StopBattle() end)
@@ -4025,6 +4035,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- Terminal replay is explicit; ordinary stage transitions stay automatic.
 	if isFinalWin or self.runFailed then
 		self.runComplete = true
+		self:RunLifecycleStep("leaderboard_submit", function() RunResults.SendTerminal(self) end)
 		self:BroadcastShopState()
 		print(self.runFailed and "[Dota2Rpg] Run ended: all five lives lost."
 			or "[Dota2Rpg] Run complete: final level cleared.")
