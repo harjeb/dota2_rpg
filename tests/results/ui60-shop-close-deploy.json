@@ -1,0 +1,32 @@
+{
+  "version": "UI60 bounded recovery after selection-induced shop close",
+  "deployed": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\content\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.js",
+      "sha256": "50ca3d631c634b831c9efe439d088392132218c643f37295e45cd4aab4334203",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui60-shop-close-jo74l4mk\\addon-before\\content\\panorama\\scripts\\custom_game\\rpg_demo_hud.js"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_english.txt",
+      "sha256": "c6764ff0b11a7fa53646186e8eccb9a2cb592fdc78ec0ef4516aaacd99f886d7",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui60-shop-close-jo74l4mk\\addon-before\\game\\resource\\addon_english.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\resource\\addon_schinese.txt",
+      "sha256": "77a72c0c77fe9f851bd935f88625243522f5d1d888d808d31853b37703684e4c",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui60-shop-close-jo74l4mk\\addon-before\\game\\resource\\addon_schinese.txt"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\dota2_rpg\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c",
+      "sha256": "619fb120028f26a054ab431fd785fdafe1d73209bf3df1c26af175e23171b788",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui60-shop-close-jo74l4mk\\addon-before\\game\\panorama\\scripts\\custom_game\\rpg_demo_hud.vjs_c"
+    }
+  ],
+  "compiler_log": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui60-shop-close-jo74l4mk\\compile.log",
+  "compiler_result": "1 compiled, 0 failed",
+  "workshop_record": "tests/results/ui60-shop-close-workshop.json",
+  "offline_tests": "87/87 passed",
+  "native_gameplay_tested": false,
+  "remote_upload": false,
+  "steam_manifest_modified": false
+}

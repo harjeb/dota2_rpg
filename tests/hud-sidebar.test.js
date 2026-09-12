@@ -134,10 +134,12 @@ function runHud() {
     var timers = [];
     var walletTimers = [];
     var closeTimers = [];
+    var selectionTimers = [];
     panorama.Schedule = function (delay, callback) {
         if (delay === 3) { timers.push(callback); }
         else if (delay === 0.25) { walletTimers.push(callback); }
         else if (delay === 0.15) { closeTimers.push(callback); }
+        else if (delay === 0.2) { selectionTimers.push(callback); }
         else { callback(); }
     };
     panorama.LocalStorage = {
@@ -182,6 +184,7 @@ function runHud() {
         nativeRoot: nativeRoot,
         walletTimers: walletTimers,
         closeTimers: closeTimers,
+        selectionTimers: selectionTimers,
         timers: timers,
         context: context,
         panels: panels,
@@ -208,7 +211,8 @@ function setPortrait(hud, index) { hud.setPortraitUnit(index); }
 // 统一跑完当前这一批，语义仍是"一次刷新"。
 function poll(hud) { hud.walletTimers.splice(0).forEach(function (callback) { callback(); }); }
 function finishClose(hud) { hud.closeTimers.splice(0).forEach(function (callback) { callback(); }); }
-function tick(hud) { poll(hud); finishClose(hud); }
+function finishSelection(hud) { hud.selectionTimers.splice(0).forEach(function (callback) { callback(); }); }
+function tick(hud) { poll(hud); finishSelection(hud); finishClose(hud); }
 function click(hud, id) { var p = panel(hud, id); assert(p && p.events.onactivate, "clickable actual panel " + id); p.events.onactivate(); }
 
 var hud = runHud();
@@ -237,6 +241,7 @@ shopHud.nativeSelections.length = 0;
 shopHud.unhandledEvents.DOTAHUDShopOpened();
 assert(shopHud.nativeSelections.length === 1 && shopHud.nativeSelections[0].index === 502,
     "opening the native shop must temporarily select the commander");
+finishSelection(shopHud);
 shopHud.unhandledEvents.DOTAHUDShopClosed();
 assert(shopHud.nativeSelections.length === 1, "close event must not restore inside the native event stack");
 finishClose(shopHud);
@@ -244,6 +249,7 @@ assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[1].inde
     "closing the native shop must restore the previously selected unit");
 shopHud.nativeSelections.length = 0;
 shopHud.unhandledEvents.DOTAHUDShopOpened();
+finishSelection(shopHud);
 shopHud.unhandledEvents.DOTAHUDShopClosed();
 finishClose(shopHud);
 assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[0].index === 502
@@ -391,6 +397,115 @@ tick(gridHud);
 assert(gridHud.nativeSelections.length === selectionCount, "new runs cannot restore an old hero entity");
 console.log("PASS native shop root: real ShopOpen class, API failures, repeat, reselection, restore and lifecycle");
 
+// UI59 passed the older fixtures because SelectUnit never closed their native shop.
+// Model the user's observed sequence, including reentrant and next-frame notifications.
+function selectionCloseFixture(eventOrder, reopenMode) {
+    var h = runHud();
+    h.subscriptions.rpg_battle_state({ phase: "setup" });
+    h.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502 });
+    var state = mountShopState(h);
+    var select = h.context.GameUI.SelectUnit;
+    var delayedSelection = null;
+    var requests = 0;
+    function close() {
+        if (eventOrder === "before") { h.unhandledEvents.DOTAHUDShopClosed(); }
+        state.shop.SetHasClass("ShopOpen", false);
+        if (eventOrder === "after") { h.unhandledEvents.DOTAHUDShopClosed(); }
+    }
+    h.context.GameUI.SelectUnit = function (index, additive) {
+        if (index !== 502) { select(index, additive); return; }
+        var hero = h.context.Players.GetLocalPlayerPortraitUnit();
+        assert(h.sentEvents.some(function (e) {
+            return e.name === "rpg_native_purchase_target" && e.payload.unit_index === hero;
+        }), "publish delivery hero before automatic selection");
+        function apply() {
+            select(index, additive);
+            h.subscriptions.dota_player_update_selected_unit({});
+            close();
+        }
+        if (eventOrder === "deferred" || eventOrder === "late" || eventOrder === "refused") {
+            delayedSelection = apply;
+        } else { apply(); }
+    };
+    h.context.$.DispatchEvent = function (name) {
+        assert(name === "DOTAHUDToggleShop", "only the installed native shop event is supported");
+        assert(!state.shop.BHasClass("ShopOpen"), "never toggle a shop that is already open");
+        assert(h.context.Players.GetLocalPlayerPortraitUnit() === 502, "reopen only after commander selection");
+        requests++;
+        if (reopenMode === "throw") { throw new Error("native event unavailable"); }
+        if (reopenMode === "noop") { return; }
+        state.shop.AddClass("ShopOpen");
+        h.unhandledEvents.DOTAHUDShopOpened();
+    };
+    state.shop.AddClass("ShopOpen");
+    poll(h);
+    if (eventOrder === "late") {
+        finishSelection(h);
+        assert(h.selectionTimers.length === 1 && requests === 0,
+            "original portrait at first check must wait for delayed selection");
+    }
+    if (eventOrder === "refused") {
+        for (var check = 0; check < 5; check++) { finishSelection(h); }
+        assert(h.selectionTimers.length === 0 && requests === 0,
+            "rejected selection must stop waiting after a bounded number of checks");
+        close(); tick(h);
+        assert(h.nativeSelections.length === 0, "rejected selection must leave original hero alone");
+        return;
+    }
+    if (delayedSelection) { delayedSelection(); }
+    poll(h); finishClose(h);
+    assert(h.nativeSelections.length === 1 && h.nativeSelections[0].index === 502,
+        "selection-induced close must not bounce back to hero before settlement");
+    return { h: h, state: state, close: close, requests: function () { return requests; } };
+}
+selectionCloseFixture("refused");
+["before", "after", "none", "deferred", "late"].forEach(function (order) {
+    var f = selectionCloseFixture(order);
+    finishSelection(f.h); tick(f.h);
+    assert(f.state.shop.BHasClass("ShopOpen") && f.requests() === 1
+        && f.h.nativeSelections.length === 1, "selection-induced close recovers once: " + order);
+    f.h.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502, gold: 360 });
+    tick(f.h);
+    assert(f.state.shop.BHasClass("ShopOpen") && f.requests() === 1,
+        "purchase updates keep recovered shop open without another request");
+    f.close(); tick(f.h); tick(f.h);
+    assert(!f.state.shop.BHasClass("ShopOpen") && f.requests() === 1
+        && f.h.nativeSelections.length === 2 && f.h.nativeSelections[1].index === 503,
+        "one later user close restores original hero without automatic reopening");
+});
+["manual", "phase", "generation", "already-open"].forEach(function (scenario) {
+    var f = selectionCloseFixture("after");
+    if (scenario === "manual") { setPortrait(f.h, 504); }
+    if (scenario === "phase") {
+        f.h.subscriptions.rpg_battle_state({ phase: "fight" });
+        f.h.subscriptions.rpg_battle_state({ phase: "setup" });
+    }
+    if (scenario === "generation") {
+        f.h.subscriptions.rpg_shop_state({ rule_generation: 2, commander_index: 502 });
+    }
+    if (scenario === "already-open") { f.state.shop.AddClass("ShopOpen"); }
+    finishSelection(f.h); tick(f.h);
+    assert(f.requests() === 0 && f.h.nativeSelections.length === 1,
+        "selection recovery cancels or skips safely: " + scenario);
+});
+["throw", "noop"].forEach(function (mode) {
+    var f = selectionCloseFixture("after", mode);
+    finishSelection(f.h); tick(f.h); tick(f.h);
+    assert(f.requests() === 1 && !f.state.shop.BHasClass("ShopOpen")
+        && f.h.nativeSelections.length === 2 && f.h.nativeSelections[1].index === 503,
+        "failed recovery must stop after one request and allow restoration: " + mode);
+});
+var reselection = selectionCloseFixture("after");
+finishSelection(reselection.h); tick(reselection.h);
+setPortrait(reselection.h, 501);
+tick(reselection.h);
+assert(reselection.requests() === 2 && reselection.state.shop.BHasClass("ShopOpen"),
+    "a new hero selected while shopping gets its own bounded selection recovery");
+reselection.close(); tick(reselection.h);
+assert(reselection.h.nativeSelections[reselection.h.nativeSelections.length - 1].index === 501,
+    "reselection preserves the newest recipient for restoration");
+console.log("PASS selection-induced shop close: synchronous/deferred, recipient, bounded recovery, user close and cancellation");
+
 click(hud, "EquipmentToggle");
 assert(panel(hud, "EquipmentBody").BHasClass("Hidden"), "equipment minimizes");
 assert(!panel(hud, "DamageBody").BHasClass("Hidden"), "DPS remains expanded");
@@ -471,7 +586,7 @@ function closeFixture(suppressNativeEvents, callbackFirst) {
     poll(h);
     activate(controls.button);
     assert(state.shop.BHasClass("ShopOpen"), "one native opening click must stay open after activation");
-    poll(h); finishClose(h); poll(h);
+    poll(h); finishSelection(h); finishClose(h); poll(h);
     assert(state.shop.BHasClass("ShopOpen") && h.context.Players.GetLocalPlayerPortraitUnit() === 502,
         "one native opening click must stay open through selection swap and later polls");
     assert(controls.button.events.onactivate === originalActivate && dispatched.length === 0,

@@ -261,6 +261,7 @@
         commanderIndex = -1;
         shopPortraitSwap = null;
         shopClosePending = null;
+        shopSelectionPending = null;
         shopOpenLast = false;
         lastNativePurchaseTarget = -1;
         lastNativePurchaseHero = "";
@@ -300,12 +301,14 @@
     // 与服务端保持（服务端不会因为选中小精灵而改写目标），物品仍然进玩家选中的英雄。
     var shopPortraitSwap = null;
     var shopClosePending = null;
+    var shopSelectionPending = null;
 
     function onNativeShopOpened() {
         if (phase !== "setup" || typeof GameUI === "undefined" || !GameUI.SelectUnit
             || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) {
             return;
         }
+        if (shopSelectionPending) { return; }
         var portrait = Number(Players.GetLocalPlayerPortraitUnit());
         if (!(commanderIndex > 0) || !(portrait > 0) || portrait === commanderIndex) {
             return;
@@ -313,11 +316,46 @@
         // 商店打开后改选英雄也必须重新切换；先同步交付目标，再改变头像。
         syncNativePurchaseTarget(true);
         shopPortraitSwap = portrait;
+        var pending = { commander: commanderIndex, hero: portrait, checks: 0 };
+        // SelectUnit 本身可能让原生商店关闭。先建立过渡状态，连同步关闭事件也要覆盖。
+        shopSelectionPending = pending;
+        shopClosePending = null;
+        shopDiag("shop selection begin hero=" + portrait + " commander=" + commanderIndex);
         GameUI.SelectUnit(commanderIndex, false);
+        $.Schedule(0.2, function settleSelection() {
+            if (shopSelectionPending !== pending) { return; }
+            if (phase !== "setup" || commanderIndex !== pending.commander) {
+                shopSelectionPending = null;
+                return;
+            }
+            var current = Number(Players.GetLocalPlayerPortraitUnit());
+            // 下一帧甚至更晚才更新头像时，原英雄仍被选中并不代表玩家取消。
+            // 最多等待一秒，避免引擎拒绝换选时永久阻止关店还原。
+            pending.checks++;
+            if (current === pending.hero && pending.checks < 5) {
+                $.Schedule(0.2, settleSelection);
+                return;
+            }
+            shopSelectionPending = null;
+            var open = nativeShopIsOpen();
+            if (current !== pending.commander) {
+                // 玩家手动换选优先，旧过渡不能重开商店或还原旧头像。
+                shopPortraitSwap = null;
+                shopDiag("shop selection cancelled portrait=" + current);
+                return;
+            }
+            shopDiag("shop selection settled open=" + open);
+            if (open === false) {
+                // 仅此次自动换选允许补一次打开；稳定打开后不再重开。
+                showNativeShopAfterSelection();
+                open = nativeShopIsOpen();
+            }
+            if (open !== null) { updateNativeShopState(open); }
+        });
     }
 
     function onNativeShopClosed() {
-        if (shopPortraitSwap === null || shopClosePending) { return; }
+        if (shopSelectionPending || shopPortraitSwap === null || shopClosePending) { return; }
         var pending = {};
         shopClosePending = pending;
         // 原生关闭动画为 0.1 秒；不要在关闭事件栈内 SelectUnit 干扰焦点/开合。
@@ -337,8 +375,17 @@
         });
     }
 
-    // UI58 接管原生 ShopButton 后实机出现一开即关。开合完全交给 Valve；
-    // 此脚本仅观察状态、同步购买目标和在关闭后还原英雄，不派发开合事件。
+    // 原生资源只有 DOTAHUDToggleShop，没有 DOTAShopShowShop。保留原生按钮；
+    // 在换选结束的单次回调中先读状态，只对已关闭的商店补一次打开。
+    function showNativeShopAfterSelection() {
+        if (nativeShopIsOpen() !== false) { return; }
+        try {
+            $.DispatchEvent("DOTAHUDToggleShop");
+            shopDiag("shop selection reopen requested");
+        } catch (error) {
+            shopDiag("shop selection reopen failed: " + error);
+        }
+    }
 
     function onNativeShopEvent(open) {
         var observed = nativeShopIsOpen();
@@ -428,6 +475,7 @@
         if (phase !== "setup") {
             shopPortraitSwap = null;
             shopClosePending = null;
+            shopSelectionPending = null;
             shopOpenLast = false;
             return;
         }
