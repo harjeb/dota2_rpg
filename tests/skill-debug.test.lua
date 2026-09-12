@@ -344,6 +344,32 @@ test("normal wrappers preserve receiver arguments returns and install idempotenc
         a,b=g[name](g,6,"body"); eq(a,name); eq(b,44); eq(g.calls[name][1],6); eq(g.calls[name][2],"body")
     end
 end)
+test("manual stomp exception is exact and passes the real combat filter",function()
+    local f,g=fixture(); f:enter(); g.phase="fight"
+    DOTA_UNIT_ORDER_CAST_NO_TARGET=8
+    local enemy=g.battleManager.teamHeroes[3][1]
+    local ability={IsNull=function() return false end, entindex=function() return 902 end}
+    enemy.entindex=function() return 901 end
+    enemy.FindAbilityByName=function(_,name) if name=="centaur_hoof_stomp" then return ability end end
+    EntIndexToHScript=function(id) if tonumber(id)==901 then return enemy end end
+    local phase="FIGHT"
+    local filter=require("tactics.order_filter").OrderFilter.new({
+        get_phase=function() return phase end, is_battle_unit=function(u) return u==enemy end,
+        allow_debug_cast=function(o) return Debug.AllowManualCast(g,o) end,
+        validate_prepare_order=function() return false end,
+    })
+    local order={issuer_player_id_const=7,order_type=8,units={["0"]=901},entindex_ability=902}
+    eq(filter:Filter(order),true)
+    order.issuer_player_id_const=8; eq(filter:Filter(order),false); order.issuer_player_id_const=7
+    order.entindex_ability=903; eq(filter:Filter(order),false); order.entindex_ability=902
+    order.order_type=4; eq(filter:Filter(order),false); order.order_type=8
+    order.units["1"]=999; eq(filter:Filter(order),false); order.units["1"]=nil
+    order.units={}; eq(Debug.AllowManualCast(g,order),false); order.units={["0"]=901}
+    g.skillDebug.pending=true; eq(filter:Filter(order),false); g.skillDebug.pending=false
+    g.skillDebug.active=false; eq(filter:Filter(order),false); g.skillDebug.active=true
+    for _,p in ipairs({"PREPARE","COUNTDOWN","SETTLE"}) do phase=p; eq(filter:Filter(order),false) end
+    phase="FIGHT"; g.phase="setup"; eq(filter:Filter(order),false)
+end)
 test("all debug events require engine owner metadata",function()
     local f,g=fixture(); f:enter(); g:OnStartBattle()
     local spawns=g.rosterSpawns; local serial=g.skillDebug.serial; local events=#f.events

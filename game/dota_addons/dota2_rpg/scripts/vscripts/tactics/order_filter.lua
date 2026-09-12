@@ -61,6 +61,7 @@ function OrderFilter.new(options)
         validate_inventory_order = options.validate_inventory_order,
         is_inventory_unit = options.is_inventory_unit,
         is_managed_order = options.is_managed_order,
+        allow_debug_cast = options.allow_debug_cast,
     }, OrderFilter)
 end
 
@@ -91,6 +92,9 @@ function OrderFilter:Filter(filter_table)
     local phase = self.get_phase()
     local issuer = tonumber(filter_table.issuer_player_id_const) or -1
     local order_type = filter_table.order_type
+    -- Narrow sandbox exception; all ordinary combat restrictions remain below.
+    if phase == "FIGHT" and self.allow_debug_cast
+        and self.allow_debug_cast(filter_table) == true then return true end
     local contains_battle_unit = self:ContainsBattleUnit(filter_table)
     local managed = self.is_managed_order ~= nil and self.is_managed_order(filter_table)
     local contains_inventory_unit = false

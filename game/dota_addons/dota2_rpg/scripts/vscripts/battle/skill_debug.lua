@@ -24,6 +24,48 @@ local function number(value)
     if n == nil or n ~= n or n < 0 or n > 10000 or n ~= math.floor(n) then return nil end
     return n
 end
+local function inspect(object, method, ...)
+    if not valid(object) or type(object[method]) ~= "function" then return "unavailable" end
+    local ok, value = pcall(object[method], object, ...)
+    return ok and tostring(value) or "error"
+end
+function Debug.TraceTarget(game, unit, event)
+    if not valid(unit) then return end
+    local ability = unit.FindAbilityByName and unit:FindAbilityByName("centaur_hoof_stomp")
+    Log.Write("SkillDebug target_state event=" .. event .. " phase=" .. tostring(game.phase)
+        .. " unit_level=" .. inspect(unit, "GetLevel")
+        .. " ability_level=" .. inspect(ability, "GetLevel")
+        .. " mana=" .. inspect(unit, "GetMana") .. "/" .. inspect(unit, "GetMaxMana")
+        .. " cooldown=" .. inspect(ability, "GetCooldownTimeRemaining")
+        .. " castable=" .. inspect(ability, "IsFullyCastable")
+        .. " hidden=" .. inspect(ability, "IsHidden")
+        .. " activated=" .. inspect(ability, "IsActivated")
+        .. " silenced=" .. inspect(unit, "IsSilenced")
+        .. " stunned=" .. inspect(unit, "IsStunned")
+        .. " command_restricted=" .. inspect(unit, "IsCommandRestricted")
+        .. " controllable=" .. inspect(unit, "IsControllableByPlayer", game.playerId))
+end
+function Debug.AllowManualCast(game, order)
+    local s = state(game)
+    if not s or not s.active or s.pending or game.phase ~= "fight"
+        or tonumber(order.issuer_player_id_const) ~= game.playerId
+        or game.playerId == nil or game.playerId < 0
+        or DOTA_UNIT_ORDER_CAST_NO_TARGET == nil
+        or tonumber(order.order_type) ~= DOTA_UNIT_ORDER_CAST_NO_TARGET then return false end
+    local units = game.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] or {}
+    local unit = units[1]
+    if #units ~= 1 or not valid(unit) or unit:GetUnitName() ~= Debug.UNIT then return false end
+    local count = 0
+    for _, index in pairs(order.units or {}) do
+        count = count + 1
+        if tonumber(index) ~= unit:entindex() then return false end
+    end
+    if count ~= 1 then return false end
+    local ability = unit:FindAbilityByName("centaur_hoof_stomp")
+    if not valid(ability) or tonumber(order.entindex_ability) ~= ability:entindex() then return false end
+    Debug.TraceTarget(game, unit, "manual_cast_allowed")
+    return true
+end
 function Debug.Catalog(game)
     local names, allowed = {}, {}
     local function add(hero)
@@ -297,6 +339,7 @@ function Debug.Install(game)
                 unit:SetControllableByPlayer(self.playerId, true)
                 Log.Write("SkillDebug target_controllable player=" .. tostring(self.playerId)
                     .. " unit=" .. unit:GetUnitName())
+                Debug.TraceTarget(self, unit, "spawn")
             end
         end
         return result
@@ -309,6 +352,17 @@ function Debug.Install(game)
     local starting = game.OnStartBattle
     game.OnStartBattle = function(self, ...)
         if state(self).pending then return end
+        if state(self).active then
+            -- Observe after native battle preparation without changing wrapper returns.
+            GameRules:GetGameModeEntity():SetContextThink("RpgSkillDebugCastState", function()
+                if state(self).active and self.phase == "fight" then
+                    for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS]) do
+                        Debug.TraceTarget(self, unit, "fight")
+                    end
+                end
+                return nil
+            end, 0.1)
+        end
         return starting(self, ...)
     end
     -- Keep exactly one selected hero; ordinary recruitment/level switching is

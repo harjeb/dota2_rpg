@@ -603,6 +603,9 @@ function TacticBridge:Install()
 		gate = orderGate,
 		get_phase = getPhase,
 		is_battle_unit = isBattleUnit,
+        allow_debug_cast = function(filterTable)
+            return require("battle.skill_debug").AllowManualCast(gameMode, filterTable)
+        end,
 		-- 玩家小精灵与待命英雄不在 battleManager 的战斗名单中，
 		-- 仍须受准备阶段的物品转移锁约束。
 		is_inventory_unit = function(unit)
