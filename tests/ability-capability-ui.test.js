@@ -16,10 +16,7 @@ api.receive({hero_index:42,rule_key:hero,revision:1,action_id:cap.name,capabilit
 function updates(){return hud.sentEvents.filter(e=>e.name==='rpg_update_rule');}
 click(hud,'RadiantRuleSettings0');
 assert(!panel(hud,'V2TeamSelectOption_team_enemy').enabled,'native enemy choice disabled');
-assert(!panel(hud,'V2ToggleSelectOption_toggle_on').enabled,'toggle cannot be assigned to heal');
-assert(!panel(hud,'V2AutocastSelectOption_autocast_off').enabled,'autocast cannot be assigned to heal');
-assert(!panel(hud,'V2CastSelectOption_cast_point').enabled,'unit spell cannot be forced to point');
-assert(!panel(hud,'V2VariantSelectOption_alternate').enabled,'unimplemented alternate variant is explicit');
+['V2ToggleSelect','V2AutocastSelect','V2CastSelect','V2VariantSelect','V2ModifierAck','V2RefreshCapability','V2Preset0','V2CapabilitySummary','V2PresetPreview0','V2Preview','V2StatePolicySelect','V2TypesSelect'].forEach(id => assert(!panel(hud,id), 'simplified heal editor omits '+id));
 assert(!panel(hud,'V2AoeSelectOption_2'),'unproven splash count is unavailable');
 assert(panel(hud,'RuleSettingsError').text.includes('target_team_incompatible'));
 click(hud,'RuleSettingsApply');assert.equal(updates().length,0,'invalid restored rule is not silently rewritten/saved');
@@ -28,16 +25,15 @@ click(hud,'RadiantRuleSettings0');choice(hud,'V2_use0','self_hp_pct_gte');input(
 choice(hud,'V2_use1','self_hp_pct_lte');input(hud,'V2_use1_value',20);
 click(hud,'RuleSettingsApply');assert.equal(updates().length,1);assert(panel(hud,'RuleSettingsError').text.includes('contradictory_conditions'));
 click(hud,'RuleSettingsClose');click(hud,'RadiantRuleSettings0');assert.equal(panel(hud,'V2_use0Select').GetChild(0).text,'#dota2_rpg_v2_none','cancel preserves original gates');
-choice(hud,'V2_use0','self_has_modifier');input(hud,'V2_use0_modifier','modifier_never_seen');click(hud,'RuleSettingsApply');
-assert.equal(updates().length,1);assert(panel(hud,'RuleSettingsError').text.includes('unverified_modifier_requires_ack'));
-click(hud,'V2ModifierAck');click(hud,'V2ModifierAckOption_yes');click(hud,'RuleSettingsApply');
-assert.equal(updates().length,2);assert.equal(updates()[1].payload.allow_unverified_modifiers,1);
+choice(hud,'V2_use0','self_has_modifier');
+assert(!panel(hud,'V2_use0_modifier'),'modifier raw input is absent');
+click(hud,'RuleSettingsClose');
 const beforeIcon=panel(hud,'RadiantActionAbility0').abilityname;
 click(hud,'RadiantActionSelect0');click(hud,'ActionOpt_Radiant0_attack');click(hud,'RuleSettingsClose');
-assert.equal(panel(hud,'RadiantActionAbility0').abilityname,beforeIcon,'cancel skill switch leaves old identity intact');assert.equal(updates().length,2);
+assert.equal(panel(hud,'RadiantActionAbility0').abilityname,beforeIcon,'cancel skill switch leaves old identity intact');assert.equal(updates().length,1);
 click(hud,'RadiantRuleSettings0');
 api.receive({hero_index:42,rule_key:hero,revision:2,action_id:cap.name,capability:cap});
-click(hud,'RuleSettingsApply');assert.equal(updates().length,2,'stale modal revision cannot authorize save');
+click(hud,'RuleSettingsApply');assert.equal(updates().length,1,'stale modal revision cannot authorize save');
 assert(panel(hud,'RuleSettingsError').text.includes('capability_unavailable'));
 assert.equal(api.get(42,cap.name,hero,1),null);assert(api.get(42,cap.name,hero,2));
 api.receive({hero_index:42,rule_key:hero,revision:1,action_id:cap.name,capability:cap});assert(api.get(42,cap.name,hero,2),'late old revision ignored');
@@ -55,7 +51,69 @@ assert(!api.validate({...rule,state_mana_on:.2},auto).ok,'empty hysteresis inter
 const release=JSON.parse(JSON.stringify(auto));release.release_parent='keeper_of_the_light_illuminate';
 assert(api.validate({target_team:'enemy',use_conditions:[{type:'channel_elapsed_gte',seconds:2}],target_filters:[]},release).ok);
 assert(!api.validate({target_team:'ally',use_conditions:[{type:'channel_elapsed_gte',seconds:2}],target_filters:[]},cap).ok,'ordinary action cannot cast during its own channel');
-console.log('PASS strict capability UI: disabled native choices, preserved invalid rules, contradictions, modifier acknowledgement, cancel, stale revisions, false autocast serialization, channel restrictions');
+console.log('PASS strict capability UI: disabled native choices, preserved invalid rules, contradictions, dropdown-only modifiers, cancel, stale revisions, false autocast serialization, channel restrictions');
+
+// A single native switch owns either toggle or autocast intent, including persisted off.
+for (const kind of ['toggle','autocast']) {
+    const switchHud=runHud(), catalog=switchHud.context.RpgConditionCatalog;
+    const native=JSON.parse(JSON.stringify(cap));
+    native.name=kind==='toggle' ? 'leshrac_pulse_nova' : 'viper_poison_attack';
+    native.cast[kind]=1;
+    const key=kind==='toggle' ? 'desired_toggle_state' : 'desired_autocast_state';
+    const other=kind==='toggle' ? 'desired_autocast_state' : 'desired_toggle_state';
+    let draft;
+    function openSwitch(settings) {
+        catalog.open({action:native.name},Object.assign({target_team:'ally'},settings),value=>{draft=value;},
+            {abilityName:native.name,capability:native});
+    }
+    openSwitch({});
+    assert.equal(panel(switchHud,'V2ToggleSelect').GetChild(0).text,'#dota2_rpg_v2_toggle_on');
+    assert.equal(panel(switchHud,'V2ToggleSelectMenu').children.length,2,'only on/off choices');
+    assert(!panel(switchHud,'V2AutocastSelect') && !panel(switchHud,'V2StatePolicySelect'));
+    click(switchHud,'RuleSettingsApply');
+    let wire=switchHud.context.RpgRuleSync.serialize({rule:Object.assign({action:native.name},draft)});
+    assert.equal(wire[key],'1','default on maps to native '+kind+' flag');
+    assert.equal(wire[other],undefined,'other native flag is omitted');
+    openSwitch(draft); choice(switchHud,'V2Toggle','toggle_off'); click(switchHud,'RuleSettingsApply');
+    wire=switchHud.context.RpgRuleSync.serialize({rule:Object.assign({action:native.name},draft)});
+    assert.equal(wire[key],'0');
+    const restored=switchHud.context.RpgRuleSync.fromServer(Object.assign({},wire,{action:native.name}));
+    openSwitch(switchHud.context.RpgRuleSync.initialSettings(restored));
+    assert.equal(panel(switchHud,'V2ToggleSelect').GetChild(0).text,'#dota2_rpg_v2_toggle_off','saved off survives authoritative reopen');
+    click(switchHud,'RuleSettingsApply'); assert.strictEqual(draft[key],false);
+    click(switchHud,'V2ClearConditions'); click(switchHud,'RuleSettingsApply');
+    assert.strictEqual(draft[key],true,'reset restores native default on');
+}
+console.log('PASS unified native toggle/autocast: default on, explicit off, native flags, server reopen and reset');
+
+// Native upgrades may change a skill while its editor is still open.
+{
+    const liveHud=runHud(), catalog=liveHud.context.RpgConditionCatalog;
+    let live, saved;
+    function openLive(casts, settings) {
+        live=JSON.parse(JSON.stringify(cap)); Object.assign(live.cast,casts);
+        saved=null;
+        catalog.open({action:live.name},Object.assign({target_team:'ally'},settings),value=>{saved=value;},
+            {abilityName:live.name,getCapability:()=>live});
+    }
+    openLive({toggle:0,autocast:0},{});
+    live=JSON.parse(JSON.stringify(live)); live.cast.autocast=1;
+    click(liveHud,'RuleSettingsApply');
+    assert(saved && saved.desired_autocast_state===true && saved.desired_toggle_state===null,
+        'gaining autocast during editing still applies default on');
+    assert(catalog.summary(saved).includes('#dota2_rpg_v2_toggle_on'),'summary reflects native autocast on');
+    openLive({toggle:0,autocast:1},{desired_autocast_state:false});
+    live=JSON.parse(JSON.stringify(live)); live.cast.autocast=0;
+    click(liveHud,'RuleSettingsApply');
+    assert(saved && saved.desired_autocast_state===null && saved.desired_toggle_state===null,
+        'losing native support clears obsolete state instead of blocking Apply');
+    openLive({toggle:0,autocast:1},{desired_autocast_state:false});
+    live=JSON.parse(JSON.stringify(live)); live.cast.autocast=0; live.cast.toggle=1;
+    click(liveHud,'RuleSettingsApply');
+    assert(saved && saved.desired_toggle_state===false && saved.desired_autocast_state===null,
+        'native mode changes preserve the player selected off state');
+}
+console.log('PASS capability changes during editing normalize native intent and summaries');
 
 // The deployment compiler must include every UI module, including new dependencies.
 {

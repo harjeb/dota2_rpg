@@ -22,6 +22,20 @@ var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c
 var rootLayout = layoutTree.children.filter(function (node) { return node.type === "Panel"; })[0];
 var resultLayout = rootLayout.children.filter(function (node) { return node.attrs.id === "BattleResult"; })[0];
 var settlementLayout = resultLayout.children.find(function (node) { return node.attrs.id === "SettlementPanel"; });
+function findLayout(node, predicate) {
+    if (predicate(node)) { return node; }
+    for (var child of node.children) { var found = findLayout(child,predicate); if (found) { return found; } }
+    return null;
+}
+var settingsHeader = findLayout(rootLayout,function(node) { return (node.attrs.class || "").split(/\s+/).indexOf("RuleSettingsHeader") >= 0; });
+if (!settingsHeader || !settingsHeader.children.some(function(node) { return node.attrs.id === "V2ClearConditions" && node.attrs.class.indexOf("RuleSettingsReset") >= 0; })) {
+    throw new Error("condition reset must be a button in the settings header");
+}
+var resetStyle = cssSource.match(/\.RuleSettingsHeader\s+\.RuleSettingsReset\s*\{([^}]+)\}/);
+var resetColor = resetStyle && resetStyle[1].match(/background-color:\s*#([0-9a-f]{6})/i);
+if (!resetColor || parseInt(resetColor[1].slice(0,2),16) <= Math.max(parseInt(resetColor[1].slice(2,4),16),parseInt(resetColor[1].slice(4,6),16))) {
+    throw new Error("condition reset must use red styling");
+}
 if (!settlementLayout || !settlementLayout.children.some(function (node) { return node.attrs.id === "LootPopup"; })) {
     throw new Error("loot must share the victory settlement card");
 }
@@ -314,12 +328,12 @@ choice(hud, "V2_use1", "nearby_enemies_gte"); input(hud, "V2_use1_value", 3); in
 choice(hud, "V2_use2", "elapsed_gte"); input(hud, "V2_use2_seconds", 57.5);
 choice(hud, "V2_use3", "action_use_count_lt"); input(hud, "V2_use3_value", 2); click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idOption_0_1");
 choice(hud, "V2_target0", "hp_pct_lte"); input(hud, "V2_target0_value", 35);
-choice(hud, "V2_target1", "modifier_stacks_gte"); input(hud, "V2_target1_modifier", "modifier_test"); input(hud, "V2_target1_value", 4);
-choice(hud, "V2_target2", "modifier_remaining_lte"); input(hud, "V2_target2_modifier", "modifier_test"); input(hud, "V2_target2_seconds", 1.75);
+choice(hud, "V2_target1", "modifier_stacks_gte"); click(hud, "V2_target1ModifierOption_modifier_test"); input(hud, "V2_target1_value", 4);
+choice(hud, "V2_target2", "modifier_remaining_lte"); click(hud, "V2_target2ModifierOption_modifier_test"); input(hud, "V2_target2_seconds", 1.75);
 choice(hud, "V2_target3", "exclude_self");
 choice(hud, "V2_priority0", "lowest_attack_damage"); choice(hud, "V2_priority1", "highest_magic_resistance");
 assert(!panel(hud,"V2_min_aoe_hits"), "hit-count control is removed");
-assert(!panel(hud,"V2ToggleSelectOption_toggle_off").enabled,"non-toggle ability rejects explicit off");
+assert(!panel(hud,"RuleSettingsBody").FindChildTraverse("V2ToggleSelect"),"ordinary ability has no toggle control");
 click(hud, "RuleSettingsApply");
 var saved = latest(hud, lion);
 assert(saved.use_condition_1_value === 0.675 && saved.target_filter_1_value === 0.35, "percentages serialize as fractions");
@@ -368,6 +382,8 @@ assert(panel(hud, "RadiantActionAbility0").abilityname === "lion_impale" && late
 
 // Malformed fields cannot emit NaN/Infinity; blank action references mean current action.
 click(hud, "RadiantRuleSettings0");
+choice(hud,"V2_use1","nearby_enemies_gte"); choice(hud,"V2_use2","elapsed_gte"); input(hud,"V2_use2_seconds",57.5);
+choice(hud,"V2_use3","action_use_count_lt"); choice(hud,"V2_target1","modifier_stacks_gte"); click(hud,"V2_target1ModifierOption_modifier_test");
 input(hud, "V2_use1_value", "NaN"); input(hud, "V2_use1_radius", "Infinity");
 click(hud, "V2_use3_action_id"); click(hud, "V2_use3_action_idCurrent");
 choice(hud, "V2_target0", "mana_pct_gte"); input(hud, "V2_target0_value", 800);
@@ -377,7 +393,7 @@ assert(Number.isFinite(malformed.use_condition_2_value) && Number.isFinite(malfo
 assert(malformed.target_filter_1_value === 1 && malformed.aoe_radius === undefined && malformed.min_aoe_hits === undefined, "bounded inputs clamp consistently");
 assert(!Object.prototype.hasOwnProperty.call(malformed, "use_condition_4_action_id"), "blank action ID omitted");
 assert(malformed.desired_toggle_state === undefined, "non-toggle action never acquires a switch intent");
-click(hud, "RadiantRuleSettings0"); choice(hud, "V2_use1", ""); choice(hud, "V2Toggle", "toggle_auto"); click(hud, "RuleSettingsApply");
+click(hud, "RadiantRuleSettings0"); choice(hud, "V2_use1", ""); click(hud, "RuleSettingsApply");
 assert(latest(hud, lion).use_condition_2_type === "" && latest(hud, lion).use_condition_2_radius === undefined, "cleared slots remove stale parameters");
 assert(latest(hud, lion).desired_toggle_state === undefined, "default toggle omits desired state");
 
@@ -423,14 +439,12 @@ assert(!fresh.sentEvents.some(function(e){return e.name === "rpg_update_rule";})
 click(fresh,"RadiantRuleSettings0");
 assert(panel(fresh,"V2_use0_value").text === "50" && panel(fresh,"V2_target0_value").text === "80","server percentages converted once for restored editor");
 var beforePreset = fresh.sentEvents.length;
-assert(panel(fresh,"V2Preset0"),"native skill has an actual preset button");
-click(fresh,"V2Preset0");
+assert(!panel(fresh,"V2Preset0"),"skill presets are applied by action selection, not buttons");
 assert(fresh.sentEvents.length === beforePreset,"preset only changes draft until Apply");
-choice(fresh,"V2Cast","cast_unit");
 click(fresh,"RuleSettingsApply");
 var restored = latest(fresh,omni);
 assert(restored.rule_count === 2 && restored.target_team === "ally" && restored.target_filter_1_value === 0.8,"real healing preset selects wounded ally and preserves server row count");
-assert(restored.min_aoe_hits === undefined && restored.cast_preference === "unit","default hit gate stays disabled; selected native target mode survives");
+assert(restored.min_aoe_hits === undefined && restored.cast_preference === undefined,"default hit gate stays disabled; selected native target mode survives");
 fresh.subscriptions.rpg_rule_update_result({request_id:restored.request_id,ok:0,reason:"invalid_numeric_value:hp_pct_lte"});
 assert(panel(fresh,"RuleSyncNotice").visible,"server rejection is visible");
 click(fresh,"RadiantRuleSettings0");click(fresh,"RuleSettingsApply");
@@ -442,12 +456,12 @@ assert(!panel(fresh,"RuleSyncNotice").visible,"stale responses cannot replace cu
 
 // Preset editing survives the actual HUD Apply -> wire -> reopen path.
 assert(!panel(fresh,"RadiantConditionEditor0"), "restored rules expose only the settings entry");
-click(fresh,"RadiantRuleSettings0"); click(fresh,"V2Preset0");
+click(fresh,"RadiantActionSelect0"); click(fresh,"ActionOpt_Radiant0_omniknight_purification");
 input(fresh,"V2_target0_value",72.5);
 choice(fresh,"V2_use0","elapsed_lte"); input(fresh,"V2_use0_seconds",17.25);
 choice(fresh,"V2_use1","nearby_enemies_gte"); input(fresh,"V2_use1_value",2); input(fresh,"V2_use1_radius",875);
-choice(fresh,"V2_target1","has_modifier"); input(fresh,"V2_target1_modifier","modifier_test");
-assert(!panel(fresh,"V2ToggleSelectOption_toggle_off").enabled,"healing spell cannot be configured as a toggle");
+choice(fresh,"V2_target1","has_modifier"); click(fresh, "V2_target1ModifierOption_modifier_test");
+assert(!panel(fresh,"RuleSettingsBody").FindChildTraverse("V2ToggleSelect"),"healing spell has no toggle control");
 assert(!panel(fresh,"V2AoeSelectOption_3"),"mixed heal/splash cannot accept an unproven three-hit gate");
 click(fresh,"RuleSettingsApply");
 var editedPreset = latest(fresh,omni);
@@ -458,8 +472,8 @@ assert(editedPreset.target_filter_1_value === 0.725 && editedPreset.use_conditio
     && editedPreset.min_aoe_hits === undefined, "edited preset parameters reach flat server payload");
 click(fresh,"RadiantRuleSettings0");
 assert(panel(fresh,"V2_target0_value").text === "72.5" && panel(fresh,"V2_use0_seconds").text === "17.25"
-    && panel(fresh,"V2_use1_radius").text === "875" && panel(fresh,"V2_target1_modifier").text === "modifier_test"
-    && panel(fresh,"V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_auto", "legal preset and U14 reopen without loss");
+    && panel(fresh,"V2_use1_radius").text === "875" && panel(fresh,"V2_target1Modifier").GetChild(0).text.indexOf("#DOTA") < 0
+    && !panel(fresh,"RuleSettingsBody").FindChildTraverse("V2ToggleSelect"), "legal preset and U14 reopen without loss");
 assert(!panel(fresh,"V2TeamSelectOption_team_enemy").enabled,"friendly native spell disables enemies");
 ["self","ally"].forEach(function(team) {
     choice(fresh,"V2Team","team_"+team); click(fresh,"RuleSettingsApply");
@@ -492,7 +506,7 @@ assert(!intelligenceHud.sentEvents.some(function(e){return e.name === "rpg_updat
 // Removing a target condition inside settings clears the same wire slot.
 click(hud,"RadiantHeroDyn1");
 click(hud,"RadiantRuleSettings0");
-assert(panel(hud,"V2_use2_seconds").text === "57.5" && panel(hud,"V2_target1_modifier").text === "modifier_test", "reorder and respawn preserve the other hero's complex rule independently");
+assert(panel(hud,"V2_use2_seconds").text === "57.5" && panel(hud,"V2_target1Modifier"), "reorder and respawn preserve the other hero's complex rule independently");
 choice(hud,"V2_target0","is_casting");click(hud,"RuleSettingsApply");
 click(hud,"RadiantRuleSettings0");choice(hud,"V2_target0","");click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the casting gate");
@@ -521,7 +535,7 @@ Object.keys(hud.context.RpgConditionCatalog.groups).forEach(function (group) {
 });
 // Exercise the catalog against a live parent/child tree, including deleted fields.
 var catalogPanels = {};
-["RuleSettings", "RuleSettingsBody", "RuleSettingsError", "RuleSettingsApply", "RuleSettingsClose"].forEach(function (id) { catalogPanels[id] = createPanel(id); });
+["RuleSettings", "RuleSettingsBody", "RuleSettingsError", "RuleSettingsApply", "RuleSettingsClose", "V2ClearConditions"].forEach(function (id) { catalogPanels[id] = createPanel(id); });
 function catalogUI(selector) { return catalogPanels[selector.substring(1)] || catalogPanels.RuleSettingsBody.FindChildTraverse(selector.substring(1)); }
 catalogUI.Localize = function (token) { return token; };
 catalogUI.CreatePanel = function (type, parent, id) {
@@ -565,11 +579,10 @@ var presetCount = 0, applied;
 Object.keys(mapping).forEach(function (ability) {
     catalogContext.RpgSkillPresets.variants(ability).forEach(function (variant, index) {
         var preset = catalogContext.RpgSkillPresets.get(ability, variant);
-        catalog.open({}, {use_conditions:[{type:"self_has_modifier",modifier:"stale"}],target_filters:[{type:"distance_gte",value:1234}],target_priorities:[]}, function (draft) { applied = draft; }, {abilityName:ability});
+        catalog.open({}, preset, function (draft) { applied = draft; }, {abilityName:ability});
         var before = JSON.stringify(preset), full = catalog.summary(preset);
         assert(before === JSON.stringify(preset), "summary does not mutate " + ability);
-        assert(catalogUI("#V2PresetPreview" + index).text === full, "full preview " + ability + "/" + variant);
-        catalogClick("V2Preset" + index);
+        assert(!catalogUI("#V2PresetPreview" + index) && !catalogUI("#V2Preset" + index), "preset and preview controls are absent");
         [["use", "use_conditions", 4], ["target", "target_filters", 4], ["priority", "target_priorities", 2]].forEach(function (spec) {
             for (var slot = 0; slot < spec[2]; slot++) {
                 var condition = (preset[spec[1]] || [])[slot] || {type:""};
@@ -585,8 +598,6 @@ Object.keys(mapping).forEach(function (ability) {
         assert(!catalogUI("#V2_use0_modifier"), "template switch deletes stale modifier input");
         assert(catalogUI("#V2TeamSelect").GetChild(0).text === "#dota2_rpg_v2_team_" + preset.target_team, "template team rendered");
         assert(!catalogUI("#V2_min_aoe_hits"), "templates never render the removed hit gate");
-        assert(catalogUI("#V2CastSelect").GetChild(0).text === "#dota2_rpg_v2_cast_" + (preset.cast_preference || "auto"), "template cast preference rendered");
-        assert(catalogUI("#V2ToggleSelect").GetChild(0).text === "#dota2_rpg_v2_toggle_" + (preset.desired_toggle_state === "0" ? "off" : preset.desired_toggle_state === "1" ? "on" : "auto"), "template toggle rendered");
         catalogClick("RuleSettingsApply");
         assert(applied.target_filters.every(function (condition) { return condition.value !== 1234; }), "template switch discards prior distance");
         var wire = catalogContext.RpgRuleSync.serialize({rule:applied,actionId:ability,actionName:ability});
@@ -761,25 +772,17 @@ assert(panel(equipHud,"Equipped_"+lion+"_0"),"server snapshot shows original ite
     assert(latest(targetHud,hero).target_team==="self","self is selectable independently of hero/creep filters");
     if (ability !== "marci_companion_run") {
         click(targetHud,"RadiantRuleSettings0");
-        assert(panel(targetHud,"V2Preset0").GetChild(0).text === "#dota2_rpg_v2_preset_prefer_teammate"
-            && panel(targetHud,"V2Preset1").GetChild(0).text === "#dota2_rpg_v2_preset_allow_self", "support presets have distinct names");
-        click(targetHud,"V2Preset0");
+        click(targetHud,"RuleSettingsClose");
+        click(targetHud,"RadiantActionSelect0"); click(targetHud,"ActionOpt_Radiant0_"+ability);
+        assert(!panel(targetHud,"V2Preset0"), "support recommendations have no preset buttons");
         click(targetHud,"RuleSettingsApply");
         var buffWire=latest(targetHud,hero);
         assert(buffWire.target_team==="ally" && buffWire.target_priority_1_type==="prefer_teammate"
             && buffWire.target_priority_2_type==="nearest" && !buffWire.target_filter_1_type,
-            ability+" teammate preference replaces stale self targeting and allows fallback on wire");
-        assert(!buffWire.target_filter_2_type && !buffWire.use_condition_1_type,
-            ability+" buff needs no unrelated enemy proximity gate");
+            ability+" selection recommends teammate preference with fallback");
         click(targetHud,"RadiantRuleSettings0");
-        assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally",
-            ability+" teammate preset survives reopen");
-        click(targetHud,"V2Preset1");
-        click(targetHud,"RuleSettingsApply");
-        buffWire=latest(targetHud,hero);
-        assert(buffWire.target_team==="ally" && buffWire.target_priority_1_type==="nearest"
-            && !buffWire.target_priority_2_type && !buffWire.target_filter_1_type,
-            ability+" allow self clears the previous preference and keeps ally selection");
+        assert(panel(targetHud,"V2TeamSelect").GetChild(0).text==="#dota2_rpg_v2_team_ally", "recommendation survives reopen");
+        click(targetHud,"RuleSettingsClose");
     }
 });
 
@@ -835,25 +838,26 @@ assert(!panel(livesHud,"StartBattleButton").enabled
             && expected.movement_trigger_ability === "pangolier_gyroshell" && expected.movement_duration === 20
             && expected.movement_retarget === true, "Rolling Thunder orbits, retargets and covers native duration plus talent");
     }
-    assert(panel(moveHud,"V2_movement_buff").text === expected.movement_buff, "preset supplies associated native modifier without current buffs");
+    assert(panel(moveHud,"V2MovementStatusSelectOption_"+expected.movement_buff), "preset native status remains selectable without current buffs");
+    assert(!panel(moveHud,"V2_movement_buff"), "movement modifier has no raw input");
+    assert(panel(moveHud,"V2MovementBuffSelectMenu").children.length === 1, "movement buff category offers custom only");
     assert(panel(moveHud,"V2MovementTrigger").GetChild(0).abilityname === ability, "preset trigger uses ability icon");
     var options = panel(moveHud,"V2MovementTriggerMenu").children.filter(function(p) { return p.BHasClass("V2ActionChoice"); });
     assert(options.length === 1 && options[0].GetChild(0).abilityname === ability, "trigger selector includes only self hero skills, not enemies/items/actions");
     click(moveHud,"RuleSettingsApply");
     var wire = latest(moveHud,hero,2);
     assert(wire.action_kind === "move" && wire.action_id === "sustained_move" && wire.action_name === "", "native movement identity does not leak metadata");
-    assert(wire.movement_loop === 1 && wire.movement_duration > 5.5, "buff presets keep cycling until native buff ends, with a later safety deadline");
+    assert(wire.movement_retarget === 1 && wire.movement_loop === 1 && wire.movement_duration > 5.5, "buff presets keep cycling until native buff ends, with a later safety deadline");
     Object.keys(expected).forEach(function(key) { assert(wire[key] === (typeof expected[key] === "boolean" ? Number(expected[key]) : expected[key]), "preset full save: "+key); });
     assert(wire.target_filter_1_target_actor === "level:enemy:lion" && wire.target_priority_1_type === "farthest", "movement retains F39 and priority through preset");
     click(moveHud,"RadiantRuleSettings1");
     assert(panel(moveHud,"V2_movement_mode").GetChild(0).text === "#dota2_rpg_v2_movement_mode_"+expected.movement_mode, "movement mode reopens");
-    click(moveHud,"V2MovementBuffSelectOption_movement_preset_"+(presetName === "shukuchi" ? "trample" : "shukuchi"));
-    assert(panel(moveHud,"V2_movement_buff").text !== expected.movement_buff, "buff selector independent of live buffs");
-    input(moveHud,"V2_movement_buff","modifier_custom_native"); input(moveHud,"V2_movement_duration","8.25"); input(moveHud,"V2_movement_distance","240");
+    click(moveHud,"V2MovementStatusSelectOption_modifier_test");
+    input(moveHud,"V2_movement_duration","8.25"); input(moveHud,"V2_movement_distance","240");
     ["movement_retarget","movement_loop","movement_interruptible"].forEach(function(key) { click(moveHud,"V2_"+key+"Option_"+key+"_true"); });
     click(moveHud,"V2_movement_directionOption_movement_direction_ccw"); click(moveHud,"RuleSettingsApply");
     wire = latest(moveHud,hero,2);
-    assert(wire.movement_duration === 8.25 && wire.movement_distance === 240 && wire.movement_retarget === 1 && wire.movement_loop === 1 && wire.movement_interruptible === 1 && wire.movement_direction === "ccw", "custom fields and booleans save");
+    assert(wire.movement_buff === "modifier_test" && wire.movement_duration === 8.25 && wire.movement_distance === 240 && wire.movement_retarget === 1 && wire.movement_loop === 1 && wire.movement_interruptible === 1 && wire.movement_direction === "ccw", "custom fields and booleans save");
     var server = Object.assign({}, wire, {action:"sustained_move", movement_loop:"true", movement_retarget:"1", movement_interruptible:true,
         use_conditions:[],target_filters:[{type:"specified_enemy",target_actor:wire.target_filter_1_target_actor}],target_priorities:[{type:"farthest"}]});
     var round = sync.serialize({rule:sync.fromServer(server)});
@@ -862,9 +866,9 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     var reload = runHud(); reload.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
     reload.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:980,hero_name:hero,can_edit:1,rules_ready:1,
         actions_text:"sustained_move;attack",abilities_text:ability,rules:[server]});
-    click(reload,"RadiantRuleSettings0"); assert(panel(reload,"V2_movement_buff").text === "modifier_custom_native" && panel(reload,"V2_movement_duration").text === "8.25", "authoritative HUD reopen restores custom movement");
+    click(reload,"RadiantRuleSettings0"); assert(panel(reload,"V2MovementStatusSelectOption_modifier_test") && panel(reload,"V2_movement_duration").text === "8.25", "authoritative HUD reopen restores custom movement");
     click(reload,"V2ClearConditions"); click(reload,"RuleSettingsApply");
-    assert(latest(reload,hero).movement_buff === "" && latest(reload,hero).movement_retarget === 0, "clear resets movement defaults");
+    assert(latest(reload,hero).movement_buff === "" && latest(reload,hero).movement_retarget === 1 && latest(reload,hero).movement_loop === 1, "clear resets movement defaults");
     click(moveHud,"RadiantRuleSettings0"); assert(panel(moveHud,"V2_use0_seconds").text === "7", "movement editing cannot mutate original attack rule");
     assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_movement_buff"), "attack has no movement controls");
     assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_positioning_modeOption_positioning_mode_cast_range"), "attack cannot choose cast range");
@@ -885,12 +889,12 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     click(moveHud,"RadiantRuleSettings1"); input(moveHud,"V2_positioning_distance",999); click(moveHud,"RuleSettingsClose"); click(moveHud,"RadiantRuleSettings1");
     assert(panel(moveHud,"V2_positioning_distance").text === "320", "cancel does not mutate authored positioning"); click(moveHud,"RuleSettingsClose");
     var malformed = sync.serialize({rule:{action:"sustained_move",movement_mode:"teleport",movement_direction:"up",movement_duration:"NaN",movement_distance:-1,movement_retarget:"bogus"}});
-    assert(malformed.movement_mode === "follow" && malformed.movement_direction === "auto" && malformed.movement_duration === 5 && malformed.movement_distance === 0 && malformed.movement_retarget === 0, "invalid movement inputs normalize safely");
+    assert(malformed.movement_mode === "follow" && malformed.movement_direction === "auto" && malformed.movement_duration === 5 && malformed.movement_distance === 0 && malformed.movement_retarget === 1, "invalid movement inputs normalize safely");
     var original = {action:"sustained_move",use_conditions:[{type:"always"}],movement_buff:"modifier_original"};
     var draftCopy = sync.initialSettings(original); draftCopy.use_conditions[0].type = "elapsed_gte";
     assert(original.use_conditions[0].type === "always", "initial settings deep clone prevents accidental rule mutation");
 });
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
-console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, previews and stale field removal");
+console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, roundtrips and removed preset controls");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation");

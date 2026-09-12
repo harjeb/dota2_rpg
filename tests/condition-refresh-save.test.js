@@ -22,12 +22,8 @@ function edit(hud, switching) {
     choice(hud,"V2_use0","self_hp_pct_gte"); input(hud,"V2_use0_value",77);
 }
 function refresh(hud, snapshot) {
-    let scheduled;
-    hud.context.$.Schedule = (_, callback) => { scheduled = callback; };
-    click(hud,"V2RefreshCapability");
-    assert(scheduled, "refresh schedules draft reopening");
+    assert(!panel(hud,"V2RefreshCapability"), "manual capability refresh is removed");
     hud.subscriptions.rpg_hero_slots(snapshot);
-    scheduled();
 }
 for (const switching of [false,true]) {
     const {hud,snapshot} = setup();
@@ -53,7 +49,8 @@ for (const switching of [false,true]) {
     refresh(hud,equivalent); click(hud,"RuleSettingsApply");
     assert.equal(updates(hud).length,1, "equivalent condition/filter key order preserves the edit binding");
     assert.equal(updates(hud)[0].payload.use_condition_1_value,0.77);
-    assert.equal(updates(hud)[0].payload.target_filter_1_value,0.8);
+    assert.equal(updates(hud)[0].payload.target_filter_1_value,switching ? undefined : 0.8,
+        "equivalent snapshot keeps existing gates; skill selection replaces them with recommendations");
 }
 for (const switching of [false,true]) {
     for (const change of ["entity","hero","action","changed-rule","reorder","delete","condition-order","priority-order"]) {
@@ -96,5 +93,39 @@ for (const switching of [false,true]) {
     assert.equal(saved.use_conditions[0].type,"nearby_enemies_gte");
     assert.equal(saved.target_filters[0].type,"nearby_allies_gte");
     assert(!hud.context.RpgConditionCatalog.summary(legacy).includes("min_aoe_hits"));
+}
+// Skill recommendations are a draft; ordinary reopen preserves authored rules.
+{
+    const hud=runHud(), hero='npc_dota_hero_omniknight', ability='omniknight_purification';
+    hud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
+    hud.subscriptions.rpg_hero_slots({slot_key:'radiant_1',hero_index:77,hero_name:hero,rule_key:hero,
+        can_edit:1,rules_ready:1,actions_text:'attack;'+ability,
+        rules:[{action:'attack',enabled:0,target_team:'enemy',desired_autocast_state:0,
+            use_conditions:[{type:'elapsed_gte',seconds:9,value:9}],
+            target_filters:[{type:'distance_gte',value:1234}],target_priorities:[{type:'farthest'}]}]});
+    const before=updates(hud).length, preset=hud.context.RpgSkillPresets.get(ability);
+    function select() { click(hud,'RadiantActionSelect0'); click(hud,'ActionOpt_Radiant0_'+ability); }
+    select();
+    assert.equal(updates(hud).length,before,'selection does not save');
+    assert.equal(panel(hud,'V2TeamSelect').GetChild(0).text,'#dota2_rpg_v2_team_'+preset.target_team);
+    assert(!panel(hud,'V2_use0_seconds'),'old elapsed gate is replaced in draft');
+    click(hud,'RuleSettingsClose'); click(hud,'RadiantRuleSettings0');
+    assert.equal(panel(hud,'V2_use0_seconds').text,'9','cancel keeps original conditions');
+    click(hud,'RuleSettingsApply');
+    assert.equal(updates(hud).at(-1).payload.action_id,'basic_attack','cancel keeps original action');
+    assert.equal(updates(hud).at(-1).payload.enabled,0,'cancel keeps disabled rule');
+    select(); click(hud,'RuleSettingsApply');
+    const wire=updates(hud).at(-1).payload;
+    const expected=hud.context.RpgRuleSync.serialize({rule:Object.assign({action:ability},preset)});
+    assert.equal(wire.action_id,ability); assert.equal(wire.enabled,0,'selection preserves enabled state');
+    assert.equal(wire.hero_index,77); assert.equal(wire.hero_name,hero); assert.equal(wire.slot,1);
+    for (const key of Object.keys(expected).filter(key=>/^(use_condition_|target_filter_|target_priority_|target_team$)/.test(key))) {
+        assert.equal(wire[key],expected[key],'first recommended preset replaces '+key);
+    }
+    assert.equal(wire.desired_autocast_state,undefined,'unsupported old autocast flag is removed');
+    click(hud,'RadiantRuleSettings0'); input(hud,'V2_target0_value',61); click(hud,'RuleSettingsApply');
+    click(hud,'RadiantRuleSettings0');
+    assert.equal(panel(hud,'V2_target0_value').text,'61','reopen does not reapply recommendation');
+    click(hud,'RuleSettingsClose');
 }
 console.log("PASS: first settings/action-switch saves survive equivalent refresh snapshots regardless of object key order; stale hero/action/changed/reordered/deleted rules and condition/priority array order remain protected; legacy hit gate removed and nearby counts preserved");

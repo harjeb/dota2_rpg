@@ -1,5 +1,6 @@
 -- Observed/declared names, not guessed modifier_<ability> strings.
 local C=require("tactics/condition_context")
+local Movement=require("tactics/movement_contract")
 local M={observed={},count=0}
 local function name_string(value)
     return type(value)=="string" and #value>0 and #value<=128 and value:match("^[%w_]+$") and value or nil
@@ -29,9 +30,20 @@ function M.List(hero,ability)
     local names={}
     for name in pairs(M.observed) do names[#names+1]=name end
     table.sort(names)
-    for index=1,math.min(#names,32) do
+    -- The observed registry is already bounded to 256 names. Returning only
+    -- its first 32 hid valid choices once raw modifier entry was removed.
+    for index=1,#names do
         local name=names[index]; out[name]=1; display[name]={}
         for key,value in pairs(M.observed[name]) do display[name][key]=value end
+    end
+    -- These buffs have explicit native movement contracts and can be selected
+    -- during the first preparation phase, before the hero has cast them.
+    for abilityName,modifierName in pairs(Movement.presets) do
+        local owned=C.Call(hero,"FindAbilityByName",abilityName)
+        if owned then
+            out[modifierName]=1; display[modifierName]=display[modifierName] or {}
+            display[modifierName].ability=abilityName
+        end
     end
     if intrinsic then
         out[intrinsic]=1; display[intrinsic]=display[intrinsic] or {}

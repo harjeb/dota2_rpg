@@ -74,7 +74,10 @@ var RpgConditionCatalog = (function () {
         });
         if (settings.target_team || settings.target) { parts.push(text("target_team") + ": " + text("team_" + (settings.target_team || String(settings.target).split("_")[0]))); }
         var desired = settings.desired_toggle_state;
-        parts.push(text("toggle_title") + ": " + text(desired === false || desired === "0" || desired === 0 ? "toggle_off" : desired === true || desired === "1" || desired === 1 ? "toggle_on" : "toggle_auto"));
+        if (desired === undefined || desired === null || desired === "") { desired = settings.desired_autocast_state; }
+        if (desired !== undefined && desired !== null && desired !== "") {
+            parts.push(text("toggle_title") + ": " + text(desired === true || desired === 1 || desired === "1" || desired === "true" ? "toggle_on" : "toggle_off"));
+        }
         parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
         ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance"].forEach(function (key) {
@@ -163,7 +166,7 @@ var RpgConditionCatalog = (function () {
         var preset = movementPresets[name] || movementPresets.trample;
         return {movement_mode:preset.mode,
             movement_buff:preset.buff, movement_trigger_ability:preset.ability,
-            movement_duration:name === "gyroshell" ? 20 : 15, movement_distance:150, movement_retarget:name === "gyroshell",
+            movement_duration:name === "gyroshell" ? 20 : 15, movement_distance:150, movement_retarget:true,
             movement_loop:true, movement_interruptible:false, movement_direction:"auto"};
     }
     var editorGeneration=0;
@@ -180,6 +183,25 @@ var RpgConditionCatalog = (function () {
         var activeMenu = null;
         var capAPI=typeof RpgAbilityCapabilities!=="undefined" ? RpgAbilityCapabilities : null;
         var baseCap=options.getCapability ? options.getCapability() : options.capability;
+        // Normalize removed controls before deriving capability or validating the draft.
+        draft.cast_preference="auto";
+        draft.cast_variant="default";
+        draft.state_policy="fixed";
+        draft.state_mana_on=0.4; draft.state_mana_off=0.2; draft.state_hold_seconds=0.75;
+        draft.allow_unverified_modifiers=false;
+        function normalizeNativeSettings(capability, previousKey) {
+            var casts=capability && capability.cast || {};
+            var key=casts.toggle===1 ? "desired_toggle_state" : casts.autocast===1 ? "desired_autocast_state" : "";
+            var desired=key ? draft[previousKey || key] : null;
+            if (key && desired===undefined) { desired=rule[previousKey || key]; }
+            draft.desired_toggle_state=null; draft.desired_autocast_state=null;
+            if (key) { draft[key]=RpgRuleSync.bool(desired,true); }
+            var derived=capAPI ? capAPI.derive(capability,draft) : null;
+            var types=capability && capability.native_unit_contract && capability.native_unit_contract.types || derived && derived.types;
+            draft.target_types=["hero","monster","summon"].filter(function(type) { return !types || types[type]!==0; }).join(",");
+            return key;
+        }
+        var stateKey=normalizeNativeSettings(baseCap);
         var cap=capAPI ? capAPI.derive(baseCap,draft) : null;
         var strict=!!options.getCapability;
         function explain(reason) { return capAPI ? capAPI.message(reason) : reason; }
@@ -198,22 +220,11 @@ var RpgConditionCatalog = (function () {
             panel.SetPanelEvent("onmouseout",function() { $.DispatchEvent("DOTAHideTextTooltip",panel); });
         }
         if (cap) {
-            label(body,"V2CapabilitySummary",text("capability_title")+": "+abilityLabel(cap.name)+" / "+text("role_"+cap.role)+" / "+text("support_"+cap.support)).AddClass("V2Hint");
-            if (cap.alternate_native===1) { label(body,"V2AlternateWarning",explain("alternate_adapter_unavailable")).AddClass("V2Hint"); }
+
             var initialCheck=capAPI.validate(draft,baseCap,{requireCapability:strict});
             if (!initialCheck.ok) { $("#RuleSettingsError").text=capAPI.describe(initialCheck); }
         } else if (strict) { $("#RuleSettingsError").text=explain("capability_unavailable"); }
-        if (strict && !options.readOnly) {
-            button(body,"V2RefreshCapability",text("refresh_capability"),function() {
-                readers.forEach(function(read) { read(); });
-                GameEvents.SendCustomGameEventToServer("rpg_request_battle_state",{});
-                if ($.Schedule) { $.Schedule(0.4,function() {
-                    if (generation!==editorGeneration || root.IsValid && !root.IsValid()) { return; }
-                    // Keep the full draft; fresh metadata is read again, never substituted for rules.
-                    if (!root.BHasClass || !root.BHasClass("Hidden")) { open(rule,draft,onApply,options); }
-                }); }
-            });
-        }
+
         function choose(parent, id, options, selected, changed) {
             var selectedEntry = options.filter(function (option) { return option.id === selected; })[0] || {id: selected};
             var trigger = button(parent, id, entryLabel(selectedEntry), function () {
@@ -244,6 +255,26 @@ var RpgConditionCatalog = (function () {
             });
             draw(trigger, selectedEntry);
             return function (option) { draw(trigger, option); };
+        }
+        function modifierChoices(saved) {
+            var known=cap && cap.modifiers || {}, details=cap && cap.modifier_details || {};
+            var names=Object.keys(known).sort();
+            if (saved && names.indexOf(saved)<0) { names.push(saved); }
+            var counts={}, seen={};
+            var choices=names.map(function(name) {
+                var option=modifierOption(name,details[name]);
+                if (!Object.prototype.hasOwnProperty.call(known,name)) {
+                    option.disabled=true; option.reason="modifier_not_observed";
+                    option.label+=" · "+explain("modifier_not_observed");
+                }
+                counts[option.label]=(counts[option.label] || 0)+1;
+                return option;
+            });
+            choices.forEach(function(option) {
+                var caption=option.label;
+                if (counts[caption]>1) { seen[caption]=(seen[caption] || 0)+1; option.label+=" · "+seen[caption]; }
+            });
+            return [modifierOption("")].concat(choices);
         }
         function actionPicker(parent, id, current, selfOnly) {
             parent.AddClass("V2ActionField");
@@ -372,30 +403,16 @@ var RpgConditionCatalog = (function () {
                                 choose(wrap,"V2_"+group+index+"Phase",phases.map(function(value) { return {id:value,label:phaseLabel(value),hint:text("phase_"+value+"_hint")}; }),current.value,function(value) { current.value=value; });
                                 return;
                             }
-                            if (field === "modifier" || field === "value_text") { wrap.AddClass("V2WideField"); }
+                            if (field === "modifier") {
+                                wrap.AddClass("V2WideField");
+                                choose(wrap,"V2_"+group+index+"Modifier",modifierChoices(current.modifier),current.modifier || "",function(name) { current.modifier=name; });
+                                return;
+                            }
+                            if (field === "value_text") { wrap.AddClass("V2WideField"); }
                             var entry = $.CreatePanel("TextEntry", wrap, "V2_" + group + index + "_" + field);
                             entry.AddClass("V2Input");
                             entry.text = String(current[keyName] === undefined ? "" : current[keyName]); entry.maxchars = 128;
-                            if (field === "modifier" || field === "action_id" || field === "value_text") { entry.AddClass("V2TextInput"); }
-                            if (field === "modifier") {
-                                var details = cap && cap.modifier_details || {};
-                                var names = Object.keys(cap && cap.modifiers || {}).sort();
-                                // A saved/manual value remains visible even if it is no longer observed.
-                                if (entry.text && names.indexOf(entry.text) < 0) { names.push(entry.text); }
-                                var choices = names.map(function(name) { return modifierOption(name, details[name]); });
-                                var counts = {}, seen = {};
-                                choices.forEach(function(option) { counts[option.label] = (counts[option.label] || 0) + 1; });
-                                choices.forEach(function(option) {
-                                    var caption = option.label;
-                                    if (counts[caption] > 1) { seen[caption] = (seen[caption] || 0) + 1; option.label += " · " + seen[caption]; }
-                                });
-                                function selectedOption(name) { return choices.filter(function(option) { return option.id === name; })[0] || modifierOption(name, details[name]); }
-                                var showModifier = choose(wrap,"V2_"+group+index+"Modifier",[modifierOption("")].concat(choices),entry.text,function(name) { entry.text=name; });
-                                label(wrap,"",text("modifier_code")).AddClass("V2ModifierCodeLabel");
-                                entry.SetParent(wrap); entry.AddClass("V2ModifierCode");
-                                entry.SetPanelEvent("ontextentrychange",function() { showModifier(selectedOption(entry.text)); });
-                                tooltip(entry,text("modifier_ack_hint"));
-                            }
+                            if (field === "value_text") { entry.AddClass("V2TextInput"); }
                             entries.push({ panel: entry, key: keyName });
                         });
                         readFields = function () { entries.forEach(function (entry) { current[entry.key] = entry.panel.text; }); current = normalize(group, current); draft[key][index] = current; };
@@ -424,48 +441,18 @@ var RpgConditionCatalog = (function () {
             reopen({target_team:selected,target:selected === "self" ? "self" : selected + "_distance_nearest"});
         });
         readers.push(function () { draft.target_team = targetTeam; });
-        var typesRow=$.CreatePanel("Panel",body,"V2TypesRow"); typesRow.AddClass("V2Selector");
-        label(typesRow,"",text("target_types"));
-        var selectedTypes=Array.isArray(draft.target_types) ? draft.target_types.join(",") : draft.target_types || "hero,monster,summon";
-        choose(typesRow,"V2TypesSelect",[{id:"any",label:text("native_types")},{id:"hero",label:text("type_hero"),disabled:cap && cap.types.hero===0,reason:cap && cap.types.hero===0 ? "target_types_incompatible" : ""},{id:"monster",label:text("type_monster"),disabled:cap && cap.types.monster===0,reason:cap && cap.types.monster===0 ? "target_types_incompatible" : ""},{id:"summon",label:text("type_summon"),disabled:cap && cap.types.summon===0,reason:cap && cap.types.summon===0 ? "target_types_incompatible" : ""}],selectedTypes.indexOf(",")>=0 ? "any" : selectedTypes,function(value) {
-            selectedTypes=value==="any" ? ["hero","monster","summon"].filter(function(t) { return !cap || cap.types[t]!==0; }).join(",") : value;
-        });
-        readers.push(function() { draft.target_types=selectedTypes; });
-        if (!options.readOnly && options.abilityName && typeof RpgSkillPresets !== "undefined") {
-            var variants = RpgSkillPresets.variants(options.abilityName);
-            if (variants.length) {
-                label(body, "", text("preset_hint")).AddClass("V2Hint");
-                variants.forEach(function(variant,index) {
-                    var preset = RpgSkillPresets.get(options.abilityName,variant);
-                    var supportLabel = /_prefer_teammate$/.test(variant) ? "preset_prefer_teammate" : /_allow_self$/.test(variant) ? "preset_allow_self" : "";
-                    var title = supportLabel ? text(supportLabel) + (variant.indexOf("charged_") === 0 ? " · " + text("preset_charges") : "")
-                        : text(preset.desired_toggle_state === "0" ? "preset_off" : "preset") + " " + (index+1);
-                    var presetCheck=capAPI && cap ? capAPI.validate(preset,baseCap) : {ok:true,errors:[]};
-                    var presetBlocked=presetCheck.errors.some(function(e) { return e.code!=="unverified_modifier_requires_ack"; });
-                    var presetButton=button(body,"V2Preset"+index,title,function() {
-                        if (presetBlocked) { return; }
-                        preset = RpgSkillPresets.get(options.abilityName,variant);
-                        delete preset.min_aoe_hits;
-                        if (preset.desired_toggle_state === undefined) { preset.desired_toggle_state = null; }
-                        open(rule,preset,onApply,options);
-                    });
-                    presetButton.enabled=!presetBlocked;
-                    if (presetBlocked) { tooltip(presetButton,capAPI.describe(presetCheck)); }
-                    label(body, "V2PresetPreview" + index, summary(preset)+(presetBlocked ? "\n"+capAPI.describe(presetCheck) : "")).AddClass("V2Preview");
-                });
-            } else {
-                label(body,"",text("preset_unavailable")).AddClass("V2Hint");
-            }
-        }
-        if (!options.readOnly) {
-            button(body, "V2ClearConditions", text("clear_conditions"), function () {
-                readers.forEach(function (read) { read(); });
-                draft.use_conditions = []; draft.target_filters = []; draft.target_priorities = [];
-                delete draft.min_aoe_hits; draft.desired_toggle_state = null; draft.desired_autocast_state=null; draft.state_policy="fixed"; draft.cast_variant="default"; draft.allow_unverified_modifiers=false; draft.destination = "target";
-                Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
-                open(rule, draft, onApply, options);
+        var resetButton=$("#V2ClearConditions");
+        resetButton.enabled=!options.readOnly;
+        resetButton.SetPanelEvent("onactivate",function() {
+            if (options.readOnly || generation!==editorGeneration) { return; }
+            readers.forEach(function(read) { read(); });
+            draft.use_conditions=[]; draft.target_filters=[]; draft.target_priorities=[];
+            draft.desired_toggle_state=null; draft.desired_autocast_state=null; draft.destination="target";
+            Object.keys(draft).forEach(function(key) {
+                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0) { delete draft[key]; }
             });
-        }
+            open(rule,draft,onApply,options);
+        });
         slots("use", "use_conditions", 4, "use_title");
         slots("target", "target_filters", 4, "target_title");
         slots("priority", "target_priorities", 2, "priority_title");
@@ -482,7 +469,6 @@ var RpgConditionCatalog = (function () {
             var row = $.CreatePanel("Panel", body, ""); row.AddClass("V2Field"); row.AddClass("V2MotionField");
             label(row, "", text(key));
             var entry = $.CreatePanel("TextEntry", row, "V2_" + key); entry.AddClass("V2Input");
-            if (key === "movement_buff") { entry.AddClass("V2TextInput"); }
             entry.maxchars = 128; entry.text = String(draft[key]);
             readers.push(function () { draft[key] = entry.text; });
         }
@@ -500,17 +486,9 @@ var RpgConditionCatalog = (function () {
             settingChoice("movement_direction", ["auto", "cw", "ccw"]);
             var buffRow = $.CreatePanel("Panel", body, ""); buffRow.AddClass("V2Selector");
             label(buffRow, "", text("movement_buff_selector"));
-            var associatedBuff = "movement_buff_custom";
-            var buffOptions = [{id:"movement_buff_custom"}];
-            Object.keys(movementPresets).forEach(function (name) {
-                var id = "movement_preset_" + name;
-                buffOptions.push({id:id});
-                if (draft.movement_buff === movementPresets[name].buff) { associatedBuff = id; }
-            });
-            choose(buffRow, "V2MovementBuffSelect", buffOptions, associatedBuff, function (id) {
-                if (id !== "movement_buff_custom") { body.FindChildTraverse("V2_movement_buff").text = movementPreset(id.replace("movement_preset_", "")).movement_buff; }
-            });
-            settingInput("movement_buff");
+            choose(buffRow, "V2MovementBuffSelect", [{id:"movement_buff_custom"}], "movement_buff_custom", function () {});
+            var statusRow=$.CreatePanel("Panel",body,"V2MovementStatusRow"); statusRow.AddClass("V2Selector");
+            choose(statusRow,"V2MovementStatusSelect",modifierChoices(draft.movement_buff),draft.movement_buff || "",function(name) { draft.movement_buff=name; });
             label(body, "", text("movement_trigger_ability"));
             var triggerRow = $.CreatePanel("Panel", body, ""); triggerRow.AddClass("V2Selector");
             var trigger = {action_id:draft.movement_trigger_ability};
@@ -528,16 +506,11 @@ var RpgConditionCatalog = (function () {
             Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
             Object.keys(normalized).forEach(function (key) { draft[key] = normalized[key]; });
         });
-        var casting = $.CreatePanel("Panel",body,""); casting.AddClass("V2Selector");
-        label(casting,"",text("cast_preference"));
-        var castPreference = draft.cast_preference || "auto";
-        choose(casting,"V2CastSelect",restrict([{id:"cast_auto"},{id:"cast_unit"},{id:"cast_point"}],function(entry) { return cap && cap.cast_preferences[entry.id.substring(5)]!==1 ? "unsupported_cast_preference" : ""; }),"cast_"+castPreference,function(id) { reopen({cast_preference:id.substring(5)}); });
         var approachRow = $.CreatePanel("Panel", body, "V2ApproachRow"); approachRow.AddClass("V2Selector");
         label(approachRow,"",text("approach_title"));
         var approach = draft.forced ? "approach_chase" : "approach_wait";
         choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) { approach=value; });
         readers.push(function() { draft.forced=approach === "approach_chase"; });
-        readers.push(function() { draft.cast_preference=castPreference; });
         if (["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"].indexOf(options.abilityName) >= 0) {
             var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");
             label(destinationRow,"",text("destination"));
@@ -549,31 +522,13 @@ var RpgConditionCatalog = (function () {
                 "destination_"+destination,function(value) { destination=value.replace("destination_",""); });
             readers.push(function() { draft.destination=destination; });
         }
-        var toggle = $.CreatePanel("Panel", body, ""); toggle.AddClass("V2Selector");
-        label(toggle, "", text("toggle_title"));
-        var desired = draft.desired_toggle_state !== undefined ? draft.desired_toggle_state : rule.desired_toggle_state;
-        var toggleValue = desired === false || desired === "0" ? "toggle_off" : desired === true || desired === "1" ? "toggle_on" : "toggle_auto";
-        choose(toggle, "V2ToggleSelect", restrict([{ id: "toggle_auto" }, { id: "toggle_on" }, { id: "toggle_off" }],function(entry) { return entry.id!=="toggle_auto" && cap && cap.cast.toggle!==1 ? "toggle_not_supported" : ""; }), toggleValue, function (id) { toggleValue = id; });
-        readers.push(function() { draft.desired_toggle_state=toggleValue==="toggle_auto" ? null : toggleValue==="toggle_on"; });
-        var autoRow=$.CreatePanel("Panel",body,"V2AutocastRow"); autoRow.AddClass("V2Selector"); label(autoRow,"",text("autocast_title"));
-        var autoValue=draft.desired_autocast_state===undefined || draft.desired_autocast_state===null || draft.desired_autocast_state==="" ? "autocast_manual" : RpgRuleSync.bool(draft.desired_autocast_state,false) ? "autocast_on" : "autocast_off";
-        choose(autoRow,"V2AutocastSelect",restrict([{id:"autocast_manual"},{id:"autocast_on"},{id:"autocast_off"}],function(entry) { return entry.id!=="autocast_manual" && cap && cap.cast.autocast!==1 ? "autocast_not_supported" : ""; }),autoValue,function(value) { reopen({desired_autocast_state:value==="autocast_manual" ? null : value==="autocast_on"}); });
-        var policyRow=$.CreatePanel("Panel",body,"V2StatePolicyRow"); policyRow.AddClass("V2Selector"); label(policyRow,"",text("state_policy"));
-        choose(policyRow,"V2StatePolicySelect",restrict([{id:"fixed",label:text("state_fixed")},{id:"mana_hysteresis",label:text("state_hysteresis")}],function(entry) { return entry.id!=="fixed" && cap && cap.cast.toggle!==1 && !(cap.cast.autocast===1 && autoValue!=="autocast_manual") ? "state_policy_requires_toggle_or_autocast" : ""; }),draft.state_policy || "fixed",function(value) { reopen({state_policy:value}); });
-        if (draft.state_policy==="mana_hysteresis") {
-            [["state_mana_on",0.4,100],["state_mana_off",0.2,100],["state_hold_seconds",0.75,1]].forEach(function(spec) {
-                var row=$.CreatePanel("Panel",body,"V2_"+spec[0]+"Row"); row.AddClass("V2Field"); label(row,"",text(spec[0]));
-                var input=$.CreatePanel("TextEntry",row,"V2_"+spec[0]); input.AddClass("V2Input");
-                input.text=String((draft[spec[0]]===undefined ? spec[1] : Number(draft[spec[0]]))*spec[2]);
-                readers.push(function() { draft[spec[0]]=Number(input.text)/spec[2]; });
+        if (stateKey) {
+            var toggle = $.CreatePanel("Panel", body, "V2ToggleRow"); toggle.AddClass("V2Selector");
+            label(toggle, "", text("toggle_title"));
+            choose(toggle,"V2ToggleSelect",[{id:"toggle_on"},{id:"toggle_off"}],draft[stateKey] ? "toggle_on" : "toggle_off",function(id) {
+                draft[stateKey]=id==="toggle_on";
             });
-            label(body,"",text("hysteresis_hint")).AddClass("V2Hint");
         }
-        var variantRow=$.CreatePanel("Panel",body,"V2VariantRow"); variantRow.AddClass("V2Selector"); label(variantRow,"",text("cast_variant"));
-        choose(variantRow,"V2VariantSelect",[{id:"default",label:text("variant_default")},{id:"alternate",label:text("variant_alternate"),disabled:true,reason:"alternate_adapter_unavailable"}],draft.cast_variant || "default",function(value) { draft.cast_variant=value; });
-        var modifierRow=$.CreatePanel("Panel",body,"V2ModifierAckRow"); modifierRow.AddClass("V2Selector"); label(modifierRow,"",text("modifier_ack_hint"));
-        choose(modifierRow,"V2ModifierAck",[{id:"no",label:text("modifier_verified_only")},{id:"yes",label:text("modifier_advanced_ack")}],RpgRuleSync.bool(draft.allow_unverified_modifiers,false) ? "yes" : "no",function(value) { draft.allow_unverified_modifiers=value==="yes"; });
-        label(body, "", text("advanced_hint")).AddClass("V2Hint");
         body.enabled = !options.readOnly;
         $("#RuleSettingsApply").enabled = !options.readOnly && (!strict || !!cap);
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
@@ -589,10 +544,14 @@ var RpgConditionCatalog = (function () {
                 });
             });
             if (missing) { $("#RuleSettingsError").text = text("required_name"); return; }
-            draft.desired_toggle_state = toggleValue === "toggle_auto" ? null : toggleValue === "toggle_on";
             if (capAPI) {
-                var checked=capAPI.validate(draft,options.getCapability ? options.getCapability() : baseCap,{requireCapability:strict});
-                if (!checked.ok) { $("#RuleSettingsError").text=capAPI.describe(checked); return; }
+                var latestCapability=options.getCapability ? options.getCapability() : baseCap;
+                var latestStateKey=normalizeNativeSettings(latestCapability,stateKey);
+                var checked=capAPI.validate(draft,latestCapability,{requireCapability:strict});
+                if (!checked.ok) {
+                    if (latestStateKey!==stateKey) { open(rule,draft,onApply,options); }
+                    $("#RuleSettingsError").text=capAPI.describe(checked); return;
+                }
             }
             if (onApply(draft) === false) { $("#RuleSettingsError").text = text("edit_conflict"); return; }
             root.SetHasClass("Hidden", true);

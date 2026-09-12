@@ -1,0 +1,72 @@
+{
+  "version": "UI52 simplified condition settings and automatic recommended skill drafts",
+  "scope": "87/87 offline regression groups passed; native Panorama XML/JS/CSS compiled; nine sources hash verified. No gameplay or screenshots; Workshop package not modified or published.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.xml",
+      "sha256": "6d007bd47b2bc034a61e5e6a412d952d9942fa105fa185016880b0e3b8feaabe"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.js",
+      "sha256": "1947aaffccc3f828198d7c5b46f5f19677e456aa9eeca4f1ca02245bf159978a"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/panorama_rule_sync.js",
+      "sha256": "fd964db997a7c17ee0476f8d4bbf62c6e5d3fe6bffd916a3be7b5be5e85208a1"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js",
+      "sha256": "337f909b081180c9f879d0b2c1ba330142d6dbe66076db253af26e8c89adac3d"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.css",
+      "sha256": "f7f432b9d122d527357d0dc21b9a527faf5252cdb65e069e3222910b428c9a6b"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "bdcfbc78145c7f4a6836f03ffd4c00283a056b91499d7b8524bcebf21c92b884"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "291511940e397cdfdbc690ce5829369c646a262545a172ec7047bbc3b8054330"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/tactics/movement_contract.lua",
+      "sha256": "ff55c89ea6ca3e7a1a1c6adc8b13f4a3b98ddc721ccd0449e7a2910cf0e77bac"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/tactics/modifier_catalog.lua",
+      "sha256": "8d1619e3178d5131d5fe88bd6f3d681ea3df4c9c5adc77f71457a641489b6008"
+    }
+  ],
+  "compiled_files": [
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.vxml_c",
+      "sha256": "2bdc35b319337362292bb6275417fe2b26f2ced9c6f57835cd0be7cfa733ddc3"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.vjs_c",
+      "sha256": "c85be61a36f7b72f0dc4ffc58f247367a08ac494c6dd1021a7d10f4a934f2294"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/panorama_rule_sync.vjs_c",
+      "sha256": "539d70500b1b94585da62e0172a9d5e7eeba200505544b07189a01adbe3edcbc"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.vjs_c",
+      "sha256": "1da0fed451de32589ff2b7d0a1b9ad8582934183c39c55682dab64a37aa0cfc1"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.vcss_c",
+      "sha256": "3f2ce796b323627c6ef4157cfdbc7b2278287a8eed9284360d36f26a93fa72ee"
+    }
+  ],
+  "compile_logs": [
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707\\rpg_demo_hud.xml-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707\\condition_catalog.js-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707\\panorama_rule_sync.js-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707\\rpg_demo_hud.js-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui52-condition-settings-backup-20260912-200707\\rpg_demo_hud.css-compile.log"
+  ]
+}

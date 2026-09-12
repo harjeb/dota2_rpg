@@ -16,15 +16,15 @@ The action catalog publishes `sustained_move` as kind `move`. The condition edit
 | `movement_trigger_ability` | Optional native ability name; requires a NEW observed `OnAbilityExecuted` |
 | `movement_duration` | Finite 0.1–60 seconds; default 8; wall-clock cap includes control pauses |
 | `movement_distance` | 32–3000 units; default 250 |
-| `movement_retarget` | Boolean, default false |
-| `movement_loop` | Boolean, default false |
+| `movement_retarget` | Boolean, default true; explicit false is preserved |
+| `movement_loop` | Boolean, default true; explicit false is preserved |
 | `movement_interruptible` | Boolean, default false |
 | `movement_direction` | `auto` (starts ccw, reverses on obstruction), `cw`, `ccw`; orbit direction |
 | `positioning_mode` | `default`, `fixed`, `attack_range`, `cast_range`; default disables posture |
 | `positioning_distance` | Finite 0–3000 units; default 250, used by fixed posture |
 | `positioning_tolerance` | Finite 0–300 units; default 40 |
 
-Flat booleans accept booleans, 0/1, or strings `0`, `1`, `false`, `true`. Unknown enum values, invalid booleans, non-finite/out-of-bounds numbers and malformed native identifiers are rejected by validation. Omitted fields preserve default behavior.
+Flat booleans accept booleans, 0/1, or strings `0`, `1`, `false`, `true`. Unknown enum values, invalid booleans, non-finite/out-of-bounds numbers and malformed native identifiers are rejected by validation. Omitted retarget/loop fields default to true; explicitly stored false (including `0` and `"false"`) remains off through save, snapshots, legacy conversion and reopening. The example below deliberately opts out of both defaults.
 
 Example flat rule:
 
@@ -41,6 +41,20 @@ Example flat rule:
 ```
 
 A separate ordinary native ability rule must cast the buff. The movement action never casts its trigger ability. Normally put the movement rule above the ability rule: it falls through until armed.
+
+## UI52 authoring
+
+Choosing a skill automatically applies its first recommended configuration to the draft. The user can then edit it and apply; reopening an existing rule preserves its authored settings rather than applying the recommendation again. Recommendations have no separate buttons or previews in the condition editor.
+
+The red **重置** button at the top right (`V2ClearConditions`) clears all four use conditions, four target filters and two priorities. It resets skill switches to On where supported, restores the default destination and rebuilds movement/positioning fields from defaults. It preserves the selected action, target team and approach behavior. Reset changes the draft; Apply submits it and Cancel discards the current edits.
+
+The single **开关技能** selector (`V2ToggleSelect`) offers On/Off for supported skills. Native Toggle maps to `desired_toggle_state`; native autocast maps to `desired_autocast_state`, with Toggle taking precedence if both are available. A missing state defaults to On; an explicitly stored Off survives reopening. Target types and cast mode are derived from native capability. There are no separate capability refresh/summary, target-type or cast-mode selectors, autocast/policy/hysteresis/hold controls, variant controls, or unverified-name acknowledgment. Only error feedback remains (`RuleSettingsError`). These backend fields are not additional user inputs in UI52.
+
+The three **movement preset buttons remain** (`V2MovementPreset_shukuchi`, `_trample`, `_gyroshell`). They overwrite only movement settings in the draft, preserving team, conditions and priorities. **关联原生增益** (`V2MovementBuffSelect`) has only Custom; the adjacent status dropdown (`V2MovementStatusSelect`) selects an observed/declared native status and stores `movement_buff`. There is no raw modifier textbox. Condition status parameters likewise use status dropdowns. Unknown saved names remain visible as unavailable entries with a reason and must be replaced with a valid selection. Selecting a status changes only the buff, while a movement preset fills the whole movement configuration.
+
+New movement drafts and all movement presets default `movement_retarget` and `movement_loop` to true. Explicitly switching either off remains preserved on save/reopen. Clicking a movement preset or Reset intentionally restores the corresponding defaults. The trigger ability remains an event reference and never casts the ability itself.
+
+The standalone Chinese [condition settings reference](CONDITION_SETTINGS_UI_REFERENCE.html) documents every current control and all 85 named conditions, with offline search and printing.
 
 ## Session semantics
 
@@ -71,7 +85,7 @@ The actual event ordering, availability on all native units, forced/extra-attack
 - Trample: `modifier_primal_beast_trample`, trigger `primal_beast_trample`.
 - Rolling Thunder: `modifier_pangolier_gyroshell`, trigger `pangolier_gyroshell`.
 
-Shukuchi/Trample use cycling/orbit respectively, looping enabled, radius 150 and a 15-second safety deadline. Rolling Thunder uses orbit, radius 150, looping and retargeting enabled, and a 20-second safety deadline (native duration is 10/11/12 seconds, plus a 2-second talent). Native buff disappearance ends movement earlier. The requested radius is a waypoint target; Rolling Thunder's native forward speed, turning radius and collisions determine its actual route. This preset does not force an exact 150-unit circle or guarantee repeated collisions. Ordinary blank UI movement fields default to 5 seconds and 150 units; the backend defaults above apply to omitted wire fields.
+Shukuchi/Trample use cycling/orbit respectively, radius 150 and a 15-second safety deadline. All three movement presets enable both retargeting and looping, disable interruption and use automatic direction. Rolling Thunder uses orbit, radius 150 and a 20-second safety deadline (native duration is 10/11/12 seconds, plus a 2-second talent). Native buff disappearance ends movement earlier. The requested radius is a waypoint target; Rolling Thunder's native forward speed, turning radius and collisions determine its actual route. This preset does not force an exact 150-unit circle or guarantee repeated collisions. Ordinary blank UI movement fields default to 5 seconds and 150 units; the backend defaults above apply to omitted wire fields.
 
 Repository `data/native_skill_conditions.json`, native snapshot client 6924 / revision 10969619, records:
 

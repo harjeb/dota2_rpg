@@ -161,7 +161,10 @@
 		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
 		<Panel id="RuleSettings" class="RuleSettings Hidden">
 			<Panel class="RuleSettingsCard">
-				<Label class="V2Title" text="#dota2_rpg_v2_settings" />
+				<Panel class="RuleSettingsHeader">
+					<Label class="V2Title" text="#dota2_rpg_v2_settings" />
+					<Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
+				</Panel>
 				<Label class="V2Hint" text="#dota2_rpg_v2_intro" />
 				<Panel id="RuleSettingsBody" class="RuleSettingsBody" />
 				<Label id="RuleSettingsError" class="V2Error" />

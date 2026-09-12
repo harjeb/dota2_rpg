@@ -77,7 +77,7 @@ var RpgRuleSync = (function () {
             out.movement_buff = String(input.movement_buff || "").trim().slice(0, 128);
             out.movement_trigger_ability = String(input.movement_trigger_ability || "").trim().slice(0, 128);
             numeric("movement_duration", 5); numeric("movement_distance", 150);
-            ["movement_retarget", "movement_loop", "movement_interruptible"].forEach(function (key) { out[key] = bool(input[key], false); });
+            ["movement_retarget", "movement_loop", "movement_interruptible"].forEach(function (key) { out[key] = bool(input[key], key !== "movement_interruptible"); });
         } else if (action === "attack" || action === "basic_attack" || action && action.indexOf("item_") !== 0) {
             choice("positioning_mode", action === "attack" || action === "basic_attack" ? ["default", "fixed", "attack_range"] : ["default", "fixed", "attack_range", "cast_range"], "default");
             numeric("positioning_distance", 0); numeric("positioning_tolerance", 50);

@@ -297,6 +297,12 @@ for _,key in ipairs(Contract.fields) do assert(decoded.action[key]==r.action[key
 for key,value in pairs({movement_duration=math.huge,movement_distance=-1,movement_mode="teleport",movement_loop="maybe",positioning_tolerance=0/0}) do
     local bad=movement(); bad.action[key]=value; assert(not service:ValidateRule(0,caster,bad),"reject "..key)
 end
+local omitted = {kind="move",logical_id="sustained_move",movement_buff="modifier_test"}
+assert(Contract.Validate(omitted) and omitted.movement_retarget and omitted.movement_loop,
+    "new movement actions default to retargeting and looping")
+local disabled = {kind="move",logical_id="sustained_move",movement_buff="modifier_test",movement_retarget=false,movement_loop=false}
+assert(Contract.Validate(disabled) and not disabled.movement_retarget and not disabled.movement_loop,
+    "explicitly disabled movement settings survive validation")
 assert(Contract.presets.weaver_shukuchi=="modifier_weaver_shukuchi" and Contract.presets.primal_beast_trample=="modifier_primal_beast_trample")
 assert(Contract.presets.pangolier_gyroshell=="modifier_pangolier_gyroshell")
 -- Rolling Thunder preset uses native cast observation + buff, retargets, and

@@ -591,7 +591,21 @@
         var heroIndex=selectedHeroIndex[side], original=rules[index];
         var editIsCurrent=bindRuleEdit(side,heroIndex,index);
         var chosenActionDetail=getActionDetail(side,heroIndex,actionKey);
-        var next=JSON.parse(JSON.stringify(original)); next.action=actionKey; next.destination="target";
+        // Selecting an action starts from its recommended configuration, so
+        // conditions and switch settings from the previous skill cannot leak.
+        var next={action:actionKey,enabled:original.enabled,condition:"always",value:50,
+            target:"enemy_distance_nearest",target_team:"enemy",destination:"target",
+            use_conditions:[],target_filters:[],target_priorities:[{type:"nearest"}],forced:false,
+            cast_preference:"auto",desired_toggle_state:null,desired_autocast_state:null,
+            state_policy:"fixed",cast_variant:"default",allow_unverified_modifiers:false};
+        var recommended=typeof RpgSkillPresets!=="undefined" && chosenActionDetail
+            ? RpgSkillPresets.get(chosenActionDetail) : null;
+        if (recommended) { Object.keys(recommended).forEach(function(key) { next[key]=recommended[key]; }); }
+        var selectedCapability=getRuleCapability(side,heroIndex,actionKey);
+        if (selectedCapability && selectedCapability.teams && selectedCapability.teams[next.target_team]===0) {
+            next.target_team=["enemy","ally","self"].filter(function(team) { return selectedCapability.teams[team]===1; })[0] || "enemy";
+            next.target=next.target_team==="self" ? "self" : next.target_team+"_distance_nearest";
+        }
         delete next.min_aoe_hits;
         closeEditorMenus();
         // A skill switch is a draft, not a saved mutation. Cancelling preserves the old rule.

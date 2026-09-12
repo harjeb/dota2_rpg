@@ -37,6 +37,8 @@ function M.Validate(action)
         action.movement_duration = action.movement_duration or 8
         action.movement_distance = action.movement_distance or 250
         action.movement_direction = action.movement_direction or "auto"
+        if action.movement_retarget == nil then action.movement_retarget = true end
+        if action.movement_loop == nil then action.movement_loop = true end
     end
     return true
 end

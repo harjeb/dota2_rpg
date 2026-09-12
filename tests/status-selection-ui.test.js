@@ -51,11 +51,15 @@ click(hud, 'V2_use0ModifierOption_modifier_native_item_effect'); click(hud, 'Rul
 assert.equal(saved.use_conditions[0].modifier, 'modifier_native_item_effect');
 assert.equal(catalog.wire('use', saved.use_conditions[0]).value, 'modifier_native_item_effect');
 open(saved); assert.equal(panel(hud, 'V2_use0Modifier').GetChild(1).text, '刃甲 · 减益效果');
-input(hud, 'V2_use0_modifier', 'modifier_weaver_shukuchi'); panel(hud, 'V2_use0_modifier').events.ontextentrychange();
-assert.equal(panel(hud, 'V2_use0Modifier').GetChild(1).text, '缩地', 'manual code refreshes readable selection');
-input(hud, 'V2_use0_modifier', 'modifier_unobserved'); panel(hud, 'V2_use0_modifier').events.ontextentrychange();
-saved = null; click(hud, 'RuleSettingsApply'); assert.equal(saved, null, 'display fallback cannot authorize an unknown modifier');
-click(hud, 'V2ModifierAckOption_yes'); click(hud, 'RuleSettingsApply'); assert.equal(saved.use_conditions[0].modifier, 'modifier_unobserved');
+assert(!panel(hud, 'V2_use0_modifier'), 'modifier selection has no raw text entry');
+click(hud, 'V2_use0ModifierOption_modifier_weaver_shukuchi');
+assert.equal(panel(hud, 'V2_use0Modifier').GetChild(1).text, '缩地', 'native dropdown refreshes readable selection');
+click(hud, 'RuleSettingsApply'); assert.equal(saved.use_conditions[0].modifier, 'modifier_weaver_shukuchi');
+open({target_team:'enemy', use_conditions:[{type:'self_has_modifier', modifier:'modifier_unobserved'}]});
+saved = null; click(hud, 'RuleSettingsApply'); assert.equal(saved, null, 'restored unknown modifier cannot silently authorize save');
+assert(!panel(hud, 'V2ModifierAck'), 'unknown modifier acknowledgement is not exposed');
+click(hud, 'V2_use0ModifierOption_modifier_weaver_shukuchi'); click(hud, 'RuleSettingsApply');
+assert.equal(saved.use_conditions[0].modifier, 'modifier_weaver_shukuchi', 'known native choice repairs legacy unknown modifier');
 // Older servers provide only the name set; native localized labels still work without icon metadata.
 delete cap.modifier_details;
 open({target_team:'enemy', target_filters:[{type:'modifier_remaining_lte', modifier:'modifier_weaver_shukuchi', seconds:2}]});

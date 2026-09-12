@@ -1470,6 +1470,11 @@
 .RuleSettingsCard { width: 980px; height: 900px; max-height: 94%; horizontal-align: center; vertical-align: center; flow-children: down; padding: 20px; background-color: #15232dfc; border: 1px solid #71858f; box-shadow: #0009 0px 0px 20px 2px; }
 .V2Title { color: #e9d6a0; font-size: 25px; margin-bottom: 8px; }
 .V2Hint { color: #b3c3cc; font-size: 15px; margin-bottom: 10px; white-space: normal; }
+.RuleSettingsHeader { width: 100%; min-height: 44px; }
+.RuleSettingsHeader .V2Title { margin-right: 190px; }
+.RuleSettingsHeader .RuleSettingsReset { horizontal-align: right; vertical-align: top; background-color: #762e35; border: 1px solid #bd6469; margin-top: 0px; }
+.RuleSettingsHeader .RuleSettingsReset:hover { background-color: #953e46; }
+.RuleSettingsHeader .RuleSettingsReset:disabled { saturation: 0; opacity: 0.45; }
 .RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 16px; }
 .V2SectionTitle { color: #e9d6a0; font-size: 20px; margin-top: 12px; margin-bottom: 6px; }
 .V2Preview { width: 100%; height: fit-children; white-space: normal; font-size: 15px; color: #d0dde4; margin-bottom: 12px; }

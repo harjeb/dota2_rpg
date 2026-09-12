@@ -67,5 +67,19 @@ local safe=A.ForAction(displayHero,{kind='attack',logical_id='basic_attack'})
 assert(safe.modifiers.modifier_weaver_shukuchi==1,'unavailable metadata preserves observed identity')
 local runtime=A.ForAction(displayHero,{kind='attack',logical_id='basic_attack'},{runtime=true})
 assert(next(runtime.modifiers)==nil and next(runtime.modifier_details)==nil,'runtime hot path omits display data')
-M.Reset();displayHero.modifiers={};local empty=M.List(displayHero,nil);assert(next(empty)==nil)
+M.Reset();displayHero.modifiers={}
+local declared,declaredDetails=M.List(displayHero,nil)
+assert(declared.modifier_weaver_shukuchi==1 and declaredDetails.modifier_weaver_shukuchi.ability=='weaver_shukuchi',
+ 'owned declared movement buff is selectable before first cast')
+local empty=M.List(H.unit(),nil);assert(next(empty)==nil,'unowned movement presets are not advertised')
+for i=1,40 do
+ local name=string.format('modifier_a_%02d',i)
+ displayHero.modifiers[name]={GetName=function() return name end}
+end
+local lastName='modifier_z_last_observed'
+displayHero.modifiers[lastName]={GetName=function() return lastName end}
+local all=A.ForAction(displayHero,{kind='move',logical_id='sustained_move'})
+assert(all.modifiers[lastName]==1 and all.modifiers.modifier_a_40==1,
+ 'movement dropdown includes observed names beyond the former first 32')
+M.Reset()
 print('PASS ability compatibility: native roles, contradictions, modifiers with source metadata, references, live refresh, switch false, builtin parity')
