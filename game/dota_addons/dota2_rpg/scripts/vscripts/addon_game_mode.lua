@@ -2969,7 +2969,7 @@ function CDota2RpgDemo:AssembleLevelEnemies(levelId, created)
 				if unit:IsRealHero() then
 					self:PrepareEnemyHero(unit, tonumber(entry.level) or 1)
 				else
-					self:PrepareEnemyCreep(unit)
+					self:PrepareEnemyCreep(unit, tonumber(entry.level) or 1)
 					EnemyScaling.Apply(unit, level.multi)
 					-- 野怪模板成长：生命/攻击倍率、额外护甲、魔抗、状态抗性
 					if entry.hp_multiplier ~= nil then
@@ -3034,9 +3034,33 @@ function CDota2RpgDemo:PrepareEnemyHero(hero, level)
 	self:PrepareBattleHero(hero, level)
 end
 
-function CDota2RpgDemo:PrepareEnemyCreep(unit)
+function CDota2RpgDemo:PrepareEnemyCreep(unit, level)
 	unit:SetIdleAcquire(false)
 	unit:SetAcquisitionRange(0)
+	-- 野怪不升级会让原生技能停在 0 级：引擎会拒绝 0 级技能的所有施法指令，
+	-- 战术 AI 却照常下发（日志里只见 rule_executed、永远没有真正的 cast），
+	-- 表现就是"野怪全都没有技能"。所以这里必须补上 levels.kv 里的等级，
+	-- 并把单位 KV 声明的技能点到满级（野怪技能 MaxLevel 基本都是 1）。
+	local wantedLevel = math.max(1, math.floor(tonumber(level) or 1))
+	local guard = 0
+	while unit:GetLevel() < wantedLevel and guard < 100 do
+		local before = unit:GetLevel()
+		unit:SetLevel(before + 1)
+		if unit:GetLevel() <= before then break end
+		guard = guard + 1
+	end
+	for slot = 0, unit:GetAbilityCount() - 1 do
+		local ability = unit:GetAbilityByIndex(slot)
+		if ability ~= nil and not ability:IsNull() then
+			local maxLevel = ability:GetMaxLevel()
+			-- 天赋与隐藏占位技能不属于野怪技能组，跳过以免误点。
+			local abilityName = ability:GetAbilityName()
+			local isTalent = string.find(abilityName, "special_bonus", 1, true) ~= nil
+			if not isTalent and maxLevel > 0 and ability:GetLevel() < maxLevel then
+				ability:SetLevel(maxLevel)
+			end
+		end
+	end
 end
 
 -- 敌人 AI：行为模式库预设 → 内部规则格式（与玩家同一引擎）
