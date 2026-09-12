@@ -298,6 +298,24 @@ for key,value in pairs({movement_duration=math.huge,movement_distance=-1,movemen
     local bad=movement(); bad.action[key]=value; assert(not service:ValidateRule(0,caster,bad),"reject "..key)
 end
 assert(Contract.presets.weaver_shukuchi=="modifier_weaver_shukuchi" and Contract.presets.primal_beast_trample=="modifier_primal_beast_trample")
+assert(Contract.presets.pangolier_gyroshell=="modifier_pangolier_gyroshell")
+-- Rolling Thunder preset uses native cast observation + buff, retargets, and
+-- exits on buff loss. Native roll steering/turn radius still needs client QA.
+r=movement({movement_mode="orbit",movement_buff="modifier_pangolier_gyroshell",
+    movement_trigger_ability="pangolier_gyroshell",movement_duration=20,movement_distance=150,
+    movement_loop=true,movement_retarget=true})
+s=reset({r,attack}); tick(0)
+assert(not s.movement,"Rolling Thunder movement cannot begin before native cast/buff")
+local roll={GetAbilityName=function() return "pangolier_gyroshell" end}
+caster.mods.modifier_pangolier_gyroshell=true
+caster.observer:OnAbilityExecuted({unit=caster,ability=roll})
+assert(tick(.3).OrderType==1 and s.movement,"Rolling Thunder cast and buff arm orbit")
+enemy.hp=0; tick(.6)
+assert(s.movement and s.movement.target==other,"Rolling Thunder retargets after enemy death")
+caster.stun=true; tick(.9)
+assert(#orders==0 and s.movement,"Rolling Thunder preset respects native control")
+caster.stun=false; caster.mods.modifier_pangolier_gyroshell=nil; tick(1.2)
+assert(not s.movement and not s.events.exclusive_movement,"native roll ending releases exclusive movement")
 -- Native reincarnation keeps the same handle: an observer removed on death
 -- would leave a cached events table that never receives release/cast callbacks.
 reset({attack}); tick(0)

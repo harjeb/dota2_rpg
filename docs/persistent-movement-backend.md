@@ -69,15 +69,16 @@ The actual event ordering, availability on all native units, forced/extra-attack
 
 - Shukuchi: `modifier_weaver_shukuchi`, trigger `weaver_shukuchi`.
 - Trample: `modifier_primal_beast_trample`, trigger `primal_beast_trample`.
+- Rolling Thunder: `modifier_pangolier_gyroshell`, trigger `pangolier_gyroshell`.
 
-The UI presets use cycling/orbit respectively, looping enabled, radius 150 and a 15-second safety deadline. Native buff disappearance ends movement earlier. Ordinary blank UI movement fields default to 5 seconds and 150 units; the backend defaults above apply to omitted wire fields.
+Shukuchi/Trample use cycling/orbit respectively, looping enabled, radius 150 and a 15-second safety deadline. Rolling Thunder uses orbit, radius 150, looping and retargeting enabled, and a 20-second safety deadline (native duration is 10/11/12 seconds, plus a 2-second talent). Native buff disappearance ends movement earlier. The requested radius is a waypoint target; Rolling Thunder's native forward speed, turning radius and collisions determine its actual route. This preset does not force an exact 150-unit circle or guarantee repeated collisions. Ordinary blank UI movement fields default to 5 seconds and 150 units; the backend defaults above apply to omitted wire fields.
 
 Repository `data/native_skill_conditions.json`, native snapshot client 6924 / revision 10969619, records:
 
 - `scripts/npc/heroes/npc_dota_hero_weaver.txt`: Shukuchi no-target/immediate behavior, duration 4 seconds, damage while passing enemies, radius 175.
 - `scripts/npc/heroes/npc_dota_hero_primal_beast.txt`: Trample no-target/immediate behavior, duration 5.5 seconds, step distance 140, effect radius 200, native disarm during the ability.
 
-These native definitions support the movement feature but **do not contain runtime modifier declarations**. The two requested modifier identifiers remain live-unverified. Missing/wrong modifiers fail closed: no persistent movement starts. The backend does not simulate their damage or claim every orbit waypoint triggers a native damage tick.
+These native definitions support the movement feature but **do not contain runtime modifier declarations**. The requested modifier identifiers and Rolling Thunder's steerability through native motion-control gates remain live-unverified. Missing/wrong modifiers fail closed: no persistent movement starts. The backend does not simulate their damage or claim every orbit waypoint triggers a native damage tick.
 
 ## Regression execution
 

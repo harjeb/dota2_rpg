@@ -27,6 +27,7 @@ local RespawnPolicy = require("battle.respawn_policy")
 local ItemSales = require("issue_fixes/item_sales")
 local ShardPurchase = require("issue_fixes/shard_purchase")
 local GrisGris = require("issue_fixes/gris_gris")
+local JinadaIncome = require("issue_fixes/jinada_income")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
@@ -3152,6 +3153,7 @@ function CDota2RpgDemo:UpdateHeroLevel(hero, targetLevel)
 end
 
 function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
+	JinadaIncome.Attach(self, hero)
 	HeroAbilityPolicy.Apply(hero)
 	local wantedLevel = self:UpdateHeroLevel(hero, targetLevel)
 
@@ -3768,6 +3770,10 @@ function CDota2RpgDemo:OnThink()
 				self:BroadcastShopState()
 			end
 			self.nativeShopTransactionPending = nil
+		elseif self.lastBroadcastGold ~= self:GetGoldBalance() then
+			-- Native combat income (e.g. Jinada/Track) can arrive during a
+			-- fight. Publish the authoritative balance without waiting for setup.
+			self:BroadcastShopState()
 		end
 	end)
 

@@ -50,6 +50,7 @@ require = function(name)
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",
         ["issue_fixes/gris_gris"] = moduleRoot .. "issue_fixes/gris_gris.lua",
+        ["issue_fixes/jinada_income"] = moduleRoot .. "issue_fixes/jinada_income.lua",
         ["issue_fixes/shard_purchase"] = moduleRoot .. "issue_fixes/shard_purchase.lua",
         ["issue_fixes/item_sales"] = moduleRoot .. "issue_fixes/item_sales.lua",
 		["issue_fixes/hero_precache"] = moduleRoot .. "issue_fixes/hero_precache.lua",
@@ -214,6 +215,53 @@ do
 	nativeGold = 900
 	walletGame:OnThink()
 	assertEqual(broadcasts, 2, "native refund also publishes")
+	local previousRules = GameRules
+	GameRules = {GetGameTime = function() return 10 end}
+	walletGame.battleManager = {OnThink = function() end}
+	walletGame.tacticBridge = {OnThink = function() end}
+	walletGame.BroadcastDamageStats = function() end
+	walletGame.phase = "fight"
+	walletGame.ReconcileNativePurchaseOrders = function() error("no shop reconciliation during combat") end
+	nativeGold = nativeGold + 36 -- Simulated native Jinada credit, NOT proof of a proc.
+	walletGame:OnThink()
+	assertEqual(broadcasts, 3, "native combat income publishes before the next setup")
+	assertEqual(walletGame.lastBroadcastGold, 936, "combat display receives native credit exactly once")
+	walletGame:OnThink()
+	assertEqual(broadcasts, 3, "unchanged combat balance cannot generate another reward or broadcast")
+	nativeGold = nativeGold + 320 -- Simulated native Track credit.
+	walletGame:OnThink()
+	assertEqual(walletGame.lastBroadcastGold, 1256, "subsequent native combat income is retained")
+	walletGame.phase = "result"
+	nativeGold = nativeGold + 50
+	walletGame:OnThink()
+	assertEqual(walletGame.lastBroadcastGold, 1306, "late native payout remains visible during settlement")
+	GameRules = previousRules
+	PlayerResource = previousResource
+end
+
+-- Both native gold buckets survive reads and subsequent custom rewards/spending.
+-- This verifies receipt only; the native ability must actually award the gold.
+do
+	local previousResource = PlayerResource
+	local reliable, unreliable, writes = 500, 0, 0
+	PlayerResource = {
+		GetGold = function() return reliable + unreliable end,
+		SetGold = function(_, pid, amount, isReliable)
+			assertEqual(pid, 0, "wallet belongs to the RPG player")
+			writes = writes + 1
+			if isReliable then reliable = amount else unreliable = amount end
+		end,
+	}
+	local wallet = newGame({playerId = 0, gold = 500, goldWalletInitialized = true})
+	unreliable = 36
+	assertEqual(wallet:GetGoldBalance(), 536, "native unreliable credit enters authoritative balance")
+	reliable = reliable + 320
+	assertEqual(wallet:GetGoldBalance(), 856, "native reliable credit also enters balance")
+	assertEqual(writes, 0, "reading incoming native gold never overwrites the engine")
+	assertEqual(wallet:AddGold(100), 956, "custom reward preserves both native incoming amounts")
+	assert(wallet:SpendGold(50), "native earnings can be spent")
+	assertEqual(wallet:GetGoldBalance(), 906, "spending cannot replay a native reward")
+	assertEqual(unreliable, 0, "custom writes retain existing reliable-only wallet policy")
 	PlayerResource = previousResource
 end
 

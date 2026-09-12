@@ -4,7 +4,7 @@ M.fields = {"movement_mode", "movement_buff", "movement_trigger_ability", "movem
 local booleans = {movement_retarget=true, movement_loop=true, movement_interruptible=true}
 local numbers = {movement_duration={0.1,60}, movement_distance={32,3000}, positioning_distance={0,3000}, positioning_tolerance={0,300}}
 local enums = {movement_mode={follow=true,pass=true,orbit=true,cycle=true}, movement_direction={auto=true,cw=true,ccw=true}, positioning_mode={default=true,fixed=true,attack_range=true,cast_range=true}}
-M.presets = {weaver_shukuchi="modifier_weaver_shukuchi", primal_beast_trample="modifier_primal_beast_trample"}
+M.presets = {weaver_shukuchi="modifier_weaver_shukuchi", primal_beast_trample="modifier_primal_beast_trample", pangolier_gyroshell="modifier_pangolier_gyroshell"}
 function M.Copy(source, target)
     for _, key in ipairs(M.fields) do
         local v = source[key]

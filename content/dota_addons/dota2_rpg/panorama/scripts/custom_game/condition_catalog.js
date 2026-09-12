@@ -154,11 +154,16 @@ var RpgConditionCatalog = (function () {
         }
         return {id:name, label:caption || text("status_unnamed"), icon:source, hint:name};
     }
+    var movementPresets = {
+        shukuchi:{ability:"weaver_shukuchi", buff:"modifier_weaver_shukuchi", mode:"cycle"},
+        trample:{ability:"primal_beast_trample", buff:"modifier_primal_beast_trample", mode:"orbit"},
+        gyroshell:{ability:"pangolier_gyroshell", buff:"modifier_pangolier_gyroshell", mode:"orbit"}
+    };
     function movementPreset(name) {
-        return {movement_mode:name === "shukuchi" ? "cycle" : "orbit",
-            movement_buff:name === "shukuchi" ? "modifier_weaver_shukuchi" : "modifier_primal_beast_trample",
-            movement_trigger_ability:name === "shukuchi" ? "weaver_shukuchi" : "primal_beast_trample",
-            movement_duration:15, movement_distance:150, movement_retarget:false,
+        var preset = movementPresets[name] || movementPresets.trample;
+        return {movement_mode:preset.mode,
+            movement_buff:preset.buff, movement_trigger_ability:preset.ability,
+            movement_duration:name === "gyroshell" ? 20 : 15, movement_distance:150, movement_retarget:name === "gyroshell",
             movement_loop:true, movement_interruptible:false, movement_direction:"auto"};
     }
     var editorGeneration=0;
@@ -483,7 +488,7 @@ var RpgConditionCatalog = (function () {
         }
         if (action === "sustained_move") {
             label(body, "", text("movement_hint")).AddClass("V2Hint");
-            ["shukuchi", "trample"].forEach(function (name) {
+            Object.keys(movementPresets).forEach(function (name) {
                 button(body, "V2MovementPreset_" + name, text("movement_preset_" + name), function () {
                     readers.forEach(function (read) { read(); });
                     var preset = movementPreset(name);
@@ -495,8 +500,14 @@ var RpgConditionCatalog = (function () {
             settingChoice("movement_direction", ["auto", "cw", "ccw"]);
             var buffRow = $.CreatePanel("Panel", body, ""); buffRow.AddClass("V2Selector");
             label(buffRow, "", text("movement_buff_selector"));
-            var associatedBuff = draft.movement_buff === "modifier_weaver_shukuchi" ? "movement_preset_shukuchi" : draft.movement_buff === "modifier_primal_beast_trample" ? "movement_preset_trample" : "movement_buff_custom";
-            choose(buffRow, "V2MovementBuffSelect", [{id:"movement_buff_custom"}, {id:"movement_preset_shukuchi"}, {id:"movement_preset_trample"}], associatedBuff, function (id) {
+            var associatedBuff = "movement_buff_custom";
+            var buffOptions = [{id:"movement_buff_custom"}];
+            Object.keys(movementPresets).forEach(function (name) {
+                var id = "movement_preset_" + name;
+                buffOptions.push({id:id});
+                if (draft.movement_buff === movementPresets[name].buff) { associatedBuff = id; }
+            });
+            choose(buffRow, "V2MovementBuffSelect", buffOptions, associatedBuff, function (id) {
                 if (id !== "movement_buff_custom") { body.FindChildTraverse("V2_movement_buff").text = movementPreset(id.replace("movement_preset_", "")).movement_buff; }
             });
             settingInput("movement_buff");

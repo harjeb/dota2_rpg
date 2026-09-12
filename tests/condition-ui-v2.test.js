@@ -810,9 +810,11 @@ lifeSnapshot(0, "result");
 assert(!panel(livesHud,"StartBattleButton").enabled
     && panel(livesHud,"BattleStatus").text === "#dota2_rpg_run_failed", "fifth loss displays run end and disables start");
 // Sustained movement uses the real action menu and condition modal, never outer controls.
-["shukuchi", "trample"].forEach(function (presetName) {
-    var moveHud = runHud(), hero = "npc_dota_hero_" + (presetName === "shukuchi" ? "weaver" : "primal_beast");
-    var ability = presetName === "shukuchi" ? "weaver_shukuchi" : "primal_beast_trample";
+["shukuchi", "trample", "gyroshell"].forEach(function (presetName) {
+    var heroNames = {shukuchi:"weaver", trample:"primal_beast", gyroshell:"pangolier"};
+    var abilities = {shukuchi:"weaver_shukuchi", trample:"primal_beast_trample", gyroshell:"pangolier_gyroshell"};
+    var moveHud = runHud(), hero = "npc_dota_hero_" + heroNames[presetName];
+    var ability = abilities[presetName];
     var sync = moveHud.context.RpgRuleSync;
     moveHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});
     moveHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:980,hero_name:hero,rule_key:hero,
@@ -828,6 +830,11 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     choice(moveHud,"V2_priority0","farthest");
     click(moveHud,"V2MovementPreset_"+presetName);
     var expected = moveHud.context.RpgConditionCatalog.movementPreset(presetName);
+    if (presetName === "gyroshell") {
+        assert(expected.movement_mode === "orbit" && expected.movement_buff === "modifier_pangolier_gyroshell"
+            && expected.movement_trigger_ability === "pangolier_gyroshell" && expected.movement_duration === 20
+            && expected.movement_retarget === true, "Rolling Thunder orbits, retargets and covers native duration plus talent");
+    }
     assert(panel(moveHud,"V2_movement_buff").text === expected.movement_buff, "preset supplies associated native modifier without current buffs");
     assert(panel(moveHud,"V2MovementTrigger").GetChild(0).abilityname === ability, "preset trigger uses ability icon");
     var options = panel(moveHud,"V2MovementTriggerMenu").children.filter(function(p) { return p.BHasClass("V2ActionChoice"); });

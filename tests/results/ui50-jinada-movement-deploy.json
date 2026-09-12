@@ -1,0 +1,49 @@
+{
+  "version": "UI50 all-unit Jinada income, Rolling Thunder orbit and expanded inventory",
+  "scope": "86/86 offline regression groups passed; native Panorama JS/CSS compiled; seven sources hash verified. No gameplay or screenshots; native behavior acceptance remains open.",
+  "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui50-jinada-movement-backup-20260912-182124",
+  "source_files": [
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.js",
+      "sha256": "82ddbc2f2093b1e31b03843f5500afd3245249272eb120027ba2f507d04feb11"
+    },
+    {
+      "path": "content/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.css",
+      "sha256": "f477254af9cb743c9a1499c86b809ee5f94690106dbb0e892e3e169722034277"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_schinese.txt",
+      "sha256": "19ca8668d6dd6edd866afe4035e5f1ea1d329631ca911714ea53415f46864b7a"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/resource/addon_english.txt",
+      "sha256": "326105e9a92fa53bef6e294abfd76d9a675c96eac14a1b5b73f2248e6acae836"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua",
+      "sha256": "fbe5f3ed9f08331d37e377ea238e1b8eb191463b8a36f5eb6fe038d6b8773419"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/jinada_income.lua",
+      "sha256": "444d7a064bf60276b062120737569e4e9e8f305c01f656d462d03e7471d7d57d"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/scripts/vscripts/tactics/movement_contract.lua",
+      "sha256": "8281f2b0ad059b0c8d81c96ffafa58c8562b499e348dbf40bc776c59e2fd1232"
+    }
+  ],
+  "compiled_files": [
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.vjs_c",
+      "sha256": "cad6aec5edfa1591077b3031dbfe25fc0ba1c76d5318bacde18fe10882e08c3e"
+    },
+    {
+      "path": "game/dota_addons/dota2_rpg/panorama/styles/custom_game/rpg_demo_hud.vcss_c",
+      "sha256": "7de2f1e9b090955481b7771a6a38f6cea9708490842efed7f734a3bcc056d1d0"
+    }
+  ],
+  "compile_logs": [
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui50-jinada-movement-backup-20260912-182124\\condition_catalog.js-compile.log",
+    "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui50-jinada-movement-backup-20260912-182124\\rpg_demo_hud.css-compile.log"
+  ]
+}

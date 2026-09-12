@@ -23,7 +23,7 @@ local hooks={ ["battle.tempest_double"]=spawnHook("double"),
     ["battle/summon_behavior"]=spawnHook("summon") }
 require=function(name)
     if name=="battle.battle_manager" or name=="battle.unit_helpers" or name=="battle.run_lives"
-        or name=="battle.respawn_policy" or name=="issue_fixes/gris_gris" then return nativeRequire(name) end
+        or name=="battle.respawn_policy" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
     if hooks[name] then return hooks[name] end
     if name=="battle.damage_stats" then return {new=function() return {Start=noop,Stop=noop} end} end
     return {Install=noop,Clear=noop,Write=function(message) logs[#logs+1]=message end,Event=noop}
