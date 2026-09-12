@@ -1,0 +1,28 @@
+{
+  "version": "UI58 single-click native shop close and deferred restore",
+  "staged": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui58-shop-close-5tlk_dkc\\3799645167.vpk",
+  "sha256": "a36016cffff0db698c10dd08fb3724e78a7168dad79fcc08f3a4b84098063e8a",
+  "entries": 137,
+  "changed_entries": [
+    "resource/addon_english.txt",
+    "resource/addon_schinese.txt",
+    "panorama/scripts/custom_game/rpg_demo_hud.vjs_c"
+  ],
+  "independent_vpk_verification": "Source2Viewer-CLI --vpk_verify: Success",
+  "targets": [
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\workshop\\content\\570\\3799645167\\3799645167.vpk",
+      "sha256_before": "2b4b28b6ba1c7adf9c08784d2a8cbd4ae28ced0d47e92e6c98d8fe61797898b2",
+      "sha256_after": "a36016cffff0db698c10dd08fb3724e78a7168dad79fcc08f3a4b84098063e8a",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui58-shop-close-5tlk_dkc\\workshop-before\\0\\3799645167.vpk",
+      "matches_staged": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\dota 2 beta\\game\\dota_addons\\vpks\\3799645167\\3799645167.vpk",
+      "sha256_before": "2b4b28b6ba1c7adf9c08784d2a8cbd4ae28ced0d47e92e6c98d8fe61797898b2",
+      "sha256_after": "a36016cffff0db698c10dd08fb3724e78a7168dad79fcc08f3a4b84098063e8a",
+      "backup": "C:\\Users\\harjeb\\AppData\\Local\\Temp\\rpg-ui58-shop-close-5tlk_dkc\\workshop-before\\1\\3799645167.vpk",
+      "matches_staged": true
+    }
+  ]
+}

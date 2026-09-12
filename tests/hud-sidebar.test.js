@@ -133,9 +133,11 @@ function runHud() {
     };
     var timers = [];
     var walletTimers = [];
+    var closeTimers = [];
     panorama.Schedule = function (delay, callback) {
         if (delay === 3) { timers.push(callback); }
         else if (delay === 0.25) { walletTimers.push(callback); }
+        else if (delay === 0.15) { closeTimers.push(callback); }
         else { callback(); }
     };
     panorama.LocalStorage = {
@@ -179,6 +181,7 @@ function runHud() {
     return {
         nativeRoot: nativeRoot,
         walletTimers: walletTimers,
+        closeTimers: closeTimers,
         timers: timers,
         context: context,
         panels: panels,
@@ -203,7 +206,9 @@ function panel(hud, id) { return hud.panels["#" + id]; }
 function setPortrait(hud, index) { hud.setPortraitUnit(index); }
 // 0.25 秒定时器现在同时包含钱包同步和商店开合轮询，按顺序单个取用不再可靠；
 // 统一跑完当前这一批，语义仍是"一次刷新"。
-function tick(hud) { hud.walletTimers.splice(0).forEach(function (callback) { callback(); }); }
+function poll(hud) { hud.walletTimers.splice(0).forEach(function (callback) { callback(); }); }
+function finishClose(hud) { hud.closeTimers.splice(0).forEach(function (callback) { callback(); }); }
+function tick(hud) { poll(hud); finishClose(hud); }
 function click(hud, id) { var p = panel(hud, id); assert(p && p.events.onactivate, "clickable actual panel " + id); p.events.onactivate(); }
 
 var hud = runHud();
@@ -233,11 +238,14 @@ shopHud.unhandledEvents.DOTAHUDShopOpened();
 assert(shopHud.nativeSelections.length === 1 && shopHud.nativeSelections[0].index === 502,
     "opening the native shop must temporarily select the commander");
 shopHud.unhandledEvents.DOTAHUDShopClosed();
+assert(shopHud.nativeSelections.length === 1, "close event must not restore inside the native event stack");
+finishClose(shopHud);
 assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[1].index === 503,
     "closing the native shop must restore the previously selected unit");
 shopHud.nativeSelections.length = 0;
 shopHud.unhandledEvents.DOTAHUDShopOpened();
 shopHud.unhandledEvents.DOTAHUDShopClosed();
+finishClose(shopHud);
 assert(shopHud.nativeSelections.length === 2 && shopHud.nativeSelections[0].index === 502
     && shopHud.nativeSelections[1].index === 503, "the shop selection swap must be repeatable");
 // 已经选中小精灵时不做切换；战斗阶段一律不动选中单位。
@@ -424,6 +432,114 @@ function mountNativeShop(h) {
     button.SetPanelEvent("onactivate", function () { clicks++; });
     return { controls: controls, button: button, label: label, clicks: function () { return clicks; } };
 }
+// Exercise one button click with a native close transition still in flight. A selection
+// during that transition reopens this simulated native shop, exposing the old race.
+function closeFixture(suppressNativeEvents) {
+    var h = runHud();
+    h.subscriptions.rpg_battle_state({ phase: "setup" });
+    h.subscriptions.rpg_shop_state({ rule_generation: 1, commander_index: 502 });
+    var state = mountShopState(h);
+    var controls = mountNativeShop(h);
+    var dispatched = [];
+    var closing = false;
+    var select = h.context.GameUI.SelectUnit;
+    h.context.GameUI.SelectUnit = function (index, additive) {
+        if (closing) { state.shop.AddClass("ShopOpen"); }
+        select(index, additive);
+    };
+    h.context.$.DispatchEvent = function (name) {
+        dispatched.push(name);
+        if (name === "DOTAShopHideShop") {
+            closing = true;
+            // Some event sources notify before changing the panel's state class.
+            if (!suppressNativeEvents) { h.unhandledEvents.DOTAHUDShopClosed(); }
+            state.shop.SetHasClass("ShopOpen", false);
+        } else if (name === "DOTAHUDToggleShop") {
+            state.shop.SetHasClass("ShopOpen", !state.shop.BHasClass("ShopOpen"));
+        }
+    };
+    poll(h);
+    controls.button.events.onactivate();
+    poll(h);
+    assert(dispatched[0] === "DOTAHUDToggleShop" && h.context.Players.GetLocalPlayerPortraitUnit() === 502,
+        "closed native button retains Valve's open action and selects commander");
+    return { h: h, state: state, controls: controls, dispatched: dispatched,
+        endAnimation: function () { closing = false; } };
+}
+var once = closeFixture();
+once.controls.button.events.onactivate();
+assert(once.dispatched.join(",") === "DOTAHUDToggleShop,DOTAShopHideShop",
+    "one close click must issue exactly one explicit native hide");
+poll(once.h);
+assert(once.h.nativeSelections.length === 1 && !once.state.shop.BHasClass("ShopOpen"),
+    "close polling must not restore selection during the native transition");
+once.endAnimation();
+finishClose(once.h);
+assert(once.h.nativeSelections.length === 2 && once.h.nativeSelections[1].index === 503
+    && !once.state.shop.BHasClass("ShopOpen"), "animation finishes with shop closed and original hero restored");
+poll(once.h); finishClose(once.h);
+assert(once.h.nativeSelections.length === 2, "duplicate close observations cannot restore twice");
+once.h.unhandledEvents.DOTAHUDShopOpened();
+assert(once.h.nativeSelections.length === 2, "late opened event cannot override a closed root");
+["manual", "reopen", "phase", "generation"].forEach(function (scenario) {
+    var f = closeFixture();
+    f.controls.button.events.onactivate();
+    poll(f.h);
+    f.endAnimation();
+    var count = f.h.nativeSelections.length;
+    if (scenario === "manual") { setPortrait(f.h, 504); }
+    if (scenario === "reopen") {
+        f.controls.button.events.onactivate();
+        // No intervening poll: the delayed callback must re-read the actual root.
+    }
+    if (scenario === "phase") {
+        f.h.subscriptions.rpg_battle_state({ phase: "fight" });
+        f.h.subscriptions.rpg_battle_state({ phase: "setup" });
+    }
+    if (scenario === "generation") {
+        f.h.subscriptions.rpg_shop_state({ rule_generation: 2, commander_index: 502 });
+    }
+    finishClose(f.h);
+    assert(f.h.nativeSelections.length === count, "pending restore respects " + scenario);
+    if (scenario === "reopen") {
+        poll(f.h);
+        f.controls.button.events.onactivate(); poll(f.h);
+        f.endAnimation(); finishClose(f.h);
+        assert(f.h.nativeSelections.length === count + 1 && f.h.nativeSelections[count].index === 503,
+            "reopening preserves the recipient for the next completed close");
+    }
+});
+// Live builds may emit no shop events. Reopen and close between polls must not reuse
+// the first close's timer during a second native animation.
+var rapid = closeFixture(true);
+rapid.controls.button.events.onactivate();
+poll(rapid.h);
+rapid.endAnimation();
+rapid.controls.button.events.onactivate();
+rapid.controls.button.events.onactivate();
+finishClose(rapid.h);
+assert(rapid.h.nativeSelections.length === 1 && !rapid.state.shop.BHasClass("ShopOpen"),
+    "no-event rapid reopen/close invalidates the first close timer");
+poll(rapid.h);
+rapid.endAnimation();
+finishClose(rapid.h);
+assert(rapid.h.nativeSelections.length === 2 && rapid.h.nativeSelections[1].index === 503,
+    "second no-event close gets its own delay and restores the saved hero");
+// A new HUD button gets wired, and its tooltip/right-click callbacks survive.
+var rebuilt = closeFixture();
+rebuilt.h.nativeRoot.children = rebuilt.h.nativeRoot.children.filter(function (p) { return p !== rebuilt.controls.controls; });
+var replacement = mountNativeShop(rebuilt.h);
+var rightClicks = 0;
+replacement.button.SetPanelEvent("oncontextmenu", function () { rightClicks++; });
+poll(rebuilt.h);
+replacement.button.events.oncontextmenu();
+replacement.button.events.onactivate();
+assert(rightClicks === 1 && rebuilt.dispatched[1] === "DOTAShopHideShop", "rebuilt button closes once and retains other events");
+rebuilt.h.subscriptions.rpg_battle_state({ phase: "fight" });
+replacement.button.events.onactivate();
+assert(rebuilt.dispatched[2] === "DOTAHUDToggleShop", "outside setup use Valve's original toggle action");
+console.log("PASS native shop single close: explicit hide, deferred restore, stale events, reopen, lifecycle and rebuilt button");
+
 var walletHud = runHud();
 walletHud.subscriptions.rpg_shop_state({gold: 360}); // 500 - a 140-gold purchase
 var nativeShop = mountNativeShop(walletHud); // Valve creates the HUD after the broadcast
