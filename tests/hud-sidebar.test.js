@@ -867,3 +867,82 @@ localHost.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:
 localHost.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:0});
 assert(localHost.sentEvents.filter(function(e) { return e.name === "rpg_request_battle_state"; }).length === initialRequests + 1, "late owner assignment requests cached state once without a broadcast loop");
 console.log("PASS automatic local-host uploads: no pairing prompt and owner state recovery");
+
+// Exercise the actual HUD script and XML with the flat accepted-snapshot contract.
+function boardSnapshot(data, board, ranks, ownRank, values) {
+    data[board + "_list_available"] = 1;
+    data[board + "_list_total"] = ranks.length ? 40 : 0;
+    data[board + "_list_player_rank"] = ownRank;
+    data[board + "_list_count"] = ranks.length;
+    ranks.forEach(function (rank, i) {
+        var prefix = board + "_row_" + (i + 1) + "_";
+        data[prefix + "rank"] = rank;
+        data[prefix + "name"] = rank === ownRank ? '<b>你 & "player"</b>' : "玩家 " + rank;
+        data[prefix + "value"] = values ? values[i] : 100000 - rank;
+        data[prefix + "is_self"] = rank === ownRank ? 1 : 0;
+    });
+    return data;
+}
+function tableRows(hud) {
+    return panel(hud, "RunRankRows").children.filter(function (row) { return row.BHasClass("RankTableRow"); });
+}
+var tables = runHud();
+tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
+var details = boardSnapshot(Object.assign({}, accepted, {settlement_generation:60}), "score", [1,2,3,4,5,18,19,20,21,22], 20);
+boardSnapshot(details, "speedrun", [1,2,3,4,5,6,7], 5, [61002,61001,60000,59999,0,0,0]);
+tables.subscriptions.rpg_leaderboard_result(details);
+assert(tableRows(tables).map(function(row) { return row.children[0].text; }).join(",") === "1,2,3,4,5,18,19,20,21,22", "top5 and distant self neighbors retain real server ranks");
+assert(panel(tables,"RunRankRows").children.filter(function(row) { return row.BHasClass("RankGap") && row.text === "…"; }).length === 1, "one ellipsis marks skipped ranks");
+[1,2,3].forEach(function(rank) { assert(tableRows(tables)[rank-1].BHasClass("RankPodium" + rank), "podium rank styled " + rank); });
+var selfRow = tableRows(tables)[7];
+assert(selfRow.BHasClass("RankSelf") && selfRow.children[2].text === "#dota2_rpg_rank_you", "self best has highlight and localized badge");
+assert(selfRow.children[1].text === '<b>你 & "player"</b>' && selfRow.children[1].html === false, "UTF8 player markup remains literal");
+assert(cssSource.includes("text-overflow: ellipsis") && layoutSource.includes("#dota2_rpg_rank_snapshot"), "compact names and acceptance-snapshot explanation exist");
+selfRow.children[1].events.onmouseover();
+assert(visible(tables,"RunRankNameTooltip") && panel(tables,"RunRankNameTooltip").text === selfRow.children[1].text && panel(tables,"RunRankNameTooltip").html === false, "full name tooltip is literal without HTML dispatch");
+selfRow.children[1].events.onmouseout();
+assert(!visible(tables,"RunRankNameTooltip"), "full name tooltip hides on mouseout");
+var eventsBeforeTabs = tables.sentEvents.length;
+click(tables,"RunSpeedrunTab");
+assert(tableRows(tables).length === 7 && panel(tables,"RunRankRows").children.length === 7, "overlapping server union renders once per row without gap");
+assert(tableRows(tables)[0].children[3].text === "01:01.002" && tableRows(tables)[1].children[3].text === "01:01.001", "milliseconds distinguish close times");
+assert(tableRows(tables)[4].children[3].text === "00:00.000", "zero remaining time is a valid displayed value");
+assert(panel(tables,"RunSpeedrunTab").BHasClass("RankTabSelected") && !panel(tables,"RunScoreTab").BHasClass("RankTabSelected"), "only one selected board");
+tables.subscriptions.rpg_leaderboard_result(details);
+assert(tableRows(tables)[0].children[3].text === "01:01.002", "accepted refresh preserves selected tab");
+click(tables,"RunScoreTab");
+assert(tableRows(tables).length === 10 && tables.sentEvents.length === eventsBeforeTabs, "tabs reuse snapshot without server requests");
+var restoredTables = runHud();
+restoredTables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
+restoredTables.subscriptions.rpg_leaderboard_result(details);
+click(restoredTables,"RunSpeedrunTab");
+assert(tableRows(restoredTables).length === 7, "reconnected snapshot supports both tabs");
+click(tables,"RunSpeedrunTab");
+tables.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:61});
+assert(!visible(tables,"RunLeaderboard") && tableRows(tables).length === 0, "setup hides and clears table");
+tables.subscriptions.rpg_leaderboard_result(details);
+assert(tableRows(tables).length === 0, "old accepted snapshot cannot restore rows after reset");
+tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:62});
+var failedHistory = Object.assign({}, details, {settlement_generation:62,cleared:0,score_global_record:0,score_first_entry:0,score_personal_record:0});
+tables.subscriptions.rpg_leaderboard_result(failedHistory);
+assert(panel(tables,"RunScoreTab").BHasClass("RankTabSelected"), "new terminal defaults to score");
+assert(panel(tables,"RunSpeedrunRank").text.includes("rank_position") && panel(tables,"RunSpeedrunRank").text.includes("rank_current_not_qualified"), "failed run preserves accepted historical speed rank");
+assert(!visible(tables,"RunRecordMessage"), "failed speedrun does not congratulate even with record flag");
+click(tables,"RunSpeedrunTab");
+assert(tableRows(tables).length === 7 && panel(tables,"RunRankTableStatus").text.includes("rank_current_not_qualified"), "historical table labels current failed run");
+var noHistory = boardSnapshot(Object.assign({}, failedHistory), "speedrun", [1,2,3], 0);
+tables.subscriptions.rpg_leaderboard_result(noHistory);
+assert(panel(tables,"RunRankTableStatus").text.includes("rank_not_ranked") && panel(tables,"RunSpeedrunRank").text.includes("rank_clear_only"), "failed player without previous clear stays unranked");
+var empty = boardSnapshot(Object.assign({}, noHistory), "speedrun", [], 0);
+tables.subscriptions.rpg_leaderboard_result(empty);
+assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text.includes("rank_empty"), "empty board clears prior rows");
+tables.subscriptions.rpg_leaderboard_result(Object.assign({}, failedHistory, {speedrun_list_available:0}));
+assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_rank_detail_unavailable", "unavailable details cannot expose stale payload rows");
+["pending","error","disabled","ineligible"].forEach(function(status, i) {
+    var generation = 63 + i;
+    tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:generation});
+    tables.subscriptions.rpg_leaderboard_result(Object.assign({}, details, {settlement_generation:generation,status:status}));
+    assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_rank_" + status, "no stale rows for " + status);
+    assert(!visible(tables,"RunRecordMessage"), "no invented records for " + status);
+});
+console.log("PASS leaderboard snapshot tables: gaps, union, tabs, literal names, milliseconds, historical rank, reconnect and reset");

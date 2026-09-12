@@ -1001,6 +1001,25 @@
 .RunRankRow { color: #e3e9ec; font-size: 20px; margin-top: 7px; }
 .RunRecordMessage { color: #ffd970; font-size: 20px; font-weight: bold; margin-top: 12px; padding: 8px; background-color: #60542655; }
 .RunRankHint { color: #9ca8ae; font-size: 14px; margin-top: 10px; }
+.RankTabs { flow-children: right; width: 100%; margin-top: 8px; }
+.RankTab { width: 50%; padding: 5px; background-color: #202c36; }
+.RankTab Label { text-align: center; color: #acb7c2; font-size: 16px; }
+.RankTabSelected { background-color: #475347; }
+.RankTabSelected Label { color: #f3db91; }
+.RunRankRows { width: 100%; flow-children: down; }
+.RankTableRow { width: 100%; flow-children: right; padding: 2px 4px; }
+.RankTableRow Label { font-size: 15px; color: #d0d9de; white-space: nowrap; text-overflow: ellipsis; }
+.RankTableRow .RankNumber { width: 48px; }
+.RankTableRow .RankPlayer { width: fill-parent-flow(1); }
+.RankTableRow .RankYou { width: 32px; color: #a7e3ca; text-align: center; }
+.RankTableRow .RankValue { width: 110px; text-align: right; }
+.RankTableHeading Label { color: #98a6b0; font-size: 14px; }
+.RankPodium1 Label { color: #f4d477; }
+.RankPodium2 Label { color: #d2dce6; }
+.RankPodium3 Label { color: #dba67f; }
+.RankSelf { background-color: #315b4b88; border-left: 2px solid #a7e3ca; }
+.RankGap { font-size: 14px; text-align: center; color: #98a6b0; height: 18px; }
+.RankNameTooltip { color: #e3e9ec; font-size: 15px; padding: 5px; background-color: #111820; }
 
 .ReplayRunButton
 {

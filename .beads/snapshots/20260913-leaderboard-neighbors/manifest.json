@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-12T16:01:58.579675+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-wcfw and dota2_rpg-h816",
+  "counts": {
+    "issues": 2,
+    "dependencies": 2,
+    "events": 8
+  },
+  "evidence": "24 backend tests, 88 offline regression groups, 3 Dota UI compilations without warnings, real D1 16-player top-five/neighbors snapshot verification with exact cleanup, 6 source copies match installed addon",
+  "remaining": "Upload original Workshop 3799645167 and validate actual local-host terminal table, tabs, reconnect and replay."
+}

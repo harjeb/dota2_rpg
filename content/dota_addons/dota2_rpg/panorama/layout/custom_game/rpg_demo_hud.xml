@@ -165,6 +165,20 @@
                 <Label id="RunScoreRank" class="RunRankRow" />
                 <Label id="RunSpeedrunRank" class="RunRankRow" />
                 <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
+                <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
+                <Panel class="RankTabs">
+                    <Button id="RunScoreTab" class="RankTab RankTabSelected"><Label text="#dota2_rpg_rank_score" /></Button>
+                    <Button id="RunSpeedrunTab" class="RankTab"><Label text="#dota2_rpg_rank_speedrun" /></Button>
+                </Panel>
+                <Panel class="RankTableRow RankTableHeading">
+                    <Label class="RankNumber" text="#dota2_rpg_rank_column" />
+                    <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
+                    <Label class="RankYou" />
+                    <Label id="RunRankValueHeading" class="RankValue" text="#dota2_rpg_rank_score" />
+                </Panel>
+                <Label id="RunRankTableStatus" class="RunRankHint" />
+                <Panel id="RunRankRows" class="RunRankRows" />
+                <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
                 <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
             </Panel>
             <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>

@@ -2012,6 +2012,77 @@
     var terminalResultVisible = false;
     var rankGeneration = -1;
     var rankStatus = "";
+    var rankSnapshot = null;
+    var rankBoard = "score";
+    function rankMilliseconds(ms) {
+        var value = Math.max(0, Math.floor(Number(ms) || 0));
+        var minutes = Math.floor(value / 60000);
+        return (minutes < 10 ? "0" : "") + minutes + ":" +
+            ("0" + Math.floor(value / 1000) % 60).slice(-2) + "." + ("00" + value % 1000).slice(-3);
+    }
+    function renderRankTable() {
+        var rows = $("#RunRankRows");
+        rows.RemoveAndDeleteChildren();
+        $("#RunRankNameTooltip").SetHasClass("Hidden", true);
+        $("#RunRankNameTooltip").text = "";
+        ["score", "speedrun"].forEach(function (board) {
+            $(board === "score" ? "#RunScoreTab" : "#RunSpeedrunTab").SetHasClass("RankTabSelected", board === rankBoard);
+        });
+        $("#RunRankValueHeading").text = rankText(rankBoard === "score" ? "rank_score" : "rank_remaining_time");
+        var data = rankSnapshot;
+        var note = $("#RunRankTableStatus");
+        note.text = "";
+        if (!data) { return; }
+        if (rankStatus !== "success") {
+            note.text = rankText("rank_" + (["pending", "error", "disabled", "ineligible"].indexOf(rankStatus) >= 0 ? rankStatus : "error"));
+            return;
+        }
+        var prefix = rankBoard + "_";
+        if (Number(data[prefix + "list_available"]) !== 1) {
+            note.text = rankText("rank_detail_unavailable");
+            return;
+        }
+        var count = Math.min(10, Math.max(0, Math.floor(Number(data[prefix + "list_count"]) || 0)));
+        if (!count) { note.text = rankText("rank_empty"); }
+        else if (!(Number(data[prefix + "list_player_rank"]) > 0)) { note.text = rankText("rank_not_ranked"); }
+        if (rankBoard === "speedrun" && Number(data.cleared) !== 1) {
+            note.text += (note.text ? " · " : "") + rankText("rank_current_not_qualified");
+        }
+        var previousRank = 0;
+        function cell(parent, text, className) {
+            var label = $.CreatePanel("Label", parent, "");
+            label.AddClass(className);
+            label.html = false;
+            label.text = String(text);
+            return label;
+        }
+        for (var i = 1; i <= count; i++) {
+            var rowPrefix = prefix + "row_" + i + "_";
+            var rank = Number(data[rowPrefix + "rank"]);
+            if (!(rank > 0)) { continue; }
+            if (rank > previousRank + 1) { cell(rows, "…", "RankGap"); }
+            previousRank = rank;
+            var row = $.CreatePanel("Panel", rows, "");
+            row.AddClass("RankTableRow");
+            row.SetHasClass("RankPodium" + rank, rank <= 3);
+            row.SetHasClass("RankSelf", Number(data[rowPrefix + "is_self"]) === 1);
+            cell(row, rank, "RankNumber");
+            var playerName = cell(row, data[rowPrefix + "name"] || "", "RankPlayer");
+            (function (nameLabel) {
+                nameLabel.SetPanelEvent("onmouseover", function () {
+                    var tooltip = $("#RunRankNameTooltip");
+                    tooltip.html = false;
+                    tooltip.text = nameLabel.text;
+                    tooltip.SetHasClass("Hidden", false);
+                });
+                nameLabel.SetPanelEvent("onmouseout", function () { $("#RunRankNameTooltip").SetHasClass("Hidden", true); });
+            })(playerName);
+            cell(row, Number(data[rowPrefix + "is_self"]) === 1 ? rankText("rank_you") : "", "RankYou");
+            cell(row, rankBoard === "speedrun" ? rankMilliseconds(data[rowPrefix + "value"]) : Math.max(0, Number(data[rowPrefix + "value"]) || 0), "RankValue");
+        }
+    }
+    $("#RunScoreTab").SetPanelEvent("onactivate", function () { rankBoard = "score"; renderRankTable(); });
+    $("#RunSpeedrunTab").SetPanelEvent("onactivate", function () { rankBoard = "speedrun"; renderRankTable(); });
     function rankText(token, values) {
         var text = $.Localize("#dota2_rpg_" + token);
         (values || []).forEach(function (value, i) { text = text.replace("%s" + (i + 1), String(value)); });
@@ -2026,7 +2097,9 @@
         if (!isFinite(generation) || generation < Math.max(replayGeneration, lastSettlementGeneration, rankGeneration)
             || phase !== "result" || data.score === undefined) { return; }
         if (generation === rankGeneration && rankStatus === "success" && data.status !== "success") { return; }
+        if (generation !== rankGeneration) { rankBoard = "score"; }
         rankGeneration = generation;
+        rankSnapshot = data;
         rankStatus = String(data.status || "pending");
         terminalResultVisible = true;
         var cleared = Number(data.cleared) === 1;
@@ -2042,7 +2115,10 @@
             var label = $(board === "score" ? "#RunScoreRank" : "#RunSpeedrunRank");
             var title = rankText("rank_" + board);
             if (board === "speedrun" && !cleared) {
-                label.text = title + " · " + rankText("rank_clear_only");
+                var historicalRank = Number(data.speedrun_list_player_rank || 0);
+                label.text = title + " · " + (status === "success" && Number(data.speedrun_list_available) === 1 && historicalRank > 0
+                    ? rankText("rank_position", [historicalRank, data.speedrun_list_total || 0]) + " · " + rankText("rank_current_not_qualified")
+                    : rankText("rank_clear_only"));
                 return;
             }
             var rank = Number(data[board + "_rank"] || 0);
@@ -2056,6 +2132,7 @@
         });
         $("#RunRecordMessage").text = congratulations.join("\n");
         $("#RunRecordMessage").SetHasClass("Hidden", !congratulations.length);
+        renderRankTable();
         $("#RunLeaderboard").SetHasClass("Hidden", false);
         $("#BattleResult").SetHasClass("Hidden", false);
     }
@@ -2105,7 +2182,7 @@
         // Keep the completed battle available throughout results and preparation.
         serverReady = Number(data.ready || 0) === 1;
         // The first HUD request may precede owner assignment. Once the map is
-        // ready, request cached owner-only results/pairing exactly once.
+        // ready, request cached owner-only results exactly once.
         if (serverReady && !requestedReadyOwnerState && typeof Players.GetLocalPlayer === "function"
             && Players.GetLocalPlayer() === Number(data.owner_player_id)) {
             requestedReadyOwnerState = true;
@@ -2126,6 +2203,9 @@
         if (phase === "setup") {
             terminalResultVisible = false;
             rankStatus = "";
+            rankSnapshot = null;
+            rankBoard = "score";
+            renderRankTable();
             $("#RunLeaderboard").SetHasClass("Hidden", true);
             setStatus(stageRetryReady ? "#dota2_rpg_stage_failed" : (stageLoading ? "#dota2_rpg_stage_loading" :
                 (serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing")));

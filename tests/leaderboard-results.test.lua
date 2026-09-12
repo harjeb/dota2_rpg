@@ -98,14 +98,32 @@ local result={submission_id=g.leaderboardRun.payload.submission_id,rankings={
     score={rank=1,total=7,personal_record=true,global_record=true,first_entry=false},
     speedrun={rank=3,total=4,personal_record=false,global_record=false,first_entry=true},
 }}
+local me=g.leaderboardRun.payload.steam_id
+result.leaderboards={score={total=7,player_rank=1,rows={}},speedrun={total=4,player_rank=3,rows={}}}
+for i=1,5 do
+    result.leaderboards.score.rows[i]={rank=i,steam_id=i==1 and me or Results.SteamId(i+10),
+        player_name=i==1 and '玩家 <b>"你好"</b>' or "邻居"..i,value=1400000-i,is_self=0,payload_hash="not a HUD field"}
+end
+for i=1,4 do
+    result.leaderboards.speedrun.rows[i]={rank=i,steam_id=i==3 and me or Results.SteamId(i+10),
+        player_name="速通玩家"..i,value=i==1 and 0 or i,is_self=1}
+end
 requests[2].callback({StatusCode=201,Body=Json.encode(result)})
 assert(events[#events].data.status=="success" and events[#events].data.score_rank==1)
+local mapped=events[#events].data
+assert(mapped.score_list_available==1 and mapped.score_list_count==5 and mapped.score_list_player_rank==1)
+assert(mapped.speedrun_list_available==1 and mapped.speedrun_list_count==4 and mapped.speedrun_list_player_rank==3)
+assert(mapped.score_row_1_name=='玩家 <b>"你好"</b>' and mapped.score_row_1_is_self==1)
+assert(mapped.speedrun_row_1_value==0 and mapped.speedrun_row_1_is_self==0 and mapped.speedrun_row_3_is_self==1)
+assert(mapped.leaderboards==nil and mapped.score_row_1_payload_hash==nil and mapped.score_row_1_steam_id==nil)
+assert(#Json.encode(mapped)<16384, "bounded flat event fits comfortably within a game event")
 assert(events[#events].data.score_global_record==1 and events[#events].data.speedrun_first_entry==1)
 local before=#events
 Results.Resend(g,1)
 assert(#events==before)
 Results.Resend(g,0)
 assert(#events==before+1)
+assert(events[#events].data.score_row_1_name==mapped.score_row_1_name and events[#events].data.speedrun_row_3_is_self==1)
 
 -- Replay suppresses late old-run UI while preserving the in-flight submission.
 local old=g.leaderboardRun
@@ -131,6 +149,36 @@ timers[#timers].fn()
 assert(requests[#requests].body==body)
 requests[#requests].callback({StatusCode=400})
 assert(#events==before)
+
+local function detailCase(details)
+    local f=game()
+    settle(f,false,120,0)
+    f.runLives.remaining=0
+    f.phase,f.runComplete="result",true
+    Results.Finish(f,false,{})
+    Results.SendTerminal(f)
+    requests[#requests].callback({StatusCode=201,Body=Json.encode({submission_id=f.leaderboardRun.payload.submission_id,
+        rankings={score={rank=1,total=1}},leaderboards=details})})
+    assert(f.leaderboardRun.result.status=="success", "missing detail must not turn accepted score into failed upload")
+    return f.leaderboardRun.result
+end
+local noDetail=detailCase(nil)
+assert(noDetail.score_list_available==0 and noDetail.speedrun_list_available==0 and noDetail.score_rank==1)
+local empty=detailCase({speedrun={total=0,rows={}}})
+assert(empty.speedrun_list_available==1 and empty.speedrun_list_count==0 and empty.speedrun_list_player_rank==0)
+local prior=detailCase({speedrun={total=1,player_rank=1,rows={{rank=1,steam_id=me,player_name="旧纪录",value=0}}}})
+assert(prior.speedrun_list_available==1 and prior.speedrun_row_1_is_self==1 and prior.speedrun_rank==nil)
+local tooMany={total=20,rows={}}
+for i=1,11 do tooMany.rows[i]={rank=i,steam_id=Results.SteamId(i+10),player_name="邻居",value=i} end
+assert(detailCase({score=tooMany}).score_list_available==0)
+local duplicate={total=2,rows={{rank=1,steam_id=Results.SteamId(10),player_name="邻居",value=1},
+    {rank=2,steam_id=Results.SteamId(10),player_name="重复",value=2}}}
+assert(detailCase({score=duplicate}).score_list_available==0)
+local badSelf={total=2,player_rank=2,rows={{rank=1,steam_id=me,player_name="错误名次",value=1}}}
+assert(detailCase({score=badSelf}).score_list_available==0)
+local unordered={total=2,rows={{rank=2,steam_id=Results.SteamId(10),player_name="后",value=2},
+    {rank=1,steam_id=Results.SteamId(11),player_name="前",value=1}}}
+assert(detailCase({score=unordered}).score_list_available==0)
 
 local practice=game()
 practice.currentLevelId="ch30"

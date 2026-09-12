@@ -64,13 +64,50 @@ function Results.Resend(game, playerId)
     Results.Publish(game, ensure(game), safeCall(PlayerResource, "GetPlayer", playerId))
 end
 
+local function whole(value, minimum, maximum)
+    return type(value) == "number" and value >= minimum and value <= maximum and value == math.floor(value)
+end
+local function mapStandings(run, name, board)
+    local result = run.result
+    result[name .. "_list_available"] = 0
+    result[name .. "_list_count"] = 0
+    if type(board) ~= "table" or not whole(board.total, 0, 2147483647)
+        or type(board.rows) ~= "table" or #board.rows > 10 then return end
+    local myRank = board.player_rank or 0
+    if not whole(myRank, 0, board.total) then return end
+    local previousRank, seen, foundSelf = 0, {}, false
+    for _, row in ipairs(board.rows) do
+        if type(row) ~= "table" or not whole(row.rank, previousRank + 1, board.total)
+            or type(row.steam_id) ~= "string" or #row.steam_id ~= 17 or not row.steam_id:match("^%d+$")
+            or seen[row.steam_id] or type(row.player_name) ~= "string" or #row.player_name < 1 or #row.player_name > 256
+            or not whole(row.value, 0, 2147483647) then return end
+        previousRank, seen[row.steam_id] = row.rank, true
+        if row.steam_id == run.payload.steam_id then
+            if row.rank ~= myRank then return end
+            foundSelf = true
+        elseif row.rank == myRank then return end
+    end
+    if (myRank > 0) ~= foundSelf or (board.total > 0 and #board.rows == 0) then return end
+    result[name .. "_list_available"] = 1
+    result[name .. "_list_total"] = board.total
+    result[name .. "_list_player_rank"] = myRank
+    result[name .. "_list_count"] = #board.rows
+    for index, row in ipairs(board.rows) do
+        local prefix = name .. "_row_" .. index .. "_"
+        result[prefix .. "rank"] = row.rank
+        result[prefix .. "name"] = row.player_name
+        result[prefix .. "value"] = row.value
+        result[prefix .. "is_self"] = row.steam_id == run.payload.steam_id and 1 or 0
+    end
+end
+
 local function acceptResponse(run, data)
     if type(data) ~= "table" or data.submission_id ~= run.payload.submission_id then return false end
-    -- The backend contract is mapped in one place; no bearer or response body
-    -- is sent to clients or logs.
+    -- Map only the bounded display contract; raw HTTP bodies never reach HUD.
     local boards = data.rankings
     if type(boards) ~= "table" or type(boards.score) ~= "table" or not tonumber(boards.score.rank) then return false end
     for _, name in ipairs({"score", "speedrun"}) do
+        mapStandings(run, name, type(data.leaderboards) == "table" and data.leaderboards[name] or nil)
         local board = boards[name]
         if type(board) == "table" then
             run.result[name .. "_rank"] = tonumber(board.rank) or 0
