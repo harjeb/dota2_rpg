@@ -32,6 +32,10 @@ function O.Actual(ctx,c,unit)
         return C.Call(unit,"HasModifier",c.modifier or c.value)
     elseif base=="modifier_stacks" or base=="modifier_remaining" then
         return C.ModifierValue(unit,c.modifier,base=="modifier_stacks" and "GetStackCount" or "GetRemainingTime")
+    elseif base=="recently_damaged" then
+        if ctx.was_recently_damaged then return ctx.was_recently_damaged(unit,tonumber(c.seconds or c.value or 2)) end
+    elseif base=="any_ally_recently_damaged" then
+        if ctx.any_ally_recently_damaged then return ctx.any_ally_recently_damaged(ctx.caster,tonumber(c.seconds or c.value or 2)) end
     elseif base=="elapsed" then return ctx.elapsed
     elseif base=="alive_enemy_count" or base=="alive_ally_count" then return ctx[base]
     elseif base=="nearby_enemies" or base=="nearby_allies" then

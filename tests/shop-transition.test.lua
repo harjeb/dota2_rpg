@@ -33,6 +33,7 @@ require = function(name)
         ["issue_fixes/jinada_income"] = true,
         ["issue_fixes/shard_purchase"] = true,
         ["issue_fixes/item_sales"] = true,
+        ["issue_fixes/eldwurms_edda"] = true,
         ["issue_fixes/hero_precache"] = true,
         ["tactics/special_targets"] = true,
         ["battle.tempest_double"] = true,

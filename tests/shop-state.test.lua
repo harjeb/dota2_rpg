@@ -54,6 +54,7 @@ require = function(name)
         ["issue_fixes/jinada_income"] = moduleRoot .. "issue_fixes/jinada_income.lua",
         ["issue_fixes/shard_purchase"] = moduleRoot .. "issue_fixes/shard_purchase.lua",
         ["issue_fixes/item_sales"] = moduleRoot .. "issue_fixes/item_sales.lua",
+        ["issue_fixes/eldwurms_edda"] = moduleRoot .. "issue_fixes/eldwurms_edda.lua",
 		["issue_fixes/hero_precache"] = moduleRoot .. "issue_fixes/hero_precache.lua",
 		["tactics/special_targets"] = moduleRoot .. "tactics/special_targets.lua",
 		["battle.tempest_double"] = moduleRoot .. "battle/tempest_double.lua",

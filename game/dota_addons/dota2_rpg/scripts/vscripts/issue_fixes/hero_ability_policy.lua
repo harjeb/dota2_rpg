@@ -89,7 +89,7 @@ function Policy.RestoreManualAbilities(hero, data, fallbackPoints)
                             break
                         end
                     end
-                else
+                elseif ability:GetLevel() ~= saved then
                     ability:SetLevel(saved)
                 end
             end

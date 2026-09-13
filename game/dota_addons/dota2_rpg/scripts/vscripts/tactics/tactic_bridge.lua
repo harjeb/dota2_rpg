@@ -451,7 +451,11 @@ function TacticBridge:Install()
 				return self.combatMemory:WasDamagedWithin(target, seconds or 3)
 			end,
 			any_ally_recently_damaged = function(caster2, seconds)
-				return self.combatMemory:AnyAllyDamagedWithin(caster2, allies, seconds or 3)
+                for _, ally in ipairs(allies) do
+                    if ally ~= caster2 and is_alive(ally)
+                        and self.combatMemory:WasDamagedWithin(ally, seconds or 3) then return true end
+                end
+                return false
 			end,
 			get_action_use_count = function(target, logicalId)
 				return self.combatMemory:GetActionUseCount(target, resolveActionName(target, logicalId))
@@ -640,6 +644,19 @@ function TacticBridge:Install()
 		end,
 	})
 	self.orderFilter:Install(GameRules:GetGameModeEntity())
+end
+
+-- entity_hurt supplies damage after mitigation. This history is separate from
+-- the scoreboard/BattleManager counters and drives U15/U16 and target filters.
+function TacticBridge:OnEntityHurt(event)
+    if self.gameMode.phase ~= "fight" or self.combatMemory == nil or type(event) ~= "table" then return false end
+    local damage = Context.Number(event.damage)
+    local id = Context.Number(event.entindex_killed)
+    if damage == nil or damage <= 0 or id == nil or id <= 0 or id ~= math.floor(id) then return false end
+    local victim = EntIndexToHScript(id)
+    if not is_valid_entity(victim) then return false end
+    self.combatMemory:RecordDamage(victim)
+    return true
 end
 
 function TacticBridge:OnThink()

@@ -28,6 +28,7 @@ local RespawnPolicy = require("battle.respawn_policy")
 local ItemSales = require("issue_fixes/item_sales")
 local ShardPurchase = require("issue_fixes/shard_purchase")
 local GrisGris = require("issue_fixes/gris_gris")
+local EldwurmsEdda = require("issue_fixes/eldwurms_edda")
 local JinadaIncome = require("issue_fixes/jinada_income")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
@@ -2504,7 +2505,7 @@ function CDota2RpgDemo:OnItemUnequip(_, payload)
 			item = candidate
 		end
 	end
-	if self:IsLiveItem(item) and item:GetAbilityName() == GrisGris.ITEM then return end
+	if self:IsLiveItem(item) and (item:GetAbilityName() == GrisGris.ITEM or item:GetAbilityName() == EldwurmsEdda.ITEM) then return end
 	if self:MoveHeroItemToStash(hero, item) then
 		self:SyncLiveEquipmentState(true)
 	end
@@ -2756,6 +2757,7 @@ function CDota2RpgDemo:RestoreHeroInventoryToUnit(heroName, hero)
 	end
 	ShardPurchase.Restore(self, heroName, hero)
 	GrisGris.BeforeRestore(self, hero)
+	EldwurmsEdda.BeforeRestore(self, hero)
 	local priorInventory = heroData.inventory or {}
 	local priorStates = heroData.inventory_states or {}
 	local priorEntities = heroData.inventory_entities or {}
@@ -2826,7 +2828,7 @@ function CDota2RpgDemo:ClearBenchHeroesForRespawn()
 	for _, unit in ipairs(self.benchUnits or {}) do
 		if TacticEngine.IsValidUnit(unit) then
 			self:CaptureHeroInventoryForRespawn(unit)
-			lifecycle.Remove(self, unit, "bench")
+			if not EldwurmsEdda.KeepForRespawn(self, unit) then lifecycle.Remove(self, unit, "bench") end
 		end
 	end
 	self.benchUnits = {}
@@ -2852,7 +2854,8 @@ function CDota2RpgDemo:SpawnBenchHeroes()
 				BENCH_AREA_CENTER.x - BENCH_GRID_SPACING + col * BENCH_GRID_SPACING,
 				BENCH_AREA_CENTER.y - 120 + row * BENCH_GRID_SPACING, 128), nil)
 			-- 先以无玩家 owner 创建，避免 npc_spawned 把它误判为玩家主英雄并移到指挥官位置；随后绑定玩家控制权。
-			local unit = lifecycle.Create(self, heroName, pos, DOTA_TEAM_GOODGUYS, "bench")
+			local unit = EldwurmsEdda.TakeRetained(self, heroName, pos)
+				or lifecycle.Create(self, heroName, pos, DOTA_TEAM_GOODGUYS, "bench")
 			if TacticEngine.IsValidUnit(unit) then
 				FindClearSpaceForUnit(unit, pos, true)
 				local data = self.heroData[heroName]
@@ -2896,7 +2899,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 		if TacticEngine.IsValidUnit(hero) then
 			-- 重铸前把身上的装备收回个人库存记录，避免随单位销毁。
 			self:CaptureHeroInventoryForRespawn(hero)
-			lifecycle.Remove(self, hero, "lineup")
+			if not EldwurmsEdda.KeepForRespawn(self, hero) then lifecycle.Remove(self, hero, "lineup") end
 		end
 	end
 	battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
@@ -2912,7 +2915,8 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 			and GetGroundPosition(Vector(placed.x, placed.y, 128), nil)
 			or GetGroundPosition(TEAM_SPAWNS[DOTA_TEAM_GOODGUYS][index], nil)
 		-- 先以无玩家 owner 创建，避免 npc_spawned 的玩家本体处理；生成后再绑定到小精灵玩家。
-		local hero = lifecycle.Create(self, heroName, spawnPosition, DOTA_TEAM_GOODGUYS, "lineup")
+		local hero = EldwurmsEdda.TakeRetained(self, heroName, spawnPosition)
+			or lifecycle.Create(self, heroName, spawnPosition, DOTA_TEAM_GOODGUYS, "lineup")
 		if TacticEngine.IsValidUnit(hero) then
 			FindClearSpaceForUnit(hero, spawnPosition, true)
 			local heroData = self:GetHeroData(heroName)
@@ -3466,11 +3470,11 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 
 	if orderType == DOTA_UNIT_ORDER_CONSUME_ITEM then
 		local item = EntIndexToHScript(tonumber(filterTable.entindex_ability) or -1)
-		if self:IsLiveItem(item) and item:GetAbilityName() == GrisGris.ITEM then
+		if self:IsLiveItem(item) and (item:GetAbilityName() == GrisGris.ITEM or item:GetAbilityName() == EldwurmsEdda.ITEM) then
 			local holder = self:FindEquipmentItemHolder(item)
 			if holder then
 				ItemSales.Sell(self, { PlayerID = issuerPlayerId,
-					hero = holder:GetUnitName(), item = GrisGris.ITEM,
+					hero = holder:GetUnitName(), item = item:GetAbilityName(),
 					item_index = tonumber(filterTable.entindex_ability) })
 			end
 			return false
@@ -3616,7 +3620,8 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 		if not isTransferableItem(item) or not self:IsItemHeldBy(source, item, 0, lastSlot) then
 			return false
 		end
-		if item:GetAbilityName() == GrisGris.ITEM and (isDrop or isGive) then return false end
+		if (item:GetAbilityName() == GrisGris.ITEM or item:GetAbilityName() == EldwurmsEdda.ITEM)
+			and (isDrop or isGive) then return false end
 		if isDrop then
 			return true -- 明确持有的物品才可丢到地面
 		end
@@ -3790,6 +3795,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 end
 
 function CDota2RpgDemo:OnEntityHurt(event)
+	if self.tacticBridge and self.tacticBridge.OnEntityHurt then self.tacticBridge:OnEntityHurt(event) end
 	self.battleManager:RecordDamage(tonumber(event.entindex_killed or -1))
 	if self.phase ~= "fight" or self.damageStats == nil then return end
 	local function entity(value)

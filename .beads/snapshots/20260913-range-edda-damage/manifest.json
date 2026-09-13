@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-13T03:02:24.594205+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-x0ol and dota2_rpg-blgc",
+  "counts": {
+    "issues": 2,
+    "dependencies": 1,
+    "events": 4
+  },
+  "evidence": "95/95 offline regression groups and 3 Dota HUD XML/CSS/JS compilations passed. Native VPK audited for zero cast ranges and Edda; addon installed.",
+  "remaining": "Arena Edda native upgrade serialization tracked in dota2_rpg-blgc. Real native Edda upgrades, AA two-phase casting and UI scrolling still require in-game observation. No Dota gameplay commands executed; backend source excluded."
+}

@@ -119,6 +119,8 @@ local special_cast_ranges = {
 -- sweep, fixed arc, or arrow's attack-based reach.
 local special_effect_reaches = {
     dawnbreaker_fire_wreath = "swipe_radius",
+    legion_commander_intimidate = "radius",
+    primal_beast_onslaught = "max_distance",
     mars_gods_rebuke = "radius",
     mars_spear = "spear_range",
     clinkz_burning_barrage = "range",
@@ -128,9 +130,28 @@ local special_effect_reaches = {
 -- Zero is also the native representation of these reviewed global casts.
 -- Never turn an arbitrary zero-range or self-centered ability into a global one.
 local global_casts = {
-    elder_titan_move_spirit = true,
+    ancient_apparition_ice_blast = true,
+    zuus_cloud = true,
+    tinker_keen_teleport = true,
     rattletrap_rocket_flare = true,
+    furion_teleportation = true,
     furion_wrath_of_nature = true,
+    chen_zealot = true,
+    spirit_breaker_charge_of_darkness = true,
+    invoker_sun_strike = true,
+    invoker_sun_strike_ad = true,
+    keeper_of_the_light_recall = true,
+    abyssal_underlord_dark_portal = true,
+    abyssal_underlord_dark_rift = true,
+    ringmaster_crystal_ball = true,
+    dawnbreaker_solar_guardian = true,
+    -- These omit the legacy field entirely; their destinations are still
+    -- global. Native target/location filters retain trap, clone and ally rules.
+    templar_assassin_trap_teleport = true,
+    spectre_reality = true,
+    meepo_poof = true,
+    wisp_relocate = true,
+    elder_titan_move_spirit = true,
     treant_living_armor = true,
     storm_spirit_ball_lightning = true,
 }
@@ -155,10 +176,10 @@ local function ability_cast_range(caster, ability, target)
     if global_casts[name] and native_range ~= nil and native_range <= 0 then
         return math.huge
     end
-    if native_range ~= nil and native_range <= 0
-        and (special_cast_ranges[name] or special_effect_reaches[name]) then
+    if native_range ~= nil and native_range <= 0 then
         -- Some native effective accessors return only the caster's range bonus
-        -- when their ordinary range is zero. That is not the spell's full reach.
+        -- when their ordinary range is zero. Consult AbilityValues / reviewed
+        -- reach fields for every zero-range spell before accepting that bonus.
         local bonus = caster.GetCastRangeBonus ~= nil and tonumber(caster:GetCastRangeBonus()) or 0
         if value ~= nil and bonus ~= nil and bonus > 0 and value <= bonus then value = 0 end
     end

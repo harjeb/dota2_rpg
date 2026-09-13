@@ -1432,7 +1432,8 @@
         button.AddClass("ItemRowBtn");
         button.AddClass("ItemSellBtn");
         createLabel(button, "", $.Localize(itemName === "item_grisgris"
-            ? "#dota2_rpg_gris_gris_redeem" : "#dota2_rpg_item_sell"));
+            ? "#dota2_rpg_gris_gris_redeem" : (itemName === "item_eldwurms_edda"
+                ? "#dota2_rpg_item_consume" : "#dota2_rpg_item_sell")));
         button.enabled = phase === "setup" && validId && !pendingItemSales[entityId];
         button.SetPanelEvent("onactivate", function () {
             if (phase !== "setup" || !validId || pendingItemSales[entityId]) {
@@ -1463,8 +1464,9 @@
         if (requestId === itemSellRequestId) {
             var success = Number(data.ok) === 1;
             var reasons = ["wrong_phase", "invalid_item", "not_owned", "not_sellable",
-                "purchase_pending", "sale_failed", "unavailable"];
-            var reason = success ? "sold" : (reasons.indexOf(data.reason) >= 0 ? data.reason : "unavailable");
+                "purchase_pending", "sale_failed", "unavailable", "edda_arena_unavailable"];
+            var reason = success ? (data.reason === "consumed" ? "consumed" : "sold")
+                : (reasons.indexOf(data.reason) >= 0 ? data.reason : "unavailable");
             // Only the authoritative shop state updates gold; show the native wallet delta verbatim.
             setItemSellNotice(reason, data.refund, success);
         }
@@ -1562,7 +1564,8 @@
                         slot: itemSlot
                     });
                 });
-                unequip.enabled = itemName !== "item_grisgris" && phase === "setup" && Boolean(itemId)
+                unequip.enabled = itemName !== "item_grisgris" && itemName !== "item_eldwurms_edda"
+                    && phase === "setup" && Boolean(itemId)
                     && (itemSlot === NEUTRAL_ITEM_SLOT ? shopState.neutralSlotFree : shopState.stashFreeSlots > 0);
                 createItemSellButton(row, target.name, itemName, itemId);
             }(target.inventory[itemIndex], target.inventoryIds[itemIndex] || "",

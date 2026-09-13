@@ -32,6 +32,10 @@ function Sales.Sell(game, payload)
         if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
         return require("issue_fixes/gris_gris").Redeem(game, holder, item)
     end
+    if payload.item == "item_eldwurms_edda" then
+        if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
+        return require("issue_fixes/eldwurms_edda").Consume(game, holder, item)
+    end
     if item.IsSellable == nil or holder.SellItem == nil then return false, "unavailable", 0 end
     local checked, sellable = pcall(item.IsSellable, item)
     if not checked or not sellable then return false, "not_sellable", 0 end

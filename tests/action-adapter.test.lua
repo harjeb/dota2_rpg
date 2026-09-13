@@ -63,6 +63,10 @@ end
 assert(adapter:GetRequiredRange(caster, spec, point) == 550, "native AbilityValues range survives zero legacy accessor")
 assert(adapter:IsInRange(caster, spec, {x=500}), "Burrowstrike may cast inside its native range")
 assert(not adapter:IsInRange(caster, spec, {x=600}), "Burrowstrike does not invent global range")
+caster.GetCastRangeBonus=function() return 125 end
+source.GetEffectiveCastRange=function() return 125 end
+assert(adapter:GetRequiredRange(caster,spec,point)==675, "bonus-only API must not mask AbilityValues range for an ordinary spell")
+caster.GetCastRangeBonus=nil
 source.GetEffectiveCastRange = function(_, _, target)
     assert(target == nil, "effective range also receives an entity or nil")
     return 750
@@ -122,6 +126,8 @@ local reviewed = {
     {"mars_spear", "spear_range", {900, 1000}, false},
     {"clinkz_burning_barrage", "range", {850, 850}, false},
     {"phoenix_icarus_dive", "dash_length", {1100, 1200}, false},
+    {"primal_beast_onslaught", "max_distance", {2000, 2000}, false},
+    {"legion_commander_intimidate", "radius", {600, 600}, false},
 }
 for _, entry in ipairs(reviewed) do
     abilityName, abilityLevel, rangeBonus = entry[1], 1, 125
@@ -159,11 +165,38 @@ assert(adapter:GetRequiredRange(caster,multishot,point)==1675, "Wukong's Command
 caster.HasScepter, caster.Script_GetAttackRange = nil, nil
 source.GetSpecialValueFor = function() return 0 end
 source.GetEffectiveCastRange = function() return 125 end
-for _, name in ipairs({"rattletrap_rocket_flare","furion_wrath_of_nature","treant_living_armor","storm_spirit_ball_lightning"}) do
+local globals = {
+    "ancient_apparition_ice_blast", "zuus_cloud", "tinker_keen_teleport", "rattletrap_rocket_flare",
+    "furion_teleportation", "furion_wrath_of_nature", "chen_zealot", "spirit_breaker_charge_of_darkness",
+    "invoker_sun_strike", "invoker_sun_strike_ad", "keeper_of_the_light_recall", "abyssal_underlord_dark_portal",
+    "abyssal_underlord_dark_rift", "ringmaster_crystal_ball", "dawnbreaker_solar_guardian",
+    "templar_assassin_trap_teleport", "spectre_reality", "meepo_poof", "wisp_relocate",
+    "elder_titan_move_spirit", "treant_living_armor", "storm_spirit_ball_lightning",
+}
+for _, name in ipairs(globals) do
     abilityName = name
-    assert(adapter:GetRequiredRange(caster,timeWalk,point)==math.huge, name .. " native global zero is not a 125-unit spell")
-    assert(adapter:IsInRange(caster,timeWalk,{x=5000}), name .. " reaches a distant battlefield target")
+    local global = assert(adapter:Resolve(caster,{kind="ability",name=name},{}))
+    assert(adapter:GetRequiredRange(caster,global,point)==math.huge, name .. " native global zero is not a 125-unit spell")
+    assert(adapter:IsInRange(caster,global,{x=5000}), name .. " reaches a distant battlefield target")
+    source.GetCastRange = function() return 700 end
+    assert(adapter:GetRequiredRange(caster,global,point)==125, "positive native effective accessor retains authority")
+    source.GetCastRange = function() return 0 end
 end
+abilityName, abilityLevel, cooldown = "ancient_apparition_ice_blast", 1, true
+local blast = assert(adapter:Resolve(caster,{kind="ability",name=abilityName},{}))
+assert(adapter:CanExecute(caster,blast,{}) and adapter:IsInRange(caster,blast,{x=20000}), "learned rank-one blast is global")
+abilityLevel=0
+local executable, why=adapter:CanExecute(caster,blast,{})
+assert(not executable and why=="ability_unlearned", "an exposed rule slot must not make an unlearned ultimate usable")
+abilityLevel=1; castable=false
+assert(not adapter:CanExecute(caster,blast,{}), "global range never bypasses native mana/castability")
+castable=true
+source.CastFilterResultLocation=function() return 1 end
+assert(not adapter:Issue(caster,blast,{x=20000},{}), "global range never bypasses native location restrictions")
+source.CastFilterResultLocation=function() return 0 end
+assert(adapter:Issue(caster,blast,{x=20000},{}), "global target emits a native cast-position order")
+assert(order.Position.x==20000 and order.OrderType==DOTA_UNIT_ORDER_CAST_POSITION)
+source.CastFilterResultLocation=nil
 source.GetEffectiveCastRange = function() return 0 end
 abilityName, rangeBonus = "unreviewed_ability_with_range", 0
 assert(adapter:GetRequiredRange(caster,timeWalk,point)==0, "unreviewed zero-range spell is never global")

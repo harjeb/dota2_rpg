@@ -23,6 +23,10 @@ function Fresh.Reset(game)
     end
     game.battleManager:StopBattle()
     local units = {}
+    -- A failed roster rebuild may still hold a preserved native Edda hero.
+    for _, data in pairs(game.heroData or {}) do
+        if data.edda_retained_unit then units[#units+1] = data.edda_retained_unit end
+    end
     for _, team in pairs(game.battleManager.teamHeroes or {}) do
         for _, unit in pairs(team) do units[#units + 1] = unit end
     end

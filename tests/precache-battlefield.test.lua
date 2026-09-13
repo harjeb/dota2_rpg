@@ -43,7 +43,7 @@ require = function(moduleName)
 	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
         or moduleName == "battle/summon_behavior" or moduleName == "issue_fixes/tiny_tree"
         or moduleName == "issue_fixes/shard_purchase" or moduleName == "issue_fixes/gris_gris" or moduleName == "issue_fixes/jinada_income"
-        or moduleName == "issue_fixes/item_sales"
+        or moduleName == "issue_fixes/item_sales" or moduleName == "issue_fixes/eldwurms_edda"
         or moduleName == "issue_fixes/hero_precache" or moduleName == "tactics/special_targets"
         or moduleName == "battle.enemy_diagnostics" or moduleName == "battle.respawn_policy"
         or moduleName == "battle.item_cooldowns" or moduleName == "battle.campaign_loot"
