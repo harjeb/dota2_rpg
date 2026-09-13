@@ -53,6 +53,13 @@ function O.Actual(ctx,c,unit)
         elseif base=="action_phase_is" then return L.Phase(actor,name,ctx.now) end
         local fn=ctx[base=="action_elapsed" and "get_action_elapsed" or base=="action_use_count" and "get_action_use_count" or "get_ability_charges"]
         if fn then return fn(actor,name) end
+    elseif base=="ability_on_cooldown" then
+        local actor=ctx.caster
+        if c.action_actor and ctx.get_action_actor then actor=ctx.get_action_actor(c.action_actor) end
+        if not actor then return nil end
+        local name=c.action_id or ctx.current_action_id
+        if ctx.resolve_action_name then name=ctx.resolve_action_name(actor,name) end
+        if ctx.get_ability_cooldown then return ctx.get_ability_cooldown(actor,name) end
     elseif base=="release_action_available" then return L.CanRelease(ctx.caster,ctx.current_action_spec)
     elseif base=="always" then return true end
 end

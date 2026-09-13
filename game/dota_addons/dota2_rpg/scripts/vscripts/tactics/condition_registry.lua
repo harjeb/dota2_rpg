@@ -401,6 +401,14 @@ ConditionRegistry:RegisterUseCondition("ability_charges_gte", function(ctx, c)
     local n = ctx.get_ability_charges(actor, c.action_id or ctx.current_action_id)
     return n ~= nil and n >= tonumber(c.value)
 end)
+-- 观测不到冷却就不成立：未知不等于"正在冷却中"。
+-- 不填 action_id 时看本条动作自己的冷却；不填 action_actor 时看施法者本人。
+ConditionRegistry:RegisterUseCondition("self_ability_on_cooldown", function(ctx, c)
+    local actor = action_actor(ctx, c)
+    if actor == nil or ctx.get_ability_cooldown == nil then return false end
+    local remaining = ctx.get_ability_cooldown(actor, c.action_id or ctx.current_action_id)
+    return remaining ~= nil and remaining > 0
+end)
 
 -- Special conditions use explicit observations; unknown is never zero.
 local function observe(ctx, name, ...)

@@ -268,7 +268,8 @@ function RuleService:ValidateCondition(condition, registry)
             and condition.type ~= "action_succeeded_after"
             and condition.type ~= "channel_elapsed_gte" and condition.type ~= "channel_elapsed_lte"
             and condition.type ~= "action_phase_is"
-            and condition.type ~= "action_use_count_lt" and condition.type ~= "ability_charges_gte" then
+            and condition.type ~= "action_use_count_lt" and condition.type ~= "ability_charges_gte"
+            and condition.type ~= "self_ability_on_cooldown" then
             return false, "unexpected_condition_action_actor"
         end
     end

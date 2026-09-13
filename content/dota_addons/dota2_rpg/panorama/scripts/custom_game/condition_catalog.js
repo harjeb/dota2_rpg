@@ -43,9 +43,12 @@ var RpgConditionCatalog = (function () {
     ["channel_elapsed_gte", "channel_elapsed_lte"].forEach(function(id) { add("use",id,"action","seconds,action_id"); });
     add("use","action_phase_is","action","value_text,action_id");
     add("use","release_action_available","action","");
+    // 新条件只能追加在组末尾：code 是按组内下标查下面的表得到的，
+    // 插在中间会把后面所有条目的 U/F 编号整体挪位（文档编号必须稳定）。
+    add("use","self_ability_on_cooldown","action","action_id");
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
-        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43],
+        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],
         target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
     };

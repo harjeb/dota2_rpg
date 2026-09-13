@@ -406,6 +406,11 @@ function TacticBridge:Install()
                 local ability = Context.Call(caster, "FindAbilityByName", resolveActionName(caster, tostring(id or "")))
                 return Context.Number(Context.Call(ability, "GetCurrentAbilityCharges"))
             end,
+            -- 剩余冷却秒数；技能就绪时原生返回 0，技能不存在时返回 nil（条件侧按不成立处理）。
+            get_ability_cooldown = function(caster, id)
+                local ability = Context.Call(caster, "FindAbilityByName", resolveActionName(caster, tostring(id or "")))
+                return Context.Number(Context.Call(ability, "GetCooldownTimeRemaining"))
+            end,
             action_used_within = function(caster, id, seconds)
                 local name = resolveActionName(caster, tostring(id or ""))
                 local last = (self.lastActionOrders[caster] or {})[name]

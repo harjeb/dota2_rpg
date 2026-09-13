@@ -513,7 +513,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 36], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
+[["use", retiredUse, 37], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {

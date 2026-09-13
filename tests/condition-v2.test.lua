@@ -60,6 +60,13 @@ enemy.GetAllDamageBarrier=function() return 42 end
 check(H.HasShield(enemy),"measured shield")
 ctx.get_ability_charges=function() return 2 end
 check(C:EvaluateUseConditions({{type="ability_charges_gte",value=2}},ctx),"charges")
+check(C.use_conditions["self_ability_on_cooldown"]~=nil,"cooldown condition registered")
+ctx.get_ability_cooldown=function() return 12.5 end
+check(C:EvaluateUseConditions({{type="self_ability_on_cooldown"}},ctx),"ability cooldown observed")
+ctx.get_ability_cooldown=function() return 0 end
+check(not C:EvaluateUseConditions({{type="self_ability_on_cooldown"}},ctx),"a ready ability is not on cooldown")
+ctx.get_ability_cooldown=nil
+check(not C:EvaluateUseConditions({{type="self_ability_on_cooldown"}},ctx),"missing cooldown observation fails closed")
 check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=1}},ctx),"unknown history")
 ctx.get_action_use_count=function() return 1 end
 check(not C:EvaluateUseConditions({{type="action_use_count_lt",value=1}},ctx),"order limit")
@@ -280,7 +287,7 @@ check(bridge.ruleService:UpdateRule(0,1,1,actorArgs),"actor flat update accepted
 check(payload.use_condition_1_action_actor==actorKey and payload.use_condition_2_action_actor==actorKey,"nettable sync preserves actor fields")
 check(real.get_action_actor(actorKey)==far and real.get_action_actor("enemy:hero:0")==enemy,"duplicate enemy occurrence resolves separately")
 check(real.get_action_actor(Snapshot.HeroKey(gm.battleManager,caster))==caster,"local roster actor resolves")
-for _,kind in ipairs({"action_elapsed_gte","action_elapsed_lte","action_use_count_lt","ability_charges_gte"}) do
+for _,kind in ipairs({"action_elapsed_gte","action_elapsed_lte","action_use_count_lt","ability_charges_gte","self_ability_on_cooldown"}) do
     check(bridge.ruleService:ValidateCondition({type=kind,value=1,action_id="native_active",action_actor=actorKey},C.use_conditions),"approved actor condition "..kind)
     check(not C:EvaluateUseConditions({{type=kind,value=1,action_id="native_active",action_actor="enemy:missing:0"}},real),"unresolved actor fails closed "..kind)
 end
