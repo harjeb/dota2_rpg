@@ -227,6 +227,8 @@
     var rulesBySide = { Radiant: {} };
     var selectedHeroIndex = { Radiant: 0 };
     var rowPanels = { Radiant: [] };
+    // 新增行动行的金框标记：按规则对象引用记录，重排/删除不会串到别的行。
+    var newRuleMarks = { Radiant: [] };
     var phase = "setup";
     var itemSellRequestId = 0;
     var pendingItemSales = {};
@@ -249,6 +251,7 @@
         RpgConditionCatalog.reset();
         RpgRuleSync.reset();
         rulesBySide = { Radiant: {} };
+        newRuleMarks = { Radiant: [] };
         heroSlots = {};
         // Fresh hero snapshots can precede the shop lineup. Discard its old names
         // too, so the new hero's defaults are cached under the correct identity.
@@ -622,6 +625,24 @@
         return entry ? RpgAbilityCapabilities.get(entry.hero_index,action,entry.rule_key,entry.capability_revision) : null;
     }
 
+    // 新增行动行在用户为它选定动作或改过设置前保持金色边框，提示"这行是刚加的"。
+    function markRuleAsNew(side, rule) {
+        if (rule && newRuleMarks[side].indexOf(rule) < 0) {
+            newRuleMarks[side].push(rule);
+        }
+    }
+
+    function clearRuleMark(side, rule) {
+        var marked = newRuleMarks[side].indexOf(rule);
+        if (marked >= 0) {
+            newRuleMarks[side].splice(marked, 1);
+        }
+    }
+
+    function isRuleMarkedNew(side, rule) {
+        return newRuleMarks[side].indexOf(rule) >= 0;
+    }
+
     function createRuleRows(side) {
         var container = $("#" + side + "Rules");
         for (var index = rowPanels[side].length; index < getSelectedRules(side).length; index++) {
@@ -663,6 +684,7 @@
                         var first = draft.use_conditions[0] || {type:"always"};
                         authored.condition = first.type || "always";
                         authored.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
+                        clearRuleMark(side, authored);
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
                     }, {isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
@@ -811,6 +833,7 @@
         if (typeof RpgAbilityCapabilities === "undefined") {
             if (rules[index].action !== actionKey) { rules[index].destination = "target"; }
             rules[index].action=actionKey; closeEditorMenus();
+            clearRuleMark(side, rules[index]);
             sendRuleToServer(side,selectedHeroIndex[side],index); renderSide(side); return;
         }
         var heroIndex=selectedHeroIndex[side], original=rules[index];
@@ -846,6 +869,7 @@
             next.value=first.seconds!==undefined ? first.seconds : first.value!==undefined ? first.value : 50;
             Object.keys(original).forEach(function(key) { delete original[key]; });
             Object.keys(next).forEach(function(key) { original[key]=next[key]; });
+            clearRuleMark(side, original);
             renderSide(side); sendRuleToServer(side,heroIndex,index);
         },{isCurrent:function() { return editIsCurrent() && getActionDetail(side,heroIndex,actionKey)===chosenActionDetail; },
             abilityName:getActionDetail(side,heroIndex,actionKey),
@@ -860,6 +884,7 @@
             return; // 至少保留一条规则（系统兜底始终存在）
         }
         closeEditorMenus();
+        clearRuleMark(side, rules[index]);
         rules.splice(index, 1);
         renderSide(side);
         syncHeroRules(side);
@@ -884,6 +909,7 @@
             use_conditions: [], target_filters: [], target_priorities: [],
             approach: "range_only", forced: false
         };
+        markRuleAsNew(side, added);
         rules.length = 0;
         actions.concat([added], attacks).forEach(function (rule) { rules.push(rule); });
         renderSide(side);
@@ -975,6 +1001,7 @@
                 continue;
             }
             var definition = rules[index];
+            panels.row.SetHasClass("NewlyAdded", isRuleMarkedNew(side, definition));
             var heroIndex = selectedHeroIndex[side];
             var detailName = getActionDetail(side, heroIndex, definition.action);
             var available = getSlotActions(side, heroIndex).indexOf(definition.action) >= 0;

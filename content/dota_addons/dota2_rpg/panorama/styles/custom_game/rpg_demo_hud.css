@@ -534,6 +534,14 @@
 	z-index: 100;
 }
 
+/* 新增行动行：金色边框提示这一行是刚加出来、还没选动作/配条件的，配置后自动消失。 */
+.RuleRow.NewlyAdded
+{
+	border: 2px solid #f0d487;
+	background-color: #f0d4871f;
+	box-shadow: #f0d48759 0px 0px 8px 1px;
+}
+
 .ActionOption
 {
 	width: 100%;

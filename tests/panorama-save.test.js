@@ -302,7 +302,13 @@ assert(hud.panels["#ShopPanel"].BHasClass("RpgTransparentHeroShop"), "live shop 
 
 created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 2, "Add must create exactly one row");
+assert(created(hud, "RadiantRule0").BHasClass("NewlyAdded"),
+    "the added action row must carry the new-row highlight");
+assert(!created(hud, "RadiantRule1").BHasClass("NewlyAdded"),
+    "pre-existing action rows must not inherit the new-row highlight");
 chooseAction(hud, "Radiant", 0, "ability_2");
+assert(!created(hud, "RadiantRule0").BHasClass("NewlyAdded"),
+    "picking an action for the new row must clear the new-row highlight");
 hud.subscriptions.rpg_hero_slots({
     slot_key: "radiant_1", hero_name: "npc_dota_hero_axe", hero_index: 501,
     actions_text: "ability_1;ability_2;ultimate;item_1;item_2;attack",
@@ -312,6 +318,8 @@ assert(visibleRules(hud, "Radiant").length === 2, "active skills/items refresh m
 assert(created(hud, "RadiantActionAbility0").abilityname === "axe_battle_hunger", "authored action before attack survives slot refresh");
 created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 3, "a second Add creates the third rule");
+assert(created(hud, "RadiantRule1").BHasClass("NewlyAdded") && !created(hud, "RadiantRule0").BHasClass("NewlyAdded"),
+    "each Add must highlight only its own row, not an already configured one");
 assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "three compact rows fit without scrolling");
 for (var extra=3;extra<7;extra++) { created(hud,"RadiantAddRule0").events.onactivate(); }
 assert(!hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "rail appears when compact rows overflow");
@@ -463,6 +471,10 @@ assert(/\.RulesContainer VerticalScrollBar[\s\S]*\.ScrollThumb/.test(cssSource),
     "action row viewport must expose a visible scrollbar thumb");
 assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s*62/.test(hudSource),
     "compact row height matches scroll calculations after removing outer editors");
+assert(/\.RuleRow\.NewlyAdded\s*\{[^}]*border:\s*2px solid #f0d487/s.test(cssSource),
+    "newly added action rows must be marked by a dedicated gold border style");
+assert(/SetHasClass\("NewlyAdded",\s*isRuleMarkedNew\(side,\s*definition\)\)/.test(hudSource),
+    "the new-row highlight must be applied from the rule list, not hard-coded per row index");
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&
     !/id="DireRules"/.test(layoutSource),
     "both action lists must accept wheel and pointer input");
