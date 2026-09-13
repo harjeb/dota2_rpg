@@ -50,6 +50,21 @@ end
 function Snapshot.ResolveTargetActor(manager, chapter, caster, key)
     if not Snapshot.ValidTargetActor(key) or unit_name(caster) == nil then return nil end
     local casterTeam = caster:GetTeamNumber()
+    if manager.arenaActive then
+        local name, occurrence = key:match("^arena:enemy:([%w_]+):(%d+)$")
+        if not name then return nil end
+        local side = casterTeam == DOTA_TEAM_GOODGUYS and DOTA_TEAM_BADGUYS or DOTA_TEAM_GOODGUYS
+        local count = 0
+        for _, hero in ipairs(manager.teamHeroes[side] or {}) do
+            if unit_name(hero) == name then
+                if count == tonumber(occurrence) then
+                    return hero:GetTeamNumber() ~= casterTeam and hero or nil
+                end
+                count = count + 1
+            end
+        end
+        return nil
+    end
     for _, hero in ipairs(manager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
         if unit_name(hero) ~= nil and Snapshot.TargetActor(manager, chapter, hero) == key then
             local team = hero:GetTeamNumber()
@@ -57,6 +72,23 @@ function Snapshot.ResolveTargetActor(manager, chapter, caster, key)
             -- units use their actual allegiance rather than their spawn side.
             if team ~= DOTA_TEAM_GOODGUYS and team ~= DOTA_TEAM_BADGUYS then team = DOTA_TEAM_BADGUYS end
             if team ~= casterTeam and hero ~= caster then return hero end
+        end
+    end
+    return nil
+end
+-- Saved ally references are relative to the team that authored the profile.
+-- Identical hero names on opposing teams must never resolve to the other side.
+function Snapshot.ResolveArenaActionActor(manager, caster, key)
+    if not manager.arenaActive or unit_name(caster) == nil or type(key) ~= "string" then return nil end
+    local side = caster:GetTeamNumber()
+    local name, occurrence = key:match("^enemy:([%w_]+):(%d+)$")
+    if name then side = side == DOTA_TEAM_GOODGUYS and DOTA_TEAM_BADGUYS or DOTA_TEAM_GOODGUYS
+    else name, occurrence = key, "0" end
+    local count = 0
+    for _, actor in ipairs(manager.teamHeroes[side] or {}) do
+        if unit_name(actor) == name then
+            if count == tonumber(occurrence) then return actor end
+            count = count + 1
         end
     end
     return nil

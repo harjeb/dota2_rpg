@@ -310,6 +310,7 @@ function Debug.Exit(game)
     return true
 end
 function Debug.Start(game, payload)
+    if game.arena and not require("battle.arena_mode").CanCampaign(game) then return false, "wrong_phase" end
     local s = state(game)
     if s.pending then return false, "busy" end
     if (game.phase ~= "setup" and not (game.phase == "result" and game.runComplete))

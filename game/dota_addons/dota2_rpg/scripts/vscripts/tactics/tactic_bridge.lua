@@ -189,6 +189,8 @@ function TacticBridge:Install()
 	self.orderGate = orderGate
 
 	local function getPhase()
+        if gameMode.arena and gameMode.phase == "setup"
+            and not require("battle.arena_mode").CanEdit(gameMode) then return "SETTLE" end
 		if gameMode.phase == "setup" then
 			return "PREPARE"
 		elseif gameMode.phase == "fight" then
@@ -262,6 +264,9 @@ function TacticBridge:Install()
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
+        -- Arena defenders execute the exact canonical player configuration.
+        -- An empty authored list remains empty; presets use the normal defaults.
+        if gameMode.battleManager.arenaActive and unit.arenaRules ~= nil then return unit.arenaRules end
         local configured = manager.ruleService ~= nil and manager.ruleService:GetHeroRules(unit) or {}
         if #configured > 0 and (not Snapshot.IsEnemy(gameMode.battleManager, unit) or Snapshot.IsDeveloperMode()) then
             return configured
@@ -372,6 +377,9 @@ function TacticBridge:Install()
                 return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, unit, key)
             end,
             get_action_actor = function(key)
+                if gameMode.battleManager.arenaActive then
+                    return Snapshot.ResolveArenaActionActor(gameMode.battleManager, unit, key)
+                end
                 -- Resolve stable roster identities each tick; never trust an old entity index.
                 for _, team in ipairs({ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS }) do
                     for _, actor in ipairs(gameMode.battleManager.teamHeroes[team] or {}) do

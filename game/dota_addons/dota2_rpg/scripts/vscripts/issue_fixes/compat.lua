@@ -65,6 +65,7 @@ end
 
 function Compat:GetPhase()
     local game = self.game
+    if game.arena and game.phase == "setup" and not require("battle.arena_mode").CanEdit(game) then return "SETTLE" end
     local candidates = {}
     local function append(value)
         if value ~= nil then candidates[#candidates + 1] = value end

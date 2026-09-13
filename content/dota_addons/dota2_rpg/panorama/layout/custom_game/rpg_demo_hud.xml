@@ -3,6 +3,7 @@
 		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
 		<include src="file://{resources}/styles/custom_game/condition_help.css" />
 		<include src="file://{resources}/styles/custom_game/skill_debug.css" />
+		<include src="file://{resources}/styles/custom_game/arena_hud.css" />
 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
 	</styles>
 	<scripts>
@@ -17,6 +18,7 @@
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
 		<include src="file://{resources}/scripts/custom_game/skill_debug.js" />
+		<include src="file://{resources}/scripts/custom_game/arena_hud.js" />
 	</scripts>
 
 	<Panel class="RpgDemoHudRoot" hittest="false">
@@ -255,5 +257,6 @@
 				<Label id="SkillDebugFooter" />
 			</Panel>
 		</Panel>
+		<Panel id="ArenaRoot" hittest="false" hittestchildren="true" />
 	</Panel>
 </root>

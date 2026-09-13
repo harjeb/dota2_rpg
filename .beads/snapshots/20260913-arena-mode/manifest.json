@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-13T02:17:29.248938+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-cr9r and dota2_rpg-qk4q",
+  "counts": {
+    "issues": 2,
+    "dependencies": 1,
+    "events": 6
+  },
+  "evidence": "93 offline groups, 39 backend tests, 3 Dota UI resource compilations; real remote 7-opponent series, finish/retry/rating/positions/JSON attachment/abandon passed and test data removed; 14 changed addon files match installation",
+  "remaining": "Real Dota/Workshop 7-battle and complex hero validation in dota2_rpg-qk4q; no gameplay commands were executed; backend source remains excluded from Git."
+}

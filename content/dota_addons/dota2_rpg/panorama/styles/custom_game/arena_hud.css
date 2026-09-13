@@ -1,0 +1,54 @@
+.ArenaActive #StartBattleButton, .ArenaActive #ShopPanel, .ArenaActive #VersusLabel,
+.ArenaActive #ControlStatus, .ArenaActive #LevelProgress, .ArenaActive #BattleStatus,
+.ArenaActive #BattleResult, .ArenaActive #RunLivesPanel, .ArenaActive #SkillDebugButton,
+.ArenaActive #LevelSelect, .ArenaActive #RecruitmentShop { visibility: collapse; }
+#ArenaRoot { width: 100%; height: 100%; z-index: 90; }
+#ArenaRoot.ArenaModalOpen { z-index: 2200; }
+#ArenaRoot .ArenaHidden { visibility: collapse; }
+#ArenaRoot Label { color: #dbe9ee; font-size: 17px; }
+#ArenaRoot .ArenaButton { min-width: 90px; height: 38px; padding: 0px 12px; background-color: #263f4e; border: 1px solid #7396a4; margin-right: 8px; }
+#ArenaRoot .ArenaButton Label { horizontal-align: center; vertical-align: center; }
+#ArenaRoot .ArenaButton:hover { brightness: 1.4; }
+#ArenaRoot .ArenaButton:disabled { opacity: 0.35; }
+#ArenaModeButton { horizontal-align: right; margin: 18px 202px 0px 0px; height: 46px; }
+#ArenaHUD { width: 720px; horizontal-align: center; margin-top: 74px; padding: 12px 16px; flow-children: down; background-color: #101e29f5; border: 1px solid #7694a3; }
+#ArenaHUD.ArenaFinal { max-height: 78%; overflow: squish scroll; }
+#ArenaRoot .ArenaTitle { font-size: 23px; color: #f3d59a; margin-bottom: 6px; }
+#ArenaRoot .ArenaText { width: 100%; white-space: normal; margin-bottom: 5px; }
+#ArenaRoot .ArenaHint { width: 100%; font-size: 15px; color: #afc4cd; white-space: normal; margin-bottom: 6px; }
+#ArenaRoot .ArenaError { width: 100%; color: #ffaaa0; white-space: normal; margin-bottom: 5px; }
+.ArenaActions { width: 100%; flow-children: right; }
+#ArenaResultsChips { flow-children: right; width: 100%; margin-bottom: 8px; }
+#ArenaRoot .ArenaChip { padding: 3px 8px; margin-right: 5px; background-color: #273844; }
+#ArenaRoot .ArenaWon { color: #9ee4b1; }
+#ArenaRoot .ArenaLost { color: #f4afa2; }
+#ArenaFeatureActions, #ArenaTestActions { margin-top: 8px; margin-bottom: 6px; }
+#ArenaRoot #ArenaTestActions .ArenaSelected { border-color: #ebcd8b; background-color: #42544f; }
+#ArenaRoot #ArenaExportStatus.ArenaError { color: #ffaaa0; }
+#ArenaSummary { width: 100%; flow-children: down; margin-top: 14px; }
+#ArenaSummaryRows { width: 100%; flow-children: down; }
+#ArenaRoot .ArenaResultRow { width: 100%; min-height: 35px; padding: 7px 4px; white-space: normal; border-bottom: 1px solid #354957; }
+#ArenaSaveStatus { margin-top: 10px; }
+.ArenaModal { width: 100%; height: 100%; }
+.ArenaBackdrop { width: 100%; height: 100%; background-color: #050b12e8; }
+.ArenaCard { width: 1080px; height: 82%; horizontal-align: center; vertical-align: center; flow-children: down; background-color: #14212b; border: 1px solid #90a8b6; border-top: 3px solid #ebcd8b; padding: 22px; }
+#ArenaPickerTitle { width: fill-parent-flow(1); }
+#ArenaSearch { width: 100%; height: 38px; padding: 5px 8px; font-size: 19px; color: #f0f4f6; background-color: #09151e; border: 1px solid #668492; margin-bottom: 8px; }
+#ArenaSelectedHeroes { width: 100%; height: 94px; flow-children: right; }
+#ArenaHeroes { width: 100%; height: fill-parent-flow(1); flow-children: right-wrap; overflow: squish scroll; margin-bottom: 10px; }
+.ArenaHero { width: 120px; height: 88px; margin: 0px 7px 7px 0px; flow-children: down; background-color: #203440; border: 2px solid #314754; padding: 3px; }
+.ArenaHero:hover { brightness: 1.4; }
+.ArenaHero:disabled { opacity: 0.45; }
+.ArenaHero.ArenaSelected { border-color: #ebcd8b; background-color: #42544f; }
+.ArenaHeroIcon { width: 110px; height: 53px; }
+#ArenaRoot .ArenaHero Label { width: 100%; text-align: center; font-size: 14px; text-overflow: ellipsis; }
+#ArenaEnter { horizontal-align: right; }
+#ArenaExitCard { width: 580px; height: fit-children; padding: 28px; }
+#ArenaAbandon { margin-top: 18px; margin-bottom: 12px; background-color: #683d32; border-color: #d09a81; }
+#ArenaSelectorCard { width: 680px; height: fit-children; padding: 34px; }
+#ArenaChooseCampaign, #ArenaChooseLadder { width: 100%; height: 64px; margin: 18px 0px 10px 0px; }
+#ArenaSelectorClose { margin-top: 16px; }
+#ArenaHUD.ArenaFighting { margin-top: 12px; }
+.ArenaFighting #ArenaInstructions, .ArenaFighting #ArenaPositionNote, .ArenaFighting #ArenaFeatureActions,
+.ArenaFighting #ArenaTestActions, .ArenaFighting #ArenaTestHint, .ArenaFighting #ArenaTestResult,
+.ArenaFighting #ArenaExportStatus, .ArenaFighting #ArenaStart { visibility: collapse; }

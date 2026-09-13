@@ -484,6 +484,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
+	require("battle.arena_integration").Install(self)
 	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 gris-gris-v1 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end
@@ -3375,6 +3376,14 @@ function CDota2RpgDemo:FindEquipmentItemHolder(item)
 end
 
 function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
+    if self.arena then
+        local arena = require("battle.arena_mode")
+        if not arena.CanEdit(self) then return false end
+        local order = tonumber(filterTable.order_type) or -1
+        if not arena.CanBuy(self) and (self:IsNativeItemShopOrder(filterTable)
+            or order == DOTA_UNIT_ORDER_TRAIN_ABILITY or order == DOTA_UNIT_ORDER_CONSUME_ITEM
+            or order == DOTA_UNIT_ORDER_EJECT_ITEM_FROM_STASH) then return false end
+    end
 	local issuerPlayerId = tonumber(filterTable.issuer_player_id_const) or -1
 	if issuerPlayerId < 0 then
 		-- OrderGate 的项目内部订单进入过滤器时已提前放行；到达这里的受管订单必须有真实玩家来源。
@@ -3727,7 +3736,7 @@ function CDota2RpgDemo:OnStartBattle(_, payload)
 
 	-- 规则在准备阶段通过 rpg_update_rule 逐条写入当前 Run；这里不再信任客户端
 	-- 的整包旧 payload，也不在开战时覆盖 RuleService 的稳定英雄键。
-	RunResults.StartBattle(self)
+	if not (self.arena and require("battle.arena_mode").IsActive(self)) then RunResults.StartBattle(self) end
 	self.phase = "fight"
 	RespawnPolicy.SetBattleActive(self, true)
 
@@ -4146,7 +4155,8 @@ function CDota2RpgDemo:BroadcastHeroInfo()
                     rule_key = RuleSnapshot.HeroKey(self.battleManager,hero),
                     target_actor = side.team == DOTA_TEAM_BADGUYS
                         and (RuleSnapshot.TargetActor(self.battleManager, self.currentLevelId, hero) or "") or "",
-                    can_edit = (side.team == DOTA_TEAM_GOODGUYS or RuleSnapshot.IsDeveloperMode()) and 1 or 0,
+                    can_edit = ((side.team == DOTA_TEAM_GOODGUYS or RuleSnapshot.IsDeveloperMode())
+                        and (not self.arena or require("battle.arena_mode").CanEdit(self))) and 1 or 0,
                     rules_ready = self.tacticBridge ~= nil and self.tacticBridge.getRules ~= nil and 1 or 0,
                     rules = self.tacticBridge ~= nil and RuleSnapshot.ForHero(self.tacticBridge, hero) or {},
 				})
