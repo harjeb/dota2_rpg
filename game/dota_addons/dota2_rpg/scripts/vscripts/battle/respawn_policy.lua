@@ -1,6 +1,7 @@
 -- Native reincarnation needs respawn permission. Ordinary round deaths do not.
 local Policy = {}
 local Log = require("issue_fixes.runtime_log")
+local Undying = require("issue_fixes/undying")
 local function write(message) pcall(Log.WriteCritical or Log.Write, message) end
 local function query(object, method)
     local ok, value = pcall(function()
@@ -36,7 +37,21 @@ local function trace(game, event, unit, allow)
         .. " entity=" .. tostring(unit:GetEntityIndex()) .. " hero=" .. unit:GetUnitName()
         .. " reincarnating=" .. query(unit, "IsReincarnating")
         .. " allow=" .. tostring(allow) .. " disabled=" .. query(unit, "GetRespawnsDisabled")
-        .. " global_enabled=" .. query(GameRules, "IsHeroRespawnEnabled") .. " until=" .. untilRespawn)
+        .. " global_enabled=" .. query(GameRules, "IsHeroRespawnEnabled") .. " until=" .. untilRespawn
+        .. " alive=" .. query(unit, "IsAlive") .. " outofgame=" .. query(unit, "IsOutOfGame")
+        .. " undying_return=" .. tostring(Undying.IsReturning(unit)))
+    -- Capture native and preparation modifiers without changing their state.
+    if unit.GetModifierCount and unit.GetModifierNameByIndex then
+        local names = {}
+        for index = 0, unit:GetModifierCount() - 1 do
+            names[#names + 1] = tostring(unit:GetModifierNameByIndex(index))
+        end
+        write("RespawnPolicy modifiers event=" .. event .. " entity=" .. tostring(unit:GetEntityIndex())
+            .. " names=" .. table.concat(names, ","))
+    end
+end
+function Policy.IsReturning(unit)
+    return (unit.IsReincarnating ~= nil and unit:IsReincarnating()) or Undying.IsReturning(unit)
 end
 function Policy.SetBattleActive(game, active)
     for team, units in pairs(rosters(game)) do
@@ -54,7 +69,7 @@ function Policy.OnKilled(game, unit)
     if not member(game, unit) then return end
     safe(game, "death", function()
         if not hero(unit) then return end
-        local allow = game.phase == "fight" and unit.IsReincarnating ~= nil and unit:IsReincarnating()
+        local allow = game.phase == "fight" and Policy.IsReturning(unit)
         unit.rpgDeathBeforeRespawn = true
         -- Native IsReincarnating includes Aegis even after the item is consumed.
         unit:SetRespawnsDisabled(not allow)

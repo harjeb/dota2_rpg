@@ -24,7 +24,7 @@ local hooks={ ["battle.tempest_double"]=spawnHook("double"),
 require=function(name)
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name=="battle.battle_manager" or name=="battle.unit_helpers" or name=="battle.run_lives"
-        or name=="battle.respawn_policy" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
+        or name=="battle.respawn_policy" or name=="issue_fixes/undying" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
     if hooks[name] then return hooks[name] end
     if name=="battle.damage_stats" then return {new=function() return {Start=noop,Stop=noop} end} end
     return {Install=noop,Clear=noop,Write=function(message) logs[#logs+1]=message end,Event=noop}
@@ -41,6 +41,7 @@ local function unit(name,real)
     function u:IsRealHero() return self.real end
     function u:IsAlive() return self.alive end
     function u:IsReincarnating() return self.reviving end
+    function u:HasModifier(name) return self.mods[name] == true end
     function u:GetEntityIndex() return self.id end
     function u:GetUnitName() return self.name end
     function u:GetPlayerOwnerID() return 0 end
@@ -134,6 +135,39 @@ test("WK death/rebirth on both teams preserves the exact entity and native state
     end
     assert(bm.teamHeroes[2][1]==a and bm.teamHeroes[3][1]==b and #callbacks==0)
     assert(table.concat(spawnOrder,",")=="double,special,summon,double,special,summon")
+end)
+test("Undying native return with false reincarnation flag keeps permission and prevents wipe",function()
+    for _,team in ipairs({2,3}) do
+        local g,bm,a,b=fixture(); local u=team==2 and a or b
+        u.name="npc_dota_hero_undying"; g:OnStartBattle()
+        u.mods.modifier_undying_ceaseless_dirge=true
+        u.mods.modifier_undying_ceaseless_dirge_buff=true
+        killed(g,u,false)
+        assert(not u.disabled,"native return must not be disabled just because IsReincarnating is false")
+        assert(bm:GetAliveCount(team)==0 and bm:GetAliveCount(team,true)==1)
+        assert(not bm:CheckBattleEnd() and g.phase=="fight")
+        local items,writes=u.items,u.stateWrites
+        now=2; spawned(g,u)
+        assert(not u.disabled and not u.rpgPlaceholderReady and bm.teamHeroes[team][1]==u)
+        assert(u.mods.modifier_undying_ceaseless_dirge_buff,"native buff must finish itself")
+        assert(u.stops==0 and u.items==items and u.stateWrites==writes)
+        u.mods.modifier_undying_ceaseless_dirge_buff=nil
+        killed(g,u,false)
+        assert(u.disabled and bm:GetAliveCount(team,true)==0,"intrinsic alone cannot grant a second return")
+    end
+end)
+test("Undying return does not escape deadline or settlement containment",function()
+    local g,bm,a=fixture(); a.name="npc_dota_hero_undying"; g:OnStartBattle()
+    a.mods.modifier_undying_ceaseless_dirge_buff=true; killed(g,a,false)
+    now=120; assert(bm:CheckBattleEnd() and g.phase=="result" and a.disabled)
+    spawned(g,a)
+    assert(a.disabled and a.mods.modifier_rooted and a.mods.modifier_silence)
+    killed(g,a,false); assert(a.disabled,"late native return never grants permission")
+end)
+test("same native buff name on other heroes cannot opt into Undying return",function()
+    local g,bm,a=fixture(); g:OnStartBattle()
+    a.mods.modifier_undying_ceaseless_dirge_buff=true; killed(g,a,false)
+    assert(a.disabled and bm:GetAliveCount(2,true)==0)
 end)
 test("consumed Aegis uses native flag; later ordinary death disables automatic respawn",function()
     local g,bm,a=fixture(); a.name="npc_dota_hero_axe"; g:OnStartBattle()

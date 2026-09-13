@@ -123,7 +123,7 @@ function Catalog.DescribeAction(hero, action)
 end
 
 local capabilityRevision=0
-function Catalog.PublishCapabilities(hero,actions,heroKey)
+function Catalog.PublishCapabilities(hero,actions,heroKey,player)
     capabilityRevision=capabilityRevision+1
     local A=require("tactics/ability_capability")
     for _,id in ipairs(actions or {}) do
@@ -132,9 +132,14 @@ function Catalog.PublishCapabilities(hero,actions,heroKey)
         local cap=A.ForAction(hero,action)
         if cap then
             cap.source_index=require("tactics/condition_context").Call(A.Source(hero,action),"entindex") or -1
-            CustomGameEventManager:Send_ServerToAllClients("rpg_action_capability",{
+            local payload = {
                 hero_index=hero:entindex(),rule_key=heroKey or "",action_id=id,
-                revision=capabilityRevision,capability=cap})
+                revision=capabilityRevision,capability=cap}
+            if player ~= nil then
+                CustomGameEventManager:Send_ServerToPlayer(player,"rpg_action_capability",payload)
+            else
+                CustomGameEventManager:Send_ServerToAllClients("rpg_action_capability",payload)
+            end
         end
     end
     return capabilityRevision

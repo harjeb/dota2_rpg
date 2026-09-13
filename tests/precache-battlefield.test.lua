@@ -262,12 +262,17 @@ spawnGame.SpawnBenchHeroes = function() end
 spawnGame.PrepareEnemyCreep = function() end
 spawnGame.BuildEnemyRules = function() return {} end
 spawnGame.BroadcastHeroInfo = function() end
+local publicationFlush
+GameRules = { GetGameModeEntity = function() return {
+    SetContextThink = function(_, _, callback) publicationFlush = callback end,
+} end }
 spawnGame:RespawnPlayerRoster()
 for index = 1, 5 do
 	assert(spawned[index].controlledByPlayer == 0,
 		"each fielded hero must be controllable in preparation for movement/pickup")
 end
 spawnGame:SpawnLevelEnemies("ch01")
+assert(publicationFlush and publicationFlush() == nil, "rebuild publication completes after roster assembly")
 
 local teamCounts = { [DOTA_TEAM_GOODGUYS] = 0, [DOTA_TEAM_BADGUYS] = 0 }
 for _, unit in ipairs(spawned) do
@@ -355,7 +360,7 @@ local bench = newUnit("npc_dota_hero_sven", Vector(-2300, 0, 128), DOTA_TEAM_GOO
 bench.modifiers.modifier_rpg_prepare_bench = true
 fightGame.selectedHero = bench
 fightGame.BroadcastBattleState = function() end
-GameRules = { GetGameTime = function() return 0 end }
+GameRules.GetGameTime = function() return 0 end
 local damagePacket
 CustomGameEventManager = { Send_ServerToAllClients = function(_, event, data)
 	if event == "rpg_damage_stats" then damagePacket = data end

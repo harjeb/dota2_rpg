@@ -9,6 +9,14 @@ local function call(entity, method, ...)
     local success, value = pcall(fn, entity, ...)
     if success then return value end
 end
+-- Relentless Return uses its own native death buff, not IsReincarnating.
+-- The intrinsic is always present (including on cooldown), so only the active
+-- return buff can grant respawn permission or postpone a team wipe.
+function Undying.IsReturning(hero)
+    return call(hero, "IsNull") ~= true
+        and call(hero, "GetUnitName") == "npc_dota_hero_undying"
+        and call(hero, "HasModifier", "modifier_undying_ceaseless_dirge_buff") == true
+end
 function Undying.ResetPreparation(game, hero)
     if game.phase ~= "setup" or call(hero, "IsNull") == true
         or call(hero, "GetUnitName") ~= "npc_dota_hero_undying" then return false end

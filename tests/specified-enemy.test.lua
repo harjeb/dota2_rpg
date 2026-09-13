@@ -103,9 +103,13 @@ chapter="ch05"; second.team=2; tick(first.id)
 -- Run the actual addon broadcast method with only its engine dependencies stubbed.
 local file=assert(io.open("game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua","r"))
 local source=file:read("*a"); file:close()
-local body=assert(source:match("function CDota2RpgDemo:BroadcastHeroInfo%(%)\n.-\nend"))
+local body=assert(source:match("function CDota2RpgDemo:BroadcastHeroInfo%(player%)\n.-\nend"))
 local events={}
-local addon={battleManager=manager,currentLevelId="ch05"}
+local addon={battleManager=manager,currentLevelId="ch05",
+    QueueStatePublication=function() return false end,
+    SendStateTo=function(_,player,event,data)
+        assert(player==nil); events[#events+1]={event=event,data=data}
+    end}
 local compile=loadstring or load
 local install=assert(compile("return function(RuleSnapshot, AbilityCatalog, TacticEngine, BuildHeroActionSlots, DescribeAction, CDota2RpgDemo, CustomGameEventManager) "..body.." end"))()
 install(Snapshot,{ListAbilities=function() return {} end,PublishCapabilities=function() return 1 end},{IsValidUnit=function(u) return not u:IsNull() end},

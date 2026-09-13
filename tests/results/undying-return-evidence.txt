@@ -1,0 +1,21 @@
+88047:09/13 17:10:51 [VScript] [RPGLifecycle seq=54 t=12.400 real=12.400 level=ch01 phase=setup] create_after role=lineup entity=850 name=npc_dota_hero_undying alive=true channel=false outofgame=false active=none modifiers=1[modifier_undying_ceaseless_dirge]
+88050:09/13 17:10:51 [VScript] [RPGLifecycle seq=55 t=12.400 real=12.400 level=ch01 phase=setup] ready role=lineup entity=850 name=npc_dota_hero_undying alive=true channel=false outofgame=false active=none modifiers=4[modifier_undying_ceaseless_dirge,modifier_invulnerable,modifier_disarmed,modifier_silence]
+88110:09/13 17:10:52 [VScript] [RPGTrace t=13.03] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=no_target_in_range
+88111:09/13 17:10:52 [VScript] [RPGTrace t=13.03] Tactic unit=850 hero=npc_dota_hero_undying event=chase_started rule=system_fallback_attack action= target=969 reason=
+88158:09/13 17:10:54 [VScript] [RPGTrace t=15.53] Tactic unit=850 hero=npc_dota_hero_undying event=rule_executed rule=999 action=system_fallback_attack target=969 reason=order_submitted_not_native_confirmation
+88164:09/13 17:10:54 [VScript] [RPGTrace t=15.73] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_stunned
+88165:09/13 17:10:54 [VScript] [RPGTrace t=15.73] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=
+88215:09/13 17:10:56 [VScript] [RPGTrace t=17.33] Tactic unit=850 hero=npc_dota_hero_undying event=rule_executed rule=1 action=basic_attack target=969 reason=order_submitted_not_native_confirmation
+88270:09/13 17:11:00 [VScript] [RPGTrace t=20.83] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_stunned
+88271:09/13 17:11:00 [VScript] [RPGTrace t=20.83] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=
+88284:09/13 17:11:01 [VScript] [RPGTrace t=22.33] Tactic unit=850 hero=npc_dota_hero_undying event=rule_executed rule=1 action=basic_attack target=936 reason=order_submitted_not_native_confirmation
+88290:09/13 17:11:01 [VScript] [RPGTrace t=22.77] RespawnPolicy event=death phase=fight entity=850 hero=npc_dota_hero_undying reincarnating=false allow=false disabled=true global_enabled=true until=0
+88333:09/13 17:11:03 [VScript] [RPGTrace t=24.77] RespawnPolicy event=spawn phase=fight entity=850 hero=npc_dota_hero_undying reincarnating=false allow=true disabled=false global_enabled=true until=0
+88336:09/13 17:11:04 [VScript] [RPGTrace t=24.93] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_out_of_game
+88353:09/13 17:11:05 [VScript] [RPGTrace t=25.93] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=
+88409:09/13 17:11:09 [VScript] [RPGTrace t=29.93] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_out_of_game
+88435:09/13 17:11:10 [VScript] [RPGTrace t=31.13] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=
+88493:09/13 17:11:14 [VScript] [RPGTrace t=35.03] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_out_of_game
+88506:09/13 17:11:15 [VScript] [RPGTrace t=36.33] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=
+88577:09/13 17:11:19 [VScript] [RPGTrace t=40.03] Tactic unit=850 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=basic_attack target= reason=caster_out_of_game
+88610:09/13 17:11:20 [VScript] [RPGTrace t=41.33] Tactic unit=850 hero=npc_dota_hero_undying event=fallback_failed rule= action= target= reason=

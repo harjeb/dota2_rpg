@@ -151,7 +151,7 @@ function BattleManager:GetAliveCount(team, includeReincarnating)
 	local count = 0
 	for _, hero in ipairs(self.teamHeroes[team] or {}) do
 		if TacticEngine.IsValidUnit(hero) and (hero:IsAlive()
-			or (includeReincarnating and hero.IsReincarnating ~= nil and hero:IsReincarnating())) then
+			or (includeReincarnating and RespawnPolicy.IsReturning(hero))) then
 			count = count + 1
 		end
 	end
@@ -186,7 +186,7 @@ function BattleManager:CheckBattleEnd()
 		self.gameMode:EndBattle("timeout", DOTA_TEAM_BADGUYS)
 		return true
 	end
-	-- Aegis/Wraith King's native death-to-rebirth delay is not a team wipe.
+	-- Aegis/Wraith King and Undying's native death-to-rebirth delays are not a team wipe.
 	-- Target selection and the ordinary alive counter still require IsAlive.
 	local radiantAlive = self:GetAliveCount(DOTA_TEAM_GOODGUYS, true)
 	local direAlive = self:GetAliveCount(DOTA_TEAM_BADGUYS, true)

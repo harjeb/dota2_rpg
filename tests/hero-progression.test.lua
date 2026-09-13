@@ -201,12 +201,18 @@ local roster = setmetatable({ phase = "setup", playerId = 0, lineup = { "axe" },
 -- Pending stage levels are captured from the old live entity by RespawnPlayerRoster.
 roster.heroData.axe.level = hero.level + 2
 local rosterPoints = hero.points + 2
+local stateFlush
+GameRules = { GetGameModeEntity = function() return {
+    SetContextThink = function(_, _, callback) stateFlush = callback end,
+} end }
 roster:RespawnPlayerRoster()
+assert(stateFlush and stateFlush() == nil, "roster publication yields through server scheduler")
 local firstRosterHero = roster.battleManager.teamHeroes[2][1]
 assert(removed[1] == hero and firstRosterHero ~= hero, "real respawn replaces old entity")
 assert(firstRosterHero.nativeTalents.special_bonus_unique_axe_5 and firstRosterHero.points == rosterPoints,
     "real roster transition retains native choice and pending stage points")
 roster:RespawnPlayerRoster()
+assert(stateFlush() == nil)
 local secondRosterHero = roster.battleManager.teamHeroes[2][1]
 assert(secondRosterHero ~= firstRosterHero and secondRosterHero.upgradeCalls == 1
     and secondRosterHero.nativeTalents.special_bonus_unique_axe_5 and secondRosterHero.points == rosterPoints,

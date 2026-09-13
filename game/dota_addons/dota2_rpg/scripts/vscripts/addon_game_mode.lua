@@ -661,7 +661,7 @@ function CDota2RpgDemo:OnPlayerConnectFull(event)
 	self.playerId = playerId
 	PlayerResource:SetCustomTeamAssignment(playerId, DOTA_TEAM_GOODGUYS)
 	self:EnsureGoldWalletInitialized()
-	self:ScheduleStateBroadcast(0.5)
+	self:RequestStateRecovery(playerId)
 end
 
 function CDota2RpgDemo:OnNpcSpawned(event)
@@ -2902,6 +2902,7 @@ function CDota2RpgDemo:RespawnPlayerRoster()
 	if self.phase ~= "setup" then
 		return
 	end
+	self:DeferStatePublications()
 	RuntimeLog.Write(string.format("Wallet roster_before player=%s native=%s mirror=%s initialized=%s owned=%s lineup=%s",
 		tostring(self.playerId), tostring(self:ReadNativeGold()), tostring(self.gold), tostring(self.goldWalletInitialized),
 		table.concat(self.ownedHeroes or {}, ","), table.concat(self.lineup or {}, ",")))
@@ -3034,6 +3035,7 @@ function CDota2RpgDemo:PreloadNextLevel(levelId)
 end
 
 function CDota2RpgDemo:SpawnLevelEnemies(levelId)
+	self:DeferStatePublications()
 	if not self:AwaitEnemyResources(levelId) then return false end
 	self.stageLoading = true -- Also guard native spawn callbacks until the whole roster exists.
 	self.preparedEnemyLevel = nil
@@ -3708,16 +3710,9 @@ function CDota2RpgDemo:PromoteBenchHero(heroName)
 end
 
 function CDota2RpgDemo:OnRequestBattleState(eventSourceIndex, payload)
-	local playerId = self:ResolvePlayerId(payload)
-	local player = PlayerResource:GetPlayer(playerId)
-	if player ~= nil then
-		CustomGameEventManager:Send_ServerToPlayer(player, "rpg_battle_state", self:BuildBattleState())
-		RunResults.Resend(self, playerId)
-	end
-	self:BroadcastShopState()
-	self:BroadcastLevelInfo()
-	self:BroadcastHeroInfo()
-	self:BroadcastDamageStats()
+	-- PlayerID is supplied by the engine; do not fall back to another owner.
+	local playerId = payload and tonumber(payload.PlayerID)
+	if playerId ~= nil and playerId >= 0 then self:RequestStateRecovery(playerId) end
 end
 
 function CDota2RpgDemo:OnSelectLevel(_, payload)
@@ -3824,10 +3819,11 @@ function CDota2RpgDemo:OnEntityHurt(event)
 		entity(event.entindex_inflictor), tonumber(event.damage), GameRules:GetGameTime())
 end
 
-function CDota2RpgDemo:BroadcastDamageStats()
+function CDota2RpgDemo:BroadcastDamageStats(player)
+	if self:QueueStatePublication("BroadcastDamageStats", player) then return end
 	if self.damageStats ~= nil then
 		local now = GameRules:GetGameTime()
-		CustomGameEventManager:Send_ServerToAllClients("rpg_damage_stats", {
+		self:SendStateTo(player, "rpg_damage_stats", {
 			elapsed = math.max(0, (self.damageStats.stoppedAt or now) - self.damageStats.startedAt),
 			units = self.damageStats:Snapshot(now),
 		})
@@ -4074,6 +4070,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	if self.runComplete then
 		self:RunLifecycleStep("run_result", function() RunResults.Finish(self, isFinalWin, settlement) end)
 	end
+	self.lastSettlement = settlement
 	self.phase = "result"
 	self.winner = winner
 	self:RunLifecycleStep("battle_stop", function() self.battleManager:StopBattle() end)
@@ -4139,13 +4136,90 @@ end
 -- 状态广播
 ------------------------------------------------------------------
 
+-- Only replaceable HUD state is coalesced. Rules, sale acknowledgements and
+-- settlement/reward events never enter this queue. Payloads are built at flush
+-- time, so removed entity handles and previous rule generations are not cached.
+local STATE_PUBLICATIONS = {
+	"BroadcastBattleState", "BroadcastLevelInfo", "BroadcastHeroInfo",
+	"BroadcastShopState", "BroadcastDamageStats",
+}
+
+function CDota2RpgDemo:SendStateTo(player, event, payload)
+	if player ~= nil then
+		CustomGameEventManager:Send_ServerToPlayer(player, event, payload)
+	else
+		CustomGameEventManager:Send_ServerToAllClients(event, payload)
+	end
+end
+
+function CDota2RpgDemo:DeferStatePublications()
+	if self.statePublications ~= nil then return end
+	self.statePublications = { all = {}, players = {} }
+	if self.statePublicationFlushing then return end
+	GameRules:GetGameModeEntity():SetContextThink("Dota2RpgStatePublications", function()
+		-- Asynchronous stage precache owns its completion/failure flag. Do not
+		-- publish an old enemy roster alongside newly rebuilt player heroes.
+		if self.stageLoading then return THINK_INTERVAL end
+		local pending = self.statePublications
+		self.statePublications = nil
+		self.statePublicationFlushing = true
+		local function publish(method, player)
+			local ok = self:RunLifecycleStep("state_" .. method, function() self[method](self, player) end)
+			if not ok then
+				-- Retry only the failed state; an invalid native handle must not
+				-- cancel independent publications or strand reconnect recovery.
+				self:DeferStatePublications()
+				if player == nil then self.statePublications.all[method] = true
+				else self.statePublications.players[player:GetPlayerID()] = true end
+			end
+		end
+		for _, method in ipairs(STATE_PUBLICATIONS) do
+			if pending.all[method] then publish(method) end
+		end
+		for playerId in pairs(pending.players) do
+			local player = PlayerResource:GetPlayer(playerId)
+			if player ~= nil then
+				for _, method in ipairs(STATE_PUBLICATIONS) do
+					-- A global update in this flush already reaches this player.
+					if not pending.all[method] then publish(method, player) end
+				end
+				local recovered = self:RunLifecycleStep("state_result_recovery", function()
+					if self.phase == "result" and self.lastSettlement
+						and self.lastSettlement.settlement_generation == self.settlementGeneration then
+						self:SendStateTo(player, "rpg_settlement", self.lastSettlement)
+					end
+					RunResults.Resend(self, playerId)
+				end)
+				if not recovered then self:RequestStateRecovery(playerId) end
+			end
+		end
+		self.statePublicationFlushing = nil
+		return self.statePublications ~= nil and THINK_INTERVAL or nil
+	end, THINK_INTERVAL)
+end
+
+function CDota2RpgDemo:QueueStatePublication(method, player)
+	if self.statePublicationFlushing then return false end
+	if self.statePublications == nil then return false end
+	if player == nil then self.statePublications.all[method] = true
+	else self.statePublications.players[player:GetPlayerID()] = true end
+	return true
+end
+
+function CDota2RpgDemo:RequestStateRecovery(playerId)
+	if PlayerResource:GetPlayer(playerId) == nil then return end
+	self:DeferStatePublications()
+	self.statePublications.players[playerId] = true
+end
+
 -- 每个英雄的可用动作槽（含主动装备）同步给前端
 -- 把 action（ability_N / item_N / ultimate / attack）解析成可显示的名字
 local function DescribeAction(hero, action)
 	return AbilityCatalog.DescribeAction(hero, action)
 end
 
-function CDota2RpgDemo:BroadcastHeroInfo()
+function CDota2RpgDemo:BroadcastHeroInfo(player)
+	if self:QueueStatePublication("BroadcastHeroInfo", player) then return end
 	local roster = {}
 	for _, unit in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
 		if TacticEngine.IsValidUnit(unit) then
@@ -4153,7 +4227,7 @@ function CDota2RpgDemo:BroadcastHeroInfo()
                 target_actor = RuleSnapshot.TargetActor(self.battleManager, self.currentLevelId, unit) or "" })
 		end
 	end
-	CustomGameEventManager:Send_ServerToAllClients("rpg_enemy_roster", { rule_generation = self.ruleGeneration or 0, units = roster })
+	self:SendStateTo(player, "rpg_enemy_roster", { rule_generation = self.ruleGeneration or 0, units = roster })
 	local sides = {
 		{ key = "radiant", team = DOTA_TEAM_GOODGUYS },
 		{ key = "dire", team = DOTA_TEAM_BADGUYS },
@@ -4168,8 +4242,8 @@ function CDota2RpgDemo:BroadcastHeroInfo()
 					local _, detail = DescribeAction(hero, action)
 					table.insert(descriptions, detail ~= "" and detail or action)
 				end
-				local capRevision = AbilityCatalog.PublishCapabilities(hero, slots, RuleSnapshot.HeroKey(self.battleManager,hero))
-				CustomGameEventManager:Send_ServerToAllClients("rpg_hero_slots", {
+				local capRevision = AbilityCatalog.PublishCapabilities(hero, slots, RuleSnapshot.HeroKey(self.battleManager,hero), player)
+				self:SendStateTo(player, "rpg_hero_slots", {
                     rule_generation = self.ruleGeneration or 0,
                     capability_revision = capRevision,
 					slot_key = side.key .. "_" .. index,
@@ -4196,10 +4270,11 @@ function CDota2RpgDemo:SyncGoldToPlayer()
 	return self:SyncGoldFromPlayer()
 end
 
-function CDota2RpgDemo:BroadcastShopState()
+function CDota2RpgDemo:BroadcastShopState(player)
+	if self:QueueStatePublication("BroadcastShopState", player) then return end
 	-- 先从原版钱包读取，再推送项目 HUD；绝不把旧 self.gold 回写为商店余额。
 	local gold = self:GetGoldBalance()
-	self.lastBroadcastGold = gold
+	if player == nil then self.lastBroadcastGold = gold end
 	-- CEM 载荷一律拍平；英雄数据用 "name:level:xp:quality" 分号串
 	local heroEntries = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
@@ -4257,7 +4332,7 @@ function CDota2RpgDemo:BroadcastShopState()
 		end
 		table.insert(equippedParts, heroName .. ":" .. table.concat(heroItems, ","))
 	end
-	CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", {
+	self:SendStateTo(player, "rpg_shop_state", {
 		rule_generation = self.ruleGeneration or 0,
 		gold = gold,
 		offer_text = self.shopOfferText or "",
@@ -4295,7 +4370,8 @@ function CDota2RpgDemo:BroadcastShopState()
 	})
 end
 
-function CDota2RpgDemo:BroadcastLevelInfo()
+function CDota2RpgDemo:BroadcastLevelInfo(player)
+	if self:QueueStatePublication("BroadcastLevelInfo", player) then return end
 	local list = {}
 	for _, levelId in ipairs(self.orderedLevels) do
 		local level = self.dataLoader:GetLevel(levelId)
@@ -4306,7 +4382,7 @@ function CDota2RpgDemo:BroadcastLevelInfo()
 			recommended_level = (level ~= nil and level.recommended_level) or 1,
 		})
 	end
-	CustomGameEventManager:Send_ServerToAllClients("rpg_levels_state", {
+	self:SendStateTo(player, "rpg_levels_state", {
 		level_ids = table.concat(self.orderedLevels, ";"),
 		current = self.currentLevelId,
 	})
@@ -4340,8 +4416,9 @@ function CDota2RpgDemo:BuildBattleState()
 	}
 end
 
-function CDota2RpgDemo:BroadcastBattleState()
-	CustomGameEventManager:Send_ServerToAllClients("rpg_battle_state", self:BuildBattleState())
+function CDota2RpgDemo:BroadcastBattleState(player)
+	if self:QueueStatePublication("BroadcastBattleState", player) then return end
+	self:SendStateTo(player, "rpg_battle_state", self:BuildBattleState())
 end
 
 function CDota2RpgDemo:ScheduleStateBroadcast(delay)
