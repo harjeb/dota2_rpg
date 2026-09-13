@@ -1,5 +1,9 @@
 param(
-    [string]$DotaPath = "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta"
+    [string]$DotaPath = "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta",
+    # Agents and CI often run without node/python on PATH; pass absolute paths
+    # explicitly instead of weakening the checks.
+    [string]$NodePath = "node",
+    [string]$PythonPath = "python"
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,15 +60,15 @@ $hudPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\layout\cu
 [xml](Get-Content -LiteralPath $hudPath -Raw -Encoding UTF8) | Out-Null
 
 $javascriptPath = Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\rpg_demo_hud.js"
-& node --check $javascriptPath
+& $NodePath --check $javascriptPath
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama JavaScript syntax validation failed"
 }
-& node --check (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js")
+& $NodePath --check (Join-Path $repoRoot "content\dota_addons\dota2_rpg\panorama\scripts\custom_game\panorama_rule_sync.js")
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama rule sync JavaScript syntax validation failed"
 }
-& node (Join-Path $repoRoot "tests\panorama-save.test.js")
+& $NodePath (Join-Path $repoRoot "tests\panorama-save.test.js")
 if ($LASTEXITCODE -ne 0) {
     throw "Panorama save-state regression test failed"
 }
@@ -474,12 +478,12 @@ if ($mapHeaderText -notmatch "dmx encoding binary") {
 
 # Parse binary-v9 data directly, including exact brush vertex bounds, material
 # indices, native prop transforms, scene attachment, and overlay synchronization.
-& python (Join-Path $repoRoot "tests\opening-balance.test.py")
+& $PythonPath (Join-Path $repoRoot "tests\opening-balance.test.py")
 if ($LASTEXITCODE -ne 0) {
     throw "Opening encounter balance contracts failed"
 }
 
-& python (Join-Path $repoRoot "tests\vmap.test.py")
+& $PythonPath (Join-Path $repoRoot "tests\vmap.test.py")
 if ($LASTEXITCODE -ne 0) {
     throw "Offline structured VMAP regression tests failed"
 }
