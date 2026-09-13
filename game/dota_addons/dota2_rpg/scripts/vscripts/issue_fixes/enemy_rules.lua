@@ -21,6 +21,9 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
             break
         end
     end
+    -- 关卡 AI 自带的普攻行会顶掉生成的那条，所以策略在这里再落一次，
+    -- 否则远程敌方英雄拿不到默认的最大攻击距离站位。
+    Defaults.ApplyRangedAttackPosture(attack, unit)
     local opening = Items.OpeningRules(unit, attack)
     if opening then return opening end
     local ultimates, basics = {}, {}

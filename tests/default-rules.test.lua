@@ -80,4 +80,41 @@ wide.GetBehaviorInt = function() return -2147483648 end
 local wideHero = {GetAbilityCount=function() return 1 end, GetAbilityByIndex=function() return wide end}
 local wideRules = Defaults.CreateForHero(wideHero)
 assert(wideRules[1].target.team == "self", "high behavior flags must preserve no-target defaults")
+
+-- 远程英雄的普攻默认在最大攻击距离站位；近战英雄、非英雄单位与技能行都不受影响。
+local function rangedHeroMock(ranged)
+    -- 用全新的技能，避免复用上面已被隐藏的技能。
+    local probe = spell("posture_probe")
+    return {GetAbilityCount=function() return 1 end, GetAbilityByIndex=function() return probe end,
+        IsRealHero=function() return true end, IsRangedAttacker=function() return ranged end}
+end
+local rangedHero = rangedHeroMock(true)
+local rangedRules = Defaults.CreateForHero(rangedHero)
+assert(rangedRules[1].action.kind == "ability" and rangedRules[1].action.positioning_mode == nil,
+    "ability rows must keep their own posture choice")
+assert(rangedRules[#rangedRules].action.kind == "attack"
+    and rangedRules[#rangedRules].action.positioning_mode == "attack_range",
+    "a ranged hero attack row must default to max attack range")
+local meleeRules = Defaults.CreateForHero(rangedHeroMock(false))
+assert(meleeRules[#meleeRules].action.positioning_mode == nil, "a melee hero attack row keeps the previous default")
+local rangedCreep = {GetAbilityCount=function() return 0 end, IsRealHero=function() return false end,
+    IsRangedAttacker=function() return true end}
+assert(Defaults.CreateForHero(rangedCreep)[1].action.positioning_mode == nil,
+    "ranged non-hero units must not receive the hero posture default")
+local authored = Defaults.CreateAttackNearestRule()
+authored.action.positioning_mode = "fixed"
+Defaults.ApplyRangedAttackPosture(authored, rangedHero)
+assert(authored.action.positioning_mode == "fixed", "an explicitly authored posture must never be overwritten")
+local noNativeFlag = {IsRealHero=function() return true end, Script_GetAttackRange=function() return 600 end}
+assert(Defaults.ApplyRangedAttackPosture(Defaults.CreateAttackNearestRule(), noNativeFlag).action.positioning_mode
+    == "attack_range", "a missing native ranged flag must fall back to the native attack range")
+local nearRange = {IsRealHero=function() return true end, Script_GetAttackRange=function() return 150 end}
+assert(Defaults.ApplyRangedAttackPosture(Defaults.CreateAttackNearestRule(), nearRange).action.positioning_mode == nil,
+    "a melee native attack range must stay unchanged")
+assert(Defaults.ApplyRangedAttackPosture(Defaults.CreateAttackNearestRule(), nil).action.positioning_mode == nil,
+    "a missing unit must not receive the hero posture default")
+for _, rule in ipairs(Defaults.CreateForHero(rangedHero)) do
+    local ok, reason = service:ValidateRule(0, rangedHero, rule)
+    assert(ok, reason)
+end
 print("default rules tests passed")

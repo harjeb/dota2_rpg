@@ -48,4 +48,23 @@ assert(#rules == 1 and rules[1].action.kind == "attack", "enemy WK must not acti
 assert(#require("issue_fixes.default_rules").CreateForHero(unit) == 2, "player defaults remain untouched")
 list = {}
 assert(#EnemyRules.CreateForUnit(unit, {}) == 1, "creeps without active abilities retain attack fallback")
+
+-- 远程敌方英雄的普攻默认在最大攻击距离站位，关卡 AI 自带的普攻行同样生效。
+local function bareUnit(realHero, ranged)
+    return {GetAbilityCount=function() return 0 end,
+        IsRealHero=function() return realHero end, IsRangedAttacker=function() return ranged end}
+end
+local rangedProfileAttack = {action={kind="attack"}, target={team="enemy"},
+    target_priorities={{type="nearest"}}, approach="range_only"}
+local rangedEnemyRules = EnemyRules.CreateForUnit(bareUnit(true, true), {rangedProfileAttack})
+assert(rangedEnemyRules[#rangedEnemyRules] == rangedProfileAttack,
+    "profile attack identity must survive the posture default")
+assert(rangedProfileAttack.action.positioning_mode == "attack_range",
+    "a ranged enemy hero must hold at max attack range")
+local meleeProfileAttack = {action={kind="attack"}, target={team="enemy"}, approach="range_only"}
+EnemyRules.CreateForUnit(bareUnit(true, false), {meleeProfileAttack})
+assert(meleeProfileAttack.action.positioning_mode == nil, "a melee enemy hero must keep the previous default")
+local creepProfileAttack = {action={kind="attack"}, target={team="enemy"}, approach="range_only"}
+EnemyRules.CreateForUnit(bareUnit(false, true), {creepProfileAttack})
+assert(creepProfileAttack.action.positioning_mode == nil, "ranged creeps must keep the previous default")
 print("enemy-rules.test.lua: passed")

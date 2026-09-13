@@ -47,6 +47,31 @@ local function call(entity, method)
     if entity ~= nil and entity[method] ~= nil then return entity[method](entity) end
 end
 
+-- 只认英雄：野怪、小兵和召唤物保持原有站位，不受这条默认策略影响。
+local function is_ranged_hero(unit)
+    if unit == nil then return false end
+    local real_hero = call(unit, "IsRealHero")
+    if real_hero == nil then real_hero = call(unit, "IsHero") end
+    if real_hero ~= true then return false end
+    -- 原生标记优先；拿不到时退回攻击距离（近战约 150，远程 400 以上）。
+    -- 注意先落到局部变量：方法不返回值时，直接 tonumber(call(...)) 会变成零参数调用而报错。
+    local ranged = call(unit, "IsRangedAttacker")
+    if ranged ~= nil then return ranged == true end
+    local range = call(unit, "Script_GetAttackRange")
+    return tonumber(range) ~= nil and tonumber(range) > 300
+end
+
+-- 远程英雄的普攻默认在最大攻击距离站位（风筝），近战英雄不变。
+-- 只处理普攻行：技能行继续由玩家选择默认 / 固定距离 / 原生施法距离。
+-- 已经显式配过 positioning_mode 的行原样保留，玩家和关卡配置都不会被覆盖。
+function DefaultRules.ApplyRangedAttackPosture(rule, unit)
+    if type(rule) ~= "table" or type(rule.action) ~= "table" then return rule end
+    if rule.action.kind ~= "attack" or rule.action.positioning_mode ~= nil then return rule end
+    if not is_ranged_hero(unit) then return rule end
+    rule.action.positioning_mode = "attack_range"
+    return rule
+end
+
 local flag = Behavior.HasFlag
 
 function DefaultRules.CreateForHero(hero)
@@ -86,7 +111,7 @@ function DefaultRules.CreateForHero(hero)
             result[#result + 1] = rule
         end
     end
-    result[#result + 1] = DefaultRules.CreateAttackNearestRule()
+    result[#result + 1] = DefaultRules.ApplyRangedAttackPosture(DefaultRules.CreateAttackNearestRule(), hero)
     return result
 end
 
