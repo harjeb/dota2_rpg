@@ -302,14 +302,14 @@ assert(hud.panels["#ShopPanel"].BHasClass("RpgTransparentHeroShop"), "live shop 
 
 created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 2, "Add must create exactly one row");
-chooseAction(hud, "Radiant", 1, "ability_2");
+chooseAction(hud, "Radiant", 0, "ability_2");
 hud.subscriptions.rpg_hero_slots({
     slot_key: "radiant_1", hero_name: "npc_dota_hero_axe", hero_index: 501,
     actions_text: "ability_1;ability_2;ultimate;item_1;item_2;attack",
     details_text: "axe_berserkers_call;axe_battle_hunger;axe_culling_blade;item_blink;item_force_staff;attack"
 });
 assert(visibleRules(hud, "Radiant").length === 2, "active skills/items refresh must preserve N authored rules without padding");
-assert(created(hud, "RadiantActionAbility1").abilityname === "axe_battle_hunger", "authored action survives slot refresh");
+assert(created(hud, "RadiantActionAbility0").abilityname === "axe_battle_hunger", "authored action before attack survives slot refresh");
 created(hud, "RadiantAddRule0").events.onactivate();
 assert(visibleRules(hud, "Radiant").length === 3, "a second Add creates the third rule");
 assert(hud.panels["#RadiantRulesScrollRail"].BHasClass("Hidden"), "three compact rows fit without scrolling");

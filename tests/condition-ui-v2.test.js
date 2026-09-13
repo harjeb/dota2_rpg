@@ -826,7 +826,10 @@ assert(!panel(livesHud,"StartBattleButton").enabled
         rules:[{action:"attack",enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",seconds:7,value:7}]}]});
     moveHud.subscriptions.rpg_enemy_roster({units:[{id:981,name:lion}]});
     moveHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:981,hero_name:lion,rule_key:"enemy:lion",target_actor:"level:enemy:lion",actions_text:"attack;lion_impale",abilities_text:"lion_impale"});
-    click(moveHud,"RadiantAddRule0"); click(moveHud,"RadiantActionSelect1");
+    click(moveHud,"RadiantAddRule0");
+    // New rows precede attack by default. This fixture deliberately moves the
+    // blank row below it to also verify that manual ordering remains available.
+    click(moveHud,"RadiantDown0"); click(moveHud,"RadiantActionSelect1");
     assert(panel(moveHud,"ActionOpt_Radiant1_sustained_move").GetChild(0).text === "#dota2_rpg_action_sustained_move", "unknown movement metadata displays localized action, not ability tooltip");
     click(moveHud,"ActionOpt_Radiant1_sustained_move"); click(moveHud,"RuleSettingsApply"); click(moveHud,"RadiantRuleSettings1");
     choice(moveHud,"V2_target0","specified_enemy"); click(moveHud,"V2_target0_target_actorOption_0");

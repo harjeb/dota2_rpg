@@ -683,7 +683,7 @@
                 createLabel(addButton, "AddGlyph", "+");
                 addButton.SetPanelEvent("onactivate", function () {
                     if (phase === "setup") {
-                        addRuleAtEnd(side);
+                        addRuleBeforeAttack(side);
                     }
                 });
                 addButton.enabled = idx === 0;
@@ -865,20 +865,27 @@
         syncHeroRules(side);
     }
 
-    // Keep the convenient action selection, but start every new row unconfigured.
-    function addRuleAtEnd(side) {
+    // Default to skills before attacks; manual moveRule ordering remains available.
+    // Keep existing rule objects/settings and their relative order within each group.
+    function addRuleBeforeAttack(side) {
         var rules = getSelectedRules(side);
         if (rules.length >= MAX_RULE_ROWS) {
             return;
         }
-        var last = rules[rules.length - 1];
-        rules.push({
+        var attacks = [], actions = [];
+        rules.forEach(function (rule) {
+            (rule.action === "attack" || rule.action === "basic_attack" ? attacks : actions).push(rule);
+        });
+        var last = actions[actions.length - 1] || attacks[attacks.length - 1];
+        var added = {
             action: last ? last.action : "attack", enabled: true,
             condition: "always", value: 50,
             target_team: last && last.target_team ? last.target_team : "enemy",
             use_conditions: [], target_filters: [], target_priorities: [],
             approach: "range_only", forced: false
-        });
+        };
+        rules.length = 0;
+        actions.concat([added], attacks).forEach(function (rule) { rules.push(rule); });
         renderSide(side);
         syncHeroRules(side);
     }
