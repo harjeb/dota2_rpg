@@ -99,6 +99,10 @@ For more details, see README.md and docs/QUICKSTART.md.
 
 <!-- END BEADS INTEGRATION -->
 
+## UI Version Marker
+
+When delivering UI changes, increment `dota2_rpg_build_tag` in both `game/dota_addons/dota2_rpg/resource/addon_schinese.txt` and `addon_english.txt` together. Report the new visible version, and verify installed locale files match when installing the addon. Do not rewrite version numbers in historical test/deployment reports.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
