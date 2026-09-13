@@ -19,7 +19,10 @@ function Edda.TakeRetained(game, name, position)
     local hero=data and data.edda_retained_unit
     if name~=Edda.HERO or not live(hero) then return nil end
     data.edda_retained_unit=nil
+    local Lifecycle = require("issue_fixes.hero_lifecycle_log")
+    Lifecycle.Event(game,"retained_before_respawn",Lifecycle.Snapshot(hero))
     if hero.IsAlive and not hero:IsAlive() then hero:RespawnHero(false,false) end
+    Lifecycle.Event(game,"retained_before_cleanup",Lifecycle.Snapshot(hero))
     hero.rpgDeathBeforeRespawn=nil
     if hero.Stop then hero:Stop() end
     if hero.GetAbilityCount then
@@ -44,6 +47,11 @@ function Edda.TakeRetained(game, name, position)
     for _,name in ipairs({"modifier_rpg_prepare_bench","modifier_invulnerable","modifier_rooted","modifier_disarmed","modifier_silence"}) do
         hero:RemoveModifierByName(name)
     end
+    -- Native RespawnHero can leave permanent, non-debuff fountain protection
+    -- on this reused entity. End that known spawn protection during preparation;
+    -- duration/debuff cleanup above deliberately preserves native Edda growth.
+    hero:RemoveModifierByName("modifier_fountain_invulnerability")
+    Lifecycle.Event(game,"retained_after_cleanup",Lifecycle.Snapshot(hero))
     return hero
 end
 function Edda.BeforeRestore(game, hero)
