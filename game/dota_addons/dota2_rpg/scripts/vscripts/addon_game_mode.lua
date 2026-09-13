@@ -1528,7 +1528,9 @@ function CDota2RpgDemo:BuildEquipmentSnapshot()
 			local item = unit:GetItemInSlot(slot)
 			if self:IsLiveItem(item) then
 				-- 名称/槽位相同但实体已替换时也必须推送，避免客户端保留陈旧 item_index。
-				table.insert(parts, prefix .. slot .. "=" .. item:GetAbilityName() .. "|" .. self:GetItemEntityId(item))
+				local charges = item.GetCurrentCharges ~= nil and item:GetCurrentCharges() or 0
+				table.insert(parts, prefix .. slot .. "=" .. item:GetAbilityName() .. "|" .. self:GetItemEntityId(item)
+					.. "|" .. tostring(charges))
 			end
 		end
 	end
@@ -3901,9 +3903,12 @@ function CDota2RpgDemo:OnThink()
 			self:ReconcileNativePurchaseOrders()
 			-- Capture native TRAIN_ABILITY results before a later roster rebuild.
 			local abilitiesChanged = self:SyncRosterAbilities()
-			self:SyncLiveEquipmentState(self.nativeShopTransactionPending)
+			-- Purchase notifications may precede inventory insertion/combination.
+			-- Keep polling after the event is consumed, but publish only actual
+			-- changes (including delayed results and same-entity stack merges).
+			local equipmentChanged = self:SyncLiveEquipmentState(false)
 			local walletChanged = self.lastBroadcastGold ~= self:GetGoldBalance()
-			if abilitiesChanged or walletChanged then
+			if not equipmentChanged and (abilitiesChanged or walletChanged) then
 				self:BroadcastShopState()
 			end
 			self.nativeShopTransactionPending = nil

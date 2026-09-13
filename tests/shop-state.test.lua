@@ -534,6 +534,56 @@ CreateItemOnPositionSync = function(position, item)
 	return { item = item }
 end
 
+-- Native notifications can arrive several ticks before inventory insertion, and
+-- combination can replace that result later still. Polling must outlive the
+-- notification without repeatedly broadcasting the unchanged inventory.
+do
+	local carrier = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 14)
+	local delayed = newGame({
+		phase = "setup", teamsSpawned = true, playerId = 0, gold = 3000,
+		lineup = {}, benchUnits = {}, heroData = {}, placeholderHero = carrier,
+		battleManager = { teamHeroes = { [DOTA_TEAM_GOODGUYS] = {} } },
+		RunLifecycleStep = function(self, name, callback)
+			if name == "roster_upkeep" then callback() end
+		end,
+		pendingNativePurchases = {},
+		SyncRosterAbilities = function() return false end,
+		EnsureNativePlayerHero = function() end,
+		BroadcastHeroInfo = function(self) self.heroPushes = (self.heroPushes or 0) + 1 end,
+		BroadcastShopState = function(self)
+			self.shopPushes = (self.shopPushes or 0) + 1
+			self.lastBroadcastGold = self:GetGoldBalance()
+		end,
+	})
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 1, "initial equipment baseline publishes once")
+	for tick = 1, 8 do
+		delayed:OnNativeItemPurchased({ PlayerID = 0, itemname = "item_branches" })
+		delayed:OnThink()
+	end
+	assertEqual(delayed.shopPushes, 1, "early/duplicate purchase events cannot flood unchanged inventory")
+	assert(delayed.nativeShopTransactionPending == nil, "event flag has already been consumed")
+	local component = carrier:AddItemByName("item_branches")
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 2, "delayed native inventory arrival publishes without another event")
+	for tick = 1, 4 do delayed:OnThink() end
+	assertEqual(delayed.shopPushes, 2, "waiting for combination does not spam broadcasts")
+	carrier:RemoveItem(component)
+	local combined = carrier:AddItemByName("item_magic_wand")
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 3, "later combination publishes the final result")
+	carrier:RemoveItem(combined)
+	local replacement = carrier:AddItemByName("item_magic_wand")
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 4, "same-name replacement updates UI entity identity")
+	replacement:SetCurrentCharges(2)
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 5, "same-entity stack changes refresh equipment")
+	for tick = 1, 40 do delayed:OnThink() end
+	assertEqual(delayed.shopPushes, 5, "settled inventory has bounded broadcasts")
+	assertEqual(delayed.heroPushes, 5, "hero and equipment broadcasts remain paired")
+end
+
 local wisp = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 14)
 local fieldedHero = makeInventoryUnit("npc_dota_hero_axe", DOTA_TEAM_GOODGUYS, 14)
 fieldedHero.lineupHeroName = "npc_dota_hero_axe"
