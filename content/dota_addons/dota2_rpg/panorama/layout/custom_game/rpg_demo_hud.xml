@@ -34,7 +34,7 @@
 			<Label id="RunLivesHint" text="#dota2_rpg_lives_hint" />
 		</Panel>
 		<Panel id="BattleHeader">
-			<Label id="LevelProgress" text="第 1 / 30 关" />
+			<Label id="LevelProgress" text="#dota2_rpg_level_progress_initial" />
 			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
 			<Label id="WalletBalance" text="" hittest="false" />
 			<Label id="BattleCountdown" text="#dota2_rpg_countdown_initial" hittest="false" />

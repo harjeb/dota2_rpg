@@ -361,7 +361,7 @@ hud.subscriptions.rpg_shop_state({
     stock_text: "item_magic_wand|9001",
     equipped_text: "npc_dota_hero_axe:item_blink|8001|0,item_force_staff|8002|14;npc_dota_hero_juggernaut:;npc_dota_hero_lion:item_manta|8100|0"
 });
-assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text === "Lv1 普通"; }),
+assert(hud.createdPanels.some(function (p) { return p.classes.ShopName && p.text === "Lv1 #dota2_rpg_quality_common"; }),
     "shop offer cards must show recruit level and quality");
 assert(hud.createdPanels.filter(function (p) { return p.classes.ShopOfferSlot; }).length === 5,
     "initial shop state must render five hero offer cards");

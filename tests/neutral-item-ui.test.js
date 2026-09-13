@@ -35,8 +35,8 @@ var hud = runHud();
 shop(hud);
 assert(panel(hud, 'Equip0').enabled === false, 'ordinary gear still needs an inventory slot');
 assert(panel(hud, 'Equip1').enabled === true, 'neutral gear fits the dedicated neutral slot');
-assert(stockLabel(hud, 1).indexOf('（中立）') >= 0, 'neutral stock row is marked');
-assert(stockLabel(hud, 0).indexOf('（中立）') < 0, 'ordinary stock row is not marked');
+assert(stockLabel(hud, 1).indexOf('#dota2_rpg_neutral_suffix') >= 0, 'neutral stock row is marked');
+assert(stockLabel(hud, 0).indexOf('#dota2_rpg_neutral_suffix') < 0, 'ordinary stock row is not marked');
 panel(hud, 'Equip1').events.onactivate();
 var equip = hud.sentEvents.filter(function (event) { return event.name === 'rpg_item_equip'; }).pop();
 assert(equip && equip.payload.item_index === '502', 'neutral equip sends the exact entity id');
@@ -46,7 +46,7 @@ hud = runHud();
 shop(hud, { equipped_text: hero + ':' + SIX_ACTIVE + ',' + NEUTRAL_EQUIPPED });
 assert(panel(hud, 'Equip1').enabled === false, 'one neutral item per hero');
 assert(panel(hud, 'Equipped_' + hero + '_6'), 'neutral slot row is rendered instead of filtered out');
-assert(equippedLabel(hud, 6).indexOf('（中立）') >= 0, 'neutral equipped row is marked');
+assert(equippedLabel(hud, 6).indexOf('#dota2_rpg_neutral_suffix') >= 0, 'neutral equipped row is marked');
 assert(panel(hud, 'Unequip_' + hero + '_6').enabled === true,
     'neutral unequip only needs the commander neutral slot');
 assert(panel(hud, 'Unequip_' + hero + '_0').enabled === false,

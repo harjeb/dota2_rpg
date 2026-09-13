@@ -1348,11 +1348,11 @@
                 portrait.AddClass("ShopPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
-                var qualityNames = { common: "普通", fine: "精良", epic: "史诗", legendary: "传说" };
+                var qualityNames = { common: "#dota2_rpg_quality_common", fine: "#dota2_rpg_quality_fine", epic: "#dota2_rpg_quality_epic", legendary: "#dota2_rpg_quality_legendary" };
                 var qualityColors = { common: "#c8d2d7", fine: "#6fc3ff", epic: "#c88bff", legendary: "#ffcc55" };
-                createLabel(slot, "ShopName", "Lv" + offer.level + " " + qualityNames[offer.quality]);
+                createLabel(slot, "ShopName", "Lv" + offer.level + " " + $.Localize(qualityNames[offer.quality] || qualityNames.common));
                 var isFree = shopState.free_recruit_choices > 0;
-                var priceLabel = createLabel(slot, "ShopPrice", isFree ? "免费（余" + shopState.free_recruit_choices + "）" : offer.price + "g");
+                var priceLabel = createLabel(slot, "ShopPrice", isFree ? localizeFormat("#dota2_rpg_recruit_free_remaining", shopState.free_recruit_choices) : offer.price + "g");
                 priceLabel.style.color = isFree ? "#8ee6a8" : (qualityColors[offer.quality] || "#f2d982");
                 if (!owned) {
                     slot.SetPanelEvent("onactivate", function () {
@@ -1554,7 +1554,7 @@
 
         label.SetHasClass("Empty", false);
         label.text = $.Localize("#dota2_rpg_item_target") + "：" + localizeHeroName(target.name)
-            + (target.isBench ? "（待命）" : "") + " " + target.activeCount + "/6";
+            + (target.isBench ? $.Localize("#dota2_rpg_bench_suffix") : "") + " " + target.activeCount + "/6";
 
         for (var heroIndex = 0; heroIndex < shopState.owned.length; heroIndex++) {
             (function (index, heroName) {
@@ -1583,9 +1583,9 @@
                 row.AddClass("ItemEquippedRow");
                 row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
-                var slotSuffix = itemSlot === NEUTRAL_ITEM_SLOT ? "（中立）"
-                    : (itemSlot >= 9 ? " [储藏栏 " + itemSlot + "]"
-                        : (itemSlot >= 6 ? " [背包 " + itemSlot + "]" : ""));
+                var slotSuffix = itemSlot === NEUTRAL_ITEM_SLOT ? $.Localize("#dota2_rpg_neutral_suffix")
+                    : (itemSlot >= 9 ? localizeFormat("#dota2_rpg_stash_slot_suffix", itemSlot)
+                        : (itemSlot >= 6 ? localizeFormat("#dota2_rpg_backpack_slot_suffix", itemSlot) : ""));
                 var itemLabel = itemName === "item_grisgris"
                     ? $.Localize("#dota2_rpg_gris_gris_saved").replace("{gold}", String(shopState.grisGrisGold || 0))
                     : itemDisplayName(itemName) + slotSuffix;
@@ -1643,7 +1643,7 @@
                 row.AddClass("ItemRow");
                 row.AddClass("ItemInventoryCard");
                 createItemIcon(row, itemName);
-                createLabel(row, "ItemRowName", itemDisplayName(itemName) + (isNeutralItem ? "（中立）" : ""));
+                createLabel(row, "ItemRowName", itemDisplayName(itemName) + (isNeutralItem ? $.Localize("#dota2_rpg_neutral_suffix") : ""));
                 var equip = $.CreatePanel("Button", row, "Equip" + index);
                 equip.AddClass("ItemRowBtn");
                 equip.AddClass("ItemEquipBtn");
@@ -1670,7 +1670,7 @@
             (function (def) {
                 var row = $.CreatePanel("Panel", scrollList, "Scroll_" + def.kind);
                 row.AddClass("ItemRow");
-                createLabel(row, "ItemRowName", def.label + " x" + def.stockCount + "（余" + def.remaining + "）");
+                createLabel(row, "ItemRowName", def.label + " x" + def.stockCount + localizeFormat("#dota2_rpg_remaining_suffix", def.remaining));
                 createLabel(row, "ItemRowCost", def.cost + "g");
                 var buy = $.CreatePanel("Button", row, "ScrollBuyBtn_" + def.kind);
                 buy.AddClass("ItemRowBtn");
