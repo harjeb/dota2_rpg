@@ -485,7 +485,8 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
-	require("battle.arena_integration").Install(self)
+	-- 天梯暂不开放：直接进入 PVE。重新开放时与 HUD 的 arena_hud.js include 一起恢复。
+	-- require("battle.arena_integration").Install(self)
 	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 gris-gris-v1 loaded; log=console.log (-condebug)")
 	print("[Dota2Rpg] Shop + lineup + TacticEngine initialized.")
 end

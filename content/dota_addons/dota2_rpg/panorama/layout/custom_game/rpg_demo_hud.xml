@@ -18,7 +18,9 @@
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
 		<include src="file://{resources}/scripts/custom_game/skill_debug.js" />
+		<!-- 天梯暂不开放。重新开放时与服务端 arena_integration.Install 一起恢复此入口。
 		<include src="file://{resources}/scripts/custom_game/arena_hud.js" />
+		-->
 	</scripts>
 
 	<Panel class="RpgDemoHudRoot" hittest="false">

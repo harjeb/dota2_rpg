@@ -1,5 +1,6 @@
 "use strict";
-// Reuse the existing harness: it parses the live XML and loads every included script in order.
+// Arena entry is paused in the live XML; load the retained module explicitly
+// so its full behavior remains covered before it is reopened.
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
@@ -22,6 +23,8 @@ assert(catalog.length >= 127, "test exercises the full server catalog");
 const HERO = "npc_dota_hero_axe";
 function launch(language) {
     const hud = runHud();
+    assert.strictEqual(hud.subscriptions.rpg_arena_state, undefined, "live HUD starts PVE without arena entry or subscriptions");
+    assert(!hud.sentEvents.some(event => event.name.startsWith("rpg_arena_")), "live HUD sends no arena requests");
     hud.context.Players.GetLocalPlayer = () => 0;
     // This shared harness indexes real XML IDs; attach their actual XML parents as well.
     const tree = JSON.parse(require("child_process").execFileSync("python", ["-c", "import json,sys,xml.etree.ElementTree as E; f=lambda e:dict(type=e.tag,attrs=e.attrib,children=[f(c) for c in e]); print(json.dumps(f(E.parse(sys.argv[1]).getroot())))", path.join(panorama,"layout/custom_game/rpg_demo_hud.xml")], {encoding:"utf8"}));
@@ -32,6 +35,7 @@ function launch(language) {
     }
     attach(tree,hud.context.$.GetContextPanel());
     hud.context.$.Localize = token => translations[language][token] || ({"#npc_dota_hero_axe": "斧王 Axe"}[token]) || token;
+    require("vm").runInContext(fs.readFileSync(path.join(panorama,"scripts/custom_game/arena_hud.js"),"utf8"),hud.context);
     const base = {mode:"campaign", phase:"preparing", rating:1500, round:1, wins:0, generation:1, catalog, results:[], can_start:true, can_edit:true, can_buy:true};
     return {hud, p:id => panel(hud,id), click:id => click(hud,id),
         events:() => hud.sentEvents.filter(e => e.name.startsWith("rpg_arena_")),

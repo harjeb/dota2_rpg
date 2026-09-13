@@ -174,7 +174,7 @@ function runHud() {
         }
     };
     // Load the scripts in the same order as the real HUD layout.
-    var scriptIncludes = layoutSource.matchAll(/<include src="file:\/\/\{resources\}\/scripts\/custom_game\/([^"]+)"/g);
+    var scriptIncludes = layoutSource.replace(/<!--[\s\S]*?-->/g, "").matchAll(/<include src="file:\/\/\{resources\}\/scripts\/custom_game\/([^"]+)"/g);
     for (var include of scriptIncludes) {
         var scriptPath = path.join(path.dirname(hudPath), include[1]);
         vm.runInNewContext(fs.readFileSync(scriptPath, "utf8"), context, { filename: scriptPath });
