@@ -192,22 +192,40 @@ do
     Loot.Award(progressionGame, config, highest)
     local state = Lives.Ensure(progressionGame)
     assert(state.campaignLootProgress.highestEquipmentCost == 1500)
-    assert(#state.pendingCampaignLoot == 3)
+    assert(#state.pendingCampaignLoot == 6)
     progressionGame.currentLevelId = "level_07"
     Loot.Award(progressionGame, config, highest)
     assert(state.campaignLootProgress.highestEquipmentCost > 1500, "Award carries price history across victories")
-    assert(#state.pendingCampaignLoot == 6, "queued delivery does not prevent progression")
+    assert(#state.pendingCampaignLoot == 12, "queued delivery does not prevent progression")
     progressionGame.runLives = nil
     progressionGame.currentLevelId = "level_01"
     Loot.Award(progressionGame, config, highest)
     assert(Lives.Ensure(progressionGame).campaignLootProgress.highestEquipmentCost <= 250, "a new run resets loot history")
 end
 local names=Loot.Award(game,config,choose("item_blink"))
-assert(#names==3 and names[1]=="item_blink" and added==0)
-assert(#Lives.Ensure(game).pendingCampaignLoot==3)
+assert(#names==6 and names[1]=="item_blink" and added==0)
+assert(#Lives.Ensure(game).pendingCampaignLoot==6)
 full=false
-assert(Loot.Flush(game)==0 and added==3)
-Loot.Flush(game); assert(added==3,"no duplicate delivery")
+assert(Loot.Flush(game)==0 and added==6)
+Loot.Flush(game); assert(added==6,"no duplicate delivery")
+-- Early neutral rewards queued behind an occupied slot must not emerge as
+-- obsolete tier-one equipment in mid-game. Upgrade pending, not held items.
+do
+    local pending = {name="item_foragers_kit",delivery="item_foragers_kit"}
+    local mid = {currentLevelId="ch13"}
+    Loot.UpgradePendingNeutral(mid,pending)
+    local row
+    for _, candidate in ipairs(Loot.Catalog) do if candidate.delivery==pending.delivery then row=candidate end end
+    assert(row and row.neutral and row.power==3,"pending neutral upgrades to current middle-game tier")
+    local upgraded=pending.delivery
+    Loot.UpgradePendingNeutral(mid,pending)
+    assert(pending.delivery==upgraded,"no repeated reroll at same tier")
+    mid.currentLevelId="ch01"; Loot.UpgradePendingNeutral(mid,pending)
+    assert(pending.delivery==upgraded,"replaying early stage cannot downgrade earned reward")
+    local uncertain={delivery="item_foragers_kit",uncertain=true}
+    mid.currentLevelId="ch25"; Loot.UpgradePendingNeutral(mid,uncertain)
+    assert(uncertain.delivery=="item_foragers_kit","do not replace possibly consumed ambiguous rewards")
+end
 
 -- 中立装备进原版专属中立槽 16：它不占物品栏/背包/储藏栏，所以 0..14 全满时
 -- 仍必须照常交付；中立槽被占用时不得发起创建，否则引擎会把新实体丢到地上。
@@ -282,7 +300,7 @@ slots={}; added=0
 local merged={GetCurrentCharges=function() return 2 end}
 game.StashAddItem=function() added=added+1; slots[added]=merged; return false end
 Loot.Award(game,config,choose("item_branches"))
-assert(#Lives.Ensure(game).pendingCampaignLoot==3, "only prior quarantined entries remain")
+assert(#Lives.Ensure(game).pendingCampaignLoot==6, "only prior quarantined entries remain")
 local timer
 GameRules={GetGameModeEntity=function() return {SetContextThink=function(_,_,fn) timer=fn end} end}
 full=true
@@ -321,7 +339,7 @@ for _,winner in ipairs({"radiant","dire","timeout"}) do
     local old=math.random; math.random=choose("item_blink")
     count=0;g:EndBattle(winner,2);g:EndBattle(winner,2);math.random=old
     assert(count==1,"exactly once settlement")
-    assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink" or ""))
-    assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 3 or 0))
+    assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink;item_blink;item_blink;item_blink" or ""))
+    assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 6 or 0))
 end
 print("PASS campaign loot: progression, 266 catalog rows, bounded gates, full stash, retries, ambiguous native delivery")

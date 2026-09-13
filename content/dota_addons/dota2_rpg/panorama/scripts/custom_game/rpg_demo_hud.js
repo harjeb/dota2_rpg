@@ -2457,7 +2457,9 @@
     GameEvents.Subscribe("rpg_rule_update_result", RpgRuleSync.onResult);
     GameEvents.Subscribe("rpg_item_sell_result", onItemSellResult);
     GameEvents.Subscribe("rpg_inventory_transfer_result", onItemTransferResult);
-    var shopTransport = RpgShopTransport.create(onShopState);
+    var shopTransport = RpgShopTransport.create(onShopState, null, function (receipt) {
+        GameEvents.SendCustomGameEventToServer("rpg_shop_state_receipt", receipt);
+    });
     GameEvents.Subscribe("rpg_shop_state", shopTransport.normal);
     GameEvents.Subscribe("rpg_shop_state_chunk", shopTransport.chunk);
 

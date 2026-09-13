@@ -453,18 +453,16 @@
 {
 	width: 100%;
 	height: fill-parent-flow(1.0);
-	padding-right: 12px;
+	padding-right: 0px;
 	overflow: squish scroll;
 	flow-children: down;
 }
 
 .RulesContainer VerticalScrollBar
 {
-	width: 9px;
-	height: 100%;
-	horizontal-align: right;
-	background-color: #0b1015cc;
-	border: 1px solid #3b474f;
+	width: 0px;
+	opacity: 0;
+	visibility: collapse;
 }
 
 .RulesContainer VerticalScrollBar .ScrollThumb
@@ -1552,7 +1550,10 @@
 .RuleSettingsHeader .RuleSettingsReset { horizontal-align: right; vertical-align: top; background-color: #762e35; border: 1px solid #bd6469; margin-top: 0px; }
 .RuleSettingsHeader .RuleSettingsReset:hover { background-color: #953e46; }
 .RuleSettingsHeader .RuleSettingsReset:disabled { saturation: 0; opacity: 0.45; }
-.RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 16px; }
+.RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 0px; }
+/* Keep wheel navigation while hiding the thin native scrollbar chrome. */
+.RuleSettingsBody VerticalScrollBar, .RuleSettingsBody HorizontalScrollBar,
+.RulesContainer HorizontalScrollBar { width: 0px; opacity: 0; visibility: collapse; }
 .V2SectionTitle { color: #e9d6a0; font-size: 20px; margin-top: 12px; margin-bottom: 6px; }
 .V2Preview { width: 100%; height: fit-children; white-space: normal; font-size: 15px; color: #d0dde4; margin-bottom: 12px; }
 .V2Condition { width: 100%; height: fit-children; min-height: 58px; flow-children: right; padding: 5px; border-bottom: 1px solid #354550; }

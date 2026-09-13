@@ -19,9 +19,9 @@ print(T.Encode(snapshot))
 ''').splitlines()
 # print propagates Encode's second return as a tab-separated budget.
 expected = json.loads(wire.pop().rsplit('\t', 1)[0])
-frames = [json.loads(line) for line in wire]
+frames = [json.loads(line) for line in wire if line.startswith('{')]
 assert len(frames) > 10
-assert all(len(f['data'].encode('utf-8')) <= 1200 for f in frames)
+assert all(len(f['data'].encode('utf-8')) <= 256 for f in frames)
 script = r'''
 const fs=require('fs'), assert=require('assert');
 const T=require('./content/dota_addons/dota2_rpg/panorama/scripts/custom_game/shop_transport.js');

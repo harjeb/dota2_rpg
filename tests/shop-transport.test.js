@@ -8,7 +8,7 @@ function frames(revision, generation = 1) {
         inventories_text: Array(180).fill("npc_dota_hero_axe:item_ultimate_scepter,item_butterfly,item_assault").join(";"),
         equipped_text: Array(180).fill("npc_dota_hero_axe:item_ultimate_scepter|123|0,item_butterfly|456|1").join(";"),
         unicode: "中立装备\\\"\n"};
-    const text = JSON.stringify(s), pieces = text.match(/[\s\S]{1,1200}/g);
+    const text = JSON.stringify(s), pieces = text.match(/[\s\S]{1,256}/g);
     return {s, chunks: pieces.map((data, i) => ({version:1, shop_revision:revision, rule_generation:generation,index:i+1,count:pieces.length,data}))};
 }
 let first = frames(1);
@@ -34,9 +34,27 @@ timeout.chunks.slice(1).forEach(receiver.chunk);
 assert.equal(delivered.length,4,"expired fragment not retained");
 timeout.chunks.forEach(receiver.chunk); assert.equal(delivered.length,5);
 receiver.chunk({version:1,shop_revision:3,rule_generation:2,index:1,count:513,data:"x"});
-receiver.chunk({version:1,shop_revision:3,rule_generation:2,index:1,count:1,data:"x".repeat(1201)});
+receiver.chunk({version:1,shop_revision:3,rule_generation:2,index:1,count:1,data:"x".repeat(257)});
 assert.equal(delivered.length,5,"oversized buffers rejected");
 const reconnect = []; const reconnected = transport.create(s => reconnect.push(s));
 reset.chunks.slice().reverse().forEach(reconnected.chunk);
 assert.deepStrictEqual(reconnect,[reset.s],"new HUD accepts current full snapshot without old buffers");
-console.log("PASS shop transport atomic assembly, ordering, generations, expiry, reconnect, bounded buffers");
+// Completely dropped and partially dropped publications recover via receipt probes.
+let probeTime = 0, receipts = [], recovered = [];
+const recovering = transport.create(s => recovered.push(s), () => probeTime, s => receipts.push(s));
+recovering.expire();
+assert.deepStrictEqual(receipts[0], {rule_generation:-1, shop_revision:-1});
+const lost = frames(9);
+lost.chunks.slice(1).forEach(recovering.chunk);
+probeTime = 5; recovering.expire();
+assert.equal(receipts[1].shop_revision,-1,"partial receipt cannot acknowledge unseen inventory");
+const replacement = frames(10);
+replacement.chunks.forEach(recovering.chunk);
+probeTime = 10; recovering.expire();
+assert.equal(receipts[2].shop_revision,10,"fully committed replacement is acknowledged");
+assert.equal(recovered.length,1);
+for (let i=0;i<100;i++) recovering.expire();
+assert.equal(receipts.length,3,"watch ticks cannot flood receipt requests");
+probeTime = 15; recovering.expire();
+assert.equal(receipts[3].shop_revision,10,"probe detects a completely lost newer server snapshot");
+console.log("PASS shop transport atomic assembly, ordering, generations, expiry, reconnect, bounded buffers and loss recovery");

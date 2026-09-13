@@ -40,9 +40,22 @@ GameRules = { GetGameTime = function() return 10 end, GetGameModeEntity = functi
 local players = {[0]={GetPlayerID=function() return 0 end}, [1]={GetPlayerID=function() return 1 end}}
 PlayerResource = { GetPlayer = function(_,id) return players[id] end,
     SetCustomTeamAssignment = function() end }
+local chunks = {}
+local Json = dofile(scripts .. "lib/json.lua")
+local function receive(player,event,data)
+    if event == "rpg_shop_state_chunk" then
+        local key = player or "all"
+        chunks[key] = chunks[key] or {}
+        chunks[key][data.index] = data.data
+        if data.index ~= data.count then return end
+        data = Json.decode(table.concat(chunks[key])); chunks[key] = nil
+        event = "rpg_shop_state"
+    end
+    sent[#sent+1]={event=event,data=data,player=player}
+end
 CustomGameEventManager = {
-    Send_ServerToAllClients = function(_,event,data) sent[#sent+1]={event=event,data=data} end,
-    Send_ServerToPlayer = function(_,player,event,data) sent[#sent+1]={event=event,data=data,player=player} end,
+    Send_ServerToAllClients = function(_,event,data) receive(nil,event,data) end,
+    Send_ServerToPlayer = function(_,player,event,data) receive(player,event,data) end,
 }
 local function tick()
     local callback = assert(timers.Dota2RpgStatePublications)

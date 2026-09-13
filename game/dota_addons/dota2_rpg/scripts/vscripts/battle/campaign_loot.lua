@@ -8,11 +8,12 @@ local NEUTRAL_ITEM_SLOT = 16
 local LAST_STANDARD_SLOT = 14
 
 -- 中立装备名称集合：交付前必须知道名称是否为中立，否则无法判断该占哪个槽。
-local NeutralNames = {}
+local NeutralNames, NeutralRows = {}, {}
 for _, row in ipairs(Catalog) do
     if row.neutral then
         NeutralNames[row.name] = true
         NeutralNames[row.delivery] = true
+        NeutralRows[row.delivery] = row
     end
 end
 
@@ -156,9 +157,26 @@ local function inventory(stash)
     return table.concat(snapshot, ";"), space
 end
 
+function Loot.UpgradePendingNeutral(game, reward)
+    local row = NeutralRows[reward.delivery]
+    local tier = Loot.PowerCeiling(Loot.StageFromLevel(game.currentLevelId))
+    if not row or not tier or tonumber(row.power) >= tier or reward.uncertain then return end
+    local choices = {}
+    for _, candidate in ipairs(Catalog) do
+        if candidate.neutral and candidate.category == row.category and tonumber(candidate.power) == tier then
+            choices[#choices + 1] = candidate
+        end
+    end
+    if #choices == 0 then return end
+    local selected = choices[NativeRandom(1, #choices)]
+    print(string.format("[RPG][Loot] upgraded_pending level=%s from=%s to=%s tier=%d", tostring(game.currentLevelId), reward.delivery, selected.delivery, tier))
+    reward.name, reward.delivery = selected.name, selected.delivery
+end
+
 function Loot.Flush(game)
     local remaining = {}
     for _, reward in ipairs(RunLives.Ensure(game).pendingCampaignLoot or {}) do
+        Loot.UpgradePendingNeutral(game, reward)
         local delivered = false
         local stash = game:GetStashUnit()
         if not reward.uncertain and stash ~= nil and not stash:IsNull() then
@@ -183,6 +201,12 @@ function Loot.Flush(game)
                 end
             end
         end
+        if delivered then
+            print(string.format("[RPG][Loot] delivered level=%s item=%s location=stash", tostring(game.currentLevelId), tostring(reward.delivery)))
+        elseif not reward.pendingLogged then
+            reward.pendingLogged = true
+            print(string.format("[RPG][Loot] pending level=%s item=%s reason=%s", tostring(game.currentLevelId), tostring(reward.delivery), reward.uncertain and "ambiguous" or "no_capacity_or_carrier"))
+        end
         if not delivered then remaining[#remaining + 1] = reward end
     end
     RunLives.Ensure(game).pendingCampaignLoot = remaining
@@ -195,6 +219,8 @@ function Loot.Award(game, config, random)
     state.pendingCampaignLoot = state.pendingCampaignLoot or {}
     state.campaignLootProgress = state.campaignLootProgress or {}
     for _, row in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId), state.campaignLootProgress)) do
+      -- Double each earned item, without changing gate probabilities, gold or XP.
+      for copy = 1, 2 do
         names[#names + 1] = row.delivery
         if row.delivery == "item_aegis" then
             -- Native Aegis is not droppable: existing life-reward delivery
@@ -204,7 +230,9 @@ function Loot.Award(game, config, random)
         else
             RunLives.Ensure(game).pendingCampaignLoot[#RunLives.Ensure(game).pendingCampaignLoot + 1] = { name = row.name, delivery = row.delivery }
         end
+      end
     end
+    print(string.format("[RPG][Loot] rolled level=%s count=%d items=%s", tostring(game.currentLevelId), #names, table.concat(names, ";")))
     Loot.Flush(game)
     RunLives.FlushItems(game)
     -- No startup pool traversal or synchronous hundreds-of-items precache.

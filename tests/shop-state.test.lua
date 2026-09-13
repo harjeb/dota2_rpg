@@ -1570,11 +1570,20 @@ assert(snapshotBeforeReplacement ~= equipmentGame:BuildEquipmentSnapshot(),
 -- The real shop payload must identify active and bench entities, and refresh
 -- those identifiers after a roster rebuild so native HUD selection cannot go stale.
 local shopPayload
+local shopChunks = {}
+local shopJson = dofile(moduleRoot .. "lib/json.lua")
 local priorEvents = CustomGameEventManager
 CustomGameEventManager = {
 	Send_ServerToAllClients = function(_, name, data)
-		assertEqual(name, "rpg_shop_state", "shop broadcast event")
-		shopPayload = data
+		if name == "rpg_shop_state_chunk" then
+            shopChunks[data.index] = data.data
+            if data.index == data.count then
+                shopPayload = shopJson.decode(table.concat(shopChunks)); shopChunks = {}
+            end
+        else
+            assertEqual(name, "rpg_shop_state", "shop broadcast event")
+            shopPayload = data
+        end
 	end,
 }
 function benchHero:GetEntityIndex() return 503 end
