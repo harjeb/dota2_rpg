@@ -474,12 +474,21 @@ assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s
     "compact row height matches scroll calculations after removing outer editors");
 assert(/\.RuleRow\.NewlyAdded\s*\{[^}]*border:\s*2px solid #f0d487/s.test(cssSource),
     "newly added action rows must be marked by a dedicated gold border style");
-assert(/\.RuleSettingsButton Label\s*\{[^}]*vertical-align:\s*center[^}]*font-size:\s*17px/s.test(cssSource),
-    "the condition-settings label must stay vertically centred at the larger font size");
+assert(/\.RuleSettingsButton \.RuleSettingsTitle\s*\{[^}]*horizontal-align:\s*center[^}]*vertical-align:\s*center[^}]*font-size:\s*17px/s.test(cssSource),
+    "the condition-settings title must be centred on both axes at the larger font size");
+assert(/createLabel\(settingsButton,\s*"RuleSettingsTitle"/.test(hudSource),
+    "the title needs its own class so the diagnostic cannot inherit its alignment rules");
+assert(!/\.RuleSettingsButton\s*\{[^}]*flow-children/s.test(cssSource),
+    "the button must not flow its children, or the title loses its own alignment");
+assert(!/\.RuleSettingsButton \.RuleSettingsTitle\s*\{[^}]*width:/s.test(cssSource),
+    "a full-width title renders its text left-aligned instead of centred");
+assert(/\.RuleSettingsButton\.HasDiagnostic \.RuleSettingsTitle\s*\{[^}]*vertical-align:\s*top/s.test(cssSource),
+    "a visible diagnostic line must move the title to the top so the two cannot overlap");
 assert(/\.RuleSettingsButton \.RuleDiagnostic\.Empty\s*\{[^}]*visibility:\s*collapse/s.test(cssSource)
     && /diagnosticLabel\.SetHasClass\("Empty",\s*true\)/.test(hudSource)
-    && /panel\.SetHasClass\("Empty",\s*!data\)/.test(diagnosticsSource),
-    "an empty diagnostic row must collapse in both CSS and both writers, or it pushes the label off centre");
+    && /panel\.SetHasClass\("Empty",\s*!data\)/.test(diagnosticsSource)
+    && /SetHasClass\("HasDiagnostic",\s*!!data\)/.test(diagnosticsSource),
+    "an empty diagnostic row must collapse, and a visible one must move the title aside");
 assert(/SetHasClass\("NewlyAdded",\s*isRuleMarkedNew\(side,\s*definition\)\)/.test(hudSource),
     "the new-row highlight must be applied from the rule list, not hard-coded per row index");
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&

@@ -663,7 +663,7 @@
                 });
                 var settingsButton = $.CreatePanel("Button", row, side + "RuleSettings" + idx);
                 settingsButton.AddClass("RuleSettingsButton");
-                createLabel(settingsButton, "", $.Localize("#dota2_rpg_v2_settings"));
+                createLabel(settingsButton, "RuleSettingsTitle", $.Localize("#dota2_rpg_v2_settings"));
                 var diagnosticLabel=createLabel(settingsButton,"RuleDiagnostic","");
                 diagnosticLabel.AddClass("RuleDiagnostic");
                 // 空诊断行整行折叠，否则它会把"条件设置"这四个字顶得偏高。
