@@ -1,4 +1,5 @@
 local Context = require("tactics/condition_context")
+local Lifecycle = require("tactics/action_lifecycle")
 local M = {}
 local function valid(unit)
     local ok, result = pcall(function() return unit ~= nil and (unit.IsNull == nil or not unit:IsNull()) end)
@@ -110,7 +111,23 @@ function M.StopOrder(engine,unit,session,ctx)
     end
     session.owns_order=false
 end
-function M.Continue(engine,unit,state,ctx)
+-- A cast borrows the native order without consuming/restarting the movement
+-- episode. Never STOP that cast when the buff/deadline expires meanwhile.
+function M.YieldCast(unit,state,ctx,name)
+    local s=state.movement
+    if not s then return end
+    s.owns_order=false
+    state.movement_cast_action=name
+    s.progress_time=ctx.now; s.last_position=unit:GetAbsOrigin()
+end
+function M.CastPending(unit,state,ctx)
+    local name=state.movement_cast_action
+    if not name then return false end
+    if Lifecycle.Phase(unit,name,ctx.now)=="REQUESTED" then return true end
+    state.movement_cast_action=nil
+    return false
+end
+function M.Continue(engine,unit,state,ctx,observeOnly)
     local s=state.movement
     if not s then return false end
     local a=s.rule.action
@@ -131,9 +148,10 @@ function M.Continue(engine,unit,state,ctx)
         if not target then return finish() end
         lock(s,target,unit:GetAbsOrigin(),ctx.now)
     end
-    -- Own/native control pauses orders, never simulates locomotion.
+    if observeOnly then return true end
+    -- Own/native control and a not-yet-observed cast pause movement orders.
     local move={kind="move",logical_id="sustained_move",target_mode="point"}
-    if engine:IsBusy(unit) or not engine.actions:CanExecute(unit,move,ctx) then
+    if engine:IsBusy(unit) or M.CastPending(unit,state,ctx) or not engine.actions:CanExecute(unit,move,ctx) then
         s.progress_time=ctx.now; s.last_position=unit:GetAbsOrigin(); return true
     end
     local p=unit:GetAbsOrigin(); local center=s.target:GetAbsOrigin()

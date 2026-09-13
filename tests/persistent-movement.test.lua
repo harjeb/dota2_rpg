@@ -106,8 +106,8 @@ local function windup() caster.observer:OnAttackStart({attacker=caster,target=en
 local r=movement(); local s=reset({r,ability,attack})
 assert(tick(0).OrderType==6 and not s.movement,"buff absent falls through to ordinary skill")
 enter(); assert(tick(.3).OrderType==1 and s.movement,"buff enter starts native move")
-assert(tick(.6).OrderType==1 and #orders==1,"exclusive session blocks available skill and attack")
-other.p=Vector(50,0,0); tick(.9); assert(s.movement.target==enemy,"no arbitrary retarget")
+assert(tick(.6).OrderType==6 and #orders==1 and s.movement,"available lower-priority skill borrows the order while movement remains armed"); cast()
+other.p=Vector(50,0,0); tick(.9); assert(s.movement.target==enemy,"no arbitrary retarget"); cast()
 caster.mods.modifier_weaver_shukuchi=nil
 assert(tick(1.2).OrderType==6 and not s.movement,"buff exit runs next rule same tick")
 other.p=Vector(500,0,0); enter(); tick(1.5); assert(s.movement,"new buff episode re-arms")
@@ -208,9 +208,71 @@ r=movement({movement_mode="orbit",movement_distance="32"}); s=reset({r,attack});
 caster.p=Vector(400-(48+8)/math.cos(.45/2),0,0); tick(0)
 for i=1,5 do tick(i*.2) end
 assert(s.movement and s.movement.arc==0,"small orbit cannot accumulate traversal without native displacement")
--- Explicit higher priority interrupt only.
+-- Skills on either side of every movement mode pause orders, then resume the
+-- SAME session after native casting/channeling, without resetting the deadline.
+local originalCooldown=spell.IsCooldownReady
+for _,mode in ipairs({"follow","orbit","pass","cycle"}) do
+    for _,higher in ipairs({false,true}) do
+        r=movement({movement_mode=mode,movement_loop="1"}); ability.enabled=false
+        s=reset(higher and {ability,r,attack} or {r,ability,attack}); enter(); tick(0)
+        local session=s.movement; local deadline=session.deadline
+        ability.enabled=true; assert(tick(.2).OrderType==6 and s.movement==session)
+        spell.IsCooldownReady=function() return false end
+        assert(tick(.3)==nil and not session.owns_order,"pending cast cannot be replaced by MOVE/STOP")
+        function spell:IsInAbilityPhase() return true end
+        caster.active=spell; assert(tick(.4)==nil and s.movement==session,"cast point is protected")
+        spell.IsInAbilityPhase=nil; cast(); caster.channel=true
+        assert(tick(2.5)==nil and s.movement==session,"channel cannot be replaced by movement")
+        caster.channel=false; caster.active=nil
+        assert(tick(2.6).OrderType==1 and s.movement==session and session.deadline==deadline,"resume original movement after cast")
+        assert(not caster.idle and caster.acquisition==0,"ordinary attacks stay suppressed")
+        tick(8.1); assert(not s.movement,"casting time still counts toward original cap")
+        spell.IsCooldownReady=originalCooldown
+    end
+end
+-- Losing the buff or reaching the cap while a cast is pending must not STOP
+-- it or immediately replace it with a fallback attack. A rejected native order
+-- eventually times out instead of freezing the rule engine indefinitely.
+for _,ending in ipairs({"buff","timeout"}) do
+    r=movement({movement_duration="0.5"}); ability.enabled=false
+    s=reset({r,ability,attack}); enter(); tick(0); ability.enabled=true; tick(.2)
+    spell.IsCooldownReady=function() return false end
+    if ending=="buff" then caster.mods.modifier_weaver_shukuchi=nil end
+    assert(tick(.6)==nil and not s.movement,ending.." preserves pending cast without STOP or ATTACK")
+    assert(tick(2.3).OrderType==4,"unconfirmed cast timeout returns control")
+    spell.IsCooldownReady=originalCooldown
+end
+-- A farther skill must not replace the orbit with an approach order.
+r=movement({movement_mode="orbit"}); ability.enabled=false
+s=reset({r,ability,attack}); enter(); tick(0)
+ability.enabled=true; ability.approach="allow_approach"
+enemy.p=Vector(1200,0,0); other.p=Vector(1800,0,0)
+assert(tick(.3).OrderType==1 and s.movement and not s.chase,"out-of-range cast leaves orbit in control")
+ability.approach="range_only"
+-- Items are evaluated too; skill/item ordering follows the authored list.
+local item=setmetatable({GetAbilityName=function() return "item_sheepstick" end},{__index=spell})
+function caster:GetItemInSlot(slot) if slot==0 then return item end end
+local itemRule=service:DecodeFlat({rule_id="item",action_kind="item",action_id="item_sheepstick",action_name="item_sheepstick",target_team="enemy",target_types="hero",target_priority_1_type="nearest"})
+r=movement(); ability.enabled=false; itemRule.enabled=false
+s=reset({r,ability,itemRule,attack}); enter(); tick(0); itemRule.enabled=true
+assert(tick(.3).OrderType==6 and s.movement,"lower-priority item casts during movement")
+caster.observer:OnAbilityExecuted({unit=caster,ability=item}); ability.enabled=true
+assert(tick(.6).OrderType==6 and s.movement_cast_action=="weaver_shukuchi","higher skill precedes available item")
+caster.GetItemInSlot=nil
+-- A channel's native release remains reachable while the movement is paused.
+local spellName=spell.GetAbilityName
+function spell:GetAbilityName() return "keeper_of_the_light_illuminate_end" end
+function spell:IsHidden() return false end
+function spell:IsActivated() return true end
+local channelRelease=service:DecodeFlat({rule_id="release",action_kind="ability",action_id="keeper_of_the_light_illuminate_end",action_name="keeper_of_the_light_illuminate_end",target_team="enemy",target_types="hero",target_priority_1_type="nearest"})
+channelRelease.enabled=false; s=reset({movement(),channelRelease,attack}); enter(); tick(0)
+caster.active={GetAbilityName=function() return "keeper_of_the_light_illuminate" end}
+caster.channel=true; channelRelease.enabled=true
+assert(tick(.3).OrderType==6 and s.movement,"reviewed native channel release can execute during orbit pause")
+spell.GetAbilityName=spellName; spell.IsHidden=nil; spell.IsActivated=nil
+-- The legacy interruption option ends the episode; ordinary casts only pause it.
 r=movement(); ability.enabled=false; s=reset({ability,r,attack}); enter(); tick(0); ability.enabled=true
-assert(tick(.3).OrderType==1 and s.movement,"ordinary higher priority rule remains blocked")
+assert(tick(.3).OrderType==6 and s.movement,"higher priority skill casts without ending movement"); cast()
 r.action.movement_interruptible=true; assert(tick(.6).OrderType==6 and not s.movement,"explicit emergency interrupt")
 -- Acquisition remains suppressed at arrival, through control pauses, and is
 -- restored once on every release path without cancelling an interrupting cast.

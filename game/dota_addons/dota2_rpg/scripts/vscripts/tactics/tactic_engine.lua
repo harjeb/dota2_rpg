@@ -232,15 +232,31 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
     local rules = self.get_rules(unit) or {}
     state.events = state.events or NativeEvents.Attach(unit)
     Movement.Observe(unit, state, rules)
+    -- Expiry/filters must still be checked when available spells keep borrowing
+    -- the order; the original movement deadline never resets for a cast.
+    if state.movement then Movement.Continue(self, unit, state, ctx, true) end
+    -- Buff loss must not let a fallback attack cancel an unconfirmed cast.
+    if not state.movement and Movement.CastPending(unit, state, ctx) then return end
     if state.movement then
         local active = state.movement
-        if active.rule.action.movement_interruptible == true and not self:IsBusy(unit) then
-            if self:EvaluateRules(unit, state, ctx, rules, 1, active.rule_index - 1, "non_attack") then
+        if not self:IsBusy(unit) and not Movement.CastPending(unit, state, ctx) then
+            if active.rule.action.movement_interruptible == true
+                and self:EvaluateRules(unit, state, ctx, rules, 1, active.rule_index - 1, "non_attack") then
                 if state.movement == active then Movement.Release(self, unit, state, ctx, false) end
                 return
             end
+            -- Skill/item priorities still apply on both sides of the movement
+            -- row. Cast from the current position; do not replace orbit with a chase.
+            ctx.movement_cast_only = true
+            local cast = self:EvaluateRules(unit, state, ctx, rules, 1, #rules, "cast")
+            ctx.movement_cast_only = nil
+            if cast then return end
         end
-        if Movement.Continue(self, unit, state, ctx) then return end
+        if Movement.Continue(self, unit, state, ctx) then
+            local busy, why = self:IsBusy(unit)
+            if not busy or why ~= "channeling" then return end
+            -- Let the normal reviewed channel-release path run below.
+        end
     end
     local busy, busy_reason = self:IsBusy(unit)
     if busy then
@@ -294,7 +310,9 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
     for index = first_index, last_index do
         local rule = rules[index]
         local is_attack = rule ~= nil and rule.action ~= nil and rule.action.kind == "attack"
-        if rule ~= nil and rule.enabled ~= false and ((mode == "attack") == is_attack) then
+        local is_cast = rule ~= nil and rule.action ~= nil and (rule.action.kind == "ability" or rule.action.kind == "item")
+        local selected = mode == "cast" and is_cast or mode ~= "cast" and ((mode == "attack") == is_attack)
+        if rule ~= nil and rule.enabled ~= false and selected then
             local executed, reason = self:TryRule(unit, state, ctx, rule, index)
             if executed then
                 return true
@@ -378,7 +396,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     if spec.logical_id == "sustained_move" then
         return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
     end
-    if (not unit.rpg_debug_manual_cast or unit.rpg_debug_positioning)
+    if not ctx.movement_cast_only and (not unit.rpg_debug_manual_cast or unit.rpg_debug_positioning)
         and Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
         state.chase = nil
         state.posture_order = {owns_order=true, expires=ctx.now+self.tick_interval*2}
@@ -394,6 +412,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
 
     -- Chase/approach is its own recovery step (rpg_debug_chase). Until it is
     -- opened, an out-of-range sandbox action simply fails without moving.
+    if ctx.movement_cast_only then return false, "out_of_range" end
     if unit.rpg_debug_manual_cast and not unit.rpg_debug_chase then
         return false, "out_of_range"
     end
@@ -542,6 +561,9 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
         Lifecycle.Requested(unit, Context.Call(spec.source,"GetAbilityName") or spec.logical_id, ctx.now)
     end
 
+    if spec.kind == "ability" or spec.kind == "item" then
+        Movement.YieldCast(unit, state, ctx, spec.source and Context.Call(spec.source,"GetAbilityName"))
+    end
     state.posture_order = nil
     state.last_order_signature = signature
     state.last_order_time = ctx.now

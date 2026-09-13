@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-09-13T04:05:43.855318+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-kcb9",
+  "counts": {
+    "issues": 1,
+    "dependencies": 0,
+    "events": 3
+  },
+  "evidence": "96/96 offline regression groups; all four changed runtime/localization files installed and byte-identical. Native cast/channel/pending-order APIs mocked. No running-game commands; backend unchanged and excluded."
+}
