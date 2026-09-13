@@ -277,6 +277,18 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         return
     end
 
+    -- Only generated enemy objective attacks outrank spells. Keep all existing
+    -- pending-cast/channel gates above; normal attack rows still fill downtime.
+    for index, rule in ipairs(rules) do
+        if rule.enabled ~= false and require("tactics/enemy_attack_objectives").IsRule(rule) then
+            if state.chase and state.chase.rule.id == rule.id then
+                if self:ContinueChase(unit, state, ctx, current_time) then return end
+            elseif self:TryRule(unit, state, ctx, rule, index) then
+                return
+            end
+        end
+    end
+
     -- A higher-priority emergency rule may interrupt a movement chase.
     if state.chase ~= nil then
         local attack_chase = state.chase.rule.action.kind == "attack"
@@ -312,7 +324,8 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
         local is_attack = rule ~= nil and rule.action ~= nil and rule.action.kind == "attack"
         local is_cast = rule ~= nil and rule.action ~= nil and (rule.action.kind == "ability" or rule.action.kind == "item")
         local selected = mode == "cast" and is_cast or mode ~= "cast" and ((mode == "attack") == is_attack)
-        if rule ~= nil and rule.enabled ~= false and selected then
+        if rule ~= nil and rule.enabled ~= false and selected
+            and not require("tactics/enemy_attack_objectives").IsRule(rule) then
             local executed, reason = self:TryRule(unit, state, ctx, rule, index)
             if executed then
                 return true
@@ -520,7 +533,7 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
     local anchor = nil
     if chase.target_index >= 0 then
         anchor = EntIndexToHScript(chase.target_index)
-        if not is_alive(anchor) then
+        if not is_alive(anchor) and not require("tactics/enemy_attack_objectives").IsRule(rule) then
             self:Debug(unit, "chase_cancelled", { reason = "target_invalid", rule_index = chase.rule_index })
             state.chase = nil
             return false

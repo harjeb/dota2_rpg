@@ -184,7 +184,10 @@ function TargetSelector:SelectUnit(rule, action_spec, ctx)
     end
 
     local candidates = {}
-    if ctx.get_candidates ~= nil then
+    local objectives = require("tactics/enemy_attack_objectives")
+    if objectives.IsRule(rule) and action_spec.kind == "attack" then
+        candidates = objectives.Candidates(ctx.caster)
+    elseif ctx.get_candidates ~= nil then
         candidates = ctx.get_candidates(ctx.caster, action_spec, rule.target or {}) or {}
     end
 

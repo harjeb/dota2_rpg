@@ -25,7 +25,7 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
     -- 否则远程敌方英雄拿不到默认的最大攻击距离站位。
     Defaults.ApplyRangedAttackPosture(attack, unit)
     local opening = Items.OpeningRules(unit, attack)
-    if opening then return opening end
+    if opening then return require("tactics/enemy_attack_objectives").Prepend(unit, opening) end
     local ultimates, basics = {}, {}
     for _, rule in ipairs(rules) do
         rule.id = "enemy_" .. rule.id
@@ -55,7 +55,7 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
         for _, rule in ipairs(group) do result[#result + 1] = rule end
     end
     result[#result + 1] = attack
-    return result
+    return require("tactics/enemy_attack_objectives").Prepend(unit, result)
 end
 
 return EnemyRules
