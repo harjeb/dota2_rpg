@@ -345,6 +345,35 @@ ability.action.positioning_mode="default"
 s=reset({movement(),attack}); enter(); tick(0); assert(caster.observer)
 phase="SETTLE"; engine:Think(); assert(next(engine.states)==nil and not caster.rpgTacticsEvents and not caster.observer,"stage cleanup")
 phase="FIGHT"; s=engine:GetState(caster); assert(not s.movement and not s.events.attack and next(s.events.casts)==nil,"fresh stage history")
+-- No-buff mode runs once per condition episode, with the same native movement
+-- and finite duration. Always-true conditions do not restart every frame.
+for _,mode in ipairs({"follow","orbit","pass","cycle"}) do
+    r=movement({movement_buff="",movement_mode=mode,movement_duration="0.5",movement_loop="1"})
+    s=reset({r,attack})
+    assert(tick(0).OrderType==1 and s.movement and not caster.mods.modifier_weaver_shukuchi,"unbound "..mode.." starts without any buff")
+    tick(.6); assert(not s.movement,"unbound duration ends")
+    tick(.9); assert(not s.movement,"always-true rule does not restart after timeout")
+    s=reset({r,attack}); tick(0); assert(s.movement,"new battle re-arms unbound rule")
+end
+r=movement({movement_buff="",movement_duration="0.5"})
+r.use_conditions={{type="self_hp_pct_lte",value=.5}}
+s=reset({r,attack}); tick(0); assert(not s.movement,"unbound use conditions are mandatory")
+caster.hp=40; tick(.2); assert(s.movement)
+caster.hp=90; tick(.3); assert(not s.movement,"condition loss ends unbound movement")
+caster.hp=40; tick(.4); assert(s.movement,"condition false to true re-arms movement")
+tick(1); assert(not s.movement); tick(1.1); assert(not s.movement,"timeout does not fake a condition edge")
+caster.hp=90; tick(1.2); caster.hp=40; tick(1.3); assert(s.movement)
+r=movement({movement_buff="",movement_trigger_ability="weaver_shukuchi",movement_duration="0.5"})
+s=reset({r,attack}); tick(0); assert(not s.movement,"trigger-only rule waits for actual cast")
+cast(); tick(.2); assert(s.movement and not caster.mods.modifier_weaver_shukuchi,"native cast can trigger without a buff")
+tick(.8); tick(1); assert(not s.movement,"same native cast cannot re-arm")
+cast(); tick(1.2); assert(s.movement,"later native cast re-arms trigger-only rule")
+-- Buff-linked rules keep their old episode gate even when use conditions flip.
+r=movement(); r.use_conditions={{type="self_hp_pct_lte",value=.5}}
+s=reset({r,attack}); enter(); caster.hp=40; tick(0); assert(s.movement)
+caster.hp=90; tick(.2); caster.hp=40; tick(.4); assert(not s.movement,"linked buff must reset before another episode")
+local noBuff={kind="move",logical_id="sustained_move",movement_buff="",movement_trigger_ability=""}
+assert(Contract.Validate(noBuff) and noBuff.movement_buff==nil and noBuff.movement_trigger_ability==nil,"empty selectors normalize to optional fields")
 -- Full flattened serialization: service sync -> decode, snapshot -> legacy.
 r=movement({movement_mode="cycle",movement_retarget="1",movement_loop="1",movement_interruptible="1",movement_direction="ccw",movement_trigger_ability="weaver_shukuchi",positioning_mode="fixed",positioning_distance="500",positioning_tolerance="30"})
 local payload

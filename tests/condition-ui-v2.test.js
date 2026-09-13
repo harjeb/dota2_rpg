@@ -843,7 +843,7 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     }
     assert(panel(moveHud,"V2MovementStatusSelectOption_"+expected.movement_buff), "preset native status remains selectable without current buffs");
     assert(!panel(moveHud,"V2_movement_buff"), "movement modifier has no raw input");
-    assert(panel(moveHud,"V2MovementBuffSelectMenu").children.length === 1, "movement buff category offers custom only");
+    assert(panel(moveHud,"V2MovementBuffSelectMenu").children.length === 2, "movement can use either no buff or a chosen buff");
     assert(panel(moveHud,"V2MovementTrigger").GetChild(0).abilityname === ability, "preset trigger uses ability icon");
     var options = panel(moveHud,"V2MovementTriggerMenu").children.filter(function(p) { return p.BHasClass("V2ActionChoice"); });
     assert(options.length === 1 && options[0].GetChild(0).abilityname === ability, "trigger selector includes only self hero skills, not enemies/items/actions");
@@ -872,6 +872,20 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     click(reload,"RadiantRuleSettings0"); assert(panel(reload,"V2MovementStatusSelectOption_modifier_test") && panel(reload,"V2_movement_duration").text === "8.25", "authoritative HUD reopen restores custom movement");
     click(reload,"V2ClearConditions"); click(reload,"RuleSettingsApply");
     assert(latest(reload,hero).movement_buff === "" && latest(reload,hero).movement_retarget === 1 && latest(reload,hero).movement_loop === 1, "clear resets movement defaults");
+    click(reload,"RadiantRuleSettings0");
+    assert(panel(reload,"V2MovementStatusRow").BHasClass("Hidden"), "no-buff mode reopens without requiring observed modifiers");
+    click(reload,"V2MovementBuffSelectOption_movement_buff_custom");
+    assert(!panel(reload,"V2MovementStatusRow").BHasClass("Hidden"), "requiring a buff exposes the list");
+    click(reload,"RuleSettingsApply");
+    assert(!panel(reload,"RuleSettings").BHasClass("Hidden") && panel(reload,"RuleSettingsError").text==="#dota2_rpg_v2_required_name", "chosen-buff mode needs an actual selection");
+    click(reload,"V2MovementStatusSelectOption_modifier_test");
+    click(reload,"V2MovementBuffSelectOption_movement_buff_none");
+    click(reload,"V2MovementBuffSelectOption_movement_buff_custom");
+    click(reload,"RuleSettingsApply");
+    assert(latest(reload,hero).movement_buff==="modifier_test", "switching modes retains chosen buff until saved without it");
+    click(reload,"RadiantRuleSettings0"); click(reload,"V2MovementBuffSelectOption_movement_buff_none");
+    click(reload,"RuleSettingsApply");
+    assert(latest(reload,hero).movement_buff==="" && latest(reload,hero).movement_trigger_ability==="", "no-buff choice clears the old association on the wire");
     click(moveHud,"RadiantRuleSettings0"); assert(panel(moveHud,"V2_use0_seconds").text === "7", "movement editing cannot mutate original attack rule");
     assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_movement_buff"), "attack has no movement controls");
     assert(!panel(moveHud,"RuleSettingsBody").FindChildTraverse("V2_positioning_modeOption_positioning_mode_cast_range"), "attack cannot choose cast range");

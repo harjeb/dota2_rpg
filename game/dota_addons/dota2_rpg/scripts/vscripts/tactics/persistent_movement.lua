@@ -42,7 +42,7 @@ local function direction(a,b)
     if n < 1 then return Vector(1,0,0) end
     return Vector(d.x/n,d.y/n,0)
 end
-local function buff(unit, action) return action.movement_buff and Context.Call(unit,"HasModifier",action.movement_buff) == true end
+local function buff(unit, action) return not action.movement_buff or Context.Call(unit,"HasModifier",action.movement_buff) == true end
 -- Keep the engine's conditions and authored selector intact; restrict only its
 -- candidate source, either to the locked handle or to unvisited handles.
 local function resolve(engine,s,ctx,accept)
@@ -64,9 +64,18 @@ local function lock(s,target,p,now)
     s.orbit_goal=nil; s.orbit_center=nil; s.arc=0
     s.last_position=p; s.progress_time=now
 end
--- Observe every rule even when it cannot execute. Each rule consumes a buff
--- episode, or a newly observed native cast, once; timeout cannot re-arm it.
-function M.Observe(unit,state,rules)
+-- Consume one buff/condition episode or newly observed cast. An always-true
+-- unbound rule runs once per battle; false -> true conditions re-arm it.
+local function conditionsActive(engine,ctx,unit,rule)
+    if not engine or not ctx or rule.enabled == false then return false end
+    local check={}
+    for key,value in pairs(ctx) do check[key]=value end
+    local spec=engine.actions:Resolve(unit,rule.action,check)
+    if not spec then return false end
+    check.current_action_id=spec.logical_id; check.current_action_spec=spec
+    return engine.conditions:EvaluateUseConditions(rule.use_conditions,check) == true
+end
+function M.Observe(unit,state,rules,engine,ctx)
     state.movement_gates = state.movement_gates or {}
     for _,r in ipairs(rules) do
         local a=r.action or {}
@@ -75,11 +84,14 @@ function M.Observe(unit,state,rules)
             local g=state.movement_gates[key]
             local seq=(state.events.casts or {})[a.movement_trigger_ability] or 0
             if not g then g={seq=seq}; state.movement_gates[key]=g end
-            if not buff(unit,a) then g.consumed=false; g.ready=false end
+            local active
+            if a.movement_buff then active=buff(unit,a)
+            else active=conditionsActive(engine,ctx,unit,r) end
+            if not active then g.consumed=false; g.ready=false end
             if a.movement_trigger_ability then
                 if seq > g.seq then g.ready=true; g.consumed=false end
                 g.seq=seq
-            else g.ready=buff(unit,a) and not g.consumed end
+            else g.ready=active and not g.consumed end
         end
     end
 end

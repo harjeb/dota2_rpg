@@ -486,9 +486,18 @@ var RpgConditionCatalog = (function () {
             settingChoice("movement_direction", ["auto", "cw", "ccw"]);
             var buffRow = $.CreatePanel("Panel", body, ""); buffRow.AddClass("V2Selector");
             label(buffRow, "", text("movement_buff_selector"));
-            choose(buffRow, "V2MovementBuffSelect", [{id:"movement_buff_custom"}], "movement_buff_custom", function () {});
+            var movementBuffMode = draft.movement_buff ? "movement_buff_custom" : "movement_buff_none";
+            var selectedMovementBuff = draft.movement_buff || "";
             var statusRow=$.CreatePanel("Panel",body,"V2MovementStatusRow"); statusRow.AddClass("V2Selector");
-            choose(statusRow,"V2MovementStatusSelect",modifierChoices(draft.movement_buff),draft.movement_buff || "",function(name) { draft.movement_buff=name; });
+            statusRow.SetHasClass("Hidden", movementBuffMode === "movement_buff_none");
+            choose(buffRow, "V2MovementBuffSelect", [{id:"movement_buff_none"},{id:"movement_buff_custom"}], movementBuffMode, function (mode) {
+                movementBuffMode = mode;
+                draft.movement_buff = mode === "movement_buff_none" ? "" : selectedMovementBuff;
+                statusRow.SetHasClass("Hidden", mode === "movement_buff_none");
+            });
+            choose(statusRow,"V2MovementStatusSelect",modifierChoices(selectedMovementBuff),selectedMovementBuff,function(name) {
+                selectedMovementBuff=name; draft.movement_buff=name;
+            });
             label(body, "", text("movement_trigger_ability"));
             var triggerRow = $.CreatePanel("Panel", body, ""); triggerRow.AddClass("V2Selector");
             var trigger = {action_id:draft.movement_trigger_ability};
@@ -534,7 +543,7 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
             if (options.readOnly || generation !== editorGeneration) { return; }
             readers.forEach(function (read) { read(); });
-            var missing = false;
+            var missing = action === "sustained_move" && movementBuffMode === "movement_buff_custom" && !draft.movement_buff;
             [["use", "use_conditions"], ["target", "target_filters"]].forEach(function (spec) {
                 draft[spec[1]].forEach(function (condition) {
                     var def = definitions[spec[0] + ":" + condition.type];

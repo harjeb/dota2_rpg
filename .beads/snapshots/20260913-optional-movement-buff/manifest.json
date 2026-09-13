@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-09-13T04:26:34.509900+00:00",
+  "source": "bd sql / local Dolt; bd sync is no-op",
+  "scope": "partial snapshot of dota2_rpg-umqh",
+  "counts": {
+    "issues": 1,
+    "dependencies": 0,
+    "events": 3
+  },
+  "evidence": "96/96 offline regression groups; condition_catalog.js native compilation; six changed addon files installed and byte-identical. Windrun and Focus Fire modifier names verified in installed VPK localization. Native gameplay not executed; backend unchanged and excluded."
+}

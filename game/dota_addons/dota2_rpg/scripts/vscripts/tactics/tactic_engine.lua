@@ -231,7 +231,7 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
     state.events = state.events or NativeEvents.Attach(unit)
-    Movement.Observe(unit, state, rules)
+    Movement.Observe(unit, state, rules, self, ctx)
     -- Expiry/filters must still be checked when available spells keep borrowing
     -- the order; the original movement deadline never resets for a cast.
     if state.movement then Movement.Continue(self, unit, state, ctx, true) end

@@ -82,4 +82,14 @@ local all=A.ForAction(displayHero,{kind='move',logical_id='sustained_move'})
 assert(all.modifiers[lastName]==1 and all.modifiers.modifier_a_40==1,
  'movement dropdown includes observed names beyond the former first 32')
 M.Reset()
+local windHero=H.unit()
+local windrun=H.ability(windHero,'windrunner_windrun',4)
+local focusfire=H.ability(windHero,'windrunner_focusfire',8)
+windrun.level=0; focusfire.level=0
+local wind=A.ForAction(windHero,{kind='move',logical_id='sustained_move'})
+assert(wind.modifiers.modifier_windrunner_windrun==1 and wind.modifier_details.modifier_windrunner_windrun.ability=='windrunner_windrun')
+assert(wind.modifiers.modifier_windrunner_focusfire==1 and wind.modifier_details.modifier_windrunner_focusfire.ability=='windrunner_focusfire',
+ 'both native Windranger buffs are selectable before learning/casting or observing a modifier')
+assert(not M.List(H.unit(),nil).modifier_windrunner_focusfire,'unowned Windranger buffs are not fabricated')
+M.Reset()
 print('PASS ability compatibility: native roles, contradictions, modifiers with source metadata, references, live refresh, switch false, builtin parity')

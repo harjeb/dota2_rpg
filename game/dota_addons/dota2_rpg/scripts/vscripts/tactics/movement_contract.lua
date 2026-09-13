@@ -4,7 +4,8 @@ M.fields = {"movement_mode", "movement_buff", "movement_trigger_ability", "movem
 local booleans = {movement_retarget=true, movement_loop=true, movement_interruptible=true}
 local numbers = {movement_duration={0.1,60}, movement_distance={32,3000}, positioning_distance={0,3000}, positioning_tolerance={0,300}}
 local enums = {movement_mode={follow=true,pass=true,orbit=true,cycle=true}, movement_direction={auto=true,cw=true,ccw=true}, positioning_mode={default=true,fixed=true,attack_range=true,cast_range=true}}
-M.presets = {weaver_shukuchi="modifier_weaver_shukuchi", primal_beast_trample="modifier_primal_beast_trample", pangolier_gyroshell="modifier_pangolier_gyroshell"}
+M.presets = {weaver_shukuchi="modifier_weaver_shukuchi", primal_beast_trample="modifier_primal_beast_trample", pangolier_gyroshell="modifier_pangolier_gyroshell",
+    windrunner_windrun="modifier_windrunner_windrun", windrunner_focusfire="modifier_windrunner_focusfire"}
 function M.Copy(source, target)
     for _, key in ipairs(M.fields) do
         local v = source[key]
@@ -19,6 +20,8 @@ function M.Copy(source, target)
     return target
 end
 function M.Validate(action)
+    if action.movement_buff == "" then action.movement_buff = nil end
+    if action.movement_trigger_ability == "" then action.movement_trigger_ability = nil end
     for _, key in ipairs(M.fields) do
         local v = action[key]
         if v ~= nil then
@@ -32,7 +35,7 @@ function M.Validate(action)
         end
     end
     if action.logical_id == "sustained_move" then
-        if action.kind ~= "move" or not action.movement_buff then return false, "movement_buff_required" end
+        if action.kind ~= "move" then return false, "movement_kind_required" end
         action.movement_mode = action.movement_mode or "follow"
         action.movement_duration = action.movement_duration or 8
         action.movement_distance = action.movement_distance or 250
