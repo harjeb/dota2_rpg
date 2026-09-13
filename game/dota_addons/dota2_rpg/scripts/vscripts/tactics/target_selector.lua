@@ -105,7 +105,7 @@ local function native_legal(target, spec, ctx)
     if spec == nil or (spec.kind ~= "ability" and spec.kind ~= "item") then return true end
     -- A point/area anchor is not the spell's native unit target. In particular,
     -- tree-capable point spells must not UnitFilter their enemy anchor as a tree.
-    if spec.target_mode ~= "unit" and spec.target_mode ~= "self" then
+    if spec.cast_type == "point" or (spec.target_mode ~= "unit" and spec.target_mode ~= "self") then
         return Context.Call(target,"IsOutOfGame") ~= true and Context.Call(target,"IsInvulnerable") ~= true
     end
     local ability = spec.ability or spec.source

@@ -1,4 +1,6 @@
 local Summons={}
+local Undying=require("issue_fixes/undying")
+local Nevermore=require("issue_fixes/nevermore")
 local function call(unit,method,...)
     if unit==nil then return nil end
     local ok,fn=pcall(function() return unit[method] end)
@@ -63,8 +65,47 @@ function Summons.ResolveOwner(game,unit)
     end
     return source
 end
+-- Native Undying summons are intentionally not player-controllable. Track
+-- them for removal only, never replace their native target/attack behavior.
+-- Exact names verified in native npc_units.txt; tombstones are removed first
+-- so their zombie spawner cannot survive the preparation reset.
+local undyingNames={"npc_dota_unit_tombstone1","npc_dota_unit_tombstone2",
+    "npc_dota_unit_tombstone3","npc_dota_unit_tombstone4","npc_dota_unit_tombstone5",
+    "npc_dota_unit_undying_zombie","npc_dota_unit_undying_zombie_torso"}
+local undyingUnits={}
+for _,name in ipairs(undyingNames) do undyingUnits[name]=true end
+function Summons.TrackUndyingSummon(game,unit)
+    if not valid(unit) or not undyingUnits[call(unit,"GetUnitName")]
+        or call(unit,"IsRealHero")==true then return false end
+    game.undyingSummons=game.undyingSummons or {}
+    game.undyingSummons[unit]=true
+    return true
+end
+function Summons.ClearUndyingSummons(game)
+    -- World lookup also catches missed spawn events, ownerless zombies and
+    -- distant summons outside the normal 4000-unit combat AI scan.
+    for _,name in ipairs(undyingNames) do
+        local className=name:find("tombstone",1,true) and "npc_dota_unit_undying_tombstone"
+            or "npc_dota_unit_undying_zombie"
+        for _,unit in ipairs(call(Entities,"FindAllByClassname",className) or {}) do
+            Summons.TrackUndyingSummon(game,unit)
+        end
+        local removing={}
+        for unit in pairs(game.undyingSummons or {}) do
+            if call(unit,"GetUnitName")==name then removing[#removing+1]=unit end
+        end
+        -- RemoveSelf can synchronously spawn/register another native unit.
+        -- Never mutate/rehash the table being traversed by pairs.
+        for _,unit in ipairs(removing) do
+            game.undyingSummons[unit]=nil
+            if valid(unit) then call(unit,"RemoveSelf") end
+        end
+    end
+    game.undyingSummons={}
+end
 local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestral_spirit=true}
 function Summons.OnSpawn(game,unit)
+    if Summons.TrackUndyingSummon(game,unit) then return false end
     if not valid(unit) or call(unit,"IsTempestDouble")==true or excluded[call(unit,"GetUnitName")] then return false end
     local owner=Summons.ResolveOwner(game,unit)
     local campaignSkeleton=call(unit,"GetUnitName")=="npc_dota_dark_troll_warlord_skeleton_warrior"
@@ -125,6 +166,7 @@ local function issue(game,order)
     return gate~=nil and gate:Execute(order)==true
 end
 function Summons.Clear(game)
+    Summons.ClearUndyingSummons(game)
     Summons.ClearEnemySummons(game)
     for unit in pairs(game.managedSummons or {}) do
         if valid(unit) then
@@ -137,7 +179,12 @@ function Summons.Clear(game)
     game.managedSummons={}
 end
 function Summons.OnThink(game)
-    if game.phase~="fight" then Summons.Clear(game); return end
+    if game.phase~="fight" then
+        Undying.RefreshPreparation(game)
+        Nevermore.RefreshPreparation(game)
+        Summons.Clear(game)
+        return
+    end
     local now=GameRules:GetGameTime()
     -- Some native abilities assign ownership just after npc_spawned. Revisit
     -- owned units periodically so those summons are not permanently missed.

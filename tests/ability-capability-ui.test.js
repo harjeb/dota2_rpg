@@ -55,6 +55,24 @@ assert(!api.validate({target_team:'ally',use_conditions:[{type:'channel_elapsed_
 console.log('PASS strict capability UI: disabled native choices, preserved invalid rules, contradictions, dropdown-only modifiers, cancel, stale revisions, false autocast serialization, channel restrictions');
 
 // A single native switch owns either toggle or autocast intent, including persisted off.
+// Enemy-affecting POINT spells expose both location-anchor teams and persist them.
+{
+    const pointHud=runHud(), native=JSON.parse(JSON.stringify(cap));
+    native.name='magnataur_skewer'; native.mode='point'; native.role='anchor';
+    native.cast={unit:0,point:1}; native.cast_preferences={auto:1,point:1,unit:0};
+    native.teams={self:1,ally:1,enemy:1};
+    let saved;
+    pointHud.context.RpgConditionCatalog.open({action:native.name},{target_team:'enemy'},value=>{saved=value;},
+        {abilityName:native.name,capability:native});
+    assert(panel(pointHud,'V2TeamSelectOption_team_ally').enabled);
+    assert(panel(pointHud,'V2TeamSelectOption_team_enemy').enabled);
+    assert.equal(panel(pointHud,'V2TargetTeamHint').text,'#dota2_rpg_v2_point_target_team_hint');
+    choice(pointHud,'V2Team','team_ally'); click(pointHud,'RuleSettingsApply');
+    const wire=pointHud.context.RpgRuleSync.serialize({rule:Object.assign({action:native.name},saved)});
+    assert.equal(wire.target_team,'ally');
+    const restored=pointHud.context.RpgRuleSync.fromServer(Object.assign({},wire,{action:native.name}));
+    assert.equal(restored.target_team,'ally');
+}
 for (const kind of ['toggle','autocast']) {
     const switchHud=runHud(), catalog=switchHud.context.RpgConditionCatalog;
     const native=JSON.parse(JSON.stringify(cap));

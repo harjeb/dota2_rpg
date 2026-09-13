@@ -434,7 +434,8 @@ var RpgConditionCatalog = (function () {
         }
         // Choose the team before reading detailed filters or movement options.
         label(body, "V2TargetTeamTitle", text("target_team")).AddClass("V2SectionTitle");
-        label(body, "V2TargetTeamHint", text("target_team_hint")).AddClass("V2Hint");
+        // POINT teams select a location anchor, not the units the spell can affect.
+        label(body, "V2TargetTeamHint", text(cap && cap.mode === "point" ? "point_target_team_hint" : "target_team_hint")).AddClass("V2Hint");
         var team = $.CreatePanel("Panel", body, "V2TargetTeamRow"); team.AddClass("V2Selector");
         var targetTeam = draft.target_team || String(draft.target || rule.target || "enemy").split("_")[0];
         choose(team, "V2TeamSelect", restrict([{id:"team_self"}, {id:"team_ally"}, {id:"team_enemy"}],function(entry) {

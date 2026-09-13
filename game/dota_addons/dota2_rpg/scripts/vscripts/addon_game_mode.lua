@@ -31,6 +31,8 @@ local GrisGris = require("issue_fixes/gris_gris")
 local EldwurmsEdda = require("issue_fixes/eldwurms_edda")
 local JinadaIncome = require("issue_fixes/jinada_income")
 local HeroAbilityPolicy = require("issue_fixes/hero_ability_policy")
+local Undying = require("issue_fixes/undying")
+local Nevermore = require("issue_fixes/nevermore")
 local okRuntimeLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okRuntimeLog then RuntimeLog = { Write = print } end
 local Traceback = RuntimeLog.Traceback or tostring
@@ -85,6 +87,10 @@ local function HeroModelPaths()
 	return paths
 end
 
+local COMMANDER_DISARM_MODIFIER = "modifier_rpg_commander_disarmed"
+if LinkLuaModifier ~= nil then
+	LinkLuaModifier(COMMANDER_DISARM_MODIFIER, "modifiers/" .. COMMANDER_DISARM_MODIFIER, LUA_MODIFIER_MOTION_NONE)
+end
 local PLAYER_PLACEHOLDER_HERO = "npc_dota_hero_wisp"
 local HERO_LEVEL = 30
 local THINK_INTERVAL = 0.1
@@ -723,9 +729,8 @@ function CDota2RpgDemo:OnNpcSpawned(event)
 	-- npc_spawned may precede PlayerResource's starting-gold initialization;
 	-- wallet initialization belongs to player_connect_full, never this callback.
 	unit:SetRespawnsDisabled(true)
-	-- 玩家小精灵 = 可自由移动的"指挥官"：禁攻/禁技能；准备阶段可自由拖拽装备，
-	-- 开战后自动进入无敌（敌人无法选中/伤害它）
-	unit:AddNewModifier(unit, nil, "modifier_disarmed", {})
+	-- 指挥官永久缴械由 EnsureCommanderProtected 维护；原版沉默独立保留。
+	-- 准备阶段仍可自由移动和拖拽装备。
 	unit:AddNewModifier(unit, nil, "modifier_silence", {})
 	FindClearSpaceForUnit(unit, Vector(-1950, -700, 128), true)
 	self:EnsureBattlefield()
@@ -1212,6 +1217,13 @@ function CDota2RpgDemo:EnsureCommanderProtected()
 		pcall(function()
 			commander:AddNewModifier(commander, nil, "modifier_invulnerable", {})
 		end)
+		-- Only this exact commander handle is protected, never recruited playable Io.
+		-- No duration: permanent across battle phases, purges and death.
+		if commander.HasModifier == nil or not commander:HasModifier(COMMANDER_DISARM_MODIFIER) then
+			pcall(function()
+				commander:AddNewModifier(commander, nil, COMMANDER_DISARM_MODIFIER, {})
+			end)
+		end
 	end
 	return true
 end
@@ -3299,6 +3311,8 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 		HeroAbilityPolicy.RestoreManualAbilities(hero, data, wantedLevel)
 		hero.rpgAbilitiesRestored = true
 	end
+	Undying.ResetPreparation(self, hero)
+	Nevermore.ResetPreparation(self, hero)
 	hero:SetRespawnsDisabled(true)
 	hero:SetHealth(hero:GetMaxHealth())
 	hero:SetMana(hero:GetMaxMana())
