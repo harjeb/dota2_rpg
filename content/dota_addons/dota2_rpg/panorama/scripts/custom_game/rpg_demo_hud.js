@@ -160,6 +160,12 @@
         return "";
     }
 
+    function stableItemAction(side, heroIndex, action) {
+        if (!/^item_\d+$/.test(action)) { return action; }
+        var name = getActionDetail(side, heroIndex, action);
+        return name && !/^item_\d+$/.test(name) ? name : action;
+    }
+
     function targetActors(side, heroIndex, kind) {
         if (!canEditHeroRules(side, heroIndex)) { return []; }
         var ally = kind === "specified_ally";
@@ -817,7 +823,7 @@
                 label.hittest = false;
                 option.SetPanelEvent("onactivate", function () {
                     if (menuGeneration !== ruleGeneration) { return; }
-                    chooseAction(side, index, actionKey);
+                    chooseAction(side, index, /^item_\d+$/.test(actionKey) && detail ? detail : actionKey);
                 });
             }(actions[i]));
         }
@@ -830,6 +836,8 @@
     }
 
     function chooseAction(side, index, actionKey) {
+        // Bind at selection time, before an inventory refresh can reuse the slot.
+        actionKey = stableItemAction(side, selectedHeroIndex[side], actionKey);
         var rules = getSelectedRules(side);
         if (!rules[index]) {
             return;
@@ -1473,6 +1481,12 @@
             ? "#dota2_rpg_gris_gris_redeem" : (itemName === "item_eldwurms_edda"
                 ? "#dota2_rpg_item_consume" : "#dota2_rpg_item_sell")));
         button.enabled = phase === "setup" && validId && !pendingItemSales[entityId];
+        if (itemName !== "item_grisgris" && itemName !== "item_eldwurms_edda") {
+            button.SetPanelEvent("onmouseover", function () {
+                $.DispatchEvent("DOTAShowTextTooltip", button, $.Localize("#dota2_rpg_item_sell_prices"));
+            });
+            button.SetPanelEvent("onmouseout", function () { $.DispatchEvent("DOTAHideTextTooltip", button); });
+        }
         button.SetPanelEvent("onactivate", function () {
             if (phase !== "setup" || !validId || pendingItemSales[entityId]) {
                 return;
@@ -2471,7 +2485,12 @@
             var heroIndex = Math.max(0, Number(match[2]) - 1);
             var current = getRules(side, heroIndex);
             if (Number(data.rules_ready) === 1 && (!current._serverHydrated || !current._authored || heroSlots[slotKey].can_edit === false)) {
-                var restored = RpgRuleSync.list(data.rules).map(RpgRuleSync.fromServer);
+                var restored = RpgRuleSync.list(data.rules).map(function (source) {
+                    var rule = RpgRuleSync.fromServer(source);
+                    // Normalize legacy slot snapshots using their own inventory mapping.
+                    rule.action = stableItemAction(side, heroIndex, rule.action);
+                    return rule;
+                });
                 if (!restored.length) { restored = buildRulesForHero(side,heroIndex); }
                 // A capability refresh sends the same rules again. Preserve their edit
                 // identities only when the entire ordered snapshot and hero still match.

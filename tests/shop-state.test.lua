@@ -1709,7 +1709,72 @@ do
         and replies[1].request_id==71,"inventory broadcast and correlated sale result reach the client")
     equipmentGame:OnItemSell(nil,payload)
     assert(nativeSales==1 and replies[2].ok==0 and equipmentGame:GetGoldBalance()==1225,"replayed request cannot refund twice")
+    local neutral = makeItem("item_chipped_vest")
+    local previousMaxSlot = fieldedHero.maxSlot
+    fieldedHero.maxSlot = 16
+    function neutral:IsSellable() return false end
+    entities[neutral:GetEntityIndex()] = neutral
+    fieldedHero.slots[16] = neutral
+    local neutralRequest = {PlayerID=0,hero="npc_dota_hero_axe",item=neutral.name,
+        item_index=neutral:GetEntityIndex(),request_id=72,refund=999999}
+    equipmentGame:OnItemSell(nil,neutralRequest)
+    assert(nativeSales==1 and neutral:IsNull() and fieldedHero.slots[16]==nil,
+        "neutral handler destroys exact equipment without native sale")
+    assert(replies[3].ok==1 and replies[3].refund==100 and equipmentGame:GetGoldBalance()==1325,
+        "neutral handler credits authoritative tier price and replies")
+    equipmentGame:OnItemSell(nil,neutralRequest)
+    assert(replies[4].ok==0 and equipmentGame:GetGoldBalance()==1325,"duplicate neutral sale cannot credit again")
+    fieldedHero.maxSlot = previousMaxSlot
     CustomGameEventManager, PlayerResource.GetPlayer = previousEvents, previousGetPlayer
+end
+
+-- Concurrent project expenses/rewards must not become native purchase coverage.
+do
+    local function purchaseWithOtherWalletChange(nativeDebit, projectDelta, expected)
+        equipmentGame.phase = "setup"
+        equipmentGame.nativePurchaseOrderContexts, equipmentGame.pendingNativePurchases = {}, {}
+        equipmentGame:SetGoldBalance(1000)
+        equipmentGame:SetNativePurchaseSelection(fieldedHero)
+        assert(equipmentGame:ValidatePrepareOrder({issuer_player_id_const=0,
+            order_type=DOTA_UNIT_ORDER_PURCHASE_ITEM, units={}, itemname="item_wallet_race"}))
+        local item = wisp:AddItem(makeItem("item_wallet_race"))
+        assert(item, "wallet race fixture has a free source slot")
+        nativeWalletReliable[0] = nativeWalletReliable[0] - nativeDebit
+        equipmentGame:OnNativeItemPurchased({PlayerID=0, itemname="item_wallet_race"})
+        if projectDelta < 0 then assert(equipmentGame:SpendGold(-projectDelta))
+        else equipmentGame:AddGold(projectDelta) end
+        equipmentGame:RoutePendingNativePurchases()
+        assertEqual(equipmentGame:GetGoldBalance(), expected,
+            "only native purchase debit counts as purchase coverage")
+        assert(equipmentGame:IsItemHeldBy(fieldedHero, item, 0, 14), "paid item reaches selected hero")
+        equipmentGame:OnNativeItemPurchased({PlayerID=0, itemname="item_wallet_race"})
+        equipmentGame:RoutePendingNativePurchases()
+        assertEqual(equipmentGame:GetGoldBalance(), expected, "duplicate event cannot repeat either charge")
+        fieldedHero:RemoveItem(item)
+    end
+    purchaseWithOtherWalletChange(0, -250, 500)
+    purchaseWithOtherWalletChange(250, 100, 850)
+    purchaseWithOtherWalletChange(100, -200, 550)
+
+    equipmentGame.nativePurchaseOrderContexts, equipmentGame.pendingNativePurchases = {}, {}
+    equipmentGame:SetGoldBalance(1000)
+    equipmentGame:SetNativePurchaseSelection(fieldedHero)
+    for _, name in ipairs({"item_wallet_first", "item_wallet_second"}) do
+        assert(equipmentGame:ValidatePrepareOrder({issuer_player_id_const=0,
+            order_type=DOTA_UNIT_ORDER_PURCHASE_ITEM, units={}, itemname=name}))
+    end
+    assert(equipmentGame:SpendGold(100))
+    local first = wisp:AddItem(makeItem("item_wallet_first"))
+    equipmentGame:OnNativeItemPurchased({PlayerID=0, itemname="item_wallet_first"})
+    equipmentGame:RoutePendingNativePurchases()
+    equipmentGame:AddGold(50)
+    local second = wisp:AddItem(makeItem("item_wallet_second"))
+    equipmentGame:OnNativeItemPurchased({PlayerID=0, itemname="item_wallet_second"})
+    equipmentGame:RoutePendingNativePurchases()
+    assertEqual(equipmentGame:GetGoldBalance(), 450, "separate delivery ticks each settle once across rewards and spending")
+    assert(equipmentGame:IsItemHeldBy(fieldedHero, first, 0, 14)
+        and equipmentGame:IsItemHeldBy(fieldedHero, second, 0, 14), "both delayed purchases reach hero")
+    fieldedHero:RemoveItem(first); fieldedHero:RemoveItem(second)
 end
 
 print("PASS: initial hero shop, native inventory transfers, five lives, native equipment sales and exactly-once transferable life rewards")

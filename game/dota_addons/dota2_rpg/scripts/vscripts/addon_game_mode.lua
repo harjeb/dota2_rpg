@@ -619,7 +619,23 @@ function CDota2RpgDemo:EnsureGoldWalletInitialized()
 	return balance
 end
 
-function CDota2RpgDemo:SetGoldBalance(amount)
+-- Project rewards/spending are not native shop debits. Keep every unsettled
+-- order's comparison balance in the same frame of reference as the wallet.
+function CDota2RpgDemo:AdjustNativePurchaseWalletBaselines(delta)
+	if delta == 0 then return end
+	local seen = {}
+	local function adjust(purchase)
+		if not seen[purchase] and not purchase.gold_checked and not purchase.gold_failed
+			and tonumber(purchase.gold_before) ~= nil then
+			purchase.gold_before = tonumber(purchase.gold_before) + delta
+		end
+		seen[purchase] = true
+	end
+	for _, purchase in ipairs(self.nativePurchaseOrderContexts or {}) do adjust(purchase) end
+	for _, purchase in ipairs(self.pendingNativePurchases or {}) do adjust(purchase) end
+end
+
+function CDota2RpgDemo:SetGoldBalance(amount, nativePurchaseDebit)
 	local before = self:ReadNativeGold()
 	if before == nil then before = self.gold end
 	local wroteNative = false
@@ -633,17 +649,20 @@ function CDota2RpgDemo:SetGoldBalance(amount)
 		self.goldWalletInitialized = true
 		wroteNative = true
 	end
+	if not nativePurchaseDebit then
+		self:AdjustNativePurchaseWalletBaselines(self.gold - (tonumber(before) or 0))
+	end
 	LogGoldWallet(self, "write", before, self.gold, wroteNative and "native" or "mirror-only")
 	return self.gold
 end
 
-function CDota2RpgDemo:SpendGold(amount)
+function CDota2RpgDemo:SpendGold(amount, nativePurchaseDebit)
 	amount = math.max(0, math.floor(tonumber(amount) or 0))
 	local balance = self:GetGoldBalance()
 	if balance < amount then
 		return false
 	end
-	self:SetGoldBalance(balance - amount)
+	self:SetGoldBalance(balance - amount, nativePurchaseDebit)
 	return true
 end
 
@@ -1786,13 +1805,21 @@ function CDota2RpgDemo:GetNativePurchaseCost(itemName, payload)
 end
 
 function CDota2RpgDemo:LogNativePurchase(purchase, stage, decision)
-	-- Bound diagnostics for long sessions, and never log routing retries per tick.
+	-- Keep late-stage transactions visible without logging retries every tick.
+	local now = self:GetNativePurchaseClock()
+	if self.nativePurchaseLogWindow == nil or now < self.nativePurchaseLogWindow
+		or now - self.nativePurchaseLogWindow >= 60 then
+		self.nativePurchaseLogWindow = now
+		self.nativePurchaseLogCount = 0
+	end
 	self.nativePurchaseLogCount = (self.nativePurchaseLogCount or 0) + 1
 	if self.nativePurchaseLogCount > 200 then return end
-	RuntimeLog.Write(string.format("[Dota2Rpg] ShopTxn id=%s stage=%s issuer=%s item=%s target=%s location=%s before=%s after=%d decision=%s",
-		tostring(purchase.transaction_id or "unmatched"), stage, tostring(purchase.issuer or self.playerId),
-		tostring(purchase.item_name), tostring(purchase.recipient_key), tostring(purchase.target_location or "stash"),
-		tostring(purchase.gold_before), self:GetGoldBalance(), tostring(decision)))
+	pcall(function()
+		(RuntimeLog.WriteCritical or RuntimeLog.Write)(string.format("[Dota2Rpg] ShopTxn id=%s stage=%s issuer=%s item=%s target=%s location=%s before=%s after=%d decision=%s",
+			tostring(purchase.transaction_id or "unmatched"), stage, tostring(purchase.issuer or self.playerId),
+			tostring(purchase.item_name), tostring(purchase.recipient_key), tostring(purchase.target_location or "stash"),
+			tostring(purchase.gold_before), self:GetGoldBalance(), tostring(decision)))
+	end)
 end
 
 function CDota2RpgDemo:ObserveNativePurchaseItem(item, purchase)
@@ -1820,6 +1847,11 @@ function CDota2RpgDemo:ReconcileNativePurchaseOrders()
 	-- Extra heroes may receive an item without dota_item_purchased. An accepted
 	-- order alone is not proof of success: require a new entity or changed stack.
 	self:PruneNativePurchaseOrderContexts()
+	-- Qualify the whole batch before routing can remove event contexts or move
+	-- the result. Each component retains its own debit/late-event state.
+	for _, list in ipairs({ self.nativePurchaseOrderContexts or {}, self.pendingNativePurchases or {} }) do
+		for _, purchase in ipairs(list) do self:FindNativePurchaseCombination(purchase) end
+	end
 	-- Event-confirmed results claim their evidence before silent orders inspect it.
 	self:RoutePendingNativePurchases()
 	self.pendingNativePurchases = self.pendingNativePurchases or {}
@@ -1872,6 +1904,7 @@ function CDota2RpgDemo:CollectManagedItemIds()
 			local itemId = self:GetItemEntityId(item)
 			if itemId ~= "" then
 				ids[itemId] = self:GetItemPersistentState(item)
+				ids[itemId].holder = unit
 			end
 		end
 	end
@@ -1893,6 +1926,125 @@ function CDota2RpgDemo:ItemPurchaseStateChanged(before, item)
 	return before.name == current.name
 		and tonumber(current.charges) ~= nil and tonumber(before.charges) ~= nil
 		and tonumber(current.charges) > tonumber(before.charges)
+end
+
+-- Only explicit recipe definitions qualify; never infer recipes from item names.
+function CDota2RpgDemo:GetNativePurchaseRecipes()
+	if self.nativePurchaseRecipes ~= nil then return self.nativePurchaseRecipes end
+	local definitions, recipes = {}, {}
+	if type(LoadKeyValues) == "function" then
+		for _, path in ipairs({ "scripts/npc/items.txt", "scripts/npc/npc_items_custom.txt" }) do
+			local ok, data = pcall(LoadKeyValues, path)
+			if ok and type(data) == "table" then
+				data = data.DOTAAbilities or data
+				for name, definition in pairs(data) do
+					if type(definition) == "table" then definitions[name] = definition end
+				end
+			end
+		end
+	end
+	for name, definition in pairs(definitions) do
+		if tonumber(definition.ItemRecipe) == 1 and type(definition.ItemResult) == "string"
+			and type(definition.ItemRequirements) == "table" then
+			for _, requirement in pairs(definition.ItemRequirements) do
+				local parts, valid = {}, type(requirement) == "string"
+				if valid then
+					for token in requirement:gmatch("[^;]+") do
+						local part = token:match("^%s*(.-)%s*$")
+						if not part:match("^item_[%w_]+$") then valid = false end
+						parts[part] = (parts[part] or 0) + 1
+					end
+				end
+				local cost = tonumber(definition.ItemCost) or self:GetNativePurchaseCost(name)
+				if cost ~= nil and cost > 0 and parts[name] == nil then parts[name] = 1 end
+				if valid and next(parts) ~= nil then
+					table.insert(recipes, { result = definition.ItemResult, parts = parts })
+				end
+			end
+		end
+	end
+	self.nativePurchaseRecipes = recipes
+	return recipes
+end
+
+function CDota2RpgDemo:FindNativePurchaseCombination(purchase)
+	local current = self:CollectManagedItemIds()
+	local proof = purchase.combination_evidence
+	if proof ~= nil then
+		local state = current[proof.item_id]
+		local claim = (self.nativePurchaseClaimedIds or {})[proof.item_id]
+		if state ~= nil and state.name == proof.name and self:IsLiveItem(proof.item)
+			and (claim == nil or claim == purchase.recipient_key) then
+			return { holder = state.holder, item = proof.item, item_id = proof.item_id }
+		end
+		return nil
+	end
+	local peers, seen = { purchase }, { [purchase] = true }
+	for _, list in ipairs({ self.nativePurchaseOrderContexts or {}, self.pendingNativePurchases or {} }) do
+		for _, other in ipairs(list) do
+			if not seen[other] and other.recipient_key == purchase.recipient_key
+				and other.issuer == purchase.issuer and not other.gold_failed
+				and other.created_at ~= nil and purchase.created_at ~= nil
+				and math.abs(other.created_at - purchase.created_at) <= 0.75
+				and other.created_tick ~= nil and purchase.created_tick ~= nil
+				and math.abs(other.created_tick - purchase.created_tick) <= 3 then
+				seen[other] = true
+				table.insert(peers, other)
+			end
+		end
+	end
+	local candidates = {}
+	for id, state in pairs(current) do
+		if (purchase.before_ids or {})[id] == nil
+			and (self.nativePurchaseClaimedIds or {})[id] == nil
+			and (self.nativePurchaseObservedStates or {})[id] == nil then
+			for _, recipe in ipairs(self:GetNativePurchaseRecipes()) do
+				if recipe.result == state.name and recipe.parts[purchase.item_name] ~= nil then
+					local needed, used = {}, { purchase }
+					for name, count in pairs(recipe.parts) do needed[name] = count end
+					needed[purchase.item_name] = needed[purchase.item_name] - 1
+					-- A baseline component must have disappeared from this very holder.
+					-- An entity moved elsewhere is not consumed recipe evidence.
+					for beforeId, before in pairs(purchase.before_ids or {}) do
+						if type(before) == "table" and before.holder == state.holder and current[beforeId] == nil
+							and (needed[before.name] or 0) > 0 then
+							needed[before.name] = needed[before.name] - 1
+						end
+					end
+					for _, other in ipairs(peers) do
+						if other ~= purchase and not other.combination_evidence and not other.observed_item_id
+							and (other.before_ids or {})[id] == nil and (needed[other.item_name] or 0) > 0 then
+							needed[other.item_name] = needed[other.item_name] - 1
+							table.insert(used, other)
+						end
+					end
+					local complete = true
+					for _, count in pairs(needed) do if count > 0 then complete = false end end
+					-- An order whose fresh component still exists cannot also have
+					-- supplied this result. This excludes unrelated fresh combinations.
+					for _, other in ipairs(used) do
+						for liveId, live in pairs(current) do
+							if live.name == other.item_name and (other.before_ids or {})[liveId] == nil then
+								complete = false
+							end
+						end
+					end
+					if complete then candidates[id] = { state = state, used = used } end
+				end
+			end
+		end
+	end
+	local id, candidate = next(candidates)
+	if id == nil or next(candidates, id) ~= nil then return nil end
+	local item = nil
+	for slot = 0, NATIVE_STASH_LAST_SLOT do
+		local held = candidate.state.holder:GetItemInSlot(slot)
+		if self:GetItemEntityId(held) == id then item = held; break end
+	end
+	if item == nil then return nil end
+	proof = { item_id = id, item = item, name = candidate.state.name }
+	for _, other in ipairs(candidate.used) do other.combination_evidence = proof end
+	return { holder = candidate.state.holder, item = item, item_id = id }
 end
 
 function CDota2RpgDemo:FindNewPurchasedItem(purchase, observed, forRouting)
@@ -1947,7 +2099,8 @@ function CDota2RpgDemo:FindNewPurchasedItem(purchase, observed, forRouting)
 	if #exact > 0 then
 		return exact[1]
 	end
-	-- 没有可按购买名称确认的新实体时不猜测并转移无关物品；合成结果留在原版默认载体，避免误搬运。
+	local combination = self:FindNativePurchaseCombination(purchase)
+	if combination ~= nil then return combination end
 	return purchase.item_name == "" and #anyNew == 1 and anyNew[1] or nil
 end
 
@@ -2202,7 +2355,7 @@ function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
 	local nativeCovered = math.min(walletState.observed_decrease, cost)
 	walletState.observed_decrease = walletState.observed_decrease - nativeCovered
 	local missing = cost - nativeCovered
-	if missing > 0 and not self:SpendGold(missing) then
+	if missing > 0 and not self:SpendGold(missing, true) then
 		purchase.gold_failed = true
 		print(string.format("[Dota2Rpg] WARNING: native purchase %s charge failed; rejecting unpaid result.",
 			tostring(purchase.item_name)))

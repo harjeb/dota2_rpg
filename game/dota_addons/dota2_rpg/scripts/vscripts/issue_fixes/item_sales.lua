@@ -1,6 +1,20 @@
 -- Explicit panel selling uses native transactions; Gris-Gris is a consumable
 -- savings bank with roster persistence and a shared-wallet redemption adapter.
 local Sales = {}
+local neutralPrices
+local neutralTierPrices = { 100, 200, 400, 800, 1600 }
+
+function Sales.NeutralPrice(itemName)
+    if neutralPrices == nil then
+        neutralPrices = {}
+        for _, entry in ipairs(require("data.campaign_loot_catalog")) do
+            if entry.neutral == true and entry.category == "neutral" then
+                neutralPrices[entry.name] = neutralTierPrices[tonumber(entry.power)]
+            end
+        end
+    end
+    return neutralPrices[itemName]
+end
 
 function Sales.HasPendingPurchase(game)
     for _, queue in ipairs({game.nativePurchaseOrderContexts or {}, game.pendingNativePurchases or {}}) do
@@ -35,6 +49,22 @@ function Sales.Sell(game, payload)
     if payload.item == "item_eldwurms_edda" then
         if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
         return require("issue_fixes/eldwurms_edda").Consume(game, holder, item)
+    end
+    local neutralPrice = Sales.NeutralPrice(payload.item)
+    if neutralPrice ~= nil then
+        if holder.RemoveItem == nil then return false, "unavailable", 0 end
+        if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
+        game.itemSaleInProgress = true
+        local called = pcall(holder.RemoveItem, holder, item)
+        game.itemSaleInProgress = nil
+        -- Native neutrals are unsellable. Pay the configured resale only after
+        -- the exact entity has been destroyed, never merely detached or moved.
+        if not called or game:IsLiveItem(item) then return false, "sale_failed", 0 end
+        game:AddGold(neutralPrice)
+        game.nativeShopTransactionPending = true
+        print(string.format("[Dota2Rpg] Neutral item sold: item=%s id=%d holder=%s refund=%d.",
+            payload.item, itemIndex, tostring(payload.hero), neutralPrice))
+        return true, "sold", neutralPrice
     end
     if item.IsSellable == nil or holder.SellItem == nil then return false, "unavailable", 0 end
     local checked, sellable = pcall(item.IsSellable, item)

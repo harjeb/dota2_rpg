@@ -1,4 +1,5 @@
 local root = TEST_REPO_ROOT or "."
+package.path = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/?.lua;" .. package.path
 local Sales = dofile(root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/issue_fixes/item_sales.lua")
 local entities, balance, nativeCalls, nextId = {}, 1000, 0, 100
 function EntIndexToHScript(id) return entities[id] end
@@ -93,4 +94,54 @@ active.fail=nil
 active.reenter=function() rejected(payload,"purchase_pending") end
 assert(Sales.Sell(game,payload),"retry works after native rejection")
 assert(item.null)
+-- Neutral resale uses the server catalog, including inventory/backpack/stash
+-- placements; a native unsellable flag is expected for these items.
+do
+    local oldAddGold = game.AddGold
+    function game:AddGold(amount) balance = balance + amount end
+    local function remove(unit, item)
+        if unit.reenter then unit.reenter() end
+        if unit.fail == "error" then error("remove failed") end
+        if unit.fail == "noop" then return end
+        for slot, value in pairs(unit.slots) do if value == item then unit.slots[slot] = nil end end
+        if unit.fail ~= "detach" then item.null = true end
+    end
+    for _, unit in ipairs({active, bench, stash}) do unit.RemoveItem = remove; unit.reenter = nil end
+    local cases = {
+        {active,16,"item_chipped_vest",100}, {bench,16,"item_defiant_shell",200},
+        {stash,16,"item_cloak_of_flames",400}, {active,6,"item_conjurers_catalyst",800},
+        {stash,0,"item_desolator_2",1600},
+    }
+    for _, case in ipairs(cases) do
+        local unit, slot, name, price = unpack(case)
+        local neutral, request = itemFor(unit,slot)
+        neutral.name, request.item, neutral.sellable = name, name, false
+        request.price, request.tier, request.refund = 999999, 5, 999999
+        local before, calls = balance, nativeCalls
+        unit.reenter = function() rejected(request,"purchase_pending") end
+        local ok, reason, refund = Sales.Sell(game,request)
+        unit.reenter = nil
+        assert(ok and reason=="sold" and refund==price and balance==before+price and neutral.null)
+        assert(nativeCalls==calls,"neutral resale never invokes native SellItem")
+        rejected(request,"invalid_item")
+    end
+    for _, failure in ipairs({"error","noop","detach"}) do
+        local neutral, request = itemFor(active,16)
+        neutral.name, request.item, neutral.sellable = "item_chipped_vest", "item_chipped_vest", false
+        active.fail=failure
+        rejected(request,"sale_failed")
+        assert(not neutral.null and not game.itemSaleInProgress,"failed removal cannot pay or lock later sales")
+    end
+    active.fail=nil
+    local neutral, request = itemFor(active,16)
+    neutral.name, request.item, neutral.sellable = "item_chipped_vest", "item_chipped_vest", false
+    request.PlayerID=1; rejected(request,"not_owned"); request.PlayerID=0
+    request.hero="__stash"; rejected(request,"not_owned"); request.hero="active"
+    game.phase="fight"; rejected(request,"wrong_phase"); game.phase="setup"
+    game.pendingNativePurchases={{}}; rejected(request,"purchase_pending"); game.pendingNativePurchases={}
+    assert(Sales.NeutralPrice("item_belt_of_strength")==nil
+        and Sales.NeutralPrice("item_enhancement_alert")==nil
+        and Sales.NeutralPrice("item_unknown_neutral")==nil,"ordinary/enchanted/unknown items cannot forge neutral tier prices")
+    game.AddGold=oldAddGold
+end
 print("item-sales tests passed (native transaction mocked; no gameplay claim)")

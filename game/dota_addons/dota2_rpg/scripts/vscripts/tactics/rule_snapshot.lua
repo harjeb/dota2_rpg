@@ -130,11 +130,10 @@ function Snapshot.ForHero(manager, hero)
         elseif action.kind == "ability" then
             local _, native = Catalog.DescribeAction(hero, name)
             name = native ~= "" and native or name
-        elseif action.kind == "item" and not name:match("^item_%d+$") and hero.GetItemInSlot ~= nil then
-            for slot = 0, 5 do
-                local item = hero:GetItemInSlot(slot)
-                if item ~= nil and not item:IsNull() and item:GetAbilityName() == name then name = "item_" .. (slot+1); break end
-            end
+        elseif action.kind == "item" then
+            -- Inventory slots are presentation positions, not rule identities.
+            -- Legacy rules can carry a slot logical_id alongside the native name.
+            name = action.name or name
         end
         result[#result+1] = { action=name, enabled=rule.enabled ~= false and 1 or 0,
             target_team=rule.target and rule.target.team or "enemy",
