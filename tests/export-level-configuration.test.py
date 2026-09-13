@@ -38,9 +38,9 @@ class LevelConfigurationExportTests(unittest.TestCase):
             manifest = json.loads(files["manifest"].read_text(encoding="utf-8"))
             self.assertEqual(manifest["runtime_source"], "game/dota_addons/dota2_rpg/scripts/data/levels.kv")
             self.assertEqual(manifest["stage_count"], 30)
-            self.assertEqual(manifest["unit_configuration_rows"], 125)
+            self.assertEqual(manifest["unit_configuration_rows"], 130)
             self.assertEqual(manifest["equipment_rows"], 499)
-            self.assertEqual(manifest["unique_units"], 75)
+            self.assertEqual(manifest["unique_units"], 78)
             self.assertEqual(manifest["item_name_count"], 76)
             self.assertEqual(manifest["untranslated_item_ids"], [])
             # Equipment authoring synchronizes actual hero levels from KV.
@@ -69,8 +69,8 @@ class LevelConfigurationExportTests(unittest.TestCase):
                 ("ch20", "npc_dota_hero_spirit_breaker", 20000, 75, 25, 6.666667),
                 ("ch30", "npc_dota_hero_skeleton_king", 50000, 100, 33.333333, 8.333333),
             ]:
-                bosses = [row for row in records if row["关卡"] == chapter]
-                self.assertEqual(len(bosses), 1, chapter + " must remain a solo Boss")
+                bosses = [row for row in records if row["关卡"] == chapter and row["是否Boss"] == "是"]
+                self.assertEqual(len(bosses), 1, chapter + " must retain exactly one Boss")
                 boss = bosses[0]
                 self.assertEqual((boss["单位原生ID"], boss["数量"], boss["是否Boss"], boss["Boss最大生命"], boss["Boss生命倍率"], boss["Boss攻击伤害+%"], boss["Boss法术增幅+%"], boss["Boss冷却减少%"]),
                                  (unit, 1, "是", health, None, attack, spell, cooldown))
@@ -114,7 +114,7 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"), "CSV needs an Excel-friendly UTF-8 BOM")
             with files["units_csv"].open(encoding="utf-8-sig", newline="") as stream:
                 csv_rows = list(csv.DictReader(stream))
-            self.assertEqual(len(csv_rows), 125)
+            self.assertEqual(len(csv_rows), 130)
             self.assertEqual(csv_rows[0]["关卡"], "ch01")
             expected_hash = hashlib.sha256(EXPORT.RUNTIME_PATH.read_bytes()).hexdigest()
             self.assertEqual(manifest["runtime_sha256"], expected_hash)

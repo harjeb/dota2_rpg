@@ -41,6 +41,12 @@ FORMATIONS = {
 }
 
 
+# Fixed final-stage additions use native level-30 heroes without equipment or buffs.
+FINAL_ESCORTS = [('life_stealer', 'aggro_front'), ('mirana', 'focus_lowest_hp'),
+                 ('pangolier', 'aggro_front'), ('bane', 'ai_healer_protect'),
+                 ('dark_seer', 'ai_healer_protect')]
+
+
 def roster(source):
     cursors = Counter()
     result = {}
@@ -62,6 +68,8 @@ def roster(source):
             cursors[role] += 1
             team.append((hero, PROFILES[role]))
         result[stage_id] = team[:1] if boss_stage else team
+        if stage_id == 'ch30':
+            result[stage_id] += FINAL_ESCORTS
     return result
 
 
@@ -88,9 +96,40 @@ def update_text(text, changes, is_json):
     return updated
 
 
+def author_final_stage(text, is_json):
+    """Append the fixed ordinary heroes, preserving the boss and all other text."""
+    separator = r':\s*' if is_json else r'\s*'
+    stage = re.search(r'(?ms)^\t"ch30".*?(?=^\t"ch\d+"|\Z)', text)
+    assert stage
+    block = stage.group(0)
+    existing = re.findall(r'"unit"' + separator + r'"(npc_dota_hero_[^"]+)"', block)
+    expected = ['npc_dota_hero_skeleton_king'] + ['npc_dota_hero_' + hero for hero, _ in FINAL_ESCORTS]
+    if existing == expected:
+        return text
+    if existing != expected[:1]:
+        raise ValueError('Unexpected final-stage roster; refusing to overwrite it')
+    boss_end = re.search(r'(?m)^\t{3}\}', block)
+    assert boss_end
+    additions = []
+    for slot, (hero, ai) in enumerate(FINAL_ESCORTS, 2):
+        entry = dict(unit='npc_dota_hero_' + hero, level=30, items=[], tags=[], ai=ai)
+        if is_json:
+            additions.append('\n'.join('\t' * 3 + line for line in json.dumps(entry, indent='\t').splitlines()))
+        else:
+            additions.append(f'\t\t\t"{slot}"\n\t\t\t{{\n'
+                             f'\t\t\t\t"unit" "{entry["unit"]}"\n'
+                             '\t\t\t\t"level" "30"\n\t\t\t\t"items"\n\t\t\t\t{\n\t\t\t\t}\n'
+                             '\t\t\t\t"tags"\n\t\t\t\t{\n\t\t\t\t}\n'
+                             f'\t\t\t\t"ai" "{ai}"\n\t\t\t}}')
+    joiner = ',\n' if is_json else '\n'
+    block = block[:boss_end.end()] + joiner + joiner.join(additions) + block[boss_end.end():]
+    return text[:stage.start()] + block + text[stage.end():]
+
+
 def main():
     source_path, runtime_path = DATA / 'levels_v07.json', DATA / 'levels.kv'
-    source_text = source_path.read_text(encoding='utf-8')
+    source_text = author_final_stage(source_path.read_text(encoding='utf-8'), True)
+    runtime_text = author_final_stage(runtime_path.read_text(encoding='utf-8'), False)
     source = json.loads(source_text)
     equipment = runpy.run_path(str(ROOT / 'scripts/author-enemy-equipment.py'))
     changes = []
@@ -103,7 +142,7 @@ def main():
             changes.append((original['unit'], 'npc_dota_hero_' + hero, profile, items))
     # Validate both complete transformations before writing either file.
     updated_source = update_text(source_text, changes, True)
-    updated_runtime = update_text(runtime_path.read_text(encoding='utf-8'), changes, False)
+    updated_runtime = update_text(runtime_text, changes, False)
     updated_source, updated_runtime = equipment['update_equipment'](updated_source, updated_runtime)
     source_path.write_text(updated_source, encoding='utf-8', newline='\n')
     runtime_path.write_text(updated_runtime, encoding='utf-8', newline='\n')

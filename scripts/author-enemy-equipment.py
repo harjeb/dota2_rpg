@@ -86,7 +86,9 @@ def update_equipment(source_text, runtime_text):
                 hero = entry['unit'].removeprefix('npc_dota_hero_')
                 tags = live.get('tags', {})
                 boss = 'boss' in (tags.values() if isinstance(tags, dict) else tags)
-                builds.append((entry['unit'], int(live['level']), loadout(hero, live['level'], boss)))
+                # Explicitly unarmed final escorts must stay unarmed on regeneration.
+                items = [] if stage_id == 'ch30' and not boss else loadout(hero, live['level'], boss)
+                builds.append((entry['unit'], int(live['level']), items))
     patterns = [
         r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])',
         r'("unit"\s+"(npc_dota_hero_[^"]+)"[^{}]*?"items"\s*\{)([^{}]*)(\})',
@@ -99,11 +101,16 @@ def update_equipment(source_text, runtime_text):
             if unit != match[2]:
                 raise ValueError(f'Hero ordering mismatch: {unit}, {match[2]}')
             prefix = match[1]
+            if not items and not re.search(r'"item_[^"]+"', match[3]):
+                if is_json:
+                    prefix = re.sub(r'("level": )\d+', lambda m: m[1] + str(level), prefix)
+                return prefix + match[3] + match[4]
             if is_json:
                 prefix = re.sub(r'("level": )\d+', lambda m: m[1] + str(level), prefix)
                 body = '\n' + ',\n'.join('          ' + json.dumps(item) for item in items) + '\n        '
             else:
-                indent = re.search(r'\n([ \t]*)"1"', match[3]).group(1)
+                indent_match = re.search(r'\n([ \t]*)"1"', match[3])
+                indent = indent_match.group(1) if indent_match else '\t' * 5
                 closing_indent = match[3].rsplit('\n', 1)[-1]
                 body = '\n' + '\n'.join(f'{indent}"{i}" "{item}"' for i, item in enumerate(items, 1)) + '\n' + closing_indent
             return prefix + body + match[4]

@@ -2267,6 +2267,41 @@
 				"boss_attack_damage_pct": 100,
 				"boss_spell_amp_pct": 33.333333,
 				"boss_cooldown_reduction_pct": 8.333333
+			},
+			{
+				"unit": "npc_dota_hero_life_stealer",
+				"level": 30,
+				"items": [],
+				"tags": [],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_mirana",
+				"level": 30,
+				"items": [],
+				"tags": [],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_pangolier",
+				"level": 30,
+				"items": [],
+				"tags": [],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_bane",
+				"level": 30,
+				"items": [],
+				"tags": [],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_dark_seer",
+				"level": 30,
+				"items": [],
+				"tags": [],
+				"ai": "ai_healer_protect"
 			}
     ],
 		"reward": {

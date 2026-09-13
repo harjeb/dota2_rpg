@@ -12,7 +12,7 @@ author = runpy.run_path(str(ROOT / 'scripts/author-enemy-roster.py'))
 HERO_COUNTS = dict(zip(
     [5, 7, 8, 9, 10, 12, 13, 14, 15, 17, 18, 19, 20, 22, 23, 24, 25, 27, 28, 29, 30],
     [3] * 4 + [4] * 4 + [5] * 4 + [6] * 4 + [7] * 5))
-HERO_COUNTS.update({10: 1, 20: 1, 30: 1})
+HERO_COUNTS.update({10: 1, 20: 1, 30: 6})
 
 
 class EnemyRosterTests(unittest.TestCase):
@@ -37,10 +37,10 @@ class EnemyRosterTests(unittest.TestCase):
         for label, teams in self.teams.items():
             with self.subTest(data=label):
                 counts = Counter(e['unit'] for team in teams.values() for e in team)
-                self.assertEqual(len(counts), 60)
+                self.assertEqual(len(counts), 63)
                 self.assertTrue(set(counts) <= known, set(counts) - known)
-                self.assertEqual(Counter(counts.values()), {1: 27, 2: 33})
-                self.assertEqual(sum(counts.values()), 93)
+                self.assertEqual(Counter(counts.values()), {1: 28, 2: 35})
+                self.assertEqual(sum(counts.values()), 98)
                 introduced = {e['unit'] for chapter, team in teams.items()
                               if chapter <= 25 for e in team}
                 self.assertEqual(len(introduced), 59)
@@ -61,6 +61,10 @@ class EnemyRosterTests(unittest.TestCase):
                         chapters[name].append(chapter)
             for name, appearances in chapters.items():
                 for earlier, later in zip(appearances, appearances[1:]):
+                    # The requested final lineup deliberately repeats Bane from ch23.
+                    if later == 30 and name == 'npc_dota_hero_bane':
+                        self.assertEqual(earlier, 23)
+                        continue
                     self.assertGreaterEqual(later - earlier, 10, (label, name, appearances))
 
     def test_original_stage_sizes_and_distinct_bosses(self):
@@ -85,7 +89,11 @@ class EnemyRosterTests(unittest.TestCase):
             for chapter, team in teams.items():
                 found = []
                 for entry in team:
-                    role = roles[entry['unit'].removeprefix('npc_dota_hero_')]
+                    hero = entry['unit'].removeprefix('npc_dota_hero_')
+                    if chapter == 30 and hero in dict(author['FINAL_ESCORTS']):
+                        self.assertEqual(entry['ai'], dict(author['FINAL_ESCORTS'])[hero])
+                        continue
+                    role = roles[hero]
                     self.assertEqual(entry['ai'], author['PROFILES'][role], (label, chapter))
                     found.append(role)
                 if chapter not in (10, 20, 30):
@@ -113,6 +121,24 @@ class EnemyRosterTests(unittest.TestCase):
                             self.assertIn('boss', tags)
                         else:
                             self.assertFalse(set(fields + ['boss_bonus_armor', 'boss_magic_resistance_bonus_pct', 'boss_magic_resistance_pct']).intersection(entry), entry['unit'])
+
+    def test_final_stage_additions_are_plain_level_30_and_surgical(self):
+        names = ['life_stealer', 'mirana', 'pangolier', 'bane', 'dark_seer']
+        for filename, is_json in [('levels_v07.json', True), ('levels.kv', False)]:
+            text = (DATA / filename).read_text(encoding='utf-8')
+            self.assertEqual(author['author_final_stage'](text, is_json), text)
+            for entry, name in zip(self.teams['source' if is_json else 'runtime'][30][1:], names):
+                self.assertEqual(entry['unit'], 'npc_dota_hero_' + name)
+                self.assertEqual(int(entry['level']), 30)
+                self.assertFalse(entry['items'])
+                self.assertFalse(entry['tags'])
+                self.assertEqual(set(entry), {'unit', 'level', 'items', 'tags', 'ai'})
+        # Rebuild from a boss-only fixture, proving all other stages and boss fields survive.
+        import copy
+        old = copy.deepcopy(self.source)
+        old['ch30']['enemies'] = old['ch30']['enemies'][:1]
+        fixture = json.dumps(old, indent='\t') + '\n'
+        self.assertEqual(json.loads(author['author_final_stage'](fixture, True)), self.source)
 
     def test_authored_roster_matches_both_files_and_reauthoring_is_stable(self):
         intended = author['roster'](self.source)

@@ -113,10 +113,10 @@ class EnemyEquipmentDataTests(unittest.TestCase):
                 count += 1
                 self.assertEqual(str(entry['level']), live['level'])
                 boss = 'boss' in live.get('tags', {}).values()
-                expected = AUTHOR['loadout'](entry['unit'][14:], live['level'], boss)
+                expected = [] if stage_id == 'ch30' and not boss else AUTHOR['loadout'](entry['unit'][14:], live['level'], boss)
                 self.assertEqual(entry['items'], expected)
                 self.assertEqual(list(live['items'].values()), expected)
-        self.assertEqual(count, 93)
+        self.assertEqual(count, 98)
         source['ch30']['enemies'][0]['level'] = 30
         changed = runtime_text.replace('"level" "30"', '"level" "2"')
         updated_source, updated_runtime = AUTHOR['update_equipment'](json.dumps(source), changed)

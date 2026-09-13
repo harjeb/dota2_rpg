@@ -43,7 +43,8 @@ def update_text(text, is_json):
                                attack_multiplier=attack, bonus_armor=armor, magic_resistance=mr)
                 slot += 1
             else:
-                assert '"boss"' in body
+                if '"boss"' not in body:
+                    return body
                 changes = BOSSES[chapter]
             for field, value in changes.items():
                 scalar = re.compile(r'(?m)^(\s*"' + field + r'"\s*' + (r':\s*' if is_json else '') + r')("[^"\n]*"|[\d.]+)')

@@ -294,6 +294,9 @@ def compare_maintenance_source(levels: dict[str, Any], source_path: Path) -> lis
             unit = str(runtime.get("unit", authored.get("unit", "")))
             for field in sorted(set(runtime) | set(authored)):
                 actual, expected = runtime.get(field, "（缺少）"), authored.get(field, "（缺少）")
+                # KV encodes an empty list as an empty block ({}).
+                if field in ('items', 'tags', 'quality_upgrades') and actual == {} and expected == []:
+                    continue
                 if normalize(actual) != normalize(expected):
                     differences.append({"关卡": stage_id, "配置序号": index, "单位原生ID": unit, "字段": field,
                                         "运行时 levels.kv": comparison_value(actual),
