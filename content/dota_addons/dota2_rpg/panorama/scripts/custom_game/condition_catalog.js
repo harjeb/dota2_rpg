@@ -40,6 +40,7 @@ var RpgConditionCatalog = (function () {
     ["tiny_grab_hp_pct_lte", "tiny_grab_hp_pct_gte"].forEach(function(id) { add("use", id, "tiny_grab", "value"); });
     add("use", "action_succeeded_after", "action", "seconds,action_id");
     add("target", "specified_enemy", "identity", "target_actor");
+    add("target", "specified_ally", "identity", "target_actor");
     ["channel_elapsed_gte", "channel_elapsed_lte"].forEach(function(id) { add("use",id,"action","seconds,action_id"); });
     add("use","action_phase_is","action","value_text,action_id");
     add("use","release_action_available","action","");
@@ -49,7 +50,7 @@ var RpgConditionCatalog = (function () {
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
         use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],
-        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39],
+        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39,40],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
     };
     Object.keys(groups).forEach(function (group) {
@@ -325,7 +326,7 @@ var RpgConditionCatalog = (function () {
         // Actor keys are opaque, level-scoped snapshot identities, never entity IDs or names.
         function targetPicker(parent, id, current, clear) {
             parent.AddClass("V2ActionField");
-            function actors() { return options.readOnly ? [] : (options.getTargetActors ? options.getTargetActors() : options.targetActors || []); }
+            function actors() { return options.readOnly ? [] : (options.getTargetActors ? options.getTargetActors(current.type) : options.targetActors || []); }
             var trigger = button(parent, id, "", function () {
                 if (options.readOnly) { return; }
                 if (activeMenu) { var same = activeMenu === menu; activeMenu.SetHasClass("Hidden", true); activeMenu = null; if (same) { return; } }
@@ -348,8 +349,8 @@ var RpgConditionCatalog = (function () {
             function refresh() {
                 var selected = actors().filter(function (actor) { return actor.actor === current.target_actor; })[0];
                 trigger.SetHasClass("V2UnavailableTarget", !!current.target_actor && !selected);
-                draw(trigger, selected, selected ? selected.label : text(current.target_actor ? "unavailable_target" : "choose_target"));
-                trigger.SetPanelEvent("onmouseover", function () { $.DispatchEvent("DOTAShowTextTooltip", trigger, text("specified_enemy_hint")); });
+                draw(trigger, selected, selected ? selected.label : text(current.target_actor ? "unavailable_target" : (current.type === "specified_ally" ? "choose_ally_target" : "choose_target")));
+                trigger.SetPanelEvent("onmouseover", function () { $.DispatchEvent("DOTAShowTextTooltip", trigger, text(current.type + "_hint")); });
                 trigger.SetPanelEvent("onmouseout", function () { $.DispatchEvent("DOTAHideTextTooltip", trigger); });
             }
             function populate() {

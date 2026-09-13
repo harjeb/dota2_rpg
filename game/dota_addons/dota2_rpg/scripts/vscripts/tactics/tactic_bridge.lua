@@ -373,6 +373,9 @@ function TacticBridge:Install()
                 end
                 return count
             end,
+            get_ally_actor = function(key)
+                return Snapshot.ResolveAllyActor(gameMode.battleManager, unit, key)
+            end,
             get_target_actor = function(key)
                 return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, unit, key)
             end,
@@ -576,7 +579,10 @@ function TacticBridge:Install()
 			end
 			return nil
 		end,
-        is_target_actor_allowed = function(_player_id, hero, key)
+        is_target_actor_allowed = function(_player_id, hero, key, kind)
+            if kind == "specified_ally" then
+                return Snapshot.ResolveAllyActor(gameMode.battleManager, hero, key) ~= nil
+            end
             return Snapshot.ResolveTargetActor(gameMode.battleManager, gameMode.currentLevelId, hero, key) ~= nil
         end,
         validate_action_reference = function(hero, actorKey, actionId)

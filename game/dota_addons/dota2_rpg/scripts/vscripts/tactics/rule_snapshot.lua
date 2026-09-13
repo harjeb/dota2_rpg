@@ -41,6 +41,20 @@ function Snapshot.ValidTargetActor(key)
     local chapter, name, occurrence = key:match("^([%w_-]+):enemy:([%w_]+):(%d+)$")
     return chapter ~= nil and name ~= nil and (occurrence == "0" or occurrence:match("^[1-9]%d*$") ~= nil)
 end
+-- Allied references reuse the stable action-actor hero identity, not entity indices.
+function Snapshot.ValidAllyActor(key)
+    return type(key) == "string" and #key <= 128 and key:match("^npc_dota_hero_[%w_]+$") ~= nil
+end
+function Snapshot.ResolveAllyActor(manager, caster, key)
+    if not Snapshot.ValidAllyActor(key) or unit_name(caster) == nil then return nil end
+    local side = caster:GetTeamNumber()
+    for _, hero in ipairs(manager.teamHeroes[side] or {}) do
+        if unit_name(hero) ~= nil and hero:GetTeamNumber() == side
+            and (Snapshot.HeroKey(manager, hero) == key
+                or (manager.arenaActive and unit_name(hero) == key)) then return hero end
+    end
+    return nil
+end
 function Snapshot.TargetActor(manager, chapter, hero)
     if chapter == nil or not Snapshot.IsEnemy(manager, hero) then return nil end
     local key = Snapshot.HeroKey(manager, hero)

@@ -134,6 +134,7 @@ function A.ConditionReason(cap,group,condition,team)
     if group~="target" then return nil end
     if id=="exclude_self" and team=="self" then return "self_excluded" end
     if id=="specified_enemy" and team~="enemy" then return "invalid_specified_enemy_team" end
+    if id=="specified_ally" and team~="ally" then return "invalid_specified_ally_team" end
     if id=="is_spell_immune" then
         local allowed=team=="enemy" and cap.magic_immune_enemy or cap.magic_immune_ally
         if allowed==0 then return "condition_conflicts_with_native_targeting" end

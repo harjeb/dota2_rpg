@@ -247,8 +247,10 @@ function RuleService:ValidateCondition(condition, registry)
             return false, "invalid_condition_" .. field
         end
     end
-    if condition.type == "specified_enemy" then
-        if not require("tactics/rule_snapshot").ValidTargetActor(condition.target_actor) then
+    if condition.type == "specified_enemy" or condition.type == "specified_ally" then
+        local snapshot = require("tactics/rule_snapshot")
+        local valid = condition.type == "specified_ally" and snapshot.ValidAllyActor or snapshot.ValidTargetActor
+        if not valid(condition.target_actor) then
             return false, "invalid_condition_target_actor"
         end
     elseif condition.target_actor ~= nil then
@@ -380,10 +382,11 @@ function RuleService:ValidateRule(player_id, hero, rule)
     for _, condition in ipairs(rule.target_filters) do
         local ok, reason = self:ValidateCondition(condition, self.conditions.target_filters)
         if not ok then return false, reason end
-        if condition.type == "specified_enemy" then
-            if rule.target.team ~= "enemy" then return false, "invalid_specified_enemy_team" end
+        if condition.type == "specified_enemy" or condition.type == "specified_ally" then
+            local team = condition.type == "specified_ally" and "ally" or "enemy"
+            if rule.target.team ~= team then return false, "invalid_" .. condition.type .. "_team" end
             if self.is_target_actor_allowed ~= nil
-                and not self.is_target_actor_allowed(player_id, hero, condition.target_actor) then
+                and not self.is_target_actor_allowed(player_id, hero, condition.target_actor, condition.type) then
                 return false, "target_actor_not_in_current_roster"
             end
         end

@@ -137,6 +137,14 @@ ConditionRegistry:RegisterTargetFilter("specified_enemy", function(ctx, target, 
     return ctx.get_target_actor(condition.target_actor) == target
 end)
 
+ConditionRegistry:RegisterTargetFilter("specified_ally", function(ctx, target, condition)
+    if not require("tactics/rule_snapshot").ValidAllyActor(condition.target_actor)
+        or type(ctx.get_ally_actor) ~= "function" or not is_valid_entity(target)
+        or target.IsAlive == nil or not target:IsAlive() then return false end
+    return ctx.get_ally_actor(condition.target_actor) == target
+        and target:GetTeamNumber() == ctx.caster:GetTeamNumber()
+end)
+
 -- Use conditions -----------------------------------------------------------
 
 ConditionRegistry:RegisterUseCondition("always", function(_ctx, _condition)

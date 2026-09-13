@@ -160,14 +160,16 @@
         return "";
     }
 
-    function targetActors(side, heroIndex) {
+    function targetActors(side, heroIndex, kind) {
         if (!canEditHeroRules(side, heroIndex)) { return []; }
-        var team = side === "Radiant" ? "Dire" : "Radiant", result = [];
+        var ally = kind === "specified_ally";
+        var team = ally ? side : (side === "Radiant" ? "Dire" : "Radiant"), result = [];
         (HEROES[team] || []).forEach(function (hero, index) {
             var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
-            if (!entry || !entry.target_actor || entry.name !== hero.name || entry.hero_index < 0
+            if (!entry || !(ally ? entry.rule_key : entry.target_actor) || entry.name !== hero.name || entry.hero_index < 0
                 || (hero.entityIndex !== undefined && entry.hero_index !== hero.entityIndex)) { return; }
-            result.push({actor: entry.target_actor, name: entry.name,
+            if (ally && !/^npc_dota_hero_[\w_]+$/.test(entry.rule_key)) { return; }
+            result.push({actor: ally ? entry.rule_key : entry.target_actor, name: entry.name,
                 label: localizeHeroName(entry.name) + " · " + (index + 1)});
         });
         return result;
@@ -689,7 +691,7 @@
                         clearRuleMark(side, authored);
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
-                    }, {isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function () { return targetActors(side,editingHeroIndex); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
+                    }, {isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function (kind) { return targetActors(side,editingHeroIndex,kind); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -876,7 +878,7 @@
         },{isCurrent:function() { return editIsCurrent() && getActionDetail(side,heroIndex,actionKey)===chosenActionDetail; },
             abilityName:getActionDetail(side,heroIndex,actionKey),
             getCapability:function() { return getRuleCapability(side,heroIndex,actionKey); },
-            actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function() { return targetActors(side,heroIndex); },
+            actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function(kind) { return targetActors(side,heroIndex,kind); },
             readOnly:!canEditHeroRules(side,heroIndex)});
     }
 

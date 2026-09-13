@@ -57,6 +57,7 @@ var RpgAbilityCapabilities = (function () {
         if (group!=="target") { return ""; }
         if (id==="exclude_self" && targetTeam==="self") { return "self_excluded"; }
         if (id==="specified_enemy" && targetTeam!=="enemy") { return "invalid_specified_enemy_team"; }
+        if (id==="specified_ally" && targetTeam!=="ally") { return "invalid_specified_ally_team"; }
         if (id==="is_spell_immune" && Number(targetTeam==="enemy" ? cap.magic_immune_enemy : cap.magic_immune_ally)===0) { return "condition_conflicts_with_native_targeting"; }
         return "";
     }

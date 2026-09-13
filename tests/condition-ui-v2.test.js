@@ -311,6 +311,30 @@ click(targetHud,"RadiantRuleSettings0"); click(targetHud,"RuleSettingsApply");
 assert(panel(targetHud,"RuleSettings").BHasClass("Hidden") && targetHud.sentEvents.filter(function(e){return e.name==="rpg_update_rule";}).length===beforeFight,"fight cannot reopen or save prep target selection");
 console.log("PASS: F39 current-enemy hero/neutral/boss portraits, duplicate keys, save/reopen, stale targets, clear and fight guards");
 
+// F40 uses the currently fielded allied roster and stable hero identity, not opposing portraits.
+var allyHud=runHud();
+allyHud.subscriptions.rpg_shop_state({lineup_text:targetCaster+";"+lion,owned_text:targetCaster+";"+lion});
+allyHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:910,hero_name:targetCaster,rule_key:targetCaster,
+    can_edit:1,rules_ready:1,actions_text:"sustained_move",rules:[{action:"sustained_move",enabled:1,target_team:"ally"}]});
+allyHud.subscriptions.rpg_hero_slots({slot_key:"radiant_2",hero_index:911,hero_name:lion,rule_key:lion,can_edit:1,rules_ready:1,actions_text:"attack"});
+click(allyHud,"RadiantRuleSettings0"); choice(allyHud,"V2_target0","specified_ally");
+assert(panel(allyHud,"V2_target0Select").GetChild(0).text.indexOf("F40 ")===0,"F40 code appended");
+click(allyHud,"V2_target0_target_actor");
+assert(panel(allyHud,"V2_target0_target_actorMenu").children.length===3,"F40 lists self and fielded ally only");
+click(allyHud,"V2_target0_target_actorOption_1"); click(allyHud,"RuleSettingsApply");
+assert(latest(allyHud,targetCaster).target_filter_1_target_actor===lion,"F40 saves ally stable identity");
+click(allyHud,"RadiantRuleSettings0");
+assert(panel(allyHud,"V2_target0_target_actor").GetChild(0).heroname===lion,"F40 selection survives reopening");
+click(allyHud,"RuleSettingsApply");
+allyHud.subscriptions.rpg_shop_state({lineup_text:targetCaster,owned_text:targetCaster+";"+lion});
+click(allyHud,"RadiantRuleSettings0");
+assert(panel(allyHud,"V2_target0_target_actor").BHasClass("V2UnavailableTarget"),"benched ally unavailable, never replaced");
+click(allyHud,"RuleSettingsApply");
+assert(latest(allyHud,targetCaster).target_filter_1_target_actor===lion,"stale ally reference remains fail-closed");
+var allyRoundtrip=targetSync.fromServer({action:"sustained_move",enabled:1,target_team:"ally",target_filters:[{type:"specified_ally",target_actor:lion}]});
+assert(targetSync.serialize({rule:allyRoundtrip}).target_filter_1_target_actor===lion,"F40 authoritative roundtrip");
+console.log("PASS: F40 allied roster portraits, hero identity, save/reopen, bench unavailable and authoritative roundtrip");
+
 var hud = runHud();
 function slots(side, index, name, entity, actions, details) {
     hud.subscriptions.rpg_hero_slots({slot_key: side.toLowerCase() + "_" + index,
@@ -513,7 +537,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 37], ["target", retiredTarget, 35], ["priority", [], 14]].forEach(function (spec) {
+[["use", retiredUse, 37], ["target", retiredTarget, 36], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -554,6 +578,7 @@ Object.keys(catalog.groups).forEach(function (group) {
         // Appended contracts must not renumber the prior documented IDs.
         if (def.id === "action_succeeded_after") { assert(def.code === "U39", "successful action trigger appends U39"); return; }
         if (def.id === "specified_enemy") { assert(def.code === "F39", "new target filter appends F39"); return; }
+        if (def.id === "specified_ally") { assert(def.code === "F40", "allied filter appends F40"); return; }
         assert(docs.split("\n").some(function (line) { return line.indexOf("| " + def.code + " |") === 0 && line.indexOf("`" + def.id + "`") >= 0; }), "stable documented ID " + def.code);
     });
 });
