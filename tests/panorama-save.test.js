@@ -14,6 +14,7 @@ var ruleSyncSource = fs.readFileSync(ruleSyncPath, "utf8");
 var cssSource = fs.readFileSync(cssPath, "utf8");
 var layoutSource = fs.readFileSync(layoutPath, "utf8");
 var fixesCssSource = fs.readFileSync(path.join(path.dirname(cssPath), "issue_fixes_ui.css"), "utf8");
+var diagnosticsSource = fs.readFileSync(path.join(path.dirname(hudPath), "rule_diagnostics.js"), "utf8");
 var layoutTree = JSON.parse(require("child_process").execFileSync("python", ["-c",
     "import json,sys,xml.etree.ElementTree as E; " +
     "encode=lambda e:dict(type=e.tag,attrs=e.attrib,children=[encode(c) for c in e]); " +
@@ -473,6 +474,12 @@ assert(/\.RuleRow\s*\{[^}]*height:\s*62px/s.test(cssSource) && /ROW_HEIGHT\s*=\s
     "compact row height matches scroll calculations after removing outer editors");
 assert(/\.RuleRow\.NewlyAdded\s*\{[^}]*border:\s*2px solid #f0d487/s.test(cssSource),
     "newly added action rows must be marked by a dedicated gold border style");
+assert(/\.RuleSettingsButton Label\s*\{[^}]*vertical-align:\s*center[^}]*font-size:\s*17px/s.test(cssSource),
+    "the condition-settings label must stay vertically centred at the larger font size");
+assert(/\.RuleSettingsButton \.RuleDiagnostic\.Empty\s*\{[^}]*visibility:\s*collapse/s.test(cssSource)
+    && /diagnosticLabel\.SetHasClass\("Empty",\s*true\)/.test(hudSource)
+    && /panel\.SetHasClass\("Empty",\s*!data\)/.test(diagnosticsSource),
+    "an empty diagnostic row must collapse in both CSS and both writers, or it pushes the label off centre");
 assert(/SetHasClass\("NewlyAdded",\s*isRuleMarkedNew\(side,\s*definition\)\)/.test(hudSource),
     "the new-row highlight must be applied from the rule list, not hard-coded per row index");
 assert(/id="RadiantRules"[^>]*hittest="true"/.test(layoutSource) &&

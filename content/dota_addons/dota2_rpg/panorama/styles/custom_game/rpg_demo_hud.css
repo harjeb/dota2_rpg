@@ -1623,8 +1623,12 @@
 
 /* Capability-aware editor and the bounded last-evaluation badge. */
 .RuleSettingsButton { flow-children: down; padding: 1px 3px; }
-.RuleSettingsButton Label { height: 17px; vertical-align: top; }
+/* “条件设置”四个字在按钮内垂直居中，字号比原来的 14px 大一档。
+   主标题吃掉剩余高度并居中；诊断行只在有内容时占位，空行折叠，
+   否则那条 13px 的空行会把标题顶到按钮上半部分。 */
+.RuleSettingsButton Label { width: 100%; height: fill-parent-flow(1); horizontal-align: center; vertical-align: center; font-size: 17px; }
 .RuleSettingsButton .RuleDiagnostic { width: 100%; height: 13px; font-size: 11px; color: #a4cbb1; text-overflow: ellipsis; }
+.RuleSettingsButton .RuleDiagnostic.Empty { visibility: collapse; }
 .RuleSettingsButton .RuleDiagnosticWarning { color: #e3bd83; }
 .V2Button:disabled { opacity: 0.38; saturation: 0; }
 #RuleSettingsError { white-space: normal; max-height: 110px; overflow: squish scroll; }

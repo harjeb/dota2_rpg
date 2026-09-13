@@ -11,6 +11,8 @@ var RpgRuleDiagnostics=(function() {
         if (data && data.action_id && binding.action && (data.action_id==="basic_attack" ? "attack" : data.action_id)!==binding.action) { data=null; }
         panel.text=data ? message(data.reason || data.event) : "";
         panel.SetHasClass("RuleDiagnosticWarning",!!data && data.event!=="rule_executed");
+        // 没有诊断内容时折叠这一行，让"条件设置"在按钮里保持垂直居中。
+        panel.SetHasClass("Empty",!data);
         var text=data ? "t="+Number(data.time).toFixed(2)+"  "+message(data.reason || data.event) : message("not_evaluated");
         if (data) {
             list(data.conditions).forEach(function(c) { text+="\n"+c.group+" #"+c.index+" "+c.type+" ["+(Number(c.passed)===1 ? "PASS" : "FAIL")+"] expected="+c.expected+" actual="+c.actual+" target="+c.target_index; });
