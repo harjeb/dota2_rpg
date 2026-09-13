@@ -51,6 +51,7 @@ require = function(moduleName)
         or moduleName == "issue_fixes.runtime_log"
         or moduleName == "battle.tempest_double" or moduleName == "issue_fixes/hero_ability_policy"
         or moduleName == "issue_fixes/undying" or moduleName == "issue_fixes/nevermore"
+        or moduleName == "issue_fixes/techies"
         or moduleName == "battle.hero_model_precache" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName:gsub("%.", "/") .. ".lua")
 	end

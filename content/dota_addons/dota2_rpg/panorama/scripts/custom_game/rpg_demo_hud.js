@@ -504,6 +504,7 @@
     }
 
     function watchNativeShop() {
+        if (shopTransport) { shopTransport.expire(); }
         $.Schedule(0.25, watchNativeShop);
         if (!shopProbeLogged) {
             shopProbeLogged = true;
@@ -2456,7 +2457,10 @@
     GameEvents.Subscribe("rpg_rule_update_result", RpgRuleSync.onResult);
     GameEvents.Subscribe("rpg_item_sell_result", onItemSellResult);
     GameEvents.Subscribe("rpg_inventory_transfer_result", onItemTransferResult);
-    GameEvents.Subscribe("rpg_shop_state", onShopState);
+    var shopTransport = RpgShopTransport.create(onShopState);
+    GameEvents.Subscribe("rpg_shop_state", shopTransport.normal);
+    GameEvents.Subscribe("rpg_shop_state_chunk", shopTransport.chunk);
+
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
     GameEvents.Subscribe("rpg_hero_slots", function (data) {
         if (!data || !data.slot_key || !acceptRuleGeneration(data)) {

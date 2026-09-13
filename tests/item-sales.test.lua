@@ -142,6 +142,32 @@ do
     assert(Sales.NeutralPrice("item_belt_of_strength")==nil
         and Sales.NeutralPrice("item_enhancement_alert")==nil
         and Sales.NeutralPrice("item_unknown_neutral")==nil,"ordinary/enchanted/unknown items cannot forge neutral tier prices")
+    -- Native slot removal can be a no-op; exact entity deletion may still work.
+    local previousRemove = UTIL_Remove
+    active.fail = "noop"
+    local fallback, fallbackRequest = itemFor(active,16)
+    fallback.name, fallbackRequest.item, fallback.sellable = "item_foragers_kit", "item_foragers_kit", false
+    local beforeFallback, fallbackCalls = balance, 0
+    UTIL_Remove = function(exact)
+        fallbackCalls = fallbackCalls + 1
+        assert(exact == fallback and game.itemSaleInProgress, "explicit removal locked to requested entity")
+        rejected(fallbackRequest, "purchase_pending")
+        active.slots[16] = nil
+        exact.null = true
+    end
+    assert(Sales.Sell(game, fallbackRequest) and balance == beforeFallback + 100 and fallbackCalls == 1,
+        "neutral slot RemoveItem no-op can use verified exact entity removal")
+    rejected(fallbackRequest,"invalid_item")
+    local failed, failedRequest = itemFor(active,16)
+    failed.name, failedRequest.item, failed.sellable = "item_pogo_stick", "item_pogo_stick", false
+    UTIL_Remove = function() error("entity deletion unavailable") end
+    rejected(failedRequest,"sale_failed")
+    assert(not failed.null,"failed native removal cannot pay")
+    UTIL_Remove = function() error("must not destroy detached items") end
+    active.fail = "detach"
+    rejected(failedRequest,"sale_failed")
+    active.fail = nil
+    UTIL_Remove = previousRemove
     game.AddGold=oldAddGold
 end
 print("item-sales tests passed (native transaction mocked; no gameplay claim)")

@@ -39,6 +39,7 @@ require = function(name)
 		end }
 	end
 	local localModules = {
+        ["issue_fixes.shop_transport"] = moduleRoot .. "issue_fixes/shop_transport.lua",
 		["tactics/ability_catalog"] = moduleRoot .. "tactics/ability_catalog.lua",
 		["tactics/rule_snapshot"] = moduleRoot .. "tactics/rule_snapshot.lua",
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
@@ -50,6 +51,7 @@ require = function(name)
 		["battle.respawn_policy"] = moduleRoot .. "battle/respawn_policy.lua",
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",
+		["issue_fixes/techies"] = moduleRoot .. "issue_fixes/techies.lua",
         ["issue_fixes/gris_gris"] = moduleRoot .. "issue_fixes/gris_gris.lua",
         ["issue_fixes/jinada_income"] = moduleRoot .. "issue_fixes/jinada_income.lua",
         ["issue_fixes/shard_purchase"] = moduleRoot .. "issue_fixes/shard_purchase.lua",
@@ -582,6 +584,19 @@ do
 	for tick = 1, 40 do delayed:OnThink() end
 	assertEqual(delayed.shopPushes, 5, "settled inventory has bounded broadcasts")
 	assertEqual(delayed.heroPushes, 5, "hero and equipment broadcasts remain paired")
+	local priorSnapshot = delayed.equipmentSnapshot
+	local publishHero = delayed.BroadcastHeroInfo
+	carrier:AddItemByName("item_black_king_bar")
+	delayed.BroadcastHeroInfo = function() error("transient capability handle") end
+	local ok = pcall(function() delayed:OnThink() end)
+	assert(not ok, "injected hero publication failure is exercised")
+	assertEqual(delayed.shopPushes, 6, "equipment reaches HUD before unrelated hero publication")
+	assertEqual(delayed.equipmentSnapshot, priorSnapshot, "failed publication cannot acknowledge snapshot")
+	delayed.BroadcastHeroInfo = publishHero
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 7, "unchanged inventory retries after publication failure")
+	delayed:OnThink()
+	assertEqual(delayed.shopPushes, 7, "successful retry returns to bounded publication")
 end
 
 local wisp = makeInventoryUnit("npc_dota_hero_wisp", DOTA_TEAM_GOODGUYS, 14)
@@ -1575,15 +1590,69 @@ local broadcastGame = newGame({
 		return name == "npc_dota_hero_axe" and fieldedHero or benchHero
 	end,
 })
+-- Native mutation after a snapshot/queue must be mirrored by the real serializer.
+local lateBkb = fieldedHero:AddItemByName("item_black_king_bar")
+broadcastGame.heroData.npc_dota_hero_axe.inventory = { "item_branches" }
 broadcastGame:BroadcastShopState()
+assert(shopPayload.inventories_text:find("item_black_king_bar", 1, true), "serializer reads late native inventory")
+assert(shopPayload.equipped_text:find("item_black_king_bar|" .. broadcastGame:GetItemEntityId(lateBkb), 1, true), "serializer publishes matching native entity")
 assertEqual(shopPayload.rule_generation, 0, "shop generation defaults to zero")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_axe, 501, "active native selection ID")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 503, "bench native selection ID")
+local sendShop = CustomGameEventManager.Send_ServerToAllClients
+broadcastGame.lastBroadcastGold = 400
+CustomGameEventManager.Send_ServerToAllClients = function() error("transient send failure") end
+assert(not pcall(function() broadcastGame:BroadcastShopState() end), "send failure exercised")
+assertEqual(broadcastGame.lastBroadcastGold, 400, "failed send cannot acknowledge wallet")
+CustomGameEventManager.Send_ServerToAllClients = sendShop
+broadcastGame:BroadcastShopState()
+assertEqual(broadcastGame.lastBroadcastGold, 500, "successful send acknowledges wallet")
 function benchHero:GetEntityIndex() return 603 end
 broadcastGame.ruleGeneration = 9
 broadcastGame:BroadcastShopState()
 assertEqual(shopPayload.rule_generation, 9, "shop publishes current generation")
 assertEqual(shopPayload.hero_entity_indices.npc_dota_hero_lion, 603, "respawn refreshes native selection ID")
+-- Native serializer rejection is a silent drop, not a Lua exception. Exercise
+-- the actual BroadcastShopState with a large real-inventory-shaped roster.
+do
+    local transport = require("issue_fixes.shop_transport")
+    local priorOwned, priorFind, priorSync = broadcastGame.ownedHeroes, broadcastGame.FindOwnedHeroUnit, broadcastGame.SyncHeroInventoryFromUnit
+    local chunks, rejected, largest, captured = {}, 0, 0, nil
+    broadcastGame.ownedHeroes = {}
+    for i = 1, 80 do
+        local name = "npc_dota_hero_transport_" .. i
+        broadcastGame.ownedHeroes[i] = name
+        broadcastGame.heroData[name] = {level=30, inventory={"item_ultimate_scepter", "item_butterfly", "item_assault", "item_heart", "item_black_king_bar", "item_abyssal_blade"}}
+    end
+    broadcastGame.FindOwnedHeroUnit = function() return fieldedHero end
+    broadcastGame.SyncHeroInventoryFromUnit = function() end
+    local realSend = transport.Send
+    -- Capture the immutable snapshot at the actual serialization boundary.
+    local oldRequire = require
+    require = function(name)
+        if name == "issue_fixes.shop_transport" then return {Send=function(g,p,s) captured=s; return realSend(g,p,s) end} end
+        return oldRequire(name)
+    end
+    CustomGameEventManager.Send_ServerToAllClients = function(_, event, data)
+        local json, budget = transport.Encode(data)
+        largest = math.max(largest, budget)
+        if budget > 3000 then rejected = rejected + 1; return end
+        assert(event == "rpg_shop_state_chunk", "large snapshot must never attempt the unbounded event")
+        chunks[data.index] = data.data
+    end
+    broadcastGame:BroadcastShopState()
+    local json, originalBudget = transport.Encode(captured)
+    assert(originalBudget > 3000 and #chunks > 1, "fixture must exceed fake native serializer threshold")
+    assert(rejected == 0 and largest < 2000, "all native messages fit despite silent oversize rejection")
+    assert(pcall(function() CustomGameEventManager:Send_ServerToAllClients("rpg_shop_state", captured) end),
+        "native oversize failure does not throw in Lua")
+    assert(rejected == 1, "the old monolithic payload is silently rejected by the same native fake")
+    assert(table.concat(chunks) == json, "every authoritative field reconstructed without loss")
+    assert(captured.inventories_text:find("item_abyssal_blade",1,true), "large hero inventories actually serialized")
+    require = oldRequire
+    broadcastGame.ownedHeroes, broadcastGame.FindOwnedHeroUnit, broadcastGame.SyncHeroInventoryFromUnit = priorOwned, priorFind, priorSync
+    CustomGameEventManager.Send_ServerToAllClients = sendShop
+end
 broadcastGame.ownedHeroes, broadcastGame.lineup = {}, {}
 broadcastGame.battleManager = {
 	GetAliveCount = function() return 0 end,

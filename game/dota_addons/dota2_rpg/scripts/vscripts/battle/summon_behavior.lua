@@ -1,6 +1,7 @@
 local Summons={}
 local Undying=require("issue_fixes/undying")
 local Nevermore=require("issue_fixes/nevermore")
+local Techies=require("issue_fixes/techies")
 local function call(unit,method,...)
     if unit==nil then return nil end
     local ok,fn=pcall(function() return unit[method] end)
@@ -105,6 +106,7 @@ function Summons.ClearUndyingSummons(game)
 end
 local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestral_spirit=true}
 function Summons.OnSpawn(game,unit)
+    if Techies.Track(game,unit,Summons.ResolveOwner) then return true end
     if Summons.TrackUndyingSummon(game,unit) then return false end
     if not valid(unit) or call(unit,"IsTempestDouble")==true or excluded[call(unit,"GetUnitName")] then return false end
     local owner=Summons.ResolveOwner(game,unit)
@@ -146,6 +148,8 @@ end
 -- （enemyRuleIndex），否则本关野怪会在准备阶段被当成召唤物清掉。
 function Summons.TrackEnemySummon(game,unit)
     if not valid(unit) then return false end
+    -- Mines use ownership-scoped lifecycle tracking, never the broad enemy bucket.
+    if Techies.Track(game,unit,Summons.ResolveOwner) then return false end
     if call(unit,"GetTeamNumber")~=(DOTA_TEAM_BADGUYS or 3) then return false end
     if call(unit,"IsRealHero")==true then return false end
     -- enemyRuleIndex 是字段不是方法，不能用 call（它只转发函数）。
@@ -166,6 +170,7 @@ local function issue(game,order)
     return gate~=nil and gate:Execute(order)==true
 end
 function Summons.Clear(game)
+    Techies.Clear(game,Summons.ResolveOwner)
     Summons.ClearUndyingSummons(game)
     Summons.ClearEnemySummons(game)
     for unit in pairs(game.managedSummons or {}) do
@@ -190,6 +195,7 @@ function Summons.OnThink(game)
     -- owned units periodically so those summons are not permanently missed.
     if now >= (game.nextSummonScan or 0) and type(FindUnitsInRadius)=="function" then
         game.nextSummonScan=now+.5
+        Techies.Scan(game,Summons.ResolveOwner)
         local origin
         for _,team in pairs(game.battleManager.teamHeroes or {}) do
             if team[1] and valid(team[1]) then origin=team[1]:GetAbsOrigin(); break end

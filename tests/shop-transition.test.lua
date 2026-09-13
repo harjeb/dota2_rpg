@@ -40,6 +40,7 @@ require = function(name)
         ["issue_fixes/hero_ability_policy"] = true,
         ["issue_fixes/undying"] = true,
         ["issue_fixes/nevermore"] = true,
+        ["issue_fixes/techies"] = true,
         ["data.progression_data"] = true,
         ["patches.recruitment_patch"] = true,
         ["patches.progression_patch"] = true,

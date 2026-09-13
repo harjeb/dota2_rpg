@@ -8,6 +8,7 @@ DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS = 2, 3
 local catalog = dofile(scripts .. "tactics/ability_catalog.lua")
 local resends = 0
 local modules = {
+    ["issue_fixes.shop_transport"] = dofile(scripts .. "issue_fixes/shop_transport.lua"),
     ["battle.unit_helpers"] = { IsValidUnit = function(u) return u ~= nil end },
     ["tactics/ability_catalog"] = catalog,
     ["tactics/rule_snapshot"] = {

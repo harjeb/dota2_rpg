@@ -1577,10 +1577,14 @@ function CDota2RpgDemo:SyncLiveEquipmentState(force)
 		return false
 	end
 	self:SyncLineupInventories()
-	self.equipmentSnapshot = self:BuildEquipmentSnapshot()
 	self.nativePurchaseBaseline = self:CollectManagedItemIds()
-	self:BroadcastHeroInfo()
+	-- Inventory must not be held hostage by capability/hero-slot publication.
+	-- Commit the observed signature only after both publications succeed (or
+	-- enter the retrying state queue). A native handle error must be retried on
+	-- the next think even when the wallet and inventory no longer change.
 	self:BroadcastShopState()
+	self:BroadcastHeroInfo()
+	self.equipmentSnapshot = snapshot
 	return true
 end
 
@@ -2626,8 +2630,12 @@ end
 function CDota2RpgDemo:OnItemSell(_, payload)
     -- PlayerID is supplied by the engine, not inferred from client selection.
     if type(payload) ~= "table" or self.playerId == nil or self.playerId < 0
-        or tonumber(payload.PlayerID) ~= self.playerId then return end
+        or tonumber(payload.PlayerID) ~= self.playerId then
+        ItemSales.LogResult(self, payload, false, "not_owned_outer", 0)
+        return
+    end
     local ok, reason, refund = ItemSales.Sell(self, payload)
+    ItemSales.LogResult(self, payload, ok, reason, refund)
     if ok then self:SyncLiveEquipmentState(true) end
     local player = PlayerResource:GetPlayer(self.playerId)
     if player ~= nil then
@@ -4427,7 +4435,12 @@ function CDota2RpgDemo:BroadcastShopState(player)
 	if self:QueueStatePublication("BroadcastShopState", player) then return end
 	-- 先从原版钱包读取，再推送项目 HUD；绝不把旧 self.gold 回写为商店余额。
 	local gold = self:GetGoldBalance()
-	if player == nil then self.lastBroadcastGold = gold end
+	-- Deferred publication can run after native insertion/combination. Refresh
+	-- the persistent mirror at serialization time, not just at queue time.
+	for _, heroName in ipairs(self.ownedHeroes) do
+		local hero = self:FindOwnedHeroUnit(heroName)
+		if hero ~= nil then self:SyncHeroInventoryFromUnit(hero) end
+	end
 	-- CEM 载荷一律拍平；英雄数据用 "name:level:xp:quality" 分号串
 	local heroEntries = {}
 	for _, heroName in ipairs(self.ownedHeroes) do
@@ -4485,7 +4498,7 @@ function CDota2RpgDemo:BroadcastShopState(player)
 		end
 		table.insert(equippedParts, heroName .. ":" .. table.concat(heroItems, ","))
 	end
-	self:SendStateTo(player, "rpg_shop_state", {
+	require("issue_fixes.shop_transport").Send(self, player, {
 		rule_generation = self.ruleGeneration or 0,
 		gold = gold,
 		offer_text = self.shopOfferText or "",
@@ -4521,6 +4534,8 @@ function CDota2RpgDemo:BroadcastShopState(player)
 		max_lives = RunLives.MAX_LIVES,
 		run_failed = self.runFailed and 1 or 0,
 	})
+	-- A failed serializer/send is not a delivered wallet update.
+	if player == nil then self.lastBroadcastGold = gold end
 end
 
 function CDota2RpgDemo:BroadcastLevelInfo(player)

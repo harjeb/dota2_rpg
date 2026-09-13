@@ -4,6 +4,17 @@ local Sales = {}
 local neutralPrices
 local neutralTierPrices = { 100, 200, 400, 800, 1600 }
 
+-- One line per user transaction, independent of the general trace budget.
+function Sales.LogResult(game, payload, ok, reason, refund)
+    pcall(function()
+        payload = type(payload) == "table" and payload or {}
+        print(string.format("[RPGItemSale v=71] request=%s player=%s phase=%s item=%s entity=%s holder=%s ok=%s reason=%s refund=%s",
+            tostring(payload.request_id), tostring(payload.PlayerID), tostring(game.phase),
+            tostring(payload.item), tostring(payload.item_index), tostring(payload.hero),
+            tostring(ok), tostring(reason), tostring(refund)))
+    end)
+end
+
 function Sales.NeutralPrice(itemName)
     if neutralPrices == nil then
         neutralPrices = {}
@@ -55,8 +66,21 @@ function Sales.Sell(game, payload)
         if holder.RemoveItem == nil then return false, "unavailable", 0 end
         if not game:BindEquipmentCarrierToPlayer(holder) then return false, "not_owned", 0 end
         game.itemSaleInProgress = true
-        local called = pcall(holder.RemoveItem, holder, item)
+        local called, removalError = pcall(holder.RemoveItem, holder, item)
+        -- Some native inventories refuse RemoveItem on protected neutral slots.
+        -- The user authorized destruction of this exact verified entity. Use
+        -- explicit entity removal only if it is STILL in that same inventory;
+        -- never follow an item moved to someone else during a callback.
+        if game:IsLiveItem(item) and game:IsItemHeldBy(holder, item, 0, 16)
+            and type(UTIL_Remove) == "function" then
+            called, removalError = pcall(UTIL_Remove, item)
+        end
         game.itemSaleInProgress = nil
+        pcall(function()
+            print(string.format("[RPGItemSale v=71] neutral_remove item=%s entity=%d price=%d called=%s live=%s held=%s error=%s",
+                payload.item, itemIndex, neutralPrice, tostring(called), tostring(game:IsLiveItem(item)),
+                tostring(game:IsItemHeldBy(holder, item, 0, 16)), called and "none" or tostring(removalError)))
+        end)
         -- Native neutrals are unsellable. Pay the configured resale only after
         -- the exact entity has been destroyed, never merely detached or moved.
         if not called or game:IsLiveItem(item) then return false, "sale_failed", 0 end
