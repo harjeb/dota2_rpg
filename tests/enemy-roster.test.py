@@ -122,7 +122,7 @@ class EnemyRosterTests(unittest.TestCase):
                         else:
                             self.assertFalse(set(fields + ['boss_bonus_armor', 'boss_magic_resistance_bonus_pct', 'boss_magic_resistance_pct']).intersection(entry), entry['unit'])
 
-    def test_final_stage_additions_are_plain_level_30_and_surgical(self):
+    def test_final_stage_additions_are_equipped_level_30_and_surgical(self):
         names = ['life_stealer', 'mirana', 'pangolier', 'bane', 'dark_seer']
         for filename, is_json in [('levels_v07.json', True), ('levels.kv', False)]:
             text = (DATA / filename).read_text(encoding='utf-8')
@@ -130,9 +130,9 @@ class EnemyRosterTests(unittest.TestCase):
             for entry, name in zip(self.teams['source' if is_json else 'runtime'][30][1:], names):
                 self.assertEqual(entry['unit'], 'npc_dota_hero_' + name)
                 self.assertEqual(int(entry['level']), 30)
-                self.assertFalse(entry['items'])
+                self.assertEqual(len(entry['items']), 6)
                 self.assertFalse(entry['tags'])
-                self.assertEqual(set(entry), {'unit', 'level', 'items', 'tags', 'ai'})
+                self.assertEqual(set(entry), {'unit', 'level', 'items', 'tags', 'ai', 'backpack_items', 'neutral_item', 'quality_upgrades'})
         # Rebuild from a boss-only fixture, proving all other stages and boss fields survive.
         import copy
         old = copy.deepcopy(self.source)

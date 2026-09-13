@@ -40,4 +40,43 @@ local spiritBoss = {"item_silver_edge", "item_ultimate_scepter", "item_black_kin
 assert(Items.EquipConfiguredItems(unit, {unit="npc_dota_hero_spirit_breaker", items=spiritBoss}) == 6)
 assert(calls[5] == "item_moon_shard" and calls[6] == "item_moon_shard",
     "two configured Moon Shards must create two native items, not deduplicate or consume one")
+local function inventoryUnit(rejectSwap)
+    local inventory = {}
+    local result = { inventory = inventory }
+    function result:AddItemByName(name)
+        local slot = 0
+        while inventory[slot] do slot = slot + 1 end
+        local item = { name = name, slot = slot }
+        function item:GetItemSlot() return self.slot end
+        inventory[slot] = item
+        return item
+    end
+    function result:SwapItems(a, b)
+        if rejectSwap then return end
+        inventory[a], inventory[b] = inventory[b], inventory[a]
+        if inventory[a] then inventory[a].slot = a end
+        if inventory[b] then inventory[b].slot = b end
+    end
+    function result:RemoveItem(item) inventory[item.slot] = nil end
+    return result
+end
+for _, backpack in ipairs({{ [2] = "item_bottle", [3] = "item_dust" },
+                           { ["1"] = "", ["2"] = "item_bottle", ["3"] = "item_dust" }}) do
+    local hero = inventoryUnit()
+    assert(Items.EquipConfiguredItems(hero, {items=spiritBoss, backpack_items=backpack,
+        neutral_item="item_desolator_2"}) == 9)
+    for index, name in ipairs(spiritBoss) do assert(hero.inventory[index - 1].name == name) end
+    assert(hero.inventory[6] == nil, "empty backpack slots must not collapse")
+    assert(hero.inventory[7].name == "item_bottle" and hero.inventory[8].name == "item_dust")
+    assert(hero.inventory[16].name == "item_desolator_2", "neutral must not occupy a main/backpack slot")
+end
+local rejected = inventoryUnit(true)
+assert(Items.EquipConfiguredItems(rejected, {items={"item_boots"},
+    backpack_items={[3]="item_bottle"}, neutral_item="item_demonicon"}) == 1)
+assert(rejected.inventory[0].name == "item_boots" and rejected.inventory[1] == nil,
+    "rejected optional placement must not grant active inventory stats")
+local plan = require("battle.stage_precache").Plan({enemies={{unit="npc_dota_hero_mirana",
+    items={"item_boots"}, backpack_items={["1"]="", ["2"]="item_dust"}, neutral_item="item_conjurers_catalyst"}}})
+assert(table.concat(plan.items, ",") == "item_boots,item_conjurers_catalyst,item_dust",
+    "stage precache must include backpack and neutral equipment and skip empty slots")
 print("enemy-items.test.lua: passed")

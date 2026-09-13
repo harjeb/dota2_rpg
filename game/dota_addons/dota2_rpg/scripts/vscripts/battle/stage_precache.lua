@@ -16,6 +16,8 @@ function M.Plan(level)
         if type(enemy) == "table" then
             add("units", enemy.unit, "npc_dota_")
             for _, item in pairs(type(enemy.items) == "table" and enemy.items or {}) do add("items", item, "item_") end
+            for _, item in pairs(type(enemy.backpack_items) == "table" and enemy.backpack_items or {}) do add("items", item, "item_") end
+            add("items", enemy.neutral_item, "item_")
         end
     end
     table.sort(plan.units); table.sort(plan.items)
@@ -66,6 +68,11 @@ local function validate(level)
     if type(level) ~= "table" or type(level.enemies) ~= "table" or next(level.enemies) == nil then return false end
     for _, enemy in pairs(level.enemies) do
         if type(enemy) ~= "table" or not valid(enemy.unit, "npc_dota_") then return false end
+        if enemy.backpack_items ~= nil then
+            if type(enemy.backpack_items) ~= "table" then return false end
+            for _, item in pairs(enemy.backpack_items) do if item ~= "" and not valid(item, "item_") then return false end end
+        end
+        if enemy.neutral_item ~= nil and not valid(enemy.neutral_item, "item_") then return false end
         if enemy.items ~= nil then
             if type(enemy.items) ~= "table" then return false end
             for _, item in pairs(enemy.items) do if not valid(item, "item_") then return false end end

@@ -95,6 +95,9 @@ class EnemyEquipmentDataTests(unittest.TestCase):
         native = reader['parse_kv'](raw.decode('utf-8-sig'))['DOTAAbilities']
         names = {item for hero in EXPECTED_HEROES for level in range(1, 31) for item in AUTHOR['loadout'](hero, level)}
         names.update(AUTHOR['loadout']('spirit_breaker', 24, True))
+        for equipment in AUTHOR['FINAL_EQUIPMENT'].values():
+            for name in equipment['items'] + equipment['backpack_items'] + [equipment['neutral_item']]:
+                if name: self.assertIn(name, native)
         for name in names:
             self.assertIn(name, native)
             self.assertEqual(int(native[name]['ItemCost']), AUTHOR['ITEM_COSTS'][name[5:]])
@@ -113,7 +116,7 @@ class EnemyEquipmentDataTests(unittest.TestCase):
                 count += 1
                 self.assertEqual(str(entry['level']), live['level'])
                 boss = 'boss' in live.get('tags', {}).values()
-                expected = [] if stage_id == 'ch30' and not boss else AUTHOR['loadout'](entry['unit'][14:], live['level'], boss)
+                expected = AUTHOR['FINAL_EQUIPMENT'][entry['unit'][14:]]['items'] if stage_id == 'ch30' and not boss else AUTHOR['loadout'](entry['unit'][14:], live['level'], boss)
                 self.assertEqual(entry['items'], expected)
                 self.assertEqual(list(live['items'].values()), expected)
         self.assertEqual(count, 98)
@@ -130,6 +133,30 @@ class EnemyEquipmentDataTests(unittest.TestCase):
                     if field != 'items': self.assertEqual(updated[chapter]['enemies'][index][field], val)
             for field, val in stage.items():
                 if field != 'enemies': self.assertEqual(updated[chapter][field], val)
+
+    def test_final_public_snapshot_slots_and_consumed_upgrades(self):
+        snapshot = json.loads((ROOT / 'data/ti15_2026_game5_equipment.json').read_text())
+        self.assertEqual(snapshot['match_id'], 8960991322)
+        self.assertEqual(snapshot['league_id'], 19719)
+        source = json.loads((DATA / 'levels_v07.json').read_text(encoding='utf-8'))
+        runtime = read_kv((DATA / 'levels.kv').read_text(encoding='utf-8'))['levels']
+        expected_buffs = {'life_stealer': ['scepter', 'shard'], 'mirana': [],
+                          'pangolier': ['scepter', 'shard'], 'bane': ['shard'], 'dark_seer': ['shard']}
+        for index, entry in enumerate(source['ch30']['enemies'][1:], 2):
+            hero = entry['unit'][14:]
+            evidence = snapshot['heroes'][hero]
+            live = runtime['ch30']['enemies'][str(index)]
+            for key in ('items', 'backpack_items', 'quality_upgrades'):
+                self.assertEqual(entry[key], evidence[key])
+                self.assertEqual(entry[key], list(live[key].values()))
+            self.assertEqual(entry['neutral_item'], evidence['neutral_item'])
+            self.assertEqual(live['neutral_item'], evidence['neutral_item'])
+            self.assertEqual(entry['quality_upgrades'], expected_buffs[hero])
+            self.assertNotIn(16, evidence['permanent_buff_ids_used'])
+            if 'item_ultimate_scepter' in entry['items']:
+                self.assertNotIn('scepter', entry['quality_upgrades'])
+            self.assertEqual(len(evidence['source_slots']), 10)
+            self.assertFalse({'account_id', 'personaname'} & evidence.keys())
 
     def test_invalid_level_and_roster_mismatch_fail_before_writes(self):
         for level in (0, 31, 8.5, 'nan', 'inf'):

@@ -41,7 +41,7 @@ FORMATIONS = {
 }
 
 
-# Fixed final-stage additions use native level-30 heroes without equipment or buffs.
+# Fixed final-stage additions use native level-30 heroes and verified GAME5 equipment.
 FINAL_ESCORTS = [('life_stealer', 'aggro_front'), ('mirana', 'focus_lowest_hp'),
                  ('pangolier', 'aggro_front'), ('bane', 'ai_healer_protect'),
                  ('dark_seer', 'ai_healer_protect')]
@@ -84,10 +84,12 @@ def update_text(text, changes, is_json):
         if match[2] != old_unit:
             raise ValueError(f'Hero ordering mismatch: {match[2]}, expected {old_unit}')
         middle = match[3]
-        if len(re.findall(r'"item_[^"]+"', middle)) != len(items):
+        inventory = re.search(r'"items"\s*:?\s*(?:\[[^\]]*\]|\{[^{}]*\})', middle)
+        if inventory is None or len(re.findall(r'"item_[^"]+"', inventory[0])) != len(items):
             raise ValueError(f'Inventory count mismatch for {old_unit}')
         item_iter = iter(items)
-        middle = re.sub(r'"item_[^"]+"', lambda _: json.dumps(next(item_iter)), middle)
+        replacement = re.sub(r'"item_[^"]+"', lambda _: json.dumps(next(item_iter)), inventory[0])
+        middle = middle[:inventory.start()] + replacement + middle[inventory.end():]
         return match[1] + new_unit + middle + profile + match[5]
 
     updated, count = re.subn(pattern, replace, text, flags=re.S)
@@ -112,15 +114,21 @@ def author_final_stage(text, is_json):
     assert boss_end
     additions = []
     for slot, (hero, ai) in enumerate(FINAL_ESCORTS, 2):
-        entry = dict(unit='npc_dota_hero_' + hero, level=30, items=[], tags=[], ai=ai)
+        equipment = json.loads((ROOT / 'data/ti15_2026_game5_equipment.json').read_text(encoding='utf-8'))['heroes'][hero]
+        entry = dict(unit='npc_dota_hero_' + hero, level=30,
+                     **{key: equipment[key] for key in ('items', 'backpack_items', 'neutral_item', 'quality_upgrades')}, tags=[], ai=ai)
         if is_json:
             additions.append('\n'.join('\t' * 3 + line for line in json.dumps(entry, indent='\t').splitlines()))
         else:
-            additions.append(f'\t\t\t"{slot}"\n\t\t\t{{\n'
-                             f'\t\t\t\t"unit" "{entry["unit"]}"\n'
-                             '\t\t\t\t"level" "30"\n\t\t\t\t"items"\n\t\t\t\t{\n\t\t\t\t}\n'
-                             '\t\t\t\t"tags"\n\t\t\t\t{\n\t\t\t\t}\n'
-                             f'\t\t\t\t"ai" "{ai}"\n\t\t\t}}')
+            lines = [f'\t\t\t"{slot}"', '\t\t\t{']
+            for key, value in entry.items():
+                if isinstance(value, list):
+                    lines.extend([f'\t\t\t\t"{key}"', '\t\t\t\t{'])
+                    lines.extend(f'\t\t\t\t\t"{i}" "{item}"' for i, item in enumerate(value, 1))
+                    lines.append('\t\t\t\t}')
+                else:
+                    lines.append(f'\t\t\t\t"{key}" "{value}"')
+            additions.append('\n'.join(lines + ['\t\t\t}']))
     joiner = ',\n' if is_json else '\n'
     block = block[:boss_end.end()] + joiner + joiner.join(additions) + block[boss_end.end():]
     return text[:stage.start()] + block + text[stage.end():]

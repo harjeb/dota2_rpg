@@ -76,6 +76,10 @@ AI_NAMES = {
 # Snapshot of the current native abilities_schinese localization for every item
 # actually referenced by levels.kv. Keep IDs too: the KV accepts IDs, not labels.
 ITEM_NAMES = {
+    "item_dust": "显影之尘", "item_essence_distiller": "精之灵器",
+    "item_gem": "真视宝石", "item_monkey_king_bar": "金箍棒",
+    "item_quelling_blade": "压制之刃", "item_tranquil_boots": "静谧之鞋",
+    "item_travel_boots_2": "远行鞋", "item_ward_sentry": "岗哨守卫",
     "item_abyssal_blade": "深渊之刃", "item_aeon_disk": "永恒之盘", "item_aether_lens": "以太透镜",
     "item_arcane_boots": "奥术鞋", "item_armlet": "莫尔迪基安的臂章", "item_assault": "强袭胸甲",
     "item_basher": "碎颅锤", "item_bfury": "狂战斧", "item_black_king_bar": "黑皇杖",

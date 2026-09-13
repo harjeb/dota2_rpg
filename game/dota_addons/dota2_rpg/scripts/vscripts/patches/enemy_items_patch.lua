@@ -35,7 +35,7 @@ function EnemyItems.EquipConfiguredItems(unit, enemyEntry)
         return 0
     end
     local equipped = 0
-    for _, itemName in ipairs(orderedValues(enemyEntry.items)) do
+    local function equip(itemName, targetSlot)
         if itemName ~= "" then
             -- A stale/invalid native item ID must not abort the whole enemy
             -- spawn before its remaining equipment, tactics and roster binding.
@@ -50,12 +50,42 @@ function EnemyItems.EquipConfiguredItems(unit, enemyEntry)
                 end
             end)
             if ok and valid(item) then
-                equipped = equipped + 1
+                local placed, reason = pcall(function()
+                    if targetSlot ~= nil then
+                        assert(item.GetItemSlot ~= nil and unit.SwapItems ~= nil, "native slot APIs unavailable")
+                        local current = item:GetItemSlot()
+                        assert(current ~= nil and current >= 0, "item not in inventory")
+                        if current ~= targetSlot then unit:SwapItems(current, targetSlot) end
+                        assert(item:GetItemSlot() == targetSlot, "native slot placement rejected")
+                    end
+                end)
+                if placed then
+                    equipped = equipped + 1
+                else
+                    -- Never leave a backpack/neutral item active in a main slot.
+                    if unit.RemoveItem ~= nil then pcall(unit.RemoveItem, unit, item) end
+                    print(string.format("[RPG][EnemyItems] Failed slot %s for %s: %s", tostring(targetSlot), itemName, tostring(reason)))
+                end
             else
                 print(string.format("[RPG][EnemyItems] Failed to equip %s on %s: %s",
                     itemName, tostring(enemyEntry.unit or "enemy"), ok and "no item returned" or tostring(item)))
             end
         end
+    end
+    for _, itemName in ipairs(orderedValues(enemyEntry.items)) do
+        equip(itemName)
+    end
+    -- KV uses string indices, JSON uses numeric indices. Look up each fixed
+    -- position without compacting holes: backpack indices 1..3 map to slots 6..8.
+    local backpack = enemyEntry.backpack_items
+    if type(backpack) == "table" then
+        for index = 1, 3 do
+            local name = backpack[index] or backpack[tostring(index)]
+            if type(name) == "string" and name ~= "" then equip(name, index + 5) end
+        end
+    end
+    if type(enemyEntry.neutral_item) == "string" and enemyEntry.neutral_item ~= "" then
+        equip(enemyEntry.neutral_item, DOTA_ITEM_NEUTRAL_SLOT or 16)
     end
     return equipped
 end

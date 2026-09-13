@@ -559,7 +559,8 @@ for _, case in ipairs(bossCases) do
 		boss_spell_amp_pct = tostring(case.spell), boss_cooldown_reduction_pct = tostring(case.cdr),
 	}
 	local ordinaryEntry = { unit = "npc_dota_hero_lina", level = tostring(case.level),
-		items = equipment, tags = { ["1"] = "hero" }, ai = "focus_lowest_hp" }
+		items = equipment, tags = { ["1"] = "hero" }, ai = "focus_lowest_hp",
+        quality_upgrades = { ["1"] = "scepter", ["2"] = "shard" } }
 	spawnGame.dataLoader.GetLevel = function() return { enemies = { bossEntry, ordinaryEntry } } end
 	spawnGame:SpawnLevelEnemies(case.chapter)
 	local boss, ordinary
@@ -570,6 +571,8 @@ for _, case in ipairs(bossCases) do
 	assert(boss and ordinary and boss.enemyRuleIndex and ordinary.enemyRuleIndex)
 	assert(boss:GetMaxHealth() == baseline * case.hp and boss.health == boss:GetMaxHealth(),
 		"real spawn must create a full-health boss scaled from the equipped hero")
+    assert(ordinary.modifiers.modifier_item_ultimate_scepter_consumed and ordinary.modifiers.modifier_item_aghanims_shard,
+        "KV string-indexed consumed upgrades must apply during actual enemy spawn")
 	assert(ordinary:GetMaxHealth() == baseline and ordinary.modifiers.modifier_rpg_boss_power == nil,
 		"ordinary enemies in the same stage must retain normal stats")
 	spawnGame:PrepareEnemyHero(boss, case.level)

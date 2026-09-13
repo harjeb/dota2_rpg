@@ -1,0 +1,192 @@
+{
+  "source_url": "https://api.opendota.com/api/matches/8960991322",
+  "match_id": 8960991322,
+  "league_id": 19719,
+  "event": "The International 2026 (TI15), grand final GAME5",
+  "duration_seconds": 3862,
+  "winner": "Team Spirit",
+  "opponent": "TEAM VISION",
+  "method": "Public match-end item_0..5, backpack_0..2 and item_neutral; only permanent buffs 2 (scepter) and 12 (shard). Excludes accumulated hero buffs, neutral enchantments, charges and cooldowns.",
+  "heroes": {
+    "bane": {
+      "hero_id": 3,
+      "player_slot": 128,
+      "source_slots": {
+        "item_0": 1,
+        "item_1": 214,
+        "item_2": 256,
+        "item_3": 108,
+        "item_4": 11,
+        "item_5": 40,
+        "backpack_0": 0,
+        "backpack_1": 0,
+        "backpack_2": 0,
+        "item_neutral": 370
+      },
+      "permanent_buff_ids_used": [
+        12
+      ],
+      "items": [
+        "item_blink",
+        "item_tranquil_boots",
+        "item_aeon_disk",
+        "item_ultimate_scepter",
+        "item_quelling_blade",
+        "item_dust"
+      ],
+      "backpack_items": [
+        "",
+        "",
+        ""
+      ],
+      "neutral_item": "item_demonicon",
+      "quality_upgrades": [
+        "shard"
+      ]
+    },
+    "life_stealer": {
+      "hero_id": 54,
+      "player_slot": 129,
+      "source_slots": {
+        "item_0": 151,
+        "item_1": 135,
+        "item_2": 208,
+        "item_3": 225,
+        "item_4": 112,
+        "item_5": 156,
+        "backpack_0": 0,
+        "backpack_1": 0,
+        "backpack_2": 0,
+        "item_neutral": 292
+      },
+      "permanent_buff_ids_used": [
+        2,
+        12
+      ],
+      "items": [
+        "item_armlet",
+        "item_monkey_king_bar",
+        "item_abyssal_blade",
+        "item_nullifier",
+        "item_assault",
+        "item_satanic"
+      ],
+      "backpack_items": [
+        "",
+        "",
+        ""
+      ],
+      "neutral_item": "item_desolator_2",
+      "quality_upgrades": [
+        "scepter",
+        "shard"
+      ]
+    },
+    "pangolier": {
+      "hero_id": 120,
+      "player_slot": 130,
+      "source_slots": {
+        "item_0": 226,
+        "item_1": 30,
+        "item_2": 1097,
+        "item_3": 110,
+        "item_4": 1,
+        "item_5": 208,
+        "backpack_0": 63,
+        "backpack_1": 41,
+        "backpack_2": 0,
+        "item_neutral": 292
+      },
+      "permanent_buff_ids_used": [
+        2,
+        12
+      ],
+      "items": [
+        "item_lotus_orb",
+        "item_gem",
+        "item_disperser",
+        "item_refresher",
+        "item_blink",
+        "item_abyssal_blade"
+      ],
+      "backpack_items": [
+        "item_power_treads",
+        "item_bottle",
+        ""
+      ],
+      "neutral_item": "item_desolator_2",
+      "quality_upgrades": [
+        "scepter",
+        "shard"
+      ]
+    },
+    "mirana": {
+      "hero_id": 9,
+      "player_slot": 131,
+      "source_slots": {
+        "item_0": 1852,
+        "item_1": 610,
+        "item_2": 256,
+        "item_3": 43,
+        "item_4": 108,
+        "item_5": 29,
+        "backpack_0": 40,
+        "backpack_1": 0,
+        "backpack_2": 0,
+        "item_neutral": 1864
+      },
+      "permanent_buff_ids_used": [],
+      "items": [
+        "item_essence_distiller",
+        "item_wind_waker",
+        "item_aeon_disk",
+        "item_ward_sentry",
+        "item_ultimate_scepter",
+        "item_boots"
+      ],
+      "backpack_items": [
+        "item_dust",
+        "",
+        ""
+      ],
+      "neutral_item": "item_conjurers_catalyst",
+      "quality_upgrades": []
+    },
+    "dark_seer": {
+      "hero_id": 55,
+      "player_slot": 132,
+      "source_slots": {
+        "item_0": 119,
+        "item_1": 600,
+        "item_2": 96,
+        "item_3": 220,
+        "item_4": 110,
+        "item_5": 256,
+        "backpack_0": 226,
+        "backpack_1": 116,
+        "backpack_2": 0,
+        "item_neutral": 1718
+      },
+      "permanent_buff_ids_used": [
+        12
+      ],
+      "items": [
+        "item_shivas_guard",
+        "item_overwhelming_blink",
+        "item_sheepstick",
+        "item_travel_boots_2",
+        "item_refresher",
+        "item_aeon_disk"
+      ],
+      "backpack_items": [
+        "item_lotus_orb",
+        "item_black_king_bar",
+        ""
+      ],
+      "neutral_item": "item_riftshadow_prism",
+      "quality_upgrades": [
+        "shard"
+      ]
+    }
+  }
+}

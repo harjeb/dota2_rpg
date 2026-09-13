@@ -11,6 +11,7 @@ import re
 import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
+FINAL_EQUIPMENT = json.loads((ROOT / 'data/ti15_2026_game5_equipment.json').read_text(encoding='utf-8'))['heroes']
 PROFILE_DATA = json.loads((ROOT / 'data/enemy_equipment_profiles.json').read_text(encoding='utf-8'))
 BUILDS = PROFILE_DATA['heroes']
 ROLES = {hero: row['role'] for hero, row in BUILDS.items()}
@@ -86,8 +87,7 @@ def update_equipment(source_text, runtime_text):
                 hero = entry['unit'].removeprefix('npc_dota_hero_')
                 tags = live.get('tags', {})
                 boss = 'boss' in (tags.values() if isinstance(tags, dict) else tags)
-                # Explicitly unarmed final escorts must stay unarmed on regeneration.
-                items = [] if stage_id == 'ch30' and not boss else loadout(hero, live['level'], boss)
+                items = FINAL_EQUIPMENT[hero]['items'] if stage_id == 'ch30' and not boss else loadout(hero, live['level'], boss)
                 builds.append((entry['unit'], int(live['level']), items))
     patterns = [
         r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])',
@@ -117,6 +117,28 @@ def update_equipment(source_text, runtime_text):
         updated, count = re.subn(pattern, replace, text, flags=re.S)
         if count != len(builds):
             raise ValueError(f'Expected {len(builds)} hero blocks, got {count}')
+        # Extras belong only to the fixed final heroes. Replace just their fields,
+        # preserving independently balanced stage and boss configuration.
+        for hero, equipment in FINAL_EQUIPMENT.items():
+            extras = {key: equipment[key] for key in ('backpack_items', 'neutral_item', 'quality_upgrades')}
+            if is_json:
+                pattern_extra = r'("unit": "npc_dota_hero_' + hero + r'"[^{}]*?"items": \[[^\]]*\])((?:,\s*"(?:backpack_items|neutral_item|quality_upgrades)": (?:\[[^\]]*\]|"[^"]*"))*)(,\s*"tags")'
+                body = ''.join(',\n\t\t\t\t' + json.dumps(key) + ': ' + json.dumps(value) for key, value in extras.items())
+            else:
+                pattern_extra = r'("unit"\s+"npc_dota_hero_' + hero + r'"[^{}]*?"items"\s*\{[^{}]*\})((?:\s*"(?:backpack_items|neutral_item|quality_upgrades)"\s*(?:\{[^{}]*\}|"[^"]*"))*)(\s*"tags")'
+                body = ''
+                for key, value in extras.items():
+                    body += '\n\t\t\t\t"' + key + '"'
+                    if isinstance(value, list):
+                        body += '\n\t\t\t\t{\n' + ''.join(f'\t\t\t\t\t"{i}" "{item}"\n' for i, item in enumerate(value, 1)) + '\t\t\t\t}'
+                    else:
+                        body += ' "' + value + '"'
+            # Restrict to ch30: Lifestealer/Bane also occur in earlier chapters.
+            start = updated.index('"ch30"')
+            tail, replaced = re.subn(pattern_extra, lambda m: m[1] + body + m[3], updated[start:], flags=re.S)
+            if replaced != 1:
+                raise ValueError(f'Expected one final equipment block for {hero}, got {replaced}')
+            updated = updated[:start] + tail
         outputs.append(updated)
     return outputs
 

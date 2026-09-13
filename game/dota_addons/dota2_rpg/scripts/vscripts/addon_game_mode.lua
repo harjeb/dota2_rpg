@@ -3126,7 +3126,7 @@ function CDota2RpgDemo:AssembleLevelEnemies(levelId, created)
 					end
 				end
 				-- 敌方品质/内置升级：魔晶/神杖
-				for _, upgrade in ipairs(entry.quality_upgrades or {}) do
+				for _, upgrade in pairs(entry.quality_upgrades or {}) do
 					if upgrade == "shard" then
 						unit:AddNewModifier(unit, nil, "modifier_item_aghanims_shard", {})
 					elseif upgrade == "scepter" then
