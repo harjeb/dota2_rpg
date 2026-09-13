@@ -355,6 +355,9 @@ function ActionAdapter:Resolve(caster, action, ctx)
         target_team = action.target_team,
         cast_type = cast_type,
         self_centered_point = self_centered_point,
+        -- Manual orb attacks remain native casts, but share attack release timing.
+        is_attack_ability = action.kind == "ability" and cast_type == "unit"
+            and has_flag(get_behavior(source), DOTA_ABILITY_BEHAVIOR_ATTACK),
         vector_mode = cast_type == "vector" and VectorTarget.NativeMode(source) or nil,
         desired_toggle_state = action.desired_toggle_state ~= false,
         desired_autocast_state = action.desired_autocast_state,

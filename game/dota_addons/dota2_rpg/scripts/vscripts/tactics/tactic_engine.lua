@@ -356,6 +356,32 @@ function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
     return nil, nil, "unsupported_target_mode"
 end
 
+-- Resolve posture without modifying saved rules or changing native cast semantics.
+-- Only a basic attack row that currently selects this target can lend its stance.
+function TacticEngine:PositioningRule(unit, ctx, rule, spec, target)
+    if not spec.is_attack_ability or rule.action.positioning_mode ~= nil then return rule end
+    local defaults = require("issue_fixes/default_rules")
+    for _, attack in ipairs(self.get_rules(unit) or {}) do
+        if attack.enabled ~= false and attack.action and attack.action.kind == "attack" then
+            local probe = shallow_copy(ctx)
+            probe.condition_trace = {}
+            probe.native_target_trace = {accepted=0, rejected=0}
+            local attack_spec = self.actions:Resolve(unit, attack.action, probe)
+            if attack_spec then
+                probe.current_action_id = attack_spec.logical_id
+                probe.current_action_spec = attack_spec
+                if Compatibility.Validate(unit, attack, {runtime=true, capability=attack_spec.capability})
+                    and self.actions:CanExecute(unit, attack_spec, probe)
+                    and self.conditions:EvaluateUseConditions(attack.use_conditions, probe)
+                    and self:ResolveRuleTarget(attack, attack_spec, probe) == target then
+                    return defaults.ApplyRangedAttackPosture({action=shallow_copy(attack.action)}, unit)
+                end
+            end
+        end
+    end
+    return defaults.ApplyRangedAttackPosture(defaults.CreateAttackNearestRule(), unit)
+end
+
 function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
     ctx.condition_trace = {}
     ctx.native_target_trace = {accepted=0, rejected=0}
@@ -397,7 +423,8 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
     end
     if not ctx.movement_cast_only and (not unit.rpg_debug_manual_cast or unit.rpg_debug_positioning)
-        and Positioning.Try(self, unit, state, ctx, rule, spec, anchor or target_or_point) then
+        and Positioning.Try(self, unit, state, ctx,
+            self:PositioningRule(unit, ctx, rule, spec, anchor or target_or_point), spec, anchor or target_or_point) then
         state.chase = nil
         state.posture_order = {owns_order=true, expires=ctx.now+self.tick_interval*2}
         -- The next attack must not be suppressed as a duplicate of the order
@@ -567,7 +594,7 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
     state.posture_order = nil
     state.last_order_signature = signature
     state.last_order_time = ctx.now
-    if spec.kind == "attack" then state.attack_order_time = ctx.now end
+    if spec.kind == "attack" or spec.is_attack_ability then state.attack_order_time = ctx.now end
     if spec.kind == "wait" then
         state.wait_until = ctx.now + tonumber(spec.wait_duration or 0.35)
     end

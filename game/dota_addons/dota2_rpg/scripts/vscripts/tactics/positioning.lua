@@ -78,7 +78,7 @@ function M.Try(engine,unit,state,ctx,rule,spec,target)
     if mode == "default" or (spec.kind ~= "attack" and spec.kind ~= "ability") then return false end
     if not target or not target.GetAbsOrigin or target == unit then return false end
     if engine:IsBusy(unit) then return false end
-    if spec.kind == "attack" then
+    if spec.kind == "attack" or spec.is_attack_ability then
         local release=state.events and state.events.attack
         local interval=tonumber(Context.Call(unit,"GetSecondsPerAttack",false))
         if not release or release.target ~= target or not interval or interval <= 0 then return false end
