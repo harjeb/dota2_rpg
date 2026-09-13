@@ -34,6 +34,13 @@ assert(targetKV:match('"StatusManaRegen"%s+"20"'), "repeat casts need mana regen
 local aiKV = readSource(root .. "/../data/enemy_ai.kv")
 local debugAI = assert(aiKV:match('"skill_test_stomp"(.-)"demo_default"'))
 assert(debugAI:find('"ability_1"', 1, true) < debugAI:find('"attack"', 1, true), "cast before attack fallback")
+-- 调试怪必须和会追击的关卡预设一样把普攻设成 forced_chase。沙箱虽然把
+-- rpg_debug_chase 打开了，但 tactic_engine 还会用 rule.approach 再挡一道；
+-- 只要这里还是 range_only，测试怪就只会站在原地等你走进它的攻击范围。
+local attackMode = debugAI:match('"action"%s*{%s*"type"%s*"attack"%s*}%s*"target"%s*"[%w_]+"%s*"mode"%s*"([%w_]+)"')
+eq(attackMode, "forced_chase", "debug creep attack must chase like the campaign chase profile")
+local stompMode = debugAI:match('"action"%s*{%s*"type"%s*"ability_1"%s*}%s*"target"%s*"[%w_]+"%s*"mode"%s*"([%w_]+)"')
+eq(stompMode, "range_only", "the self-centred stomp must not chase")
 local function cooldown(name, level)
     return {name=name, level=level or 0, remaining=20, IsNull=function() return false end,
         EndCooldown=function(self) self.remaining=0 end, RemoveSelf=function(self) self.removed=true end}
