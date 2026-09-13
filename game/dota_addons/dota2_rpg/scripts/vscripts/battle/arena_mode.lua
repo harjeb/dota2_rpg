@@ -30,7 +30,7 @@ local function catalog(g)
     data=data.debug_heroes or data
     local list={}
     for _,name in pairs(data) do
-        if type(name)=="string" and name:match("^npc_dota_hero_[a-z0-9_]+$") then list[#list+1]=name end
+        if type(name)=="string" and name~="npc_dota_hero_wisp" and name:match("^npc_dota_hero_[a-z0-9_]+$") then list[#list+1]=name end
     end
     table.sort(list);g.arenaCatalog=list;return list
 end

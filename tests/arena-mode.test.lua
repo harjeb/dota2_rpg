@@ -22,10 +22,12 @@ package.loaded["battle.arena_profile"]={Copy=copy,Capture=function(game) return 
 for _,module in ipairs({"battle.tempest_double","tactics.special_targets","battle.summon_behavior","issue_fixes.tiny_tree"}) do package.loaded[module]={Clear=function() end} end
 package.loaded["battle.respawn_policy"]={SetBattleActive=function() end}
 package.loaded["battle.fresh_run"]={Reset=function(game) game.heroData={};game.pendingNativePurchases={};game.ownedHeroes={};game.lineup={};game.team=team();game.battleManager.teamHeroes={[2]={},[3]={}};game.runComplete=false;game.runFailed=false end}
-LoadKeyValues=function() return {debug_heroes=names} end
+LoadKeyValues=function() local all=copy(names);all[#all+1]='npc_dota_hero_wisp';return {debug_heroes=all} end
 PlayerResource={GetSteamAccountID=function() return 1 end,GetPlayerName=function() return "测试" end,GetPlayer=function(_,id) return id end}
 GameRules={GetGameTime=function() return now end,GetGameModeEntity=function() return {SetContextThink=function(_,key,fn,delay) timers[key]={fn=fn,at=now+delay} end} end}
-CustomGameEventManager={RegisterListener=function(_,name,fn) listeners[name]=fn end,Send_ServerToPlayer=function(_,player,event,payload) events[#events+1]={event=event,payload=copy(payload)} end}
+CustomGameEventManager={RegisterListener=function(_,name,fn) listeners[name]=fn end,Send_ServerToPlayer=function(_,player,event,payload)
+ if event=='rpg_arena_state' then for _,name in ipairs(Json.decode(payload.state_json).catalog) do assert(name~='npc_dota_hero_wisp','commander must not be selectable') end end
+ events[#events+1]={event=event,payload=copy(payload)} end}
 local unique=0
 DoUniqueString=function() unique=unique+1;return "arena-"..unique end
 RandomInt=function(a,b) return a end

@@ -14,10 +14,11 @@ class RecruitableHeroesTests(unittest.TestCase):
         self.assertEqual(len(native['rows']), 127)
         pool = read_kv((DATA / 'heroes.kv').read_text(encoding='utf-8'))['heroes']['recruitable']
         self.assertEqual({k: len(v) for k, v in pool.items()},
-                         dict(strength=35, agility=34, intelligence=32, universal=22))
+                         dict(strength=35, agility=34, intelligence=32, universal=21))
         names = [name for group in pool.values() for name in group.values()]
-        self.assertEqual(len(names), 123)
-        self.assertEqual(len(set(names)), 123)
+        self.assertEqual(len(names), 122)
+        self.assertEqual(len(set(names)), 122)
+        self.assertNotIn('npc_dota_hero_wisp', names)
         self.assertEqual(set(names), {row['name'] for row in native['rows']} - AUTHOR['EXCLUDED'])
         skills = {r['hero'] for r in json.loads((ROOT / 'data/native_skill_conditions.json').read_text(encoding='utf-8'))['rows']}
         self.assertFalse(set(names) - skills)

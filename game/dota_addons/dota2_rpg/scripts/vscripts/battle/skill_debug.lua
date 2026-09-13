@@ -124,7 +124,7 @@ end
 function Debug.Catalog(game)
     local names, allowed = {}, {}
     local function add(hero)
-        if type(hero) == "string" and hero:match("^npc_dota_hero_[a-z0-9_]+$") and not allowed[hero] then
+        if type(hero) == "string" and hero ~= "npc_dota_hero_wisp" and hero:match("^npc_dota_hero_[a-z0-9_]+$") and not allowed[hero] then
             names[#names + 1], allowed[hero] = hero, true
         end
     end

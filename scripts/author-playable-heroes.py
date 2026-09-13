@@ -8,7 +8,7 @@ import struct
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / 'game/dota_addons/dota2_rpg/scripts/data'
-EXCLUDED = {'npc_dota_hero_' + name for name in ('earth_spirit', 'invoker', 'rubick', 'kez')}
+EXCLUDED = {'npc_dota_hero_' + name for name in ('earth_spirit', 'invoker', 'rubick', 'kez', 'wisp')}
 ATTRIBUTES = dict(DOTA_ATTRIBUTE_STRENGTH='strength', DOTA_ATTRIBUTE_AGILITY='agility',
                   DOTA_ATTRIBUTE_INTELLECT='intelligence', DOTA_ATTRIBUTE_ALL='universal')
 DEFAULT_VPK = Path('C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta/game/dota/pak01_dir.vpk')

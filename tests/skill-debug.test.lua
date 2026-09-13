@@ -251,11 +251,13 @@ test("debug catalog allows heroes outside ordinary recruitment",function()
     local previous = LoadKeyValues
     LoadKeyValues = function(path)
         eq(path,"scripts/data/debug_heroes.kv")
-        return {debug_heroes={["1"]="npc_dota_hero_invoker",["2"]="invalid_unit",["3"]=false}}
+        return {debug_heroes={['1']='npc_dota_hero_invoker',['2']='invalid_unit',['3']=false,['4']='npc_dota_hero_wisp'}}
     end
     local f,g=fixture(); local names,allowed=Debug.Catalog(g)
     LoadKeyValues = previous
     assert(allowed["npc_dota_hero_invoker"] and not allowed.invalid_unit)
+    assert(not allowed.npc_dota_hero_wisp)
+    f:emit("start",{PlayerID=7,hero="npc_dota_hero_wisp",attack_damage=100}); eq(#f.loads,0)
     eq(#names,4)
     f:emit("start",{PlayerID=7,hero="npc_dota_hero_invoker",attack_damage=100}); f:finish()
     eq(g.lineup[1],"npc_dota_hero_invoker"); eq(g.heroData.npc_dota_hero_invoker.level,30)
