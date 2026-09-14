@@ -106,6 +106,16 @@ local NEUTRAL_ITEM_SLOT = 16
 local NATIVE_TP_SLOT = 15
 -- “可搬运槽位”上界：面板、装备快照、阵容重铸与原生拖放都必须覆盖中立槽。
 local CARRIER_LAST_SLOT = NEUTRAL_ITEM_SLOT
+-- 原版合成只考虑主物品栏 0..5；背包 6..8 与储藏栏 9..14 的配件不会参与合成。
+local CARRIER_MAIN_INVENTORY_LAST_SLOT = 5
+-- 已付款但要交付的英雄满格时，订单保留下来反复重试，直到目标腾出格子完成交付；
+-- 超过保留窗口或尝试上限才放弃（物品始终留在原持有者，不销毁）。
+local NATIVE_PURCHASE_DELIVERY_RETRY_SECONDS = 600
+local NATIVE_PURCHASE_DELIVERY_RETRY_ATTEMPTS = 20000
+-- 为满格目标“腾一格”的临时搬运间隔（秒），避免每个 think 反复搬动装备。
+local NATIVE_PURCHASE_SWAP_INTERVAL = 0.5
+-- 没有游戏时间可用时（离线替身/引擎异常）按 think 次数限流：THINK_INTERVAL × 该值。
+local NATIVE_PURCHASE_SWAP_ATTEMPTS = 5
 
 -- 战场由 2400×1350 同心扩展至 3120×1755，两轴各 +30%。
 -- 准备期场上英雄只可在左侧区域排位；小精灵/待命区不受此场地钳制。
@@ -1974,19 +1984,11 @@ function CDota2RpgDemo:GetNativePurchaseRecipes()
 	return recipes
 end
 
-function CDota2RpgDemo:FindNativePurchaseCombination(purchase)
-	local current = self:CollectManagedItemIds()
-	local proof = purchase.combination_evidence
-	if proof ~= nil then
-		local state = current[proof.item_id]
-		local claim = (self.nativePurchaseClaimedIds or {})[proof.item_id]
-		if state ~= nil and state.name == proof.name and self:IsLiveItem(proof.item)
-			and (claim == nil or claim == purchase.recipient_key) then
-			return { holder = state.holder, item = proof.item, item_id = proof.item_id }
-		end
-		return nil
-	end
-	local peers, seen = { purchase }, { [purchase] = true }
+-- 同一批购买指同一目标、同一发起者、同一帧附近的订单；组合识别与散件归并共用
+-- 这个概念，避免同一批订单在两条路径上得到不同结论。
+function CDota2RpgDemo:CollectNativePurchaseBatch(purchase, seen)
+	local peers = { purchase }
+	seen = seen or { [purchase] = true }
 	for _, list in ipairs({ self.nativePurchaseOrderContexts or {}, self.pendingNativePurchases or {} }) do
 		for _, other in ipairs(list) do
 			if not seen[other] and other.recipient_key == purchase.recipient_key
@@ -2000,6 +2002,22 @@ function CDota2RpgDemo:FindNativePurchaseCombination(purchase)
 			end
 		end
 	end
+	return peers
+end
+
+function CDota2RpgDemo:FindNativePurchaseCombination(purchase)
+	local current = self:CollectManagedItemIds()
+	local proof = purchase.combination_evidence
+	if proof ~= nil then
+		local state = current[proof.item_id]
+		local claim = (self.nativePurchaseClaimedIds or {})[proof.item_id]
+		if state ~= nil and state.name == proof.name and self:IsLiveItem(proof.item)
+			and (claim == nil or claim == purchase.recipient_key) then
+			return { holder = state.holder, item = proof.item, item_id = proof.item_id }
+		end
+		return nil
+	end
+	local peers = self:CollectNativePurchaseBatch(purchase)
 	local candidates = {}
 	for id, state in pairs(current) do
 		if (purchase.before_ids or {})[id] == nil
@@ -2149,6 +2167,452 @@ function CDota2RpgDemo:FindClaimedPurchaseItem(purchase, recipient)
 		if found ~= nil then return found end
 	end
 	return nil
+end
+
+-- 本次购买涉及的配方，以及目标身上已经找到、但不在主物品栏 0..5 的配件。
+-- arriving=true 表示“这件物品还没到目标手上”，用于判断到位后是否会立刻合成；
+-- arriving=false 表示“这件物品已经在目标身上”，用于判断整套配件是否可合成。
+-- 只看包含本次购买物品的原版配方，避免替玩家擅自合成无关装备。
+function CDota2RpgDemo:DescribeNativePurchaseRecipe(purchase, itemName, recipient, arriving)
+	if purchase == nil or recipient == nil or recipient.GetItemInSlot == nil then
+		return nil
+	end
+	itemName = tostring(itemName or purchase.item_name or "")
+	if itemName == "" then
+		return nil
+	end
+	for _, recipe in ipairs(self:GetNativePurchaseRecipes()) do
+		if (recipe.parts[itemName] or 0) > 0 then
+			local needed = {}
+			for part, count in pairs(recipe.parts) do needed[part] = count end
+			if arriving then
+				needed[itemName] = needed[itemName] - 1
+			end
+			local strays = {}
+			for slot = 0, CARRIER_LAST_SLOT do
+				local held = recipient:GetItemInSlot(slot)
+				local heldName = self:IsLiveItem(held) and held.GetAbilityName ~= nil
+					and held:GetAbilityName() or nil
+				if heldName ~= nil and (needed[heldName] or 0) > 0 then
+					needed[heldName] = needed[heldName] - 1
+					if slot > CARRIER_MAIN_INVENTORY_LAST_SLOT then
+						table.insert(strays, { item = held, slot = slot })
+					end
+				end
+			end
+			local complete = true
+			for _, count in pairs(needed) do
+				if count > 0 then complete = false end
+			end
+			if complete then
+				return { recipe = recipe, strays = strays }
+			end
+		end
+	end
+	return nil
+end
+
+-- 目标身上凑齐了本次配方的其他配件，但它们躺在背包/储藏栏里：主物品栏有空位时
+-- 按同一实体提到 0..5，原版才能合成。只在有配方证据时执行，且不参与任何删改。
+function CDota2RpgDemo:PromoteNativePurchaseRecipeParts(purchase, recipient, arrival)
+	local promoted = 0
+	local promotedItems = {}
+	if arrival == nil or #arrival.strays == 0 or recipient == nil or recipient.TakeItem == nil then
+		return 0, promotedItems
+	end
+	for _, stray in ipairs(arrival.strays) do
+		if self:CountEmptyMainInventorySlots(recipient) == 0 then
+			break
+		end
+		local item = stray.item
+		if self:IsLiveItem(item) and self:IsItemHeldBy(recipient, item, 0, CARRIER_LAST_SLOT) then
+			local ok = pcall(function() recipient:TakeItem(item) end)
+			if ok and not self:IsItemHeldBy(recipient, item, 0, CARRIER_LAST_SLOT) then
+				if self:TryAttachItem(recipient, item) then
+					promoted = promoted + 1
+					table.insert(promotedItems, { item = item, slot = stray.slot })
+				else
+					self:PreserveDetachedItem(item, recipient, "recipe part promotion failed")
+					break
+				end
+			end
+		end
+	end
+	if promoted > 0 then
+		print(string.format("[Dota2Rpg] Native purchase %s: promoted %d recipe part(s) into the main inventory.",
+			tostring(purchase.item_name), promoted))
+	end
+	return promoted, promotedItems
+end
+
+-- 目标物品栏已满时，挑一件与本次合成无关的主物品栏装备临时挪走腾格。
+-- 只考虑 0..5：原版 AddItem 优先填主物品栏，这也是合成发生的位置。
+function CDota2RpgDemo:FindNativePurchaseSwapCandidate(recipient, purchase, skipNames)
+	if recipient == nil or recipient.GetItemInSlot == nil then
+		return nil, nil
+	end
+	local total = CARRIER_MAIN_INVENTORY_LAST_SLOT + 1
+	local cursor = tonumber(purchase ~= nil and purchase.swap_cursor) or 0
+	for offset = 0, CARRIER_MAIN_INVENTORY_LAST_SLOT do
+		local slot = (cursor + offset) % total
+		local item = recipient:GetItemInSlot(slot)
+		if self:IsLiveItem(item) and item.GetAbilityName ~= nil then
+			local name = item:GetAbilityName()
+			-- 成长装备（格里格里/艾德之证）与本次合成所需配件都不参与临时搬运。
+			if name ~= GrisGris.ITEM and name ~= EldwurmsEdda.ITEM
+				and not (skipNames ~= nil and skipNames[name]) then
+				if purchase ~= nil then purchase.swap_cursor = (slot + 1) % total end
+				return slot, item
+			end
+		end
+	end
+	return nil, nil
+end
+
+-- 把临时挪走的装备放回目标；放不回去时报 false，由调用方决定排队重试。
+function CDota2RpgDemo:TryReattachNativePurchaseSwapItem(item, holder, recipient)
+	if not self:IsLiveItem(item) or recipient == nil then
+		return false
+	end
+	if self:IsItemHeldBy(recipient, item, 0, CARRIER_LAST_SLOT) then
+		return true
+	end
+	if not self:IsEquipmentCarrier(recipient) or self:FindEmptyCarrierSlot(recipient) == nil then
+		return false
+	end
+	if holder ~= nil and self:IsItemHeldBy(holder, item, 0, CARRIER_LAST_SLOT) then
+		pcall(function() holder:TakeItem(item) end)
+		if self:IsItemHeldBy(holder, item, 0, CARRIER_LAST_SLOT) then
+			return false
+		end
+	end
+	if not self:TryAttachItem(recipient, item) then
+		if holder ~= nil and not self:TryAttachItem(holder, item) then
+			self:PreserveDetachedItem(item, holder, "swap return failed")
+		end
+		return false
+	end
+	local heroName = self:GetEquipmentHeroName(recipient)
+	if heroName ~= nil then
+		self:SyncHeroInventoryFromUnit(recipient)
+	end
+	return true
+end
+
+-- 临时装备暂时放不回目标时进入待归还队列，后续每个 think 继续尝试，绝不删除。
+function CDota2RpgDemo:QueueNativePurchaseSwapReturn(item, holder, recipient, recipient_key)
+	if not self:IsLiveItem(item) or recipient == nil then
+		return false
+	end
+	self.nativePurchaseSwapReturns = self.nativePurchaseSwapReturns or {}
+	local id = self:GetItemEntityId(item)
+	for _, entry in ipairs(self.nativePurchaseSwapReturns) do
+		if entry.item == item or (id ~= "" and entry.item_id == id) then
+			return false
+		end
+	end
+	table.insert(self.nativePurchaseSwapReturns, {
+		item = item,
+		item_id = id,
+		holder = holder,
+		recipient = recipient,
+		recipient_key = recipient_key,
+		created_at = self:GetNativePurchaseClock() or 0,
+	})
+	print(string.format("[Dota2Rpg] Native purchase swap: %s waits with the source until %s has a free slot.",
+		item.GetAbilityName ~= nil and item:GetAbilityName() or "item",
+		tostring(self:GetEquipmentHeroName(recipient) or recipient_key or "target")))
+	return true
+end
+
+-- 每个 think 归还待归还的临时装备；目标腾出格子后自动放回。
+function CDota2RpgDemo:ReturnNativePurchaseSwapItems()
+	local queue = self.nativePurchaseSwapReturns
+	if queue == nil or #queue == 0 then
+		return
+	end
+	local clock = self:GetNativePurchaseClock() or 0
+	local remaining = {}
+	for _, entry in ipairs(queue) do
+		local item = entry.item
+		local recipient = entry.recipient
+		if recipient == nil and entry.recipient_key ~= nil then
+			recipient = self:ResolveNativePurchaseRecipient(entry.recipient_key)
+		end
+		local holder = self:FindEquipmentItemHolder(item)
+		if not self:IsLiveItem(item) then
+			-- 玩家已经取走或原版已经合成：无需归还。
+		elseif recipient ~= nil and holder == recipient then
+			-- 已经回到目标手上。
+		elseif self:TryReattachNativePurchaseSwapItem(item, holder or entry.holder, recipient) then
+			-- 归还完成。
+		elseif clock > 0 and entry.created_at > 0
+			and clock - entry.created_at > NATIVE_PURCHASE_DELIVERY_RETRY_SECONDS then
+			print(string.format("[Dota2Rpg] WARNING: swapped %s stayed with the source carrier; %s had no free slot.",
+				tostring(item.GetAbilityName ~= nil and item:GetAbilityName() or entry.item_id),
+				tostring(recipient ~= nil and self:GetEquipmentHeroName(recipient) or entry.recipient_key or "target")))
+		else
+			table.insert(remaining, entry)
+		end
+	end
+	self.nativePurchaseSwapReturns = remaining
+end
+
+-- 已付款但尚未交付的订单：同一物品实体还在、且未超过保留窗口时继续重试。
+-- 目标腾出格子后会自动补齐，散件不会再永久留在别的载体上。
+function CDota2RpgDemo:ShouldRetryNativePurchaseDelivery(purchase)
+	if purchase == nil or not purchase.awaiting_delivery then
+		return false
+	end
+	if (purchase.attempts or 0) > NATIVE_PURCHASE_DELIVERY_RETRY_ATTEMPTS then
+		return false
+	end
+	local clock = self:GetNativePurchaseClock() or 0
+	local since = tonumber(purchase.awaiting_since)
+	if clock > 0 and since ~= nil and since > 0 and clock - since > NATIVE_PURCHASE_DELIVERY_RETRY_SECONDS then
+		return false
+	end
+	local tracked = purchase.awaiting_item
+	if tracked ~= nil and not self:IsLiveItem(tracked) then
+		-- 实体已被原版合成/出售/移除：这次购买已经不再是“待交付”。
+		return false
+	end
+	return true
+end
+
+-- 为满格目标腾格属于“重”操作：按游戏时间限流；缺少游戏时间时按 think 次数限流，
+-- 避免卡在同一状态下每个 think 反复搬动玩家装备。
+function CDota2RpgDemo:IsNativePurchaseAssistThrottled(purchase)
+	if purchase == nil then
+		return true
+	end
+	local clock = self:GetNativePurchaseClock() or 0
+	local attempts = purchase.attempts or 0
+	if clock > 0 then
+		local last = tonumber(purchase.last_assist_clock)
+		if last ~= nil and clock - last < NATIVE_PURCHASE_SWAP_INTERVAL then
+			return true
+		end
+		purchase.last_assist_clock = clock
+		return false
+	end
+	local last = tonumber(purchase.last_assist_attempt)
+	if last ~= nil and attempts - last < NATIVE_PURCHASE_SWAP_ATTEMPTS then
+		return true
+	end
+	purchase.last_assist_attempt = attempts
+	return false
+end
+
+-- 主物品栏空位统计（0..5）。原版合成只发生在这里。
+function CDota2RpgDemo:CountEmptyMainInventorySlots(unit)
+	local free = 0
+	if unit == nil or unit.GetItemInSlot == nil then
+		return 0
+	end
+	for slot = 0, CARRIER_MAIN_INVENTORY_LAST_SLOT do
+		if not self:IsLiveItem(unit:GetItemInSlot(slot)) then
+			free = free + 1
+		end
+	end
+	return free
+end
+
+-- 目标收不下本次购买时的“合成辅助交付”：原版合成要求全部配件同时在主物品栏
+-- 0..5，所以先把躺在背包/储藏栏里的配件提上来，必要时临时挪走与合成无关的装备
+-- 腾出主物品栏格，交付后再把临时装备放回。任何一步失败都尽量恢复原状，
+-- 绝不删除、也绝不同名重建物品。
+function CDota2RpgDemo:TryDeliverNativePurchaseWithAssist(purchase, recipient, found)
+	if purchase == nil or recipient == nil or not self:IsLiveItem(found ~= nil and found.item) then
+		return false, "no-item"
+	end
+	local site = found.holder
+	if site == nil or site == recipient or not self:IsEquipmentCarrier(site) then
+		return false, "no-assist-site"
+	end
+	if self:FindEmptyCarrierSlot(recipient) ~= nil then
+		return false, "recipient-has-room"
+	end
+	-- 只有“这件物品一到目标手上就会合成”时才值得动玩家的其他装备。
+	local arrival = self:DescribeNativePurchaseRecipe(purchase, purchase.item_name, recipient, true)
+	if arrival == nil then
+		return false, "no-combination-on-arrival"
+	end
+	if self:IsNativePurchaseAssistThrottled(purchase) then
+		return false, "assist-throttled"
+	end
+	-- 主物品栏需要容纳“其他配件 + 这件物品本身”，不足的格数用临时搬运补齐。
+	local extras = #arrival.strays + 1 - self:CountEmptyMainInventorySlots(recipient)
+	if extras < 0 then extras = 0 end
+	if extras > 0 and self:FindEmptyCarrierSlot(site) == nil then
+		return false, "no-assist-site-room"
+	end
+	local skip = {}
+	for part in pairs(arrival.recipe.parts) do skip[part] = true end
+	local swapped = {}
+	for _ = 1, extras do
+		if self:FindEmptyCarrierSlot(site) == nil then
+			break
+		end
+		local _, candidate = self:FindNativePurchaseSwapCandidate(recipient, purchase, skip)
+		if candidate == nil then
+			break
+		end
+		local okDetach = pcall(function() recipient:TakeItem(candidate) end)
+		if not okDetach or self:IsItemHeldBy(recipient, candidate, 0, CARRIER_LAST_SLOT) then
+			break
+		end
+		if not self:TryAttachItem(site, candidate) then
+			self:TryReattachNativePurchaseSwapItem(candidate, site, recipient)
+			break
+		end
+		table.insert(swapped, candidate)
+	end
+	if #swapped < extras then
+		-- 腾不出足够的主物品栏格：恢复原状等下一次重试。
+		for _, item in ipairs(swapped) do
+			if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+				self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+			end
+		end
+		return false, "no-assist-candidates"
+	end
+
+	-- 把背包/储藏栏里的配件提到主物品栏，再交付本次购买的实体。
+	self:PromoteNativePurchaseRecipeParts(purchase, recipient, arrival)
+	local delivered = self:TryAttachItem(recipient, found.item)
+	local gone = not self:IsLiveItem(found.item)
+	local placed = self:IsItemHeldBy(recipient, found.item, 0, CARRIER_LAST_SLOT)
+	-- 合成（或同名堆叠）已经消费掉到达的实体时，交付同样算成功。
+	if placed or gone then
+		if self:FindEmptyCarrierSlot(recipient) ~= nil then
+			for _, item in ipairs(swapped) do
+				if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+					self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+				end
+			end
+			purchase.transfer_decision = "delivered-after-assist"
+			return true, "delivered-after-assist"
+		end
+	end
+	-- 没有腾出格子：把刚到达的实体退回来源，再恢复被临时挪走的装备。
+	if placed and self:IsLiveItem(found.item) then
+		pcall(function() recipient:TakeItem(found.item) end)
+		if not self:IsItemHeldBy(recipient, found.item, 0, CARRIER_LAST_SLOT) then
+			if not self:TryAttachItem(site, found.item) then
+				self:PreserveDetachedItem(found.item, site, "assist rollback failed")
+			end
+			self.nativePurchaseClaimedIds = self.nativePurchaseClaimedIds or {}
+			self.nativePurchaseClaimedIds[found.item_id] = nil
+		end
+	end
+	for _, item in ipairs(swapped) do
+		if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+			self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+		end
+	end
+	if delivered and gone then
+		-- 实体已被原版消费（例如并进同名堆），购买已经完成，只把临时装备排队归还。
+		for _, item in ipairs(swapped) do
+			self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+		end
+		purchase.transfer_decision = "delivered-after-assist-return-pending"
+		return true, "delivered-after-assist-return-pending"
+	end
+	return false, "assist-rolled-back"
+end
+
+-- 本次购买已经交付，但整套配件没有同时落在主物品栏（例如后到的配件被原版放进了
+-- 背包）：原版不会合成。这里把配件提进 0..5，主物品栏不足时临时腾格；合成完成后
+-- 把临时装备放回，合成没有发生则把临时装备放回并尽量恢复原槽位。
+function CDota2RpgDemo:TryFitNativePurchaseRecipeIntoMainInventory(purchase, recipient, site)
+	local assembly = self:DescribeNativePurchaseRecipe(purchase, purchase.item_name, recipient, false)
+	if assembly == nil or #assembly.strays == 0 then
+		return false
+	end
+	if self:IsNativePurchaseAssistThrottled(purchase) then
+		return false
+	end
+	local extras = #assembly.strays - self:CountEmptyMainInventorySlots(recipient)
+	if extras < 0 then extras = 0 end
+	local skip = {}
+	for part in pairs(assembly.recipe.parts) do skip[part] = true end
+	local swapped = {}
+	if extras > 0 then
+		if site == nil or self:FindEmptyCarrierSlot(site) == nil then
+			return false
+		end
+		for _ = 1, extras do
+			if self:FindEmptyCarrierSlot(site) == nil then
+				break
+			end
+			local _, candidate = self:FindNativePurchaseSwapCandidate(recipient, purchase, skip)
+			if candidate == nil then
+				break
+			end
+			local okDetach = pcall(function() recipient:TakeItem(candidate) end)
+			if not okDetach or self:IsItemHeldBy(recipient, candidate, 0, CARRIER_LAST_SLOT) then
+				break
+			end
+			if not self:TryAttachItem(site, candidate) then
+				self:TryReattachNativePurchaseSwapItem(candidate, site, recipient)
+				break
+			end
+			table.insert(swapped, candidate)
+		end
+		if #swapped < extras then
+			for _, item in ipairs(swapped) do
+				if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+					self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+				end
+			end
+			return false
+		end
+	end
+
+	local _, promotedItems = self:PromoteNativePurchaseRecipeParts(purchase, recipient, assembly)
+	local combined = false
+	for _, entry in ipairs(promotedItems) do
+		if not self:IsLiveItem(entry.item) then
+			combined = true
+		end
+	end
+	if not combined then
+		-- 没有合成：把提上来的配件送回原槽位，再归还临时装备，保持原状。
+		for index = #promotedItems, 1, -1 do
+			local entry = promotedItems[index]
+			if self:IsLiveItem(entry.item) and entry.slot > CARRIER_MAIN_INVENTORY_LAST_SLOT
+				and recipient.SwapItems ~= nil and not self:IsLiveItem(recipient:GetItemInSlot(entry.slot)) then
+				local currentSlot = nil
+				for slot = 0, CARRIER_LAST_SLOT do
+					if recipient:GetItemInSlot(slot) == entry.item then
+						currentSlot = slot
+						break
+					end
+				end
+				if currentSlot ~= nil and currentSlot <= CARRIER_MAIN_INVENTORY_LAST_SLOT then
+					pcall(function() recipient:SwapItems(currentSlot, entry.slot) end)
+				end
+			end
+		end
+		for _, item in ipairs(swapped) do
+			if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+				self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+			end
+		end
+		return false
+	end
+
+	for _, item in ipairs(swapped) do
+		if not self:TryReattachNativePurchaseSwapItem(item, site, recipient) then
+			self:QueueNativePurchaseSwapReturn(item, site, recipient, purchase.recipient_key)
+		end
+	end
+	print(string.format("[Dota2Rpg] Native purchase %s: combined on %s from %d promoted part(s).",
+		tostring(purchase.item_name),
+		tostring(self:GetEquipmentHeroName(recipient) or purchase.recipient_key),
+		#promotedItems))
+	return true
 end
 
 function CDota2RpgDemo:SplitMergedPurchaseStack(purchase, claimed, recipient)
@@ -2379,6 +2843,8 @@ function CDota2RpgDemo:DebitNativePurchase(purchase, walletState)
 end
 
 function CDota2RpgDemo:RoutePendingNativePurchases()
+	-- 先归还上一轮“换格交付”临时挪走的装备；目标腾出格子后会自动放回。
+	self:ReturnNativePurchaseSwapItems()
 	local pending = self.pendingNativePurchases or {}
 	self.nativePurchaseObservedStates = self.nativePurchaseObservedStates or {}
 	local observed = self.nativePurchaseObservedStates
@@ -2455,30 +2921,70 @@ function CDota2RpgDemo:RoutePendingNativePurchases()
 				else
 					local itemNameForLog = found.item.GetAbilityName ~= nil and found.item:GetAbilityName() or purchase.item_name
 					found.holder:TakeItem(found.item)
-					if not self:TryAttachItem(recipient, found.item) then
-						local preserved = self:PreserveDetachedItem(found.item, found.holder, "direct purchase routing failed")
-						purchase.transfer_decision = preserved and "attachment-failed-preserved" or "attachment-failed"
-						self.nativePurchaseClaimedIds[found.item_id] = nil
-					else
+					-- 目标身上已有本次配方的其他配件时，先把它们从背包/储藏栏提到主物品栏，
+					-- 原版才会在目标身上合成，而不是把结果留在别的载体上。
+					local arrival = self:DescribeNativePurchaseRecipe(purchase, purchase.item_name, recipient, true)
+					self:PromoteNativePurchaseRecipeParts(purchase, recipient, arrival)
+					local delivered = self:TryAttachItem(recipient, found.item)
+					if not delivered then
+						-- 目标满格：先试“合成辅助交付”，让原版在目标身上完成合成。
+						delivered = self:TryDeliverNativePurchaseWithAssist(purchase, recipient, found) == true
+					end
+					if delivered then
+						-- 交付但原版没有合成（例如配件分散在主物品栏和背包）：把整套配件
+						-- 凑进主物品栏，合成完成后临时挪动的装备自动放回。
+						if self:TryFitNativePurchaseRecipeIntoMainInventory(purchase, recipient, found.holder) then
+							purchase.transfer_decision = "delivered-after-assembly"
+						elseif purchase.transfer_decision == nil
+							or purchase.transfer_decision == "attachment-failed"
+							or purchase.transfer_decision == "attachment-failed-preserved" then
+							-- 清掉上一次失败留下的决定，避免日志把成功记成失败。
+							purchase.transfer_decision = "delivered"
+						end
 						local heroName = self:GetEquipmentHeroName(recipient)
 						if heroName ~= nil then
 							self:SyncHeroInventoryFromUnit(recipient)
 						end
 						print(string.format("[Dota2Rpg] Native purchase routed: %s -> %s.",
 							itemNameForLog, tostring(purchase.recipient_key)))
+						routed = true
+					else
+						-- 目标暂时收不下：物品原样留在原持有者，订单保留继续重试，
+						-- 目标腾出格子（例如合成完成）后自动补齐。
+						local preserved = self:PreserveDetachedItem(found.item, found.holder, "direct purchase routing failed")
+						purchase.transfer_decision = preserved and "attachment-failed-preserved" or "attachment-failed"
+						self.nativePurchaseClaimedIds[found.item_id] = nil
+						if preserved and purchase.awaiting_delivery == nil then
+							purchase.awaiting_delivery = true
+							purchase.awaiting_since = self:GetNativePurchaseClock() or 0
+							purchase.awaiting_item_id = found.item_id
+							purchase.awaiting_item = found.item
+							self:LogNativePurchase(purchase, "transfer", "awaiting-space")
+						end
+						routed = false
 					end
-					routed = true
 				end
 			end
 		end
-		if routed or purchase.attempts >= 10 then
-			self:LogNativePurchase(purchase, "transfer", purchase.gold_failed and "unpaid-reverted" or purchase.transfer_decision or (routed and "resolved" or "item-not-found"))
-		end
-		if not routed and purchase.attempts < 10 then
+		local retry_delivery = not routed and self:ShouldRetryNativePurchaseDelivery(purchase)
+		if routed then
+			purchase.awaiting_delivery = nil
+			purchase.awaiting_item = nil
+			self:LogNativePurchase(purchase, "transfer", purchase.gold_failed and "unpaid-reverted"
+				or purchase.transfer_decision or "resolved")
+		elseif retry_delivery or purchase.attempts < 10 then
+			-- 已付款但目标满格时保留订单反复重试，物品始终留在原持有者。
 			table.insert(remaining, purchase)
-		elseif not routed then
-			print(string.format("[Dota2Rpg] WARNING: could not locate purchased item %s for %s; kept native result.",
-				tostring(purchase.item_name), tostring(purchase.recipient_key)))
+		else
+			self:LogNativePurchase(purchase, "transfer", purchase.transfer_decision or "item-not-found")
+			if purchase.awaiting_delivery then
+				print(string.format("[Dota2Rpg] Native purchase %s for %s was never delivered; the item stays with the source carrier.",
+					tostring(purchase.item_name), tostring(purchase.recipient_key)))
+				purchase.awaiting_delivery = nil
+			else
+				print(string.format("[Dota2Rpg] WARNING: could not locate purchased item %s for %s; kept native result.",
+					tostring(purchase.item_name), tostring(purchase.recipient_key)))
+			end
 		end
 	end
 	self.pendingNativePurchases = remaining
