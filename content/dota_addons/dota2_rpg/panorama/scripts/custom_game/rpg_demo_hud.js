@@ -171,6 +171,14 @@
         var ally = kind === "specified_ally";
         var team = ally ? side : (side === "Radiant" ? "Dire" : "Radiant"), result = [];
         (HEROES[team] || []).forEach(function (hero, index) {
+            // Specified enemies own their chapter-qualified identity in the roster;
+            // independently delivered capability slots need not exist or share its positions.
+            if (!ally) {
+                if (!hero.target_actor || !hero.name || !isFinite(hero.entityIndex) || hero.entityIndex < 0) { return; }
+                result.push({actor: hero.target_actor, name: hero.name,
+                    label: localizeHeroName(hero.name) + " · " + (index + 1)});
+                return;
+            }
             var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
             if (!entry || !(ally ? entry.rule_key : entry.target_actor) || entry.name !== hero.name || entry.hero_index < 0
                 || (hero.entityIndex !== undefined && entry.hero_index !== hero.entityIndex)) { return; }
@@ -2043,7 +2051,7 @@
     function onEnemyRoster(data) {
         if (!acceptRuleGeneration(data)) { return; }
         var roster = eventArray(data.units);
-        var signature = roster.map(function (u) { return u.id + ":" + u.name; }).join(";");
+        var signature = roster.map(function (u) { return u.id + ":" + u.name + ":" + (u.target_actor || ""); }).join(";");
         if (signature === enemyRosterSignature) { return; }
         enemyRosterSignature = signature;
         // Keep enemy identities for condition target pickers, without an enemy editor.
@@ -2056,7 +2064,7 @@
             }
         });
         HEROES.Dire = roster.map(function (unit) {
-            return { name: unit.name, entityIndex: Number(unit.id) };
+            return { name: unit.name, entityIndex: Number(unit.id), target_actor: unit.target_actor };
         });
 
     }
@@ -2181,7 +2189,7 @@
         note.text = "";
         if (!data) { return; }
         if (rankStatus !== "success") {
-            note.text = rankText("rank_" + (["pending", "error", "disabled", "ineligible"].indexOf(rankStatus) >= 0 ? rankStatus : "error"));
+            note.text = rankText("rank_" + (["pending", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error"));
             return;
         }
         var prefix = rankBoard + "_";
@@ -2254,7 +2262,7 @@
         $("#RunScoreValue").text = String(Math.max(0, Math.floor(Number(data.score) || 0)));
         $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0]);
         $("#RunMetrics").text = rankText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
-        var status = ["pending", "success", "error", "disabled", "ineligible"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
+        var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
         $("#RunRankStatus").text = rankText("rank_" + status);
         $("#RunRankStatus").SetHasClass("RankError", status === "error" || status === "disabled");
         var congratulations = [];

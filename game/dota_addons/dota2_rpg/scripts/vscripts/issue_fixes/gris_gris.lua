@@ -127,7 +127,9 @@ function Gris.OnKilled(game, killed)
     if lost and state.lossSnapshot and killed == state.hero and not state.consumed then
         -- Only actual owner death losses are deposits. Reliable gold has no
         -- death loss; another roster hero sharing the wallet is not the owner.
-        state.base = (state.base or state.gold) + math.max(0, lost - state.lossSnapshot)
+        local deposit = math.max(0, lost - state.lossSnapshot)
+        state.deathDeposits = (state.deathDeposits or 0) + deposit
+        state.base = (state.base or state.gold) + deposit
         Gris.Update(game, killed)
     end
     state.lossSnapshot = lost
@@ -151,7 +153,9 @@ end
 function Gris.Gold(game)
     local data = game.heroData and game.heroData[Gris.HERO]
     local state = data and data.grisGris
-    return state and not state.consumed and state.gold or 0
+    if not state or state.consumed then return 0 end
+    local principal = math.min(state.gold, state.deathDeposits or 0)
+    return principal + require("battle.campaign_difficulty").Scale(game, state.gold - principal)
 end
 
 -- Caller validates phase, player, exact entity/holder and pending purchases.
@@ -160,7 +164,8 @@ function Gris.Redeem(game, hero, item)
     if not state or state.consumed or state.item ~= item then return false, "not_owned", 0 end
     if hero.RemoveItem == nil then return false, "unavailable", 0 end
     Gris.Update(game, hero)
-    local saved = state.gold
+    -- Deposited wallet losses are returned principal, not newly earned income.
+    local saved = Gris.Gold(game)
     local before = game:GetGoldBalance()
     game.itemSaleInProgress = true
     -- The RPG bank has one payout authority. Remove this exact owned item

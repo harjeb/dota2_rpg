@@ -257,7 +257,9 @@ targetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:900,hero
     can_edit:1,rules_ready:1,actions_text:"attack",rules:[{action:"attack",enabled:1,target_team:"enemy"}]});
 var targetRoster = [{id:901,name:lion},{id:902,name:lion},{id:903,name:"npc_dota_neutral_centaur_khan"},{id:904,name:"npc_dota_roshan"}];
 function feedTargets(level, roster) {
-    targetHud.subscriptions.rpg_enemy_roster({units:roster});
+    targetHud.subscriptions.rpg_enemy_roster({units:roster.map(function(unit,index) {
+        return {id:unit.id,name:unit.name,target_actor:level+":enemy:"+unit.name+":"+index};
+    })});
     roster.forEach(function(unit,index) {
         targetHud.subscriptions.rpg_hero_slots({slot_key:"dire_"+(index+1),hero_index:unit.id,hero_name:unit.name,
             target_actor:level+":enemy:"+unit.name+":"+index,can_edit:1,rules_ready:1,actions_text:"attack"});
@@ -303,7 +305,7 @@ assert(!panel(targetHud,"DireEditor") && !panel(targetHud,"DireRuleSettings0"),"
 // A late slot message cannot resurrect an entity replaced in the current roster.
 targetHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:999,hero_name:lion,target_actor:"ch04:enemy:"+lion+":0"});
 click(targetHud,"RadiantRuleSettings0"); choice(targetHud,"V2_target0","specified_enemy"); click(targetHud,"V2_target0_target_actor");
-assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===1,"mismatched current entity excludes stale slot metadata");
+assert(panel(targetHud,"V2_target0_target_actorMenu").children.length===2,"stale slot metadata cannot hide the current roster-owned target");
 var beforeFight=targetHud.sentEvents.filter(function(e){return e.name==="rpg_update_rule";}).length;
 targetHud.subscriptions.rpg_battle_state({phase:"fight"});
 assert(panel(targetHud,"RuleSettings").BHasClass("Hidden"),"fight closes prep picker");
@@ -849,7 +851,7 @@ assert(!panel(livesHud,"StartBattleButton").enabled
         can_edit:1,rules_ready:1,actions_text:"attack;sustained_move;"+ability,details_text:"attack;unknown_movement_metadata;"+ability,
         abilities_text:ability+";item_blink;attack;sustained_move",
         rules:[{action:"attack",enabled:1,target_team:"enemy",use_conditions:[{type:"elapsed_gte",seconds:7,value:7}]}]});
-    moveHud.subscriptions.rpg_enemy_roster({units:[{id:981,name:lion}]});
+    moveHud.subscriptions.rpg_enemy_roster({units:[{id:981,name:lion,target_actor:"level:enemy:lion"}]});
     moveHud.subscriptions.rpg_hero_slots({slot_key:"dire_1",hero_index:981,hero_name:lion,rule_key:"enemy:lion",target_actor:"level:enemy:lion",actions_text:"attack;lion_impale",abilities_text:"lion_impale"});
     click(moveHud,"RadiantAddRule0");
     // New rows precede attack by default. This fixture deliberately moves the

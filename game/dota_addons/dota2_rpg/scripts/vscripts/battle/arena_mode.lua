@@ -44,6 +44,7 @@ function Arena.Publish(g,playerId)
         can_export=(Arena.CanEdit(g) or s.phase=="finished") and s.mode=="arena",practice=s.practice==true,test_result=s.test_result,error=s.error or "",
         rating_before=s.rating_before,rating_after=s.rating_after,rating_change=s.rating_change,perfect_bonus=s.perfect_bonus}
     publishEvent(g,"rpg_arena_state",{state_json=Json.encode(out)})
+    if g.campaignDifficultyInstalled then require("battle.campaign_difficulty").Publish(g, playerId) end
 end
 local function change(g,s,phase,err)
     if not current(g,s) then return end

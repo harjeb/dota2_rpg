@@ -104,6 +104,7 @@ function C:Pay(target, amount, source)
     if amount <= 0 or not self:Eligible(target) then return end
     local hero = self:GetParent()
     local game = hero.rpgJinadaGame
+    amount = require("battle.campaign_difficulty").Scale(game, amount)
     game:AddGold(amount)
     if SendOverheadEventMessage and OVERHEAD_ALERT_GOLD then
         SendOverheadEventMessage(call(PlayerResource,"GetPlayer",game.playerId),OVERHEAD_ALERT_GOLD,hero,amount,nil)

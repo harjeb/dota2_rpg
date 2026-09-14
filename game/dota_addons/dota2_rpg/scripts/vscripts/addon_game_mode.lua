@@ -507,6 +507,7 @@ function CDota2RpgDemo:InitGameMode()
 		error("[Dota2Rpg] TacticBridge install failed: " .. tostring(installErr))
 	end
 	SkillDebug.Install(self)
+	require("battle.campaign_difficulty").Install(self)
 	-- 天梯暂不开放：直接进入 PVE。重新开放时与 HUD 的 arena_hud.js include 一起恢复。
 	-- require("battle.arena_integration").Install(self)
 	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 gris-gris-v1 loaded; log=console.log (-condebug)")
@@ -4724,6 +4725,11 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	-- 时间奖励上限为基础金币的 10%，且只由服务端计算一次。
 	local timeBonus = winner == "radiant" and self:CalculateTimeBonus(baseGold, clearTime, timeLimit) or 0
+	local difficulty = require("battle.campaign_difficulty")
+	-- Scale each earned stream once, before the bench share; never AddGold/AddXpToHero.
+	baseGold = difficulty.Scale(self, baseGold)
+	timeBonus = difficulty.Scale(self, timeBonus)
+	baseXp = difficulty.Scale(self, baseXp)
 	local activeXp = baseXp
 	local benchXp = math.floor(baseXp * ((ProgressionData and ProgressionData.BENCH_XP_RATE) or 0.5))
 
@@ -4739,6 +4745,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 
 	local settlement = {
 		settlement_generation = settlementGeneration,
+		campaign_difficulty = difficulty.Name(self),
+		reward_multiplier = difficulty.Multiplier(self),
+		difficulty_version = difficulty.VERSION,
 		level = self.currentLevelId,
 		winner = winner,
 		gold = winner == "radiant" and (baseGold + timeBonus) or 0,

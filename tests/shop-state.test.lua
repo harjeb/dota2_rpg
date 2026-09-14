@@ -48,6 +48,7 @@ require = function(name)
         ["data.campaign_loot_catalog"] = moduleRoot .. "data/campaign_loot_catalog.lua",
 		["battle.boss_scaling"] = moduleRoot .. "battle/boss_scaling.lua",
 		["battle.run_lives"] = moduleRoot .. "battle/run_lives.lua",
+        ["battle.campaign_difficulty"] = moduleRoot .. "battle/campaign_difficulty.lua",
 		["battle.respawn_policy"] = moduleRoot .. "battle/respawn_policy.lua",
 		["battle/summon_behavior"] = moduleRoot .. "battle/summon_behavior.lua",
 		["issue_fixes/tiny_tree"] = moduleRoot .. "issue_fixes/tiny_tree.lua",

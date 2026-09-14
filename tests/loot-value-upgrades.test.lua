@@ -26,6 +26,16 @@ Loot.Roll=function() return {axe,axe,axe} end
 local earned=Loot.Award(game,config,function(a) return a end)
 assert(#earned==3 and #Lives.Ensure(game).pendingCampaignLoot==3,'one improved reward per original gate, no doubled copies')
 for _,name in ipairs(earned) do assert(choices[name],'Award actually enqueues upgraded equipment') end
+for _,difficulty in ipairs({'easy','hard'}) do
+ local g={campaignDifficulty=difficulty,currentLevelId='ch04',GetStashUnit=function() return nil end}
+ local names=Loot.Award(g,config,function(a) return a end)
+ local expected=Loot.ScaleEquipment(g,Loot.UpgradeEquipment(axe,function(a) return a end),function(a) return a end)
+ assert(#names==3 and #Lives.Ensure(g).pendingCampaignLoot==3)
+ for _,name in ipairs(names) do assert(name==expected.delivery,'scale post-upgrade value exactly once') end
+ Loot.Flush(g);Loot.Flush(g)
+ assert(#Lives.Ensure(g).pendingCampaignLoot==3,'delivery retries neither reroll nor multiply')
+ for _,pending in ipairs(Lives.Ensure(g).pendingCampaignLoot) do assert(pending.delivery==expected.delivery) end
+end
 Loot.Roll=original
 local fresh={currentLevelId='ch04',GetStashUnit=function() return nil end}
 local function first(a) return a or 0 end

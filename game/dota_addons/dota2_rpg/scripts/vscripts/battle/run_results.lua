@@ -1,6 +1,7 @@
 local Score = require("battle.run_score")
 local Json = require("lib.json")
 local Config = require("data.leaderboard_config")
+local Difficulty = require("battle.campaign_difficulty")
 local Results = {}
 local function now() return GameRules:GetGameTime() end
 local function flag(value) return value == true or value == 1 end
@@ -121,6 +122,11 @@ local function acceptResponse(run, data)
 end
 
 function Results.Submit(game, run)
+    if not Difficulty.Ranked(game) then
+        run.payload = nil
+        if run.result then run.result.status = "difficulty_unranked" end
+        return
+    end
     if run.submitted then return end
     run.submitted = true
     if type(Config.endpoint) ~= "string" or not Config.endpoint:match("^https://") or not CreateHTTPRequestScriptVM then
@@ -181,9 +187,15 @@ function Results.Finish(game, cleared, settlement)
     local summary = Score.Calculate(game.runLives and game.runLives.remaining, run.completed, run.remainingMs, cleared)
     summary.settlement_generation = game.settlementGeneration
     summary.status = "pending"
+    for name, value in pairs(Difficulty.Metadata(game)) do summary[name] = value end
     run.result = summary
     settlement.run_complete = 1
     for name, value in pairs(summary) do settlement[name] = value end
+    if not Difficulty.Ranked(game) then
+        summary.status = "difficulty_unranked"
+        settlement.status = summary.status
+        return summary
+    end
     local account = safeCall(PlayerResource, "GetSteamAccountID", game.playerId)
     local steamId = Results.SteamId(account)
     if not steamId or not run.eligible or (cleared and run.completed ~= Score.TOTAL_STAGES) then

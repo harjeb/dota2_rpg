@@ -55,6 +55,13 @@ end
 local function payout(g,h,s)
     return {PlayerID=0,hero=Gris.HERO,item=Gris.ITEM,item_index=s.item.id}
 end
+for _,case in ipairs({{"easy",20},{"default",15},{"hard",12}}) do
+    local game,unit,state=setup();game.campaignDifficulty=case[1]
+    time=30;Gris.OnThink(game);lost=5;Gris.OnKilled(game,unit)
+    local ok,_,amount=Gris.Redeem(game,unit,state.item)
+    assert(ok and amount==case[2] and game.balance==100+case[2],"only earned bank ticks scale; returned death principal stays fixed")
+    assert(not Gris.Redeem(game,unit,state.item),"redemption cannot multiply twice")
+end
 local g,h,s=setup()
 -- Fallback accrues in preparation/fight/result and game-time pause accrues zero.
 for _,case in ipairs({{2.99,0,"setup"},{3,1,"setup"},{30.5,10,"fight"},{30.5,10,"result"}}) do

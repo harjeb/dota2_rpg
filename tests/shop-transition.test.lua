@@ -10,6 +10,7 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
+    if name == "battle.campaign_difficulty" then return dofile(moduleRoot .. "battle/campaign_difficulty.lua") end
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name == "issue_fixes.bootstrap" or name == "battle.skill_debug" then return { Install = function() end } end
     local modules = {
@@ -53,8 +54,13 @@ dofile(moduleRoot .. "addon_game_mode.lua")
 local function equal(actual, expected, label)
     assert(actual == expected, label .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual))
 end
-local function scenario(winner, final, initialLives)
+local function scenario(winner, final, initialLives, difficulty, elapsed)
+    local policy = require("battle.campaign_difficulty")
+    local rewardGame = {campaignDifficulty=difficulty}
+    local function scaled(value) return policy.Scale(rewardGame,value) end
     initialLives = initialLives or 5
+    elapsed = elapsed or 120
+    local timeBonus = math.floor(100*.1*(120-elapsed)/120+.5)
     local callback, scheduled, settlements, lastSettlement = nil, 0, 0, nil
     GameRules = { GetGameModeEntity = function()
         return { SetContextThink = function(_, name, fn, delay)
@@ -72,7 +78,7 @@ local function scenario(winner, final, initialLives)
         lastSettlement = payload
     end }
     local game = setmetatable({
-        phase = "fight", currentLevelId = final and "ch02" or "ch01",
+        phase = "fight", campaignDifficulty=difficulty, currentLevelId = final and "ch02" or "ch01",
         runLives = { remaining = initialLives, pendingItems = {} },
         orderedLevels = { "ch01", "ch02" }, lineup = {}, ownedHeroes = {},
         refreshCount = 3, scrollPurchases = { low = 2, high = 1 }, gold = 500,
@@ -80,11 +86,11 @@ local function scenario(winner, final, initialLives)
         heroPool = { strength = { "axe", "sven" }, agility = { "sniper" },
             intelligence = { "lina" }, universal = { "marci" } },
         shopOffers = { { hero = "old" } }, shopOfferText = "old", broadcasts = 0,
-        dataLoader = { GetLevel = function() return { time_limit = 120, reward = { gold = 100, xp_per_active_hero = 0 } } end },
-        battleManager = { GetBattleTime = function() return 120 end,
+        dataLoader = { GetLevel = function() return { time_limit = 120, reward = { gold = 100, xp_per_active_hero = 7 } } end },
+        battleManager = { GetBattleTime = function() return elapsed end,
             teamHeroes = { [2] = {} }, StopBattle = function() end },
         AddGold = function(self, value) self.gold = self.gold + value end,
-        AwardStageXp = function() end,
+        AwardStageXp = function(self, value) self.awardedXp=(self.awardedXp or 0)+value end,
         SpendGold = function() error("automatic refresh must not spend gold") end,
         BroadcastBattleState = function() end, BroadcastLevelInfo = function() end,
         BroadcastShopState = function(self) self.broadcasts = self.broadcasts + 1 end,
@@ -110,8 +116,13 @@ local function scenario(winner, final, initialLives)
     equal(settlements, 1, "duplicate battle end rejected")
     equal(game.runLives.remaining, initialLives - (winner == "radiant" and 0 or 1), "one life per lost battle")
     equal(lastSettlement.lives_remaining, game.runLives.remaining, "authoritative lives in settlement")
-    equal(lastSettlement.life_reward_gold, winner ~= "radiant" and initialLives == 4 and 2000 or 0, "gold threshold")
-    equal(game.gold, 500 + (winner == "radiant" and 100 or lastSettlement.life_reward_gold), "reward credited once")
+    equal(lastSettlement.life_reward_gold, winner ~= "radiant" and initialLives == 4 and scaled(2000) or 0, "gold threshold")
+    equal(game.gold, 500 + (winner == "radiant" and (scaled(100)+scaled(timeBonus)) or lastSettlement.life_reward_gold), "reward credited once")
+    equal(game.awardedXp or 0,winner == "radiant" and scaled(7) or 0,"XP granted once, never on defeat")
+    equal(lastSettlement.xp_per_active_hero,scaled(7),"scaled active display")
+    equal(lastSettlement.xp_per_bench_hero,math.floor(scaled(7)*.5),"bench share after difficulty rounding")
+    equal(lastSettlement.campaign_difficulty,difficulty or "default","settlement metadata")
+    equal(lastSettlement.time_bonus,winner == "radiant" and scaled(timeBonus) or 0,"time bonus independently rounded once")
     equal(lastSettlement.life_reward_items, winner ~= "radiant" and initialLives == 2 and "item_aegis;item_cheese" or "", "last-life items")
     equal(game.shopOfferText, "old", "offers remain during settlement")
     game:OnShopRefresh(nil, {})
@@ -174,6 +185,12 @@ local function scenario(winner, final, initialLives)
     game.phase = "result"
     callback()
     equal(game.shopOffers, offers, "old callback cannot reroll a later settlement")
+end
+for _, difficulty in ipairs({"easy","default","hard"}) do
+    scenario("radiant", false, 5, difficulty)
+    scenario("radiant", false, 5, difficulty, 60)
+    scenario("dire", false, 4, difficulty)
+    scenario("timeout", false, 2, difficulty)
 end
 scenario("radiant", false)
 scenario("dire", false)

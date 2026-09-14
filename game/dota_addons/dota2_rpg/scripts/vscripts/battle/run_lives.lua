@@ -15,7 +15,7 @@ function RunLives.Lose(game)
     if state.remaining <= 0 then return reward end
     state.remaining = state.remaining - 1
     if state.remaining == 3 then
-        reward.gold = 2000
+        reward.gold = require("battle.campaign_difficulty").Scale(game, 2000)
         game:AddGold(reward.gold)
     elseif state.remaining == 1 then
         reward.items = { "item_aegis", "item_cheese" }
