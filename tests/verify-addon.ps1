@@ -8,6 +8,22 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Probe both runtimes before anything else. Without this, a runtime that cannot
+# be launched leaves $LASTEXITCODE unset, and the later `-ne 0` guards then throw
+# their own message -- reporting a syntax or test failure for what is really
+# "the interpreter never ran". Fail here with the real reason instead.
+foreach ($runtime in @(@{ Name = "node"; Path = $NodePath; Param = "-NodePath" },
+                        @{ Name = "python"; Path = $PythonPath; Param = "-PythonPath" })) {
+    $probe = ""
+    try { $probe = (& $runtime.Path --version) -join " " } catch { $probe = "" }
+    if ($LASTEXITCODE -ne 0 -or $probe.Trim() -eq "") {
+        throw ("Runtime '$($runtime.Name)' could not be executed as '$($runtime.Path)' " +
+            "(exit code '$LASTEXITCODE', output '$($probe.Trim())'). " +
+            "This is not a syntax or test failure: the interpreter never ran. " +
+            "Pass $($runtime.Param) with a working absolute path.")
+    }
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $installScriptText = Get-Content -LiteralPath (Join-Path $repoRoot "scripts\install-addon.ps1") -Raw
 $compileScriptText = Get-Content -LiteralPath (Join-Path $repoRoot "tests\compile-vmap.ps1") -Raw
