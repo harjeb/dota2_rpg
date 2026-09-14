@@ -946,3 +946,100 @@ assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text === 
     assert(!visible(tables,"RunRecordMessage"), "no invented records for " + status);
 });
 console.log("PASS leaderboard snapshot tables: gaps, union, tabs, literal names, milliseconds, historical rank, reconnect and reset");
+
+// UI77: execute the actual HUD branches; no extracted selection implementation.
+{
+    const h = runHud();
+    const wind = "npc_dota_hero_windrunner", lesh = "npc_dota_hero_leshrac", bench = "npc_dota_hero_lion";
+    const snapshot = {rule_generation:1, commander_index:689, gold:5000,
+        owned_text:[wind,lesh,bench].join(";"), lineup_text:[wind,lesh].join(";"),
+        hero_entity_indices:{[wind]:71,[lesh]:70,[bench]:72}};
+    h.subscriptions.rpg_battle_state({phase:"setup"});
+    setPortrait(h,70);
+    h.subscriptions.rpg_shop_state(snapshot);
+    const state = mountShopState(h);
+    function targets() { return h.sentEvents.filter(e=>e.name==="rpg_native_purchase_target"); }
+    function latest() { return targets().at(-1).payload; }
+    function selected(name) { return panel(h,"ItemTarget_"+name).BHasClass("Selected"); }
+    // Historical mismatch: custom default Windrunner but the real native portrait is Leshrac.
+    state.shop.AddClass("ShopOpen"); tick(h);
+    assert(selected(lesh) && latest().unit_index===70 && latest().shop_carrier===689,
+        "native portrait wins the historical Windrunner/Leshrac mismatch in both UI and purchase target");
+    for (let component=0; component<4; component++) {
+        h.subscriptions.rpg_shop_state(Object.assign({},snapshot,{gold:5000-component*100}));
+        h.subscriptions.dota_player_update_query_unit({}); tick(h);
+        assert(selected(lesh) && latest().unit_index===70,
+            "inventory/render/query/heartbeat updates cannot drift component "+component+" to stale hero or Wisp");
+    }
+    state.shop.SetHasClass("ShopOpen",false); tick(h);
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===70,"restore the effective native recipient");
+    click(h,"ItemTarget_"+wind);
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===71 && latest().unit_index===71,
+        "custom Windrunner click selects native Windrunner, not just a hero-name publication");
+    state.shop.AddClass("ShopOpen"); tick(h);
+    assert(latest().unit_index===71 && selected(wind),"opening after custom selection preserves Windrunner");
+    // Native bench selection while shopping updates custom target without changing the action hero.
+    setPortrait(h,72); h.subscriptions.dota_player_update_selected_unit({});
+    assert(selected(bench) && latest().unit_index===72,"native bench selection updates custom equipment");
+    tick(h);
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===689 && latest().unit_index===72,
+        "new native bench target is retained through the necessary shop carrier swap");
+    // Delayed/duplicated automatic notifications AFTER settlement still mean carrier only.
+    for (let duplicate=0; duplicate<3; duplicate++) {
+        h.subscriptions.dota_player_update_selected_unit({});
+        assert(latest().unit_index===72 && selected(bench),"late automatic Wisp notifications retain bench recipient");
+    }
+    state.shop.SetHasClass("ShopOpen",false); tick(h);
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===72,"late notifications cannot cancel hero restoration");
+    // An unambiguous Wisp choice after shop closure means public inventory.
+    setPortrait(h,689); h.subscriptions.dota_player_update_selected_unit({});
+    assert(latest().unit_index===689 && !selected(bench),"explicit Wisp outside automatic swap targets public inventory");
+    const count = targets().length;
+    h.subscriptions.rpg_shop_state(snapshot);
+    assert(targets().length===count,"render and server refresh publish no stale hero intent");
+    const serials = targets().map(e=>Number(e.payload.selection_serial));
+    assert(serials.every((n,i)=>i===0 || n>serials[i-1]),"all effective intent messages are strictly ordered");
+    assert(targets().every(e=>!e.payload.hero),"no competing hero-name publication path remains");
+}
+{
+    const h = runHud(), wind="npc_dota_hero_windrunner", lesh="npc_dota_hero_leshrac", bench="npc_dota_hero_lion";
+    h.subscriptions.rpg_battle_state({phase:"setup"});
+    setPortrait(h,70);
+    h.subscriptions.rpg_shop_state({rule_generation:1,commander_index:689,owned_text:[wind,lesh,bench].join(";"),
+        lineup_text:[wind,lesh].join(";"),hero_entity_indices:{[wind]:71,[lesh]:70,[bench]:72}});
+    const state = mountShopState(h), requests=[];
+    const select = h.context.GameUI.SelectUnit;
+    h.context.GameUI.SelectUnit = function(index,additive) { requests.push(()=>select(index,additive)); };
+    function latest() { return h.sentEvents.filter(e=>e.name==="rpg_native_purchase_target").at(-1).payload; }
+    click(h,"ItemTarget_"+wind);
+    state.shop.AddClass("ShopOpen"); poll(h);
+    h.subscriptions.dota_player_update_query_unit({});
+    assert(latest().unit_index===71 && requests.length===1,
+        "asynchronous custom selection cannot be overwritten by the old Leshrac portrait at shop-open");
+    click(h,"ItemTarget_"+bench);
+    requests.shift()(); h.subscriptions.dota_player_update_selected_unit({});
+    assert(latest().unit_index===72,"late first custom selection cannot supersede the second click");
+    requests.shift()(); h.subscriptions.dota_player_update_selected_unit({});
+    h.context.GameUI.SelectUnit=select;
+    tick(h);
+    assert(latest().unit_index===72 && h.context.Players.GetLocalPlayerPortraitUnit()===689,
+        "latest asynchronous custom target settles and native shop still uses Wisp");
+    state.shop.SetHasClass("ShopOpen",false); tick(h);
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===72,"close restores latest asynchronous target");
+}
+{
+    const h=runHud(), a="npc_dota_hero_axe", b="npc_dota_hero_lion";
+    h.subscriptions.rpg_battle_state({phase:"setup"}); setPortrait(h,70);
+    h.subscriptions.rpg_shop_state({rule_generation:1,commander_index:689,owned_text:a+";"+b,
+        lineup_text:a,hero_entity_indices:{[a]:71,[b]:72}});
+    const apply=[], select=h.context.GameUI.SelectUnit;
+    h.context.GameUI.SelectUnit=(index,additive)=>apply.push(()=>select(index,additive));
+    click(h,"ItemTarget_"+a); click(h,"ItemTarget_"+b);
+    apply[1](); h.subscriptions.dota_player_update_selected_unit({});
+    apply[0](); h.subscriptions.dota_player_update_selected_unit({});
+    assert(h.sentEvents.filter(e=>e.name==="rpg_native_purchase_target").at(-1).payload.unit_index===72,
+        "reverse-completion old SelectUnit cannot override the newest settled intent");
+    apply[2](); h.subscriptions.dota_player_update_selected_unit({});
+    assert(h.context.Players.GetLocalPlayerPortraitUnit()===72,"stale completion restores latest native selection");
+}
+console.log("PASS UI77 native/custom bidirectional selection, native purchase priority, bench, explicit Wisp, component stability and asynchronous ordering");

@@ -1439,6 +1439,47 @@ assertEqual(benchPurchaseOrder.units["0"], 502, "native purchase executes on ass
 assertEqual(equipmentGame.nativePurchaseOrderContexts[#equipmentGame.nativePurchaseOrderContexts].recipient_key,
 	"npc_dota_hero_lion", "rerouting purchaser preserves bench delivery target")
 
+-- UI77 effective native selection is one ordered stream. Delayed legacy HUD renders and
+-- raw engine carrier events cannot reroute later components of the same selected-hero buy.
+do
+    local function intent(serial, index, carrier, generation, player)
+        equipmentGame:OnNativePurchaseTarget(0, {PlayerID=player or 0, unit_index=index,
+            selection_serial=tostring(serial), rule_generation=generation or 0, shop_carrier=carrier})
+    end
+    equipmentGame.ruleGeneration = 0
+    intent(100, 503, 502)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero, "npc_dota_hero_lion", "marked Wisp swap retains bench target")
+    assertEqual(selectedHeroCalls[#selectedHeroCalls].name, "npc_dota_hero_wisp", "marked swap still binds native Wisp carrier")
+    equipmentGame:OnPlayerSelectedUnit({PlayerID=0, unit_index=502})
+    equipmentGame:OnPlayerSelectedUnit({PlayerID=0, unit_index=501})
+    equipmentGame:OnNativePurchaseTarget(0, {PlayerID=0, hero="npc_dota_hero_axe"})
+    intent(99,501)
+    intent(100,501)
+    intent(101,501,nil,1)
+    intent(101,501,nil,0,1)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero, "npc_dota_hero_lion", "stale/unsequenced/wrong-generation/non-owner selection cannot win")
+    for component=1,3 do
+        assert(equipmentGame:ValidatePrepareOrder({issuer_player_id_const=0,
+            order_type=DOTA_UNIT_ORDER_PURCHASE_ITEM, units={["0"]=502}, itemname="item_prepare_bench"}),
+            "component keeps real native purchase order path")
+        assertEqual(equipmentGame.nativePurchaseOrderContexts[#equipmentGame.nativePurchaseOrderContexts].recipient_key,
+            "npc_dota_hero_lion", "all components snapshot the same effective native recipient")
+        intent(100+component,503,502)
+    end
+    intent(104,502)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero,"__wisp","explicit native Wisp selection now means Wisp")
+    intent(105,501)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero,"npc_dota_hero_axe","later genuine native hero selection wins")
+    intent(104,503,502)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero,"npc_dota_hero_axe","late automatic swap cannot restore stale target")
+    intent(106,999999)
+    assertEqual(equipmentGame.nativePurchaseSelectionHero,"__wisp","invalid entity never retains a stale hero target")
+    equipmentGame.nativePurchaseIntentGeneration=nil
+    equipmentGame.nativePurchaseIntentSerial=nil
+    equipmentGame.nativePurchaseOrderContexts={}
+    equipmentGame:SetNativePurchaseSelection(benchHero)
+end
+
 -- Skill-up clicks can submit either the ability entity index or its slot.
 local skillAbility = {
 	level = 0,

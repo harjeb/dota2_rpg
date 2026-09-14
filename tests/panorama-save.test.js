@@ -445,7 +445,7 @@ assert(hud.nativeSelections.at(-1).index === 503,
     "bench equipment portrait must select its native hero, not leave abilities on the commander");
 var benchTargetEvent = hud.sentEvents[hud.sentEvents.length - 1];
 assert(benchTargetEvent.name === "rpg_native_purchase_target"
-    && benchTargetEvent.payload.hero === "npc_dota_hero_lion",
+    && benchTargetEvent.payload.unit_index === 503 && benchTargetEvent.payload.selection_serial > 0,
     "standby hero target selection must be sent to the server for native purchases");
 var selectionsBeforeRefresh = hud.nativeSelections.length;
 hud.subscriptions.rpg_shop_state({

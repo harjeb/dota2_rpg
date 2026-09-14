@@ -1699,7 +1699,7 @@ function CDota2RpgDemo:HasLiveNativePurchaseTarget()
 	return hero ~= nil and self:IsEquipmentCarrier(hero)
 end
 
-function CDota2RpgDemo:SetNativePurchaseSelection(unit)
+function CDota2RpgDemo:SetNativePurchaseSelection(unit, explicitSelection, nativeCarrier)
 	if not self:IsEquipmentCarrier(unit) then
 		self.nativePurchaseSelectionHero = "__wisp"
 		self:SyncNativePlayerHero(self:GetStashUnit())
@@ -1714,10 +1714,10 @@ function CDota2RpgDemo:SetNativePurchaseSelection(unit)
 	-- 选中小精灵是为了让原版商店能点（客户端只认玩家自己的英雄），不代表
 	-- "这次购买进小精灵"。只要还选着上阵/待命英雄，就保留它作为交付目标，
 	-- 购买后自动交付，不需要再手动转交。
-	if key ~= "__wisp" or not self:HasLiveNativePurchaseTarget() then
+	if explicitSelection or key ~= "__wisp" or not self:HasLiveNativePurchaseTarget() then
 		self.nativePurchaseSelectionHero = key
 	end
-	self:SyncNativePlayerHero(unit)
+	self:SyncNativePlayerHero(nativeCarrier or unit)
 	return true
 end
 
@@ -1732,6 +1732,27 @@ function CDota2RpgDemo:OnNativePurchaseTarget(eventSourceIndex, payload)
 	if self.playerId ~= nil and self.playerId >= 0 and playerId ~= self.playerId then
 		return
 	end
+	-- UI77 owns effective selection: native portrait except an explicitly marked shop carrier swap.
+	-- CEM and raw engine selection notifications can arrive in either order. Once this
+	-- generation uses sequenced intent, neither old hero-name renders nor raw Wisp events may win.
+	local generation = self.ruleGeneration or 0
+	local serial = tonumber(payload and payload.selection_serial)
+	if serial ~= nil then
+		if serial < 1 or serial > 9007199254740991 or serial ~= math.floor(serial)
+			or tonumber(payload.rule_generation) ~= generation then return end
+		if self.nativePurchaseIntentGeneration == generation
+			and serial <= (self.nativePurchaseIntentSerial or 0) then return end
+		local index = tonumber(payload.unit_index)
+		local unit = index ~= nil and index > 0 and EntIndexToHScript(index) or nil
+		self.nativePurchaseIntentGeneration = generation
+		self.nativePurchaseIntentSerial = serial
+		local carrier = tonumber(payload.shop_carrier)
+		local stash = self:GetStashUnit()
+		local nativeCarrier = stash ~= nil and carrier == stash:GetEntityIndex() and stash or nil
+		self:SetNativePurchaseSelection(unit, true, nativeCarrier)
+		return
+	end
+	if self.nativePurchaseIntentGeneration == generation then return end
 	local heroName = tostring(payload and (payload.hero or payload.hero_name) or "")
 	if heroName ~= "" then
 		local hero = self:FindOwnedHeroUnit(heroName)
@@ -1755,7 +1776,12 @@ function CDota2RpgDemo:OnPlayerSelectedUnit(event)
 	end
 	local unitIndex = tonumber(event and (event.unit_index or event.unitindex or event.unit or event.entindex or event.selected_entindex) or -1) or -1
 	if unitIndex > 0 then
-		self:SetNativePurchaseSelection(EntIndexToHScript(unitIndex))
+		local unit = EntIndexToHScript(unitIndex)
+		if self.nativePurchaseIntentGeneration ~= (self.ruleGeneration or 0) then
+			self:SetNativePurchaseSelection(unit)
+		end
+		-- Sequenced HUD messages already synchronize both the recipient and native carrier.
+		-- A late raw notification must not revert either binding.
 	end
 end
 

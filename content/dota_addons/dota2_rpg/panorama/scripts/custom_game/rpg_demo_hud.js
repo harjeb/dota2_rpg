@@ -243,7 +243,11 @@
     var serverReady = false;
     var stageRetryReady = false;
     var lastNativePurchaseTarget = -1;
-    var lastNativePurchaseHero = "";
+    // Survive Panorama script reloads within the same server generation.
+    var nativeSelectionConfig = GameUI.CustomUIConfig();
+    nativeSelectionConfig.purchaseSelectionSerial = Math.max(Number(nativeSelectionConfig.purchaseSelectionSerial) || 0, Date.now());
+    var nativeHeroSelectionPending = null;
+    var obsoleteNativeSelections = null;
     var selectedEquipmentHeroName = "";
     var heroEntityIndices = {};
     var commanderIndex = -1;
@@ -275,7 +279,8 @@
         shopSelectionPending = null;
         shopOpenLast = false;
         lastNativePurchaseTarget = -1;
-        lastNativePurchaseHero = "";
+        nativeHeroSelectionPending = null;
+        obsoleteNativeSelections = null;
         saveData = loadSave();
         shopState.owned = [];
         shopState.lineup = [];
@@ -299,17 +304,51 @@
         return true;
     }
 
+    function rememberObsoleteNativeSelections(units, restore) {
+        var obsolete = { units: units, restore: restore, checks: 0 };
+        obsoleteNativeSelections = obsolete;
+        if (!units.length) { return; }
+        $.Schedule(0.2, function expireObsolete() {
+            if (obsoleteNativeSelections !== obsolete) { return; }
+            if (++obsolete.checks < 5) { $.Schedule(0.2, expireObsolete); }
+            else { obsoleteNativeSelections = null; }
+        });
+    }
+
     function selectNativeHero(heroName) {
         var unitIndex = Number(heroEntityIndices[heroName] || -1);
-        if (phase === "setup" && unitIndex > 0 && GameUI.SelectUnit) {
-            GameUI.SelectUnit(unitIndex, false);
-        }
+        if (phase !== "setup" || !(unitIndex > 0) || typeof GameUI === "undefined" || !GameUI.SelectUnit) { return; }
+        var from = Number(Players.GetLocalPlayerPortraitUnit());
+        // Record intent BEFORE SelectUnit: its events may be reentrant, or its portrait delayed.
+        var superseded = nativeHeroSelectionPending ? nativeHeroSelectionPending.superseded.slice() : [];
+        if (nativeHeroSelectionPending) { superseded.push(nativeHeroSelectionPending.unit); }
+        if (shopSelectionPending) { superseded.push(shopSelectionPending.commander); }
+        if (obsoleteNativeSelections) { superseded = superseded.concat(obsoleteNativeSelections.units); }
+        rememberObsoleteNativeSelections(superseded, unitIndex);
+        var pending = { from: from, unit: unitIndex, checks: 0, superseded: superseded };
+        nativeHeroSelectionPending = pending;
+        shopSelectionPending = null;
+        shopClosePending = null;
+        shopPortraitSwap = null;
+        publishNativePurchaseTarget(unitIndex, true);
+        GameUI.SelectUnit(unitIndex, false);
+        $.Schedule(0.2, function settleHero() {
+            if (nativeHeroSelectionPending !== pending) { return; }
+            pending.checks++;
+            var current = Number(Players.GetLocalPlayerPortraitUnit());
+            if (current !== pending.unit && (current === pending.from || pending.superseded.indexOf(current) >= 0) && pending.checks < 5) {
+                $.Schedule(0.2, settleHero);
+                return;
+            }
+            nativeHeroSelectionPending = null;
+            syncNativePurchaseTarget(true);
+        });
     }
 
     // 实机日志确认：选中上阵/待命英雄时点原版商店购买，客户端连订单都不下发
     // （控制台里没有 Native order signature），选中小精灵才正常。所以在原版商店
-    // 打开期间把选中临时切到小精灵，关闭时还原。交付目标由 sendNativePurchaseHero
-    // 与服务端保持（服务端不会因为选中小精灵而改写目标），物品仍然进玩家选中的英雄。
+    // 打开期间把选中临时切到小精灵，关闭时还原。带序号的有效选择与显式载体标记
+    // 区分自动换选和玩家主动选小精灵，物品仍然进玩家选中的英雄。
     var shopPortraitSwap = null;
     var shopClosePending = null;
     var shopSelectionPending = null;
@@ -319,7 +358,7 @@
             || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) {
             return;
         }
-        if (shopSelectionPending) { return; }
+        if (shopSelectionPending || nativeHeroSelectionPending) { return; }
         var portrait = Number(Players.GetLocalPlayerPortraitUnit());
         if (!(commanderIndex > 0) || !(portrait > 0) || portrait === commanderIndex) {
             return;
@@ -332,6 +371,8 @@
         shopSelectionPending = pending;
         shopClosePending = null;
         shopDiag("shop selection begin hero=" + portrait + " commander=" + commanderIndex);
+        // This is a carrier change, NOT a player purchase-target change.
+        publishNativePurchaseTarget(portrait, true, commanderIndex);
         GameUI.SelectUnit(commanderIndex, false);
         $.Schedule(0.2, function settleSelection() {
             if (shopSelectionPending !== pending) { return; }
@@ -487,6 +528,8 @@
             shopPortraitSwap = null;
             shopClosePending = null;
             shopSelectionPending = null;
+            nativeHeroSelectionPending = null;
+            obsoleteNativeSelections = null;
             shopOpenLast = false;
             return;
         }
@@ -514,6 +557,7 @@
             updateNativeShopState(false);
             return;
         }
+        syncNativePurchaseTarget(false);
         var open = nativeShopIsOpen();
         var available = open !== null;
         if (available !== shopOpenKnown) {
@@ -526,33 +570,78 @@
         }
     }
 
-    // 原版商店对额外生成的英雄仍可能把物品送到 assigned hero（小精灵）。
-    // 把当前世界选择同步给服务端，购买后即可将新增的同一物品实体补转给上阵或待命英雄。
+    function nativeHeroName(unitIndex) {
+        var names = Object.keys(heroEntityIndices);
+        for (var i = 0; i < names.length; i++) {
+            if (Number(heroEntityIndices[names[i]]) === unitIndex) { return names[i]; }
+        }
+        return "";
+    }
+
+    function publishNativePurchaseTarget(unitIndex, force, carrier) {
+        if (!(unitIndex > 0) || (!force && unitIndex === lastNativePurchaseTarget)) { return; }
+        lastNativePurchaseTarget = unitIndex;
+        GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", {
+            unit_index: unitIndex, selection_serial: String(++nativeSelectionConfig.purchaseSelectionSerial),
+            rule_generation: ruleGeneration, shop_carrier: carrier || -1
+        });
+    }
+
+    // Native portrait is authoritative, except for our explicitly marked SelectUnit transitions.
+    // Rendering never publishes hero-name intent and native events never call SelectUnit back.
     function syncNativePurchaseTarget(force) {
-        if (phase !== "setup" || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) {
+        if (phase !== "setup" || typeof Players === "undefined" || !Players.GetLocalPlayerPortraitUnit) { return; }
+        var unitIndex = Number(Players.GetLocalPlayerPortraitUnit());
+        if (!(unitIndex > 0)) { return; }
+        var obsolete = obsoleteNativeSelections;
+        if (obsolete && !nativeHeroSelectionPending && !(shopPortraitSwap !== null && unitIndex === commanderIndex)
+            && unitIndex !== obsolete.restore && obsolete.units.indexOf(unitIndex) >= 0) {
+            // An older SelectUnit can finish AFTER the latest one. Do not call that player intent.
+            obsolete.units.splice(obsolete.units.indexOf(unitIndex), 1);
+            GameUI.SelectUnit(obsolete.restore, false);
             return;
         }
-        var unitIndex = Number(Players.GetLocalPlayerPortraitUnit());
-        if (unitIndex > 0 && (force || unitIndex !== lastNativePurchaseTarget)) {
-            lastNativePurchaseTarget = unitIndex;
-            lastNativePurchaseHero = "";
-            GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", { unit_index: unitIndex });
+        var pending = nativeHeroSelectionPending;
+        if (pending) {
+            if (unitIndex !== pending.unit && (unitIndex === pending.from || pending.superseded.indexOf(unitIndex) >= 0)) { return; }
+            nativeHeroSelectionPending = null;
         }
+        if (shopPortraitSwap !== null && unitIndex === commanderIndex) {
+            // Selected-unit events have no click-origin token: even a delayed/duplicate
+            // notification after settlement can acknowledge OUR swap. Keep the marker
+            // for the entire carrier lifetime; never infer a player click from event count.
+            // To deliberately target Wisp, close the shop (restore hero), then select Wisp.
+            publishNativePurchaseTarget(shopPortraitSwap, force, commanderIndex);
+            return;
+        } else if (shopPortraitSwap !== null && unitIndex !== shopPortraitSwap) {
+            if (shopSelectionPending) {
+                rememberObsoleteNativeSelections([shopSelectionPending.commander], unitIndex);
+            }
+            shopPortraitSwap = null;
+            shopClosePending = null;
+            shopSelectionPending = null;
+        }
+        if (obsolete && unitIndex !== obsolete.restore) { obsoleteNativeSelections = null; }
+        var name = nativeHeroName(unitIndex);
+        // Before the roster snapshot arrives we can publish the entity, but cannot map the UI.
+        if (name || unitIndex === commanderIndex) {
+            var target = name || "__native";
+            if (selectedEquipmentHeroName !== target) {
+                selectedEquipmentHeroName = target;
+                var index = (shopState.lineup || []).indexOf(name);
+                if (index >= 0 && selectedHeroIndex.Radiant !== index) {
+                    closeEditorMenus();
+                    selectedHeroIndex.Radiant = index;
+                    renderSide("Radiant");
+                }
+                renderItemShop();
+            }
+        }
+        publishNativePurchaseTarget(unitIndex, force);
     }
 
     function heartbeatNativePurchaseTarget() {
-        // 原版选中状态事件会强制刷新；此处只补一次延迟刷新，避免在工具测试的同步 Schedule
-        // 实现中递归调用，同时覆盖服务端刚重置目标的短窗口。
         syncNativePurchaseTarget(true);
-    }
-
-    function sendNativePurchaseHero(heroName, force) {
-        heroName = String(heroName || "");
-        if (phase !== "setup" || !heroName || (!force && heroName === lastNativePurchaseHero)) {
-            return;
-        }
-        lastNativePurchaseHero = heroName;
-        GameEvents.SendCustomGameEventToServer("rpg_native_purchase_target", { hero: heroName });
     }
 
     // CEM object keys can arrive in any order; rule/condition/priority arrays keep their order.
@@ -956,7 +1045,6 @@
         if (selectedHeroIndex[side] === index) {
             if (side === "Radiant" && HEROES.Radiant[index]) {
                 selectedEquipmentHeroName = HEROES.Radiant[index].name;
-                sendNativePurchaseHero(selectedEquipmentHeroName, true);
                 renderItemShop();
             }
             return;
@@ -967,7 +1055,6 @@
         // 装备目标与行动面板使用同一名上阵英雄；切换头像后无需重新上阵/刷新。
         if (side === "Radiant") {
             selectedEquipmentHeroName = HEROES.Radiant[index] ? HEROES.Radiant[index].name : selectedEquipmentHeroName;
-            sendNativePurchaseHero(selectedEquipmentHeroName, true);
             renderItemShop();
         }
     }
@@ -1231,9 +1318,10 @@
         heroEntityIndices = data.hero_entity_indices || {};
         commanderIndex = Number(data.commander_index !== undefined ? data.commander_index : -1);
         if (shopState.lineup.length
+            && selectedEquipmentHeroName !== "__native"
             && (!selectedEquipmentHeroName || shopState.owned.indexOf(selectedEquipmentHeroName) < 0)) {
             selectedEquipmentHeroName = shopState.lineup[Math.min(selectedHeroIndex.Radiant, shopState.lineup.length - 1)];
-            sendNativePurchaseHero(selectedEquipmentHeroName);
+            // A roster refresh is not player selection intent.
         }
         shopState.bench_slots = Number(data.bench_slots || 0);
         shopState.free_recruit_choices = Number(data.free_recruit_choices !== undefined ? data.free_recruit_choices : shopState.free_recruit_choices);
@@ -1404,7 +1492,7 @@
     // ---------------- 装备购买与转移：固定目标 + 直接装备 ----------------
     function getSelectedEquipmentTarget() {
         var owned = shopState.owned || [];
-        if (!owned.length) {
+        if (selectedEquipmentHeroName === "__native" || !owned.length) {
             return null;
         }
         var lineup = shopState.lineup || [];
@@ -1412,7 +1500,6 @@
             selectedEquipmentHeroName = lineup.length ? lineup[0] : owned[0];
         }
         var heroName = selectedEquipmentHeroName;
-        sendNativePurchaseHero(heroName);
         var heroData = saveData.heroes[heroName] || {};
         var inventorySlots = heroData.inventorySlots || [];
         var activeCount = 0;
@@ -1439,7 +1526,6 @@
             return;
         }
         selectedEquipmentHeroName = heroName;
-        sendNativePurchaseHero(heroName, true);
         var lineupIndex = (shopState.lineup || []).indexOf(heroName);
         if (lineupIndex >= 0 && selectedHeroIndex.Radiant !== lineupIndex) {
             selectHero("Radiant", lineupIndex);
@@ -1563,29 +1649,29 @@
         heroes.RemoveAndDeleteChildren();
         equipped.RemoveAndDeleteChildren();
 
-        if (!target) {
-            label.text = $.Localize("#dota2_rpg_item_target_none");
-            label.SetHasClass("Empty", true);
-            createLabel(equipped, "ItemRowName", $.Localize("#dota2_rpg_item_target_none"));
-            return;
-        }
-
-        label.SetHasClass("Empty", false);
-        label.text = $.Localize("#dota2_rpg_item_target") + "：" + localizeHeroName(target.name)
-            + (target.isBench ? $.Localize("#dota2_rpg_bench_suffix") : "") + " " + target.activeCount + "/6";
-
         for (var heroIndex = 0; heroIndex < shopState.owned.length; heroIndex++) {
             (function (index, heroName) {
                 var portrait = $.CreatePanel("DOTAHeroImage", heroes, "ItemTarget_" + heroName);
                 portrait.AddClass("ItemTargetPortrait");
                 portrait.heroname = heroName;
                 portrait.heroimagestyle = "portrait";
-                portrait.SetHasClass("Selected", heroName === target.name);
+                portrait.SetHasClass("Selected", Boolean(target) && heroName === target.name);
                 portrait.SetPanelEvent("onactivate", function () {
                     setEquipmentTarget(heroName);
                 });
             }(heroIndex, shopState.owned[heroIndex]));
         }
+
+        if (!target) {
+            label.text = selectedEquipmentHeroName === "__native"
+                ? localizeHeroName("npc_dota_hero_wisp") : $.Localize("#dota2_rpg_item_target_none");
+            label.SetHasClass("Empty", true);
+            createLabel(equipped, "ItemRowName", $.Localize("#dota2_rpg_item_target_none"));
+            return;
+        }
+        label.SetHasClass("Empty", false);
+        label.text = $.Localize("#dota2_rpg_item_target") + "：" + localizeHeroName(target.name)
+            + (target.isBench ? $.Localize("#dota2_rpg_bench_suffix") : "") + " " + target.activeCount + "/6";
 
         if (!target.inventory.length) {
             createLabel(equipped, "ItemRowName", $.Localize("#dota2_rpg_item_equipped_empty"));
