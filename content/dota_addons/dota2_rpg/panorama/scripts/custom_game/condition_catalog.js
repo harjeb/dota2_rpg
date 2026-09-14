@@ -74,7 +74,8 @@ var RpgConditionCatalog = (function () {
                 });
                 return (def ? entryLabel(def) : condition.type) + (values.length ? " (" + values.join(", ") + ")" : "");
             });
-            parts.push(text(spec[2]) + ": " + (items.join("; ") || text("none")));
+            var mode = spec[0] === "priority" ? "" : " · " + text(settings[spec[1] + "_mode"] === "priority" ? "mode_priority" : "mode_all");
+            parts.push(text(spec[2]) + mode + ": " + (items.join("; ") || text("none")));
         });
         if (settings.target_team || settings.target) { parts.push(text("target_team") + ": " + text("team_" + (settings.target_team || String(settings.target).split("_")[0]))); }
         var desired = settings.desired_toggle_state;
@@ -372,6 +373,18 @@ var RpgConditionCatalog = (function () {
         }
         function slots(group, key, count, title) {
             label(body, "", text(title)).AddClass("V2SectionTitle");
+            if (group !== "priority") {
+                var modeKey = key + "_mode";
+                draft[modeKey] = draft[modeKey] === "priority" ? "priority" : "all";
+                var modeRow = $.CreatePanel("Panel", body, "V2_" + group + "ModeRow"); modeRow.AddClass("V2Selector");
+                choose(modeRow, "V2_" + group + "Mode", [
+                    {id:"all",label:text("mode_all"),hint:text("mode_all_hint")},
+                    {id:"priority",label:text("mode_priority"),hint:text(group + "_mode_priority_hint")}
+                ], draft[modeKey], function(value) {
+                    if (options.readOnly) { return; }
+                    var changes = {}; changes[modeKey] = value; reopen(changes);
+                });
+            }
             for (var i = 0; i < count; i++) {
                 (function (index) {
                     var current = normalize(group, draft[key][index]);
@@ -425,7 +438,9 @@ var RpgConditionCatalog = (function () {
                         // Reference-dependent predicates need an actor picker first;
                         // validate their final reference on Apply, not the empty menu entry.
                         if (entry.id==="channel_elapsed_gte" || entry.id==="channel_elapsed_lte" || entry.id==="action_phase_is") { return ""; }
-                        return entry.id && cap ? capAPI.conditionReason(cap,group,{type:entry.id},draft.target_team || targetTeam) : "";
+                        var reason = entry.id && cap ? capAPI.conditionReason(cap,group,{type:entry.id},draft.target_team || targetTeam) : "";
+                        if (group === "target" && draft.target_filters_mode === "priority" && (reason === "self_excluded" || reason === "condition_conflicts_with_native_targeting")) { return ""; }
+                        return reason;
                     }), current.type, function (type) {
                         readFields(); current.type = type; current = normalize(group, current); draft[key][index] = current; renderFields();
                     });

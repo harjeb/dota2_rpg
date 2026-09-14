@@ -73,7 +73,7 @@ local function conditionsActive(engine,ctx,unit,rule)
     local spec=engine.actions:Resolve(unit,rule.action,check)
     if not spec then return false end
     check.current_action_id=spec.logical_id; check.current_action_spec=spec
-    return engine.conditions:EvaluateUseConditions(rule.use_conditions,check) == true
+    return engine.conditions:EvaluateUseConditions(rule.use_conditions,check,rule.use_conditions_mode) == true
 end
 function M.Observe(unit,state,rules,engine,ctx)
     state.movement_gates = state.movement_gates or {}
@@ -151,7 +151,7 @@ function M.Continue(engine,unit,state,ctx,observeOnly)
     if ctx.now >= s.deadline or not buff(unit,a) then return finish() end
     ctx.current_action_id=s.spec.logical_id
     ctx.current_action_spec=s.spec
-    if not engine.conditions:EvaluateUseConditions(s.rule.use_conditions,ctx) then return finish() end
+    if not engine.conditions:EvaluateUseConditions(s.rule.use_conditions,ctx,s.rule.use_conditions_mode) then return finish() end
     if not resolve(engine,s,ctx,function(target) return target == s.target end) then
         if not a.movement_retarget then return finish() end
         local target=resolve(engine,s,ctx,function(candidate)

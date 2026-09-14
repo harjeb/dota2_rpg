@@ -26,6 +26,8 @@ local REMOVED_CONDITIONS = {
 
 function RuleService.StripRemovedConditions(rule)
     if type(rule) ~= "table" then return rule end
+    rule.use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode)
+    rule.target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode)
     for _, field in ipairs({ "use_conditions", "target_filters" }) do
         local conditions = rule[field]
         if type(conditions) == "table" then
@@ -208,6 +210,8 @@ function RuleService:DecodeFlat(args)
             team = tostring(args.target_team or "enemy"),
             types = {},
         },
+        use_conditions_mode = Conditions.NormalizeMode(args.use_conditions_mode),
+        target_filters_mode = Conditions.NormalizeMode(args.target_filters_mode),
         target_filters = {},
         target_priorities = {},
         use_conditions = {},
@@ -319,6 +323,8 @@ function RuleService:ValidateRule(player_id, hero, rule)
     if type(rule) ~= "table" or type(rule.action) ~= "table" or type(rule.target) ~= "table"
         or type(rule.target_filters) ~= "table" or type(rule.use_conditions) ~= "table"
         or type(rule.target_priorities) ~= "table" then return false, "invalid_rule" end
+    rule.use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode)
+    rule.target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode)
     if type(rule.action.logical_id) ~= "string" or #rule.action.logical_id > 256 then return false, "invalid_action_id" end
     if not require("tactics/special_targets").ValidDestination(rule.action.logical_id, rule.action.destination) then
         return false, "invalid_destination"
@@ -543,6 +549,8 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
         action_id = rule.action.logical_id,
         target_team = rule.target.team,
         approach = rule.approach,
+        use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode),
+        target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode),
         target_filter_1 = rule.target_filters[1] and rule.target_filters[1].type or "",
         target_filter_2 = rule.target_filters[2] and rule.target_filters[2].type or "",
         target_priority_1 = rule.target_priorities[1] and rule.target_priorities[1].type or "",

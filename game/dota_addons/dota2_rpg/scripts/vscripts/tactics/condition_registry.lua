@@ -92,7 +92,21 @@ function ConditionRegistry:RegisterTargetFilter(name, evaluator)
     self.target_filters[name] = evaluator
 end
 
-function ConditionRegistry:EvaluateUseConditions(conditions, ctx)
+function ConditionRegistry.NormalizeMode(mode)
+    return mode == "priority" and "priority" or "all"
+end
+
+function ConditionRegistry:EvaluateUseConditions(conditions, ctx, mode)
+    if mode == "priority" and #(conditions or {}) > 0 then
+        for index, condition in ipairs(conditions) do
+            local evaluator = self.use_conditions[condition.type]
+            local passed, err = false, nil
+            if evaluator then passed, err = safe_boolean_call(evaluator, ctx, condition) end
+            Observation.Record(ctx, "use", index, condition, ctx.caster, passed, err)
+            if passed then return true, nil, index end
+        end
+        return false, "no_use_condition_matched"
+    end
     for index, condition in ipairs(conditions or {}) do
         local evaluator = self.use_conditions[condition.type]
         if evaluator == nil then
@@ -111,7 +125,17 @@ function ConditionRegistry:EvaluateUseConditions(conditions, ctx)
     return true, nil, nil
 end
 
-function ConditionRegistry:EvaluateTargetFilters(filters, ctx, target)
+function ConditionRegistry:EvaluateTargetFilters(filters, ctx, target, mode)
+    if mode == "priority" and #(filters or {}) > 0 then
+        for index, condition in ipairs(filters) do
+            local evaluator = self.target_filters[condition.type]
+            local passed, err = false, nil
+            if evaluator then passed, err = safe_boolean_call(evaluator, ctx, target, condition) end
+            Observation.Record(ctx, "target", index, condition, target, passed, err)
+            if passed then return true, nil, index end
+        end
+        return false, "no_target_filter_matched"
+    end
     for index, condition in ipairs(filters or {}) do
         local evaluator = self.target_filters[condition.type]
         if evaluator == nil then

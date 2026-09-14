@@ -62,15 +62,26 @@ function Special.SelectDestination(rule, spec, ctx, conditions)
         return true,unit:GetAbsOrigin(),unit
     end
     if mode == "self" then
-        if not conditions:EvaluateTargetFilters(rule.target_filters, ctx, ctx.caster) then
+        if not conditions:EvaluateTargetFilters(rule.target_filters, ctx, ctx.caster, rule.target_filters_mode) then
             return true, nil, nil, "destination_filter_failed"
         end
         return result(ctx.caster)
     end
-    local candidates = {}
+    local candidates, first_tier = {}, math.huge
     for _, remnant in ipairs(Special.OwnRemnants(ctx)) do
-        if conditions:EvaluateTargetFilters(rule.target_filters, ctx, remnant) then
-            candidates[#candidates+1] = remnant
+        local passed, _, tier = conditions:EvaluateTargetFilters(rule.target_filters, ctx, remnant, rule.target_filters_mode)
+        if passed and rule.target_filters_mode == "priority" then
+            local point, source = remnant:GetAbsOrigin(), spec.source or spec.ability
+            if source and source.CastFilterResultLocation then
+                local ok, result = pcall(source.CastFilterResultLocation, source, point)
+                passed = ok and result == (UF_SUCCESS or 0)
+            end
+            if passed and rule.approach ~= "allow_approach" and ctx.is_in_range then passed = ctx.is_in_range(spec, point) end
+        end
+        if passed then
+            tier = rule.target_filters_mode == "priority" and (tier or 0) or 0
+            if tier < first_tier then candidates = {}; first_tier = tier end
+            if tier == first_tier then candidates[#candidates+1] = remnant end
         end
     end
     local function nearest_enemy(unit)

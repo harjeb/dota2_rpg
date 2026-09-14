@@ -9,6 +9,7 @@ end
 function R.Contradictions(rule)
     local ranges,positive,negative,phases={}, {}, {}, {}
     local function add(list,group)
+        if rule[group == "use" and "use_conditions_mode" or "target_filters_mode"] == "priority" then return end
         for index,c in ipairs(list or {}) do
             local id=c.type or ""
             local context=group=="target" and (rule.target or {}).team=="self" and "self" or group
@@ -53,6 +54,7 @@ function R.Contradictions(rule)
     end
     local failed=add(rule.use_conditions,"use") or add(rule.target_filters,"target")
     if failed then return failed end
+    if rule.use_conditions_mode == "priority" then return end
     local noEnemy,nearby={},{}
     for index,c in ipairs(rule.use_conditions or {}) do
         if c.type=="no_enemy_within" then noEnemy[#noEnemy+1]=tonumber(c.radius or c.value)
@@ -96,7 +98,9 @@ function R.Validate(hero,rule,options)
     for _,group in ipairs({{"use",rule.use_conditions},{"target",rule.target_filters}}) do
         for index,c in ipairs(group[2] or {}) do
             local reason=A.ConditionReason(cap,group[1],c,(rule.target or {}).team)
-            if reason then errors[#errors+1]=issue(reason,group[1],index) end
+            local alternative = group[1] == "target" and rule.target_filters_mode == "priority"
+                and (reason == "self_excluded" or reason == "condition_conflicts_with_native_targeting")
+            if reason and not alternative then errors[#errors+1]=issue(reason,group[1],index) end
             local modifier=c.modifier or ((c.type or ""):find("has_modifier",1,true) and c.value or nil)
             if modifier then
                 if type(modifier)~="string" or not modifier:match("^[%a_][%w_]*$") then

@@ -385,7 +385,7 @@ function TacticEngine:PositioningRule(unit, ctx, rule, spec, target)
                 probe.current_action_spec = attack_spec
                 if Compatibility.Validate(unit, attack, {runtime=true, capability=attack_spec.capability})
                     and self.actions:CanExecute(unit, attack_spec, probe)
-                    and self.conditions:EvaluateUseConditions(attack.use_conditions, probe)
+                    and self.conditions:EvaluateUseConditions(attack.use_conditions, probe, attack.use_conditions_mode)
                     and self:ResolveRuleTarget(attack, attack_spec, probe) == target then
                     return defaults.ApplyRangedAttackPosture({action=shallow_copy(attack.action)}, unit)
                 end
@@ -422,7 +422,7 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return false, action_reason
     end
 
-    local use_ok, use_reason = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx)
+    local use_ok, use_reason = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx, rule.use_conditions_mode)
     if not use_ok then
         return false, use_reason
     end
@@ -523,7 +523,7 @@ function TacticEngine:ContinueChase(unit, state, ctx, current_time)
         state.chase=nil; return false
     end
     local can_execute = self.actions:CanExecute(unit, spec, ctx)
-    local use_ok = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx)
+    local use_ok = self.conditions:EvaluateUseConditions(rule.use_conditions, ctx, rule.use_conditions_mode)
     if not can_execute or not use_ok then
         state.chase = nil
         return false

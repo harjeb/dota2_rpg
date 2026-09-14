@@ -430,4 +430,19 @@ caster.hp=100; tick(2)
 assert(caster.observer==revivalObserver,"same-handle revival retains the native observer")
 caster.observer:OnAttack({attacker=caster,target=enemy})
 assert(engine:GetState(caster).events.attack.target==enemy,"attack release still arrives after revival")
+-- Independent OR mode must survive Observe/re-arm and Continue, not just first acquisition.
+r=movement({use_conditions_mode="priority",target_filters_mode="priority",
+    use_condition_1_type="self_hp_pct_lte",use_condition_1_value="0.2",
+    use_condition_2_type="self_hp_pct_gte",use_condition_2_value="0.8",
+    target_filter_1_type="hp_pct_lte",target_filter_1_value="0.2",
+    target_filter_2_type="hp_pct_gte",target_filter_2_value="0.8"})
+r.action.movement_buff=nil
+s=reset({r,attack}); enter(); tick(0)
+assert(s.movement and s.movement.target==enemy,"movement acquires fallback target tier under independent use priority")
+tick(.2); assert(s.movement,"Continue uses OR rather than reverting to AND")
+caster.hp=50;tick(.4);assert(not s.movement,"no matching use condition ends movement")
+caster.hp=100;tick(.6);assert(s.movement,"Observe re-arms after OR false-to-true transition")
+engine:Reset()
+r.target_filters_mode="all";s=reset({r,attack});enter();tick(0)
+assert(not s.movement,"target AND independently blocks impossible intersection")
 print("PASS: persistent movement + native-release posture engine, control, modes, lifecycle, validation and roundtrips (native APIs mocked)")

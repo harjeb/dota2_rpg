@@ -64,6 +64,7 @@ var RpgAbilityCapabilities = (function () {
     function contradiction(rule) {
         var ranges={}, positive={}, negative={}, phases={}, error="", targetTeam=team(rule);
         [["use",rule.use_conditions],["target",rule.target_filters]].forEach(function(pair) {
+            if (rule[pair[0] === "use" ? "use_conditions_mode" : "target_filters_mode"] === "priority") { return; }
             list(pair[1]).forEach(function(c) {
                 if (!c || !c.type || error) { return; }
                 var context=pair[0]==="target" && targetTeam==="self" ? "self" : pair[0], metric=c.type;
@@ -97,7 +98,7 @@ var RpgAbilityCapabilities = (function () {
                 }
             });
         });
-        var use=list(rule.use_conditions), ids={};
+        var use=rule.use_conditions_mode === "priority" ? [] : list(rule.use_conditions), ids={};
         use.forEach(function(c) { ids[c.type]=true; });
         if (ids.tiny_grab_is_ally && ids.tiny_grab_is_enemy) { error="contradictory_conditions"; }
         use.forEach(function(c) {
@@ -131,7 +132,8 @@ var RpgAbilityCapabilities = (function () {
             list(pair[1]).forEach(function(c,index) {
                 if (!c || !c.type) { return; }
                 var why=cap ? conditionReason(cap,pair[0],c,targetTeam) : "";
-                if (why) { fail(why,pair[0],index+1); }
+                var alternative=pair[0] === "target" && rule.target_filters_mode === "priority" && (why === "self_excluded" || why === "condition_conflicts_with_native_targeting");
+                if (why && !alternative) { fail(why,pair[0],index+1); }
                 var mod=c.modifier || (c.type.indexOf("has_modifier")>=0 ? c.value : "");
                 if (mod) {
                     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(mod)) { fail("invalid_modifier_name",pair[0],index+1); }

@@ -133,8 +133,8 @@ local function native_legal(target, spec, ctx)
         and Context.Call(target, "IsMagicImmune") ~= true
 end
 
-function TargetSelector:FilterCandidates(candidates, target_filters, ctx, action_spec)
-    local filtered = {}
+function TargetSelector:FilterCandidates(candidates, target_filters, ctx, action_spec, mode, viable)
+    local filtered, first_tier = {}, math.huge
     for _, target in ipairs(candidates or {}) do
         require("tactics/modifier_catalog").Observe(target)
         local alive = self.conditions.IsValidEntity(target) and (target.IsAlive == nil or target:IsAlive())
@@ -144,9 +144,11 @@ function TargetSelector:FilterCandidates(candidates, target_filters, ctx, action
             ctx.native_target_trace[key]=ctx.native_target_trace[key]+1
         end
         if native then
-            local passed = self.conditions:EvaluateTargetFilters(target_filters, ctx, target)
-            if passed then
-                table.insert(filtered, target)
+            local passed, _, tier = self.conditions:EvaluateTargetFilters(target_filters, ctx, target, mode)
+            if passed and (mode ~= "priority" or viable == nil or viable(target)) then
+                tier = mode == "priority" and (tier or 0) or 0
+                if tier < first_tier then filtered = {}; first_tier = tier end
+                if tier == first_tier then table.insert(filtered, target) end
             end
         end
     end
@@ -176,7 +178,7 @@ end
 
 function TargetSelector:SelectUnit(rule, action_spec, ctx)
     if action_spec.target_mode == "self" then
-        local passed = native_legal(ctx.caster, action_spec, ctx) and self.conditions:EvaluateTargetFilters(rule.target_filters, ctx, ctx.caster)
+        local passed = native_legal(ctx.caster, action_spec, ctx) and self.conditions:EvaluateTargetFilters(rule.target_filters, ctx, ctx.caster, rule.target_filters_mode)
         if passed then
             return ctx.caster, nil
         end
@@ -191,7 +193,9 @@ function TargetSelector:SelectUnit(rule, action_spec, ctx)
         candidates = ctx.get_candidates(ctx.caster, action_spec, rule.target or {}) or {}
     end
 
-    local filtered = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec)
+    local filtered = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec, rule.target_filters_mode, function(target)
+        return rule.approach == "allow_approach" or ctx.is_in_range == nil or ctx.is_in_range(action_spec, target)
+    end)
     if #filtered == 0 then
         return nil, "no_legal_target"
     end
@@ -211,7 +215,15 @@ function TargetSelector:SelectPoint(rule, action_spec, ctx)
         candidates = ctx.get_candidates(ctx.caster, action_spec, rule.target or {}) or {}
     end
 
-    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec)
+    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec, rule.target_filters_mode, function(anchor)
+        local point = anchor:GetAbsOrigin()
+        local source = action_spec.source or action_spec.ability
+        if source ~= nil and source.CastFilterResultLocation ~= nil then
+            local ok, result = pcall(source.CastFilterResultLocation, source, point)
+            if not ok or result ~= (UF_SUCCESS or 0) then return false end
+        end
+        return rule.approach == "allow_approach" or ctx.is_in_range == nil or ctx.is_in_range(action_spec, point)
+    end)
     if #legal == 0 then
         return nil, nil, "no_legal_aoe_anchor"
     end
@@ -242,7 +254,16 @@ function TargetSelector:SelectVector(rule, action_spec, ctx)
     native_spec.target_mode = action_spec.vector_mode
     local candidates = ctx.get_candidates ~= nil
         and ctx.get_candidates(ctx.caster, native_spec, rule.target or {}) or {}
-    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, native_spec)
+    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, native_spec, rule.target_filters_mode, function(primary)
+        local target = VectorTarget.Build(ctx.caster, primary)
+        if target == nil then return false end
+        local source = action_spec.source
+        if action_spec.vector_mode == "point" and source.CastFilterResultLocation ~= nil then
+            local ok, result = pcall(source.CastFilterResultLocation, source, target.start)
+            if not ok or result ~= (UF_SUCCESS or 0) then return false end
+        end
+        return rule.approach == "allow_approach" or ctx.is_in_range == nil or ctx.is_in_range(action_spec, target)
+    end)
     self:SortCandidates(legal, rule.target_priorities, ctx)
     for _, primary in ipairs(legal) do
         local target = VectorTarget.Build(ctx.caster, primary)
@@ -269,7 +290,7 @@ function TargetSelector:CheckNoTarget(rule, action_spec, ctx)
     if ctx.get_candidates ~= nil then
         candidates = ctx.get_candidates(ctx.caster, action_spec, rule.target or {}) or {}
     end
-    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec)
+    local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec, rule.target_filters_mode)
     -- Filters require a matching trigger. Explicit distance/nearby conditions
     -- own proximity restrictions, independently of the retired hit-count gate.
     if #legal > 0 then return true, nil end

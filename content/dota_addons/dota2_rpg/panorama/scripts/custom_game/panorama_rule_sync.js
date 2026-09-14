@@ -217,7 +217,9 @@ var RpgRuleSync = (function () {
             action_name: action === "attack" ? "" : String(args.actionName || ""),
             target_team: rule.target_team || targetTeam(target),
             target_types: Array.isArray(rule.target_types) ? rule.target_types.join(",") : rule.target_types || targetTypes(target),
-            approach: rule.forced ? "allow_approach" : "range_only"
+            approach: rule.forced ? "allow_approach" : "range_only",
+            use_conditions_mode: rule.use_conditions_mode === "priority" ? "priority" : "all",
+            target_filters_mode: rule.target_filters_mode === "priority" ? "priority" : "all"
         };
 
         if (args.ruleCount !== undefined) {
@@ -310,6 +312,7 @@ var RpgRuleSync = (function () {
                 return copy;
             });
         });
+        ["use_conditions_mode","target_filters_mode"].forEach(function(key) { rule[key] = source[key] === "priority" ? "priority" : "all"; });
         var first = rule.use_conditions[0] || {type:"always"};
         rule.condition = first.type; rule.value = first.seconds !== undefined ? first.seconds : first.value !== undefined ? first.value : 50;
         rule.target_team=team; rule.target_types=source.target_types || targetTypes(rule.target);
@@ -337,6 +340,8 @@ var RpgRuleSync = (function () {
                 target_team:rule.target_team || targetTeam(rule.target),
                 target_types:rule.target_types || targetTypes(rule.target),
                 target:rule.target,
+                use_conditions_mode: rule.use_conditions_mode === "priority" ? "priority" : "all",
+                target_filters_mode: rule.target_filters_mode === "priority" ? "priority" : "all",
                 use_conditions: rule.use_conditions || [use],
                 target_filters: rule.target_filters || [targetFilter(rule) || { type: "" }],
                 target_priorities: rule.target_priorities || [{ type: targetPriority(rule.target) }],

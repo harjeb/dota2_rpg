@@ -942,10 +942,12 @@
         var editIsCurrent=bindRuleEdit(side,heroIndex,index);
         var chosenActionDetail=getActionDetail(side,heroIndex,actionKey);
         // Selecting an action starts from its recommended configuration, so
-        // conditions and switch settings from the previous skill cannot leak.
+        // Native skill settings are reset; the independent combination choices persist.
         var next={action:actionKey,enabled:original.enabled,condition:"always",value:50,
             target:"enemy_distance_nearest",target_team:"enemy",destination:"target",
             use_conditions:[],target_filters:[],target_priorities:[{type:"nearest"}],forced:false,
+            use_conditions_mode:original.use_conditions_mode === "priority" ? "priority" : "all",
+            target_filters_mode:original.target_filters_mode === "priority" ? "priority" : "all",
             cast_preference:"auto",desired_toggle_state:null,desired_autocast_state:null,
             state_policy:"fixed",cast_variant:"default",allow_unverified_modifiers:false};
         var recommended=typeof RpgSkillPresets!=="undefined" && chosenActionDetail
