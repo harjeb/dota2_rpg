@@ -383,6 +383,9 @@ function CDota2RpgDemo:InitGameMode()
 	self.nativePurchaseClaimedIds = {}
 	self.nativePurchaseTick = 0
 	self.pendingNativePurchases = {}
+	-- UI74：已付款但目标满格未能交付的订单会保留重试；“换格交付”临时挪走的装备
+	-- 进入待归还队列，新局/重开时必须一起清空，不能跨局保留旧实体句柄。
+	self.nativePurchaseSwapReturns = {}
 	self.rosterAbilitySnapshot = nil
 	self.barrierUnits = nil
 	self.placedPositions = {}  -- heroName -> {x, y}（准备阶段玩家排的站位）
