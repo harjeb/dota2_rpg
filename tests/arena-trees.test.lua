@@ -97,5 +97,5 @@ local uninitialized = Arena.new()
 function EntIndexToHScript() return nil end
 local order = { order_type = 1, position_x = 9000, position_y = 9000, units = {} }
 assert(uninitialized:ValidateOrder(order), "movement validation loads bounds lazily")
-assert(order.position_x == 1152 and order.position_y == 627, "movement clamped after lazy load")
+assert(order.position_x == 1512 and order.position_y == 829.5, "movement clamped after lazy load")
 print("PASS: marker-height native divider, prepare repair, navigation cuts, direct open, repeated stages, and lazy bounds")

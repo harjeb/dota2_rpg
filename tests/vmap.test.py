@@ -139,20 +139,31 @@ class VmapTests(unittest.TestCase):
             self.assertEqual(len(terrain[key]), size, key)
             self.assertFalse(any(terrain[key]), key)
 
+    def test_width_update_is_absolute_and_preserves_unrelated_data(self):
+        model = dmx.load(in_file=io.BytesIO(MAP.read_bytes()))
+        before = signature(model)
+        self.assertFalse(updater.set_arena_width(model))
+        self.assertTrue(updater.set_arena_width(model, 1200))
+        self.assertTrue(updater.set_arena_width(model))
+        self.assertEqual(signature(model), before)
+        self.assertFalse(updater.set_arena_width(model))
+        self.assertEqual(updater.HALF_WIDTH / 1200, 1.3)
+        self.assertEqual(updater.HALF_HEIGHT / 675, 1.3)
+
     def test_arena_markers(self):
-        for name, origin in {'min': (-1200, -675, 128), 'max': (1200, 675, 128),
+        for name, origin in {'min': (-1560, -877.5, 128), 'max': (1560, 877.5, 128),
                              'center': (0, 0, 128)}.items():
             marker = self.named('rpg_arena_' + name)
             self.assertEqual(marker['entity_properties']['classname'], 'info_target')
             self.vector(marker['origin'], origin)
 
     def test_invisible_colliding_perimeter(self):
-        for side, y, low_y, high_y in [('north', 691, 675, 707), ('south', -691, -707, -675)]:
-            self.brush('rpg_arena_wall_' + side, (0, y, 384), (1.59375, .03125, 2),
-                       ((-1224, low_y, 128), (1224, high_y, 640)))
-        for side, x, low_x, high_x in [('east', 1216, 1200, 1232), ('west', -1216, -1232, -1200)]:
-            self.brush('rpg_arena_wall_' + side, (x, 0, 384), (1 / 48, 691 / 512, 2),
-                       ((low_x, -691, 128), (high_x, 691, 640)))
+        for side, y, low_y, high_y in [('north', 893.5, 877.5, 909.5), ('south', -893.5, -909.5, -877.5)]:
+            self.brush('rpg_arena_wall_' + side, (0, y, 384), (2.0625, .03125, 2),
+                       ((-1584, low_y, 128), (1584, high_y, 640)))
+        for side, x, low_x, high_x in [('east', 1576, 1560, 1592), ('west', -1576, -1592, -1560)]:
+            self.brush('rpg_arena_wall_' + side, (x, 0, 384), (1 / 48, 893.5 / 512, 2),
+                       ((low_x, -893.5, 128), (high_x, 893.5, 640)))
 
     def test_no_static_middle_obstruction(self):
         for name in ('rpg_mid_gate_visual', 'rpg_mid_gate_nav'):
@@ -195,25 +206,25 @@ class VmapTests(unittest.TestCase):
     def test_four_nonav_slabs(self):
         slabs = [e for e in self.meshes if e['meshData']['materials'] == [NONAV]]
         self.assertEqual(len(slabs), 4)
-        for y in (691, -691):
+        for y in (893.5, -893.5):
             matches = [e for e in slabs if tuple(e['origin']) == (0, y, 128)]
             self.assertEqual(len(matches), 1)
-            self.mesh_contract(matches[0], (0, y, 128), (1.59375, .0625, .25), NONAV,
-                               ((-1224, y - 32, 96), (1224, y + 32, 160)))
-        for x in (1200, -1200):
+            self.mesh_contract(matches[0], (0, y, 128), (2.0625, .0625, .25), NONAV,
+                               ((-1584, y - 32, 96), (1584, y + 32, 160)))
+        for x in (1560, -1560):
             matches = [e for e in slabs if tuple(e['origin']) == (x, 0, 128)]
             self.assertEqual(len(matches), 1)
-            self.mesh_contract(matches[0], (x, 0, 128), (1 / 24, 691 / 512, .25), NONAV,
-                               ((x - 32, -691, 96), (x + 32, 691, 160)))
+            self.mesh_contract(matches[0], (x, 0, 128), (1 / 24, 893.5 / 512, .25), NONAV,
+                               ((x - 32, -893.5, 96), (x + 32, 893.5, 160)))
 
     def test_native_rock_perimeter(self):
         rocks = [e for e in self.entities if (e['entity_properties'].get('targetname') or '').startswith('rpg_arena_rock_')]
         self.assertEqual(len(rocks), 28)
         placements = []
-        for side, y, yaw in [('north', 825, 90), ('south', -825, 270)]:
-            placements.extend((side, i, (x, y, 128), yaw) for i, x in enumerate(range(-1200, 1201, 240)))
-        for side, x, yaw in [('east', 1350, 0), ('west', -1350, 180)]:
-            placements.extend((side, i, (x, y, 128), yaw) for i, y in enumerate(range(-540, 541, 540)))
+        for side, y, yaw in [('north', 1027.5, 90), ('south', -1027.5, 270)]:
+            placements.extend((side, i, (x, y, 128), yaw) for i, x in enumerate(range(-1560, 1561, 312)))
+        for side, x, yaw in [('east', 1710, 0), ('west', -1710, 180)]:
+            placements.extend((side, i, (x, y, 128), yaw) for i, y in enumerate((-702, 0, 702)))
         for side, index, origin, yaw in placements:
             prop = self.named(f'rpg_arena_rock_{side}_{index:02}')
             self.assertIn(prop, self.model.root['world']['children'])

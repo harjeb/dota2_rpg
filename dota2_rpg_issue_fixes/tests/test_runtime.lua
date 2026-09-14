@@ -397,10 +397,10 @@ do
     local ArenaController = require("issue_fixes.arena_controller")
     local arena = ArenaController.new()
     arena:LoadBounds()
-    assert_equal(arena.min.x, -1200, "compact arena min x")
-    assert_equal(arena.max.x, 1200, "compact arena max x")
-    assert_equal(arena.min.y, -675, "expanded arena min y")
-    assert_equal(arena.max.y, 675, "expanded arena max y")
+    assert_equal(arena.min.x, -1560, "expanded arena min x")
+    assert_equal(arena.max.x, 1560, "expanded arena max x")
+    assert_equal(arena.min.y, -877.5, "expanded arena min y")
+    assert_equal(arena.max.y, 877.5, "expanded arena max y")
 
     local unit = Unit.new(DOTA_TEAM_GOODGUYS)
     local order = {
@@ -412,7 +412,7 @@ do
     }
     arena:ValidateOrder(order)
     assert(order.position_x <= -72, "prepare player stays in compact left zone")
-    assert(order.position_y <= 627, "movement clamped inside expanded y boundary")
+    assert(order.position_y <= 829.5, "movement clamped inside expanded y boundary")
 
     -- Existing external callers that explicitly asked for the former square
     -- layout retain its original dimensions.

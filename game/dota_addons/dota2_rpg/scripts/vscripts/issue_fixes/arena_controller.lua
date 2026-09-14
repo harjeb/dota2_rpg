@@ -1,8 +1,7 @@
 -- Compact rectangular arena: two preparation zones joined side by side.
 -- Hammer provides the outer blockers; native temporary trees close the middle
 -- divider without baking a permanent obstruction into terrain/grid navigation.
--- The default 2400×900 arena is two 1200×900 zones, each slightly roomier
--- than the original 1040×760 bench/preparation enclosure.
+-- Default 3120×1755 arena: both axes expanded 30% from 2400×1350.
 
 local ArenaController = {}
 ArenaController.__index = ArenaController
@@ -58,10 +57,10 @@ function ArenaController.new(options)
     local legacy_square_size = tonumber(options.square_size)
     local half_width = tonumber(options.half_width)
         or legacy_square_size
-        or 1200
+        or 1560
     local half_height = tonumber(options.half_height)
         or (legacy_square_size and legacy_square_size * 0.5)
-        or 675
+        or 877.5
 
     return setmetatable({
         min_marker = options.min_marker or "rpg_arena_min",

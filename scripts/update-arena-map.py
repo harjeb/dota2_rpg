@@ -1,4 +1,4 @@
-"""Update the arena perimeter to 2400 x 1350 and remove its obsolete divider.
+"""Update the arena perimeter to 3120 x 1755 and remove its obsolete divider.
 
 Only arena markers, perimeter brushes/slabs and decorative rocks move. Terrain,
 player starts, lighting and unrelated entities retain their authored coordinates.
@@ -45,7 +45,8 @@ def remove_middle_brush(model):
     return bool(gates)
 
 
-HALF_HEIGHT = 675
+HALF_WIDTH = 1560
+HALF_HEIGHT = 877.5
 NONAV = 'materials/tools/nonavclip.vmat'
 
 
@@ -91,10 +92,44 @@ def set_arena_height(model, half_height=HALF_HEIGHT):
         x, y, _ = slab['origin']
         if x == 0 and y != 0:
             set_y(slab, 'origin', (1 if y > 0 else -1) * (half_height + 16))
-        elif abs(x) == 1200 and y == 0:
+        elif x != 0 and y == 0:
             set_y(slab, 'scales', (half_height + 16) / 512)
         else:
             raise ValueError('Unrecognized arena NONAV slab; inspect map before updating')
+    return changed
+
+
+def set_arena_width(model, half_width=HALF_WIDTH):
+    """Absolute width, preserving wall thickness and the original center."""
+    changed = False
+    def set_x(element, key, value):
+        nonlocal changed
+        v = element[key]
+        if v[0] != value:
+            element[key] = dmx.Vector3((value, v[1], v[2])); changed = True
+    elements = list(model.elements)
+    by_name = {e.get('entity_properties', {}).get('targetname'): e
+               for e in elements if e.type == 'CMapEntity'}
+    for side, sign in [('min', -1), ('max', 1)]:
+        set_x(by_name['rpg_arena_' + side], 'origin', sign * half_width)
+    for side, sign in [('east', 1), ('west', -1)]:
+        wall = by_name['rpg_arena_wall_' + side]
+        for e in [wall, wall['children'][0]]:
+            set_x(e, 'origin', sign * (half_width + 16))
+        for index in range(3):
+            set_x(by_name[f'rpg_arena_rock_{side}_{index:02}'], 'origin', sign * (half_width + 150))
+    for side in ('north', 'south'):
+        set_x(by_name['rpg_arena_wall_' + side]['children'][0], 'scales', (half_width + 24) / 768)
+        for index in range(11):
+            set_x(by_name[f'rpg_arena_rock_{side}_{index:02}'], 'origin', (index - 5) * half_width / 5)
+    for slab in [e for e in elements if e.type == 'CMapMesh' and e['meshData']['materials'] == [NONAV]]:
+        x, y, _ = slab['origin']
+        if x == 0 and y != 0:
+            set_x(slab, 'scales', (half_width + 24) / 768)
+        elif x != 0 and y == 0:
+            set_x(slab, 'origin', (1 if x > 0 else -1) * half_width)
+        else:
+            raise ValueError('Unrecognized NONAV slab')
     return changed
 
 
@@ -103,12 +138,13 @@ def main():
     model = dmx.load(str(source))
     changed = remove_middle_brush(model)
     changed = set_arena_height(model) or changed
+    changed = set_arena_width(model) or changed
     data = model.echo("binary", 9) if changed else source.read_bytes()
     if changed:
         source.write_bytes(data)
     overlay = ROOT / "dota2_rpg_issue_fixes/overlay" / MAP
     overlay.write_bytes(data)
-    print('Arena is 2400 x 1350 at Z=128; no static middle brush; overlay synced.'
+    print('Arena is 3120 x 1755 at Z=128; no static middle brush; overlay synced.'
           + (' Updated source.' if changed else ' Source already current.'))
 
 

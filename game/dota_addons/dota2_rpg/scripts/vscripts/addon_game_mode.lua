@@ -107,10 +107,10 @@ local NATIVE_TP_SLOT = 15
 -- “可搬运槽位”上界：面板、装备快照、阵容重铸与原生拖放都必须覆盖中立槽。
 local CARRIER_LAST_SLOT = NEUTRAL_ITEM_SLOT
 
--- 战场宽度 2400，纵向高度由 900 增至 1350（+50%）。
+-- 战场由 2400×1350 同心扩展至 3120×1755，两轴各 +30%。
 -- 准备期场上英雄只可在左侧区域排位；小精灵/待命区不受此场地钳制。
-local BATTLEFIELD_HALF_WIDTH = 1200
-local BATTLEFIELD_HALF_HEIGHT = 675
+local BATTLEFIELD_HALF_WIDTH = 1560
+local BATTLEFIELD_HALF_HEIGHT = 877.5
 local BATTLEFIELD_MOVE_MARGIN = 64
 local PREPARE_DIVIDER_MARGIN = 150
 
@@ -3833,7 +3833,7 @@ function CDota2RpgDemo:ValidatePrepareOrder(filterTable)
 			local pos = filterTable.position_2 or filterTable.position
 			local hasPosition = filterTable.position_x ~= nil or (pos and pos.x ~= nil)
 			if hasPosition then
-				-- Lua 边界和默认出生点使用同一紧凑布局：左方 1200×900 准备区。
+				-- Lua 准备区边界与地图 3120×1755 战场一致。
 				local x = tonumber(filterTable.position_x or (pos and pos.x) or 0)
 				local y = tonumber(filterTable.position_y or (pos and pos.y) or 0)
 				local minX = -BATTLEFIELD_HALF_WIDTH + BATTLEFIELD_MOVE_MARGIN

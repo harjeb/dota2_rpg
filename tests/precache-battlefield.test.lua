@@ -278,8 +278,8 @@ assert(publicationFlush and publicationFlush() == nil, "rebuild publication comp
 local teamCounts = { [DOTA_TEAM_GOODGUYS] = 0, [DOTA_TEAM_BADGUYS] = 0 }
 for _, unit in ipairs(spawned) do
 	teamCounts[unit.team] = teamCounts[unit.team] + 1
-	assert(math.abs(unit.position.x) <= 1200, "battlefield x spawn must stay inside compact boundary")
-	assert(math.abs(unit.position.y) <= 675, "battlefield y spawn must stay inside expanded boundary")
+	assert(math.abs(unit.position.x) <= 1560, "battlefield x spawn must stay inside compact boundary")
+	assert(math.abs(unit.position.y) <= 877.5, "battlefield y spawn must stay inside expanded boundary")
 	if unit.team == DOTA_TEAM_GOODGUYS then
 		assert(unit.position.x <= -150, "friendly spawn must stay in the left preparation zone")
 	else
@@ -333,14 +333,14 @@ local placementOrder = {
 	position_y = 9999,
 }
 assert(spawnGame:ValidatePrepareOrder(placementOrder), "fielded placement order must be accepted")
-assert(placementOrder.position_x == -150 and placementOrder.position_y == 611,
+assert(placementOrder.position_x == -150 and placementOrder.position_y == 813.5,
 	"placement must clamp to the compact preparation boundary")
 assert(spawnGame.placedPositions[spawned[1]:GetUnitName()].x == -150,
 	"clamped placement must be persisted")
 placementOrder.position_x = -9999
 placementOrder.position_y = -9999
 assert(spawnGame:ValidatePrepareOrder(placementOrder), "far placement order must be accepted and clamped")
-assert(placementOrder.position_x == -1136 and placementOrder.position_y == -611,
+assert(placementOrder.position_x == -1496 and placementOrder.position_y == -813.5,
 	"placement must clamp to the compact outer boundary")
 
 local radiant = newUnit("npc_dota_hero_axe", Vector(-650, 0, 128), DOTA_TEAM_GOODGUYS)
