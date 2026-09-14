@@ -183,6 +183,9 @@ local game={GetStashUnit=function() return stash end, StashAddItem=function(_,na
     return true
 end}
 local function choose(name) return function(a,b) return a and index[name] or 0 end end
+-- Delivery/queue tests below isolate transport from value selection; the real
+-- upgrade + Award pipeline is exercised in loot-value-upgrades.test.lua.
+Loot.UpgradeEquipment = function(row) return row end
 full=true
 -- Award remembers earned prices even when the warehouse is full, and replay
 -- clears the history through the same runLives reset used by ResetSessionState.
@@ -192,22 +195,22 @@ do
     Loot.Award(progressionGame, config, highest)
     local state = Lives.Ensure(progressionGame)
     assert(state.campaignLootProgress.highestEquipmentCost == 1500)
-    assert(#state.pendingCampaignLoot == 6)
+    assert(#state.pendingCampaignLoot == 3)
     progressionGame.currentLevelId = "level_07"
     Loot.Award(progressionGame, config, highest)
     assert(state.campaignLootProgress.highestEquipmentCost > 1500, "Award carries price history across victories")
-    assert(#state.pendingCampaignLoot == 12, "queued delivery does not prevent progression")
+    assert(#state.pendingCampaignLoot == 6, "queued delivery does not prevent progression")
     progressionGame.runLives = nil
     progressionGame.currentLevelId = "level_01"
     Loot.Award(progressionGame, config, highest)
     assert(Lives.Ensure(progressionGame).campaignLootProgress.highestEquipmentCost <= 250, "a new run resets loot history")
 end
 local names=Loot.Award(game,config,choose("item_blink"))
-assert(#names==6 and names[1]=="item_blink" and added==0)
-assert(#Lives.Ensure(game).pendingCampaignLoot==6)
+assert(#names==3 and names[1]=="item_blink" and added==0)
+assert(#Lives.Ensure(game).pendingCampaignLoot==3)
 full=false
-assert(Loot.Flush(game)==0 and added==6)
-Loot.Flush(game); assert(added==6,"no duplicate delivery")
+assert(Loot.Flush(game)==0 and added==3)
+Loot.Flush(game); assert(added==3,"no duplicate delivery")
 -- Early neutral rewards queued behind an occupied slot must not emerge as
 -- obsolete tier-one equipment in mid-game. Upgrade pending, not held items.
 do
@@ -300,7 +303,7 @@ slots={}; added=0
 local merged={GetCurrentCharges=function() return 2 end}
 game.StashAddItem=function() added=added+1; slots[added]=merged; return false end
 Loot.Award(game,config,choose("item_branches"))
-assert(#Lives.Ensure(game).pendingCampaignLoot==6, "only prior quarantined entries remain")
+assert(#Lives.Ensure(game).pendingCampaignLoot==3, "only prior quarantined entries remain")
 local timer
 GameRules={GetGameModeEntity=function() return {SetContextThink=function(_,_,fn) timer=fn end} end}
 full=true
@@ -339,7 +342,7 @@ for _,winner in ipairs({"radiant","dire","timeout"}) do
     local old=math.random; math.random=choose("item_blink")
     count=0;g:EndBattle(winner,2);g:EndBattle(winner,2);math.random=old
     assert(count==1,"exactly once settlement")
-    assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink;item_blink;item_blink;item_blink" or ""))
-    assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 6 or 0))
+    assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink" or ""))
+    assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 3 or 0))
 end
 print("PASS campaign loot: progression, 266 catalog rows, bounded gates, full stash, retries, ambiguous native delivery")

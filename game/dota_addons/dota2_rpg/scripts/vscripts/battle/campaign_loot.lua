@@ -213,14 +213,37 @@ function Loot.Flush(game)
     return #remaining
 end
 
+-- Keep one reward per gate. Upgrade ordinary equipment into an assembled
+-- component/major item near twice its price, not two copies of a stat piece.
+function Loot.UpgradeEquipment(row, random)
+    local price = tonumber(row and row.cost) or 0
+    if not row or row.category ~= "standard" or price <= 0 then return row end
+    local assembled = require("data.assembled_loot_items")
+    local target, choices, nearest, distance = price * 2, {}, {}, math.huge
+    for _, candidate in ipairs(Catalog) do
+        local cost = tonumber(candidate.cost) or 0
+        if candidate.category == "standard" and assembled[candidate.name] and cost > price then
+            if cost >= target * 0.9 and cost <= target * 1.1 then choices[#choices + 1] = candidate end
+            local delta = math.abs(cost - target)
+            if delta < distance then nearest, distance = {candidate}, delta
+            elseif delta == distance then nearest[#nearest + 1] = candidate end
+        end
+    end
+    if #choices == 0 then choices = nearest end
+    if #choices == 0 then return row end -- already at the native catalog ceiling
+    return choices[(random or NativeRandom)(1, #choices)]
+end
+
 function Loot.Award(game, config, random)
     local names = {}
     local state = RunLives.Ensure(game)
     state.pendingCampaignLoot = state.pendingCampaignLoot or {}
     state.campaignLootProgress = state.campaignLootProgress or {}
-    for _, row in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId), state.campaignLootProgress)) do
-      -- Double each earned item, without changing gate probabilities, gold or XP.
-      for copy = 1, 2 do
+    for _, base in ipairs(Loot.Roll(config, random, Loot.StageFromLevel(game and game.currentLevelId), state.campaignLootProgress)) do
+        local row = Loot.UpgradeEquipment(base, random)
+        if row ~= base then
+            print(string.format("[RPG][Loot] value_upgrade base=%s cost=%d item=%s cost=%d", base.name, base.cost, row.name, row.cost))
+        end
         names[#names + 1] = row.delivery
         if row.delivery == "item_aegis" then
             -- Native Aegis is not droppable: existing life-reward delivery
@@ -230,7 +253,6 @@ function Loot.Award(game, config, random)
         else
             RunLives.Ensure(game).pendingCampaignLoot[#RunLives.Ensure(game).pendingCampaignLoot + 1] = { name = row.name, delivery = row.delivery }
         end
-      end
     end
     print(string.format("[RPG][Loot] rolled level=%s count=%d items=%s", tostring(game.currentLevelId), #names, table.concat(names, ";")))
     Loot.Flush(game)
