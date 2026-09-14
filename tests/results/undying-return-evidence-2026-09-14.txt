@@ -1,0 +1,11 @@
+7775:09/14 20:42:06 [VScript] [RPGTrace t=1217.03] RespawnPolicy event=death phase=fight entity=469 hero=npc_dota_hero_undying reincarnating=false allow=true disabled=false global_enabled=true until=0 alive=false outofgame=false undying_return=true
+7776:09/14 20:42:06 [VScript] [RPGTrace t=1217.03] RespawnPolicy modifiers event=death entity=469 names=modifier_undying_ceaseless_dirge,modifier_rpg_tactics_events,modifier_undying_ceaseless_dirge_buff
+7847:09/14 20:42:08 [VScript] [RPGTrace t=1219.03] RespawnPolicy event=spawn phase=fight entity=469 hero=npc_dota_hero_undying reincarnating=false allow=true disabled=false global_enabled=true until=16 alive=true outofgame=true undying_return=false
+7848:09/14 20:42:08 [VScript] [RPGTrace t=1219.03] RespawnPolicy modifiers event=spawn entity=469 names=modifier_undying_ceaseless_dirge,,modifier_fountain_invulnerability
+7852:09/14 20:42:08 [VScript] [RPGTrace t=1219.23] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=undying_tombstone target= reason=caster_out_of_game
+7853:09/14 20:42:08 [VScript] [RPGTrace t=1219.23] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=2 action=undying_soul_rip target= reason=caster_out_of_game
+7854:09/14 20:42:08 [VScript] [RPGTrace t=1219.23] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=3 action=basic_attack target= reason=caster_out_of_game
+8012:09/14 20:42:13 [VScript] [RPGTrace t=1224.33] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=1 action=undying_tombstone target= reason=caster_out_of_game
+8013:09/14 20:42:13 [VScript] [RPGTrace t=1224.33] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=2 action=undying_soul_rip target= reason=caster_out_of_game
+8014:09/14 20:42:13 [VScript] [RPGTrace t=1224.33] Tactic unit=469 hero=npc_dota_hero_undying event=rule_skipped rule=3 action=basic_attack target= reason=caster_out_of_game
+8086:09/14 20:42:16 [VScript] [RPGLifecycle seq=424 t=1227.833 real=1227.833 level=ch05 phase=setup] remove_before role=lineup entity=469 name=npc_dota_hero_undying alive=true channel=false outofgame=true active=none modifiers=3[modifier_undying_ceaseless_dirge,modifier_fountain_invulnerability,modifier_rpg_tactics_events]

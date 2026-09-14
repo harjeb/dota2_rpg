@@ -1,11 +1,11 @@
 {
   "source_sha256": "308522003567de5dd08aeee95f350f46990e9251b257ca57eb2b49a49b43aa96",
   "neutral_sha256": "0935ad39d72909cd2800d62d083e55406b2a8eb85049373c1a4392bcf907a8d5",
-  "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nAll recipe scrolls and Roshan's Banner are excluded by campaign policy.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
+  "policy": "Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.\nAll recipe scrolls, wards and Roshan's Banner are excluded by campaign policy.\nSelf-consuming Shard/Blessing use transferable Roshan consumables instead of\nAddItemByName on the commander. Blessing recipe excluded: auto-combination on\ncommander can consume Scepter without upgrading a roster hero.\n",
   "counts": {
-    "standard": 184,
-    "special": 14,
-    "excluded": 278,
+    "standard": 183,
+    "special": 12,
+    "excluded": 281,
     "neutral": 49,
     "neutral_enhancement": 19
   },
@@ -12412,10 +12412,10 @@
     },
     {
       "name": "item_ward_dispenser",
-      "category": "special",
-      "excluded_reason": null,
-      "delivery": "item_ward_dispenser",
-      "power": 1,
+      "category": null,
+      "excluded_reason": "Campaign policy: no ward drops (shop availability unchanged)",
+      "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -12448,10 +12448,10 @@
     },
     {
       "name": "item_ward_observer",
-      "category": "special",
-      "excluded_reason": null,
-      "delivery": "item_ward_observer",
-      "power": 5,
+      "category": null,
+      "excluded_reason": "Campaign policy: no ward drops (shop availability unchanged)",
+      "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",
@@ -12488,10 +12488,10 @@
     },
     {
       "name": "item_ward_sentry",
-      "category": "standard",
-      "excluded_reason": null,
-      "delivery": "item_ward_sentry",
-      "power": 1,
+      "category": null,
+      "excluded_reason": "Campaign policy: no ward drops (shop availability unchanged)",
+      "delivery": null,
+      "power": null,
       "schema": {
         "AbilityBehavior": "DOTA_ABILITY_BEHAVIOR_POINT | DOTA_ABILITY_BEHAVIOR_AOE | DOTA_ABILITY_BEHAVIOR_OPTIONAL_UNIT_TARGET | DOTA_ABILITY_BEHAVIOR_SUPPRESS_ASSOCIATED_CONSUMABLE",
         "AbilityUnitTargetTeam": "DOTA_UNIT_TARGET_TEAM_FRIENDLY",

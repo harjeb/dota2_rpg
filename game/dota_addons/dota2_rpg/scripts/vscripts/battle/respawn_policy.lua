@@ -71,6 +71,7 @@ function Policy.OnKilled(game, unit)
         if not hero(unit) then return end
         local allow = game.phase == "fight" and Policy.IsReturning(unit)
         unit.rpgDeathBeforeRespawn = true
+        unit.rpgUndyingNativeReturn = allow and Undying.IsReturning(unit) or nil
         -- Native IsReincarnating includes Aegis even after the item is consumed.
         unit:SetRespawnsDisabled(not allow)
         trace(game, "death", unit, allow)
@@ -85,6 +86,14 @@ function Policy.OnSpawn(game, unit)
         local inFight, wasDead = game.phase == "fight", unit.rpgDeathBeforeRespawn
         unit:SetRespawnsDisabled(not inFight)
         unit.rpgDeathBeforeRespawn = nil
+        local pendingReturn = unit.rpgUndyingNativeReturn
+        unit.rpgUndyingNativeReturn = nil
+        if wasDead and pendingReturn and inFight then
+            trace(game, "undying_return_before_cleanup", unit, inFight)
+            if Undying.FinishNativeReturn(game, unit, pendingReturn) then
+                trace(game, "undying_return_after_cleanup", unit, inFight)
+            end
+        end
         if wasDead and not inFight and unit:IsAlive() then
             -- Contain a late native callback after settlement. Initial preparation
             -- spawns must retain the player's freedom to position the lineup.

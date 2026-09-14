@@ -2745,7 +2745,7 @@ function CDota2RpgDemo:GetPendingNativePurchaseReservation()
 		end
 		local before = tonumber(purchase.gold_before)
 		if before ~= nil and not purchase.gold_checked and not purchase.gold_failed
-			and (earliestBefore == nil or before < earliestBefore) then
+			and (earliestBefore == nil or before > earliestBefore) then
 			earliestBefore = before
 		end
 	end
@@ -2756,6 +2756,10 @@ function CDota2RpgDemo:GetPendingNativePurchaseReservation()
 	if earliestBefore ~= nil then
 		observed = math.max(0, earliestBefore - self:GetGoldBalance())
 	end
+	-- Use the highest outstanding baseline: later orders can already observe
+	-- earlier native debits. Taking the smallest snapshot would reserve those
+	-- earlier costs again (e.g. circlet + gauntlets blocks the bracer recipe).
+	-- Project-side wallet changes rebase outstanding snapshots separately.
 	-- A price check reserves only the part not already debited by the native shop.
 	-- This permits a second order after an immediate first native debit without
 	-- allowing multiple engine-free orders to consume the same balance.

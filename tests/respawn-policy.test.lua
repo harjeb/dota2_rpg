@@ -156,6 +156,53 @@ test("Undying native return with false reincarnation flag keeps permission and p
         assert(u.disabled and bm:GetAliveCount(team,true)==0,"intrinsic alone cannot grant a second return")
     end
 end)
+test("confirmed Undying native return removes only fountain protection after the native buff ends",function()
+    for _,team in ipairs({2,3}) do
+        local g,bm,a,b=fixture(); local u=team==2 and a or b
+        u.name="npc_dota_hero_undying"; g:OnStartBattle()
+        u.mods.modifier_undying_ceaseless_dirge_buff=true; killed(g,u,false)
+        assert(u.rpgUndyingNativeReturn)
+        u.mods.modifier_undying_ceaseless_dirge_buff=nil
+        u.mods.modifier_fountain_invulnerability=true
+        u.mods.modifier_undying_ceaseless_dirge=true
+        u.mods.modifier_other_out_of_game=true
+        function u:IsOutOfGame() return self.mods.modifier_fountain_invulnerability==true or self.mods.modifier_other_out_of_game==true end
+        local writes,items=u.stateWrites,u.items
+        spawned(g,u)
+        assert(not u.mods.modifier_fountain_invulnerability,"known native spawn protection must end")
+        assert(u.mods.modifier_undying_ceaseless_dirge and u:IsOutOfGame(),"unrelated native state is preserved")
+        assert(not u.rpgUndyingNativeReturn and not u.disabled)
+        assert(u.stateWrites==writes and u.items==items and u.cooldown==27 and u.stops==0)
+        local before,after=false,false
+        for _,line in ipairs(logs) do
+            before=before or line:find("event=undying_return_before_cleanup",1,true)
+            after=after or line:find("event=undying_return_after_cleanup",1,true)
+        end
+        assert(before and after,"native state is observable on both sides of targeted cleanup")
+        u.mods.modifier_fountain_invulnerability=true
+        spawned(g,u)
+        assert(u.mods.modifier_fountain_invulnerability,"duplicate spawn cannot repeat cleanup")
+        killed(g,u,false); assert(u.disabled and not u.rpgUndyingNativeReturn)
+        spawned(g,u)
+        assert(u.mods.modifier_fountain_invulnerability,"ordinary cooldown-spent death is not native return")
+    end
+end)
+test("fountain cleanup excludes other heroes, initial spawns, pending buffs and late returns",function()
+    for _,case in ipairs({"other","initial","buff","late"}) do
+        local g,bm,a=fixture(); a.name=case=="other" and "npc_dota_hero_axe" or "npc_dota_hero_undying"
+        g:OnStartBattle()
+        if case~="initial" then
+            a.mods.modifier_undying_ceaseless_dirge_buff=true; killed(g,a,case=="other")
+        end
+        if case~="buff" then a.mods.modifier_undying_ceaseless_dirge_buff=nil end
+        a.mods.modifier_fountain_invulnerability=true
+        if case=="late" then g.phase="result" end
+        spawned(g,a)
+        assert(a.mods.modifier_fountain_invulnerability,case.." must preserve protection")
+        assert(not a.rpgUndyingNativeReturn,"pending return is consumed even when cleanup is refused")
+        if case=="late" then assert(a.disabled and a.mods.modifier_rooted) end
+    end
+end)
 test("Undying return does not escape deadline or settlement containment",function()
     local g,bm,a=fixture(); a.name="npc_dota_hero_undying"; g:OnStartBattle()
     a.mods.modifier_undying_ceaseless_dirge_buff=true; killed(g,a,false)

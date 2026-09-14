@@ -16,7 +16,7 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(len(c['items']), 544)
         self.assertEqual(len({r['name'] for r in c['items']}), 544)
         pool = {r['name']: r for r in c['items'] if r['category']}
-        self.assertEqual(len(pool), 266)
+        self.assertEqual(len(pool), 263)
         self.assertNotIn('item_roshans_banner', pool)
         # 本模式不需要回城卷轴：既不进掉落池，也从原版商店下架。
         self.assertNotIn('item_tpscroll', pool)
@@ -24,7 +24,13 @@ class CatalogTests(unittest.TestCase):
         self.assertTrue(all(r['schema'].get('ItemRecipe') != '1' for r in pool.values()))
         for r in c['items']:
             self.assertEqual(bool(r['category']), not bool(r['excluded_reason']))
-        self.assertIn('item_ward_observer', pool)
+        wards = {'item_ward_observer', 'item_ward_sentry', 'item_ward_dispenser'}
+        rows = {r['name']: r for r in c['items']}
+        for name in wards:
+            self.assertNotIn(name, pool)
+            self.assertIsNone(rows[name]['delivery'])
+            self.assertIn('no ward drops', rows[name]['excluded_reason'])
+        self.assertTrue(wards.isdisjoint(r['delivery'] for r in pool.values()))
         self.assertIn('item_foragers_kit', pool)
         self.assertIn('item_enhancement_quickened', pool)
         self.assertNotIn('item_keen_optic', pool)  # neutral flag alone is not current rotation
@@ -50,7 +56,7 @@ class CatalogTests(unittest.TestCase):
         self.assertNotIn('item_aghanims_shard', pool)
         self.assertNotIn('item_aghanims_shard_roshan', pool)
         self.assertEqual(author.ALIASES, {})
-        self.assertEqual(len({r['delivery'] for r in pool.values()}), 266)
+        self.assertEqual(len({r['delivery'] for r in pool.values()}), 263)
         kv = author.native.parse_kv((author.DATA / 'loot.kv').read_text(encoding='utf-8'))['loot']
         for name, expected in [('loot_basic', .85), ('loot_hero', .85), ('loot_boss', 1.35)]:
             self.assertEqual(kv[name]['pool'], 'all_items')
@@ -72,6 +78,36 @@ class CatalogTests(unittest.TestCase):
         for name in neutral:
             self.assertIn('delivery = "' + name + '", neutral = true', lua)
         self.assertNotIn('delivery = "item_blink", neutral = true', lua)
+
+    def test_ward_policy_precedes_native_eligibility(self):
+        # Positive-price purchasable wards and current-rotation flags cannot bypass policy.
+        items = b'''"DOTAAbilities" {
+            "item_ward_observer" { "ItemCost" "0" }
+            "item_ward_sentry" { "ItemCost" "50" "ItemPurchasable" "1" }
+            "item_ward_dispenser" { "ItemCost" "50" }
+            "item_clarity" { "ItemCost" "50" }
+        }'''
+        rotation = b'''"neutral_items" { "neutral_tiers" { "1" {
+            "items" { "item_ward_observer" "1" }
+            "enhancements" { "1" { "item_ward_dispenser" "1" } }
+        } } }'''
+        rows = {r['name']: r for r in author.build(items, rotation)['items']}
+        for name in ('item_ward_observer', 'item_ward_sentry', 'item_ward_dispenser'):
+            self.assertIsNone(rows[name]['category'])
+            self.assertIsNone(rows[name]['delivery'])
+        self.assertEqual(rows['item_clarity']['category'], 'standard')
+
+    def test_experience_scroll_localization(self):
+        import re
+        resource = ROOT / 'game/dota_addons/dota2_rpg/resource'
+        tags = []
+        for locale, term in [('schinese', '经验卷轴'), ('english', 'Experience Scroll')]:
+            tokens = dict(re.findall(r'"([^"\n]+)"\s+"([^"\n]*)"',
+                                    (resource / ('addon_' + locale + '.txt')).read_text(encoding='utf-8-sig')))
+            for suffix in ('shop', 'low', 'high', 'use_low', 'use_high'):
+                self.assertIn(term, tokens['dota2_rpg_scroll_' + suffix])
+            tags.append(re.search(r'\d+$', tokens['dota2_rpg_build_tag']).group())
+        self.assertEqual(tags[0], tags[1])
 
     @unittest.skipUnless(author.native.DEFAULT_VPK.exists(), 'installed native VPK not present')
     def test_installed_native_reproduction(self):

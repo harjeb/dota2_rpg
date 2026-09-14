@@ -17,6 +17,20 @@ function Undying.IsReturning(hero)
         and call(hero, "GetUnitName") == "npc_dota_hero_undying"
         and call(hero, "HasModifier", "modifier_undying_ceaseless_dirge_buff") == true
 end
+-- Only a roster death classified by RespawnPolicy may enter this cleanup.
+-- Native return already restored the entity; do not respawn it or end its buff.
+-- The recorded stuck return retains fountain protection. Remove that known
+-- spawn-only modifier, not arbitrary out-of-game states or AI legality checks.
+-- Native causality/action recovery still requires user-run engine verification.
+function Undying.FinishNativeReturn(game, hero, pending)
+    if not pending or game.phase ~= "fight" or call(hero, "IsNull") == true
+        or call(hero, "GetUnitName") ~= "npc_dota_hero_undying"
+        or call(hero, "IsAlive") ~= true or Undying.IsReturning(hero)
+        or call(hero, "HasModifier", "modifier_fountain_invulnerability") ~= true then return false end
+    if type(hero.RemoveModifierByName) ~= "function" then return false end
+    hero:RemoveModifierByName("modifier_fountain_invulnerability")
+    return true
+end
 function Undying.ResetPreparation(game, hero)
     if game.phase ~= "setup" or call(hero, "IsNull") == true
         or call(hero, "GetUnitName") ~= "npc_dota_hero_undying" then return false end

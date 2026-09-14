@@ -1,5 +1,5 @@
 """Offline campaign loot catalog. Native items + CURRENT neutral rotation, not shop-only.
-All recipe scrolls and Roshan's Banner are excluded by campaign policy.
+All recipe scrolls, wards and Roshan's Banner are excluded by campaign policy.
 Self-consuming Shard/Blessing use transferable Roshan consumables instead of
 AddItemByName on the commander. Blessing recipe excluded: auto-combination on
 commander can consume Scepter without upgrading a roster hero.
@@ -57,6 +57,8 @@ def build(items_bytes, neutral_bytes):
         reason, category = None, None
         if name.startswith('item_recipe_') or schema.get('ItemRecipe') == '1':
             reason = 'Campaign policy: no recipe scroll drops'
+        elif name in ('item_ward_observer', 'item_ward_sentry', 'item_ward_dispenser'):
+            reason = 'Campaign policy: no ward drops (shop availability unchanged)'
         elif name == 'item_roshans_banner':
             reason = 'Campaign policy: no Roshan Banner drops'
         elif name == 'item_tpscroll':

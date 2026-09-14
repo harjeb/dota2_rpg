@@ -689,6 +689,56 @@ assert(not equipmentGame:ValidatePrepareOrder({
 equipmentGame.nativePurchaseOrderContexts = {}
 assertEqual(equipmentGame:SyncGoldToPlayer(), 3000, "legacy wallet sync must never restore stale self.gold")
 
+-- Live Mars report: one click buys 155 + 140 + 210, with native debits
+-- and purchase events interleaved before the next routing Think.
+do
+	local originalCost = GetItemCost
+	local names = { "item_circlet", "item_gauntlets", "item_recipe_bracer" }
+	local prices = { item_circlet = 155, item_gauntlets = 140, item_recipe_bracer = 210 }
+	GetItemCost = function(name) return prices[name] or originalCost(name) end
+	for _, initial in ipairs({ 647, 505, 504 }) do
+		for _, mode in ipairs({ "immediate", "deferred", "mixed" }) do
+			local game = newGame({ phase = "setup", playerId = 0,
+				goldWalletInitialized = true, nativePurchaseOrderContexts = {}, pendingNativePurchases = {},
+				placeholderHero = wisp, heroData = equipmentGame.heroData,
+				battleManager = equipmentGame.battleManager, benchUnits = {} })
+			game:SetGoldBalance(initial)
+			assert(game:SetNativePurchaseSelection(fieldedHero))
+			local total, debited = 0, 0
+			for index, name in ipairs(names) do
+				local accepted = game:ValidatePrepareOrder({ issuer_player_id_const = 0,
+					order_type = DOTA_UNIT_ORDER_PURCHASE_ITEM, units = {}, itemname = name })
+				assertEqual(accepted, initial >= total + prices[name],
+					mode .. " component affordability " .. initial .. " " .. name)
+				if accepted then
+					total = total + prices[name]
+					if mode == "immediate" or (mode == "mixed" and index == 1) then
+						nativeWalletReliable[0] = nativeWalletReliable[0] - prices[name]
+						debited = debited + prices[name]
+					end
+					-- Leave the second order context waiting for its event, so the
+					-- recipe preflight must consider both context and pending lists.
+					if index ~= 2 then game:OnNativeItemPurchased({ PlayerID = 0, itemname = name }) end
+					local reserved, observed = game:GetPendingNativePurchaseReservation()
+					assertEqual(reserved, total, "all unsettled components reserved once")
+					assertEqual(observed, debited, "all native component debits recognized")
+				end
+			end
+			local walletState = { observed_decrease = debited }
+			for _, list in ipairs({ game.pendingNativePurchases, game.nativePurchaseOrderContexts }) do
+				for _, purchase in ipairs(list) do
+					assert(game:DebitNativePurchase(purchase, walletState))
+					assert(game:DebitNativePurchase(purchase, walletState), "settlement is idempotent")
+				end
+			end
+			assertEqual(game:GetGoldBalance(), initial - total, "components charged exactly once")
+			assertEqual(game:GetPendingNativePurchaseReservation(), 0, "settled purchases no longer reserve gold")
+		end
+	end
+	GetItemCost = originalCost
+	equipmentGame:SetGoldBalance(3000)
+end
+
 -- Refresh is a project-side debit but must survive the next think/broadcast
 -- cycle exactly like a native-shop debit.
 local refreshFlow = newGame({

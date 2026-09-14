@@ -3,7 +3,12 @@ local modules = root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 package.path = modules .. "?.lua;" .. package.path
 local Loot = require("battle.campaign_loot")
 local Lives = require("battle.run_lives")
-assert(#Loot.Catalog == 266)
+assert(#Loot.Catalog == 263)
+local wards = {item_ward_observer=true, item_ward_sentry=true, item_ward_dispenser=true}
+local function assertNotWard(row)
+    assert(not wards[row.name] and not wards[row.delivery], 'wards cannot enter campaign rewards')
+end
+for _, row in ipairs(Loot.Catalog) do assertNotWard(row) end
 
 -- 掉落强度按关卡分级：第一章不掉 6000+ 的成品，最后一章不再掉一级散件。
 assert(Loot.PowerCeiling(nil) == nil and Loot.PowerCeiling("last") == nil,
@@ -21,6 +26,7 @@ for stage = 1, 30 do
     local minimum, maximum = Loot.PriceRange(stage)
     local equipmentCount, bonusCount = 0, 0
     for _, row in ipairs(pool) do
+        assertNotWard(row)
         assert(tonumber(row.power) >= 1 and tonumber(row.power) <= ceiling,
             "stage " .. stage .. " pool stays within its ceiling")
         if row.category == "standard" then
@@ -104,6 +110,7 @@ do
         local history, lastCost = {}, nil
         for stage = 1, 30 do
             for _, row in ipairs(Loot.Roll(config, random, stage, history)) do
+                assertNotWard(row)
                 total = total + 1
                 if row.category == "standard" then
                     ordinary = ordinary + 1
@@ -162,7 +169,8 @@ end
 
 local index={}
 for i,r in ipairs(Loot.Catalog) do index[r.name]=i end
-assert(index.item_ward_observer and index.item_aegis)
+assert(index.item_aegis)
+for name in pairs(wards) do assert(not index[name]) end
 assert(not index.item_roshans_banner)
 for name in pairs(index) do assert(not name:match('^item_recipe_')) end
 assert(not index.item_recipe_phase_boots and not index.item_stout_shield)
@@ -345,4 +353,4 @@ for _,winner in ipairs({"radiant","dire","timeout"}) do
     assert(payload.loot_text==(winner=="radiant" and "item_blink;item_blink;item_blink" or ""))
     assert(#(Lives.Ensure(g).pendingCampaignLoot or {})==(winner=="radiant" and 3 or 0))
 end
-print("PASS campaign loot: progression, 266 catalog rows, bounded gates, full stash, retries, ambiguous native delivery")
+print("PASS campaign loot: progression, 263 catalog rows, bounded gates, full stash, retries, ambiguous native delivery")
