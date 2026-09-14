@@ -1018,12 +1018,15 @@
             var heroIndex = selectedHeroIndex[side];
             var detailName = getActionDetail(side, heroIndex, definition.action);
             var available = getSlotActions(side, heroIndex).indexOf(definition.action) >= 0;
-            panels.actionSelect.SetHasClass("UnavailableAction", !available);
+            // Equipment rules keep their identity even when an item leaves the inventory.
+            // Availability is validated at execution time, not a condition-editing error.
+            var showUnavailable = !available && definition.action.indexOf("item_") !== 0;
+            panels.actionSelect.SetHasClass("UnavailableAction", showUnavailable);
             if (panels.actionAbilityImage) {
                 setAbilityImage(panels.actionAbilityImage,
                     definition.action !== "attack" ? detailName : "");
             }
-            if (!available) {
+            if (showUnavailable) {
                 panels.actionFallback.text = $.Localize("#dota2_rpg_v2_unavailable");
             } else if (definition.action === "attack") {
                 panels.actionFallback.text = $.Localize("#dota2_rpg_action_attack");
