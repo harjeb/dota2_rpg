@@ -100,6 +100,10 @@ rule.chase_timeout="4.5"; assert(service:ValidateRule(0,caster,rule)); assert(at
 assert(state.chase.deadline==14.5,"saved custom timeout reaches engine")
 assert(engine:ContinueChase(caster,state,engine:BuildContext(caster,14.4),14.4))
 assert(not engine:ContinueChase(caster,state,engine:BuildContext(caster,14.51),14.51))
+rule.chase_timeout=121; assert(service:ValidateRule(0,caster,rule)); assert(rule.chase_timeout==120); assert(attempt())
+assert(state.chase.deadline==130,"server clamps to 120 seconds and engine uses the full duration")
+assert(engine:ContinueChase(caster,state,engine:BuildContext(caster,129.9),129.9))
+assert(not engine:ContinueChase(caster,state,engine:BuildContext(caster,130.01),130.01))
 rule.chase_timeout=nil; assert(attempt())
 far.hp=100;near.hp=100;caster.x=350;orders={}
 assert(not engine:ContinueChase(caster,state,engine:BuildContext(caster,10.5),10.5) and #orders==0,

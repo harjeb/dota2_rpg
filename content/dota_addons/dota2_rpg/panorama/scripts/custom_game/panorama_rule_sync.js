@@ -74,7 +74,7 @@ var RpgRuleSync = (function () {
     function actionSettings(input, action) {
         if (action === "buyback") { return {}; }
         input = input || {};
-        var out = {chase_timeout: Math.max(0.1, Math.min(5, numberValue(input.chase_timeout, 3)))};
+        var out = {chase_timeout: Math.max(0.1, Math.min(120, numberValue(input.chase_timeout, 3)))};
         if (input.max_chase_distance !== undefined) {
             out.max_chase_distance = Math.max(100, Math.min(2000, numberValue(input.max_chase_distance, 2000)));
         }

@@ -429,16 +429,16 @@ click(hud,"RadiantRuleSettings0");
 choice(hud,"V2Team","team_ally"); choice(hud,"V2_priority0","farthest");
 choice(hud,"V2Approach","approach_chase");
 assert(panel(hud,"V2_chase_timeout").text === "3", "new chase timeout defaults to three seconds");
-input(hud,"V2_chase_timeout",4.5); click(hud,"RuleSettingsApply");
+input(hud,"V2_chase_timeout",120); click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).target_team === "ally" && latest(hud,lion).target_priority_1_type === "farthest"
     && latest(hud,lion).approach === "allow_approach", "complete settings own target and approach behavior");
 click(hud,"RadiantRuleSettings0");
 assert(panel(hud,"V2ApproachSelect").GetChild(0).text === "#dota2_rpg_v2_approach_chase","approach survives reopening");
-assert(latest(hud,lion).chase_timeout === 4.5 && panel(hud,"V2_chase_timeout").text === "4.5", "custom timeout saves and reopens");
+assert(latest(hud,lion).chase_timeout === 120 && panel(hud,"V2_chase_timeout").text === "120", "custom timeout saves and reopens");
 choice(hud,"V2Approach","approach_wait");click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).approach === "range_only","approach can be disabled in settings");
 var sync = hud.context.RpgRuleSync;
-[ [undefined,3], ["",3], ["Infinity",3], [-1,0.1], [99,5], [2.75,2.75] ].forEach(function(pair) {
+[ [undefined,3], ["",3], ["Infinity",3], [-1,0.1], [99,99], [120,120], [121,120], [2.75,2.75] ].forEach(function(pair) {
     assert(sync.serialize({rule:{action:"attack",chase_timeout:pair[0]}}).chase_timeout === pair[1], "timeout normalization " + pair[0]);
 });
 [["enemy_attack_lowest", "lowest_attack_damage"], ["ally_mr_highest", "highest_magic_resistance"], ["ally_distance_nearest", "nearest"]].forEach(function (pair) {

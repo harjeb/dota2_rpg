@@ -430,7 +430,7 @@ function RuleService:ValidateRule(player_id, hero, rule)
     end
 
     if rule.chase_timeout ~= nil then
-        rule.chase_timeout = clamp(rule.chase_timeout, 0.1, 5.0)
+        rule.chase_timeout = clamp(rule.chase_timeout, 0.1, 120.0)
     end
     if rule.max_chase_distance ~= nil then
         rule.max_chase_distance = clamp(rule.max_chase_distance, 100, 2000)

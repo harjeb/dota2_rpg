@@ -590,7 +590,7 @@ var RpgConditionCatalog = (function () {
         });
         readers.push(function() {
             draft.forced=approach === "approach_chase";
-            draft.chase_timeout=number(timeoutEntry.text, 3, 0.1, 5);
+            draft.chase_timeout=number(timeoutEntry.text, 3, 0.1, 120);
         });
         // 地板释放（点目标）技能/物品可指定落点方式；残焰类保留原有专属落点。
         var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
