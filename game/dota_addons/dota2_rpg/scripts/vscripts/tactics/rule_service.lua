@@ -246,6 +246,15 @@ function RuleService:ValidateCondition(condition, registry)
         return false, "invalid_condition"
     end
     if registry[condition.type] == nil then return false, "unknown_condition:" .. condition.type end
+    if condition.type == "facing_enemy" then
+        for field, value in pairs(condition) do
+            if field ~= "type" then
+                if value ~= "" then return false, "unexpected_condition_parameter:" .. tostring(field) end
+                condition[field] = nil
+            end
+        end
+        return true
+    end
     for _, field in ipairs({ "modifier", "action_id", "action_actor", "target_actor" }) do
         local value = condition[field]
         if value == "" then condition[field] = nil

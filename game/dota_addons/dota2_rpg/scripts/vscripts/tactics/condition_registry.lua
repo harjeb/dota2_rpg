@@ -250,6 +250,44 @@ end)
 
 -- Target hard filters ------------------------------------------------------
 
+-- Fixed 30-degree total cone. Scale before normalizing to avoid overflow or
+-- underflow for valid, non-unit horizontal vectors. Height does not affect aim.
+local FACING_ENEMY_COS = math.cos(math.rad(15))
+local function horizontal_unit(x, y)
+    x, y = Context.Number(x), Context.Number(y)
+    if x == nil or y == nil then return nil end
+    local scale = math.max(math.abs(x), math.abs(y))
+    if scale == 0 then return nil end
+    x, y = x / scale, y / scale
+    local length = math.sqrt(x * x + y * y)
+    return x / length, y / length
+end
+
+ConditionRegistry:RegisterTargetFilter("facing_enemy", function(ctx, target, _condition)
+    -- Guard vector member access as well as native entity methods: stale handles
+    -- and malformed observations are a false condition, never an evaluator error.
+    local ok, result = pcall(function()
+        local caster = ctx.caster
+        if not is_valid_entity(caster) or not is_valid_entity(target) then return false end
+        local caster_team = Context.Number(Context.Call(caster, "GetTeamNumber"))
+        local target_team = Context.Number(Context.Call(target, "GetTeamNumber"))
+        if caster_team == nil or target_team == nil or caster_team == target_team then return false end
+        local forward = Context.Call(caster, "GetForwardVector")
+        local origin = Context.Call(caster, "GetAbsOrigin")
+        local destination = Context.Call(target, "GetAbsOrigin")
+        if forward == nil or origin == nil or destination == nil then return false end
+        local fx, fy = horizontal_unit(forward.x, forward.y)
+        local ox, oy = Context.Number(origin.x), Context.Number(origin.y)
+        local tx, ty = Context.Number(destination.x), Context.Number(destination.y)
+        if fx == nil or ox == nil or oy == nil or tx == nil or ty == nil then return false end
+        local dx, dy = horizontal_unit(tx - ox, ty - oy)
+        if dx == nil then return false end
+        -- Roundoff tolerance keeps both exact 15-degree boundaries inclusive.
+        return fx * dx + fy * dy >= FACING_ENEMY_COS - 1e-12
+    end)
+    return ok and result == true
+end)
+
 ConditionRegistry:RegisterTargetFilter("hp_pct_lte", function(_ctx, target, condition)
     return health_pct(target) <= tonumber(condition.value)
 end)

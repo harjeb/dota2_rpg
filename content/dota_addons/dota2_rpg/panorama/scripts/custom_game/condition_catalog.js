@@ -47,10 +47,11 @@ var RpgConditionCatalog = (function () {
     // 新条件只能追加在组末尾：code 是按组内下标查下面的表得到的，
     // 插在中间会把后面所有条目的 U/F 编号整体挪位（文档编号必须稳定）。
     add("use","self_ability_on_cooldown","action","action_id");
+    add("target", "facing_enemy", "proximity", "");
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
         use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],
-        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39,40],
+        target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39,40,41],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
     };
     Object.keys(groups).forEach(function (group) {
@@ -429,6 +430,9 @@ var RpgConditionCatalog = (function () {
                         params.RemoveAndDeleteChildren();
                         var def = definitions[group + ":" + current.type] || { fields: [] };
                         var fields = def.fields;
+                        if (current.type === "facing_enemy") {
+                            label(params, "V2_" + group + index + "FacingHint", text("facing_enemy_hint")).AddClass("V2Hint");
+                        }
                         var entries = [];
                         fields.forEach(function (field) {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;

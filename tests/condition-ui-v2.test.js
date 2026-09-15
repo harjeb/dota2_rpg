@@ -539,7 +539,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 37], ["target", retiredTarget, 36], ["priority", [], 14]].forEach(function (spec) {
+[["use", retiredUse, 37], ["target", retiredTarget, 37], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -958,6 +958,22 @@ assert(!panel(livesHud,"StartBattleButton").enabled
     assert(original.use_conditions[0].type === "always", "initial settings deep clone prevents accidental rule mutation");
 });
 console.log("PASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings");
+// F41 remains a parameter-free enemy filter through the actual editor and wire roundtrip.
+var facingDraft;
+catalog.open({action:"attack"}, {target_team:"enemy",target_filters_mode:"all",target_filters:[]}, function(value) { facingDraft=value; }, {});
+catalogClick("V2_target0Select"); catalogClick("V2_target0SelectOption_facing_enemy");
+assert(catalogUI("#V2_target0Select").GetChild(0).text.indexOf("F41 ") === 0, "facing appends stable F41");
+assert(catalogUI("#V2_target0FacingHint").text === "#dota2_rpg_v2_facing_enemy_hint", "facing explanation visible");
+assert(!catalogUI("#V2_target0_value"), "fixed cone needs no parameter");
+catalogClick("RuleSettingsApply");
+var facingWire=catalogContext.RpgRuleSync.serialize({rule:facingDraft,actionId:"attack",actionName:"attack"});
+assert(facingWire.target_filter_1_type === "facing_enemy", "facing serialized from actual editor");
+var facingRestored=catalogContext.RpgRuleSync.fromServer({action:"attack",enabled:1,target_team:"enemy",target_filters_mode:"all",target_filters:{1:{type:"facing_enemy"}}});
+catalog.open(facingRestored,catalogContext.RpgRuleSync.initialSettings(facingRestored),function(value) { facingDraft=value; },{});
+assert(catalogUI("#V2_target0Select").GetChild(0).text.indexOf("F41 ") === 0, "facing survives authoritative reopen");
+catalogClick("RuleSettingsApply");
+assert(catalogContext.RpgRuleSync.serialize({rule:facingDraft}).target_filter_1_type === "facing_enemy", "facing resaves unchanged");
+console.log("PASS: F41 facing cone editor, explanation, stable ID, save and authoritative roundtrip");
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
 console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, roundtrips and removed preset controls");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation");
