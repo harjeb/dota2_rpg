@@ -161,4 +161,32 @@ impostor.IsControllableByAnyPlayer=skeleton.IsControllableByAnyPlayer
 assert(not Summons.OnSpawn(trollBattle,impostor),"other uncontrollable summons keep native behavior")
 Summons.Clear(trollBattle)
 assert(skeleton.removed and not troll.removed and not hero.removed,"battle end removes the skeleton and preserves the roster")
-print("summon-behavior tests passed: illusion ownership, campaign Troll skeletons, nearest attacks and cleanup")
+-- Empty initial vision must not leave mobile summons waiting for their owner.
+DOTA_UNIT_ORDER_ATTACK_MOVE=3
+local boar=unit(300,"npc_dota_beastmaster_boar",2,0,hero,1)
+local sentry=unit(301,"npc_dota_shadow_shaman_ward",2,0,hero,1)
+boar.IsIdle=function(self) return self.idle~=false end
+sentry.GetMoveCapability=function() return 0 end
+local openingOrders={}
+local opening={phase="fight",nextSummonScan=math.huge,
+    battleManager={teamHeroes={[2]={hero},[3]={other}}},
+    tacticBridge={orderGate={Execute=function(_,o)
+        openingOrders[#openingOrders+1]=o;boar.idle=false;return true
+    end}}}
+assert(Summons.OnSpawn(opening,boar) and Summons.OnSpawn(opening,sentry))
+FindUnitsInRadius=function() return {} end
+Summons.OnThink(opening)
+assert(#openingOrders==1 and openingOrders[1].UnitIndex==boar.id
+    and openingOrders[1].OrderType==3 and openingOrders[1].Position.x==other.x,
+    "mobile summon attack-moves on the first tick without hero attack or enemy vision; stationary ward stays")
+time=time+.5;Summons.OnThink(opening)
+assert(#openingOrders==1,"uninterrupted advance is not restarted")
+boar.idle=true;time=time+.5;Summons.OnThink(opening)
+assert(#openingOrders==2,"interrupted opening advance retries")
+FindUnitsInRadius=function() return {other} end
+time=time+.5;Summons.OnThink(opening)
+assert(openingOrders[3].OrderType==4 and openingOrders[3].TargetIndex==other.id,
+    "visible enemy replaces the opening advance with an attack")
+local before=#openingOrders;opening.phase="setup";time=time+.5;Summons.OnThink(opening)
+assert(#openingOrders==before and boar.removed and sentry.removed,"preparation clears summons without advancing")
+print("summon-behavior tests passed: autonomous opening, illusion ownership, campaign Troll skeletons, nearest attacks and cleanup")

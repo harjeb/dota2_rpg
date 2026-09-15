@@ -251,11 +251,36 @@ function Summons.OnThink(game)
                 -- every half second; an idle unit or a new nearest target recovers.
                 local current=call(unit,"GetAttackTarget")
                 local pursuing=current==nil and state.attackTarget==target and call(unit,"IsIdle")==false
+                if target then state.advanceTarget=nil end
                 if target and current~=target and not pursuing then
                     if issue(game,{UnitIndex=unit:entindex(),OrderType=DOTA_UNIT_ORDER_ATTACK_TARGET,TargetIndex=target:entindex(),Queue=false}) then
                         state.attackTarget=target
                     end
-                elseif not target then state.attackTarget=nil end
+                elseif not target then
+                    state.attackTarget=nil
+                    -- Before the hero engages, fog may leave this visible-enemy
+                    -- query empty. Mobile summons advance into the battlefield
+                    -- themselves; attack-move lets native vision acquire targets.
+                    -- Stationary wards must keep their native placement.
+                    if call(unit,"GetMoveCapability")~=(DOTA_UNIT_CAP_MOVE_NONE or 0)
+                        and DOTA_UNIT_ORDER_ATTACK_MOVE~=nil then
+                        local advance
+                        for team,members in pairs(game.battleManager.teamHeroes or {}) do
+                            if tonumber(team)~=unit:GetTeamNumber() then
+                                for _,enemy in ipairs(members) do
+                                    if valid(enemy) and call(enemy,"IsAlive")==true
+                                        and call(enemy,"IsInvulnerable")~=true and call(enemy,"IsOutOfGame")~=true
+                                        and not require("battle/neutral_recruitment").IsReserved(enemy)
+                                        and (advance==nil or distance(unit,enemy)<distance(unit,advance)) then advance=enemy end
+                                end
+                            end
+                        end
+                        if advance and (state.advanceTarget~=advance or call(unit,"IsIdle")~=false) then
+                            if issue(game,{UnitIndex=unit:entindex(),OrderType=DOTA_UNIT_ORDER_ATTACK_MOVE,
+                                Position=advance:GetAbsOrigin(),Queue=false}) then state.advanceTarget=advance end
+                        elseif not advance then state.advanceTarget=nil end
+                    end
+                end
             end
         end
     end

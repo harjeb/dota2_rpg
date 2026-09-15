@@ -33,6 +33,9 @@ assert(panel.FindChildTraverse('NeutralRecruitSelect0_3'),'one choice per live c
 let third=panel.FindChildTraverse('NeutralRecruitSelect0_2');third.SetSelected('nr_0_2_1');third.events.oninputsubmit();
 assert.deepEqual(Array.from(sent[sent.length-1].unit_names),['npc_dota_neutral_centaur_khan','npc_dota_neutral_satyr_trickster','npc_dota_neutral_centaur_khan'],'complete list permits repeated species');
 assert(!('unit_name' in sent[sent.length-1]),'Chen sends list not scalar');
+ui.render(panel,JSON.parse(JSON.stringify(chen)),'setup',8,p=>sent.push(p));
+assert.strictEqual(panel.FindChildTraverse('NeutralRecruitSelect0_2'),third,'Chen refresh retains pending multi-slot control');
+assert.equal(third.selected,'nr_0_2_1','Chen pending repeated species survives refresh');
 for(const id of ['NeutralRecruitSelect0','NeutralRecruitSelect0_1','NeutralRecruitSelect0_2','NeutralRecruitSelect0_3']) {
  const dropdown=panel.FindChildTraverse(id);dropdown.SetSelected(dropdown.children[0].id);
 }
@@ -40,4 +43,50 @@ third.events.oninputsubmit();assert.equal(sent[sent.length-1].unit_names.length,
 source.max_count=1;source.selected_units=['npc_dota_neutral_satyr_trickster'];
 ui.render(panel,chen,'setup',8,p=>sent.push(p));assert(!panel.FindChildTraverse('NeutralRecruitSelect0_1'),'live cap reduction removes extra slots');
 assert.equal(panel.FindChildTraverse('NeutralRecruitSelect0').selected,'nr_0_2');
-console.log('PASS neutral recruitment UI: eligibility, Chen multiple/repeated choices, full-list clearing, live caps, fight lock and stale results');
+// Repeated HUD snapshots must keep the actual dropdown, its pending choice and result notice.
+const stablePanel=new Panel(),stableSent=[];
+const snapshot=()=>JSON.parse(JSON.stringify(hero));
+ui.render(stablePanel,snapshot(),'setup',9,p=>stableSent.push(p));
+const pending=stablePanel.FindChildTraverse('NeutralRecruitSelect0');
+pending.SetSelected('nr_0_2');
+ui.result(stablePanel,{hero_entindex:42,rule_generation:9,success:1},hero,9);
+const notice=stablePanel.FindChildTraverse('NeutralRecruitNotice');
+const refreshed=snapshot();refreshed.health=999;refreshed.inventory={};
+let latestSends=0;
+ui.render(stablePanel,refreshed,'setup',9,p=>{latestSends++;stableSent.push(p);});
+assert.strictEqual(stablePanel.FindChildTraverse('NeutralRecruitSelect0'),pending,'unrelated refresh must retain open dropdown');
+assert.equal(pending.selected,'nr_0_2','unacknowledged choice survives identical source snapshot');
+assert.strictEqual(stablePanel.FindChildTraverse('NeutralRecruitNotice'),notice,'refresh retains result notice');
+const reordered=snapshot();
+reordered.neutral_recruitment['1']=Object.fromEntries(Object.entries(reordered.neutral_recruitment['1']).reverse());
+ui.render(stablePanel,reordered,'setup',9,p=>{latestSends++;stableSent.push(p);});
+assert.strictEqual(stablePanel.FindChildTraverse('NeutralRecruitSelect0'),pending,'object key order is not a source change');
+pending.events.oninputsubmit();assert.equal(latestSends,1,'retained control uses current send callback');
+for(const change of [
+ h=>{h.hero_index=43;},
+ h=>{h.can_edit=false;},
+ h=>{h.neutral_recruitment['1'].selected_unit='npc_dota_neutral_satyr_trickster';},
+ h=>{h.neutral_recruitment['1'].units['2'].level=3;}
+]) {
+ ui.render(stablePanel,snapshot(),'setup',9,p=>stableSent.push(p));
+ const old=stablePanel.FindChildTraverse('NeutralRecruitSelect0');
+ const changed=snapshot();change(changed);
+ ui.render(stablePanel,changed,'setup',9,p=>stableSent.push(p));
+ assert.notStrictEqual(stablePanel.FindChildTraverse('NeutralRecruitSelect0'),old,'changed authority/source rebuilds');
+ const count=stableSent.length;old.events.oninputsubmit();assert.equal(stableSent.length,count,'deleted control cannot submit');
+ assert(!stablePanel.FindChildTraverse('NeutralRecruitNotice'),'changed source clears old notice');
+}
+for(const [nextPhase,nextGeneration] of [['fight',9],['setup',10]]) {
+ ui.render(stablePanel,snapshot(),'setup',9,p=>stableSent.push(p));
+ const old=stablePanel.FindChildTraverse('NeutralRecruitSelect0');
+ ui.render(stablePanel,snapshot(),nextPhase,nextGeneration,p=>stableSent.push(p));
+ const count=stableSent.length;old.events.oninputsubmit();assert.equal(stableSent.length,count,'phase/generation invalidates queued input');
+}
+ui.result(stablePanel,{hero_entindex:42,rule_generation:9,success:1},hero,9);
+assert(!stablePanel.FindChildTraverse('NeutralRecruitNotice'),'result must also match rendered generation');
+const old=stablePanel.FindChildTraverse('NeutralRecruitSelect0');
+ui.render(stablePanel,{hero_index:42,neutral_recruitment:[]},'setup',10,()=>assert.fail('empty panel submitted'));
+old.events.oninputsubmit();
+ui.result(stablePanel,{hero_entindex:42,rule_generation:10,success:1},hero,10);
+assert.equal(stablePanel.children.length,0,'late result cannot populate empty panel');
+console.log('PASS neutral recruitment UI: stable refreshes, pending choices/notices, stale callbacks, eligibility, Chen repeated choices, live caps and stale results');

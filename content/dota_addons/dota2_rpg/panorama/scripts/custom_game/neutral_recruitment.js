@@ -5,10 +5,28 @@ var RpgNeutralRecruitment = (function () {
     }
     function text(key) { return $.Localize("#dota2_rpg_neutral_" + key); }
     function named(token, fallback) { var value=$.Localize(token); return value===token ? fallback : value; }
+    // Net-table objects can arrive with different key insertion order.
+    function canonical(value) {
+        if (Array.isArray(value)) { return value.map(canonical); }
+        if (value && typeof value==="object") {
+            var result={};
+            Object.keys(value).sort().forEach(function (key) { result[key]=canonical(value[key]); });
+            return result;
+        }
+        return value;
+    }
     function render(panel, hero, phase, generation, send) {
         if (!panel) { return; }
-        panel.RemoveAndDeleteChildren();
         var sources=list(hero && hero.neutral_recruitment);
+        var heroIndex=Number(hero && hero.hero_index);
+        var editable=phase==="setup" && !!hero && hero.can_edit!==false && heroIndex>=0;
+        var key=JSON.stringify([heroIndex,Number(generation),phase,editable,canonical(sources)]);
+        var state=panel._neutralRecruitmentState;
+        if (state && state.key===key) { state.send=send; return; }
+        // Replace state before deleting controls so queued events from old rows are inert.
+        state={key:key,heroIndex:heroIndex,generation:Number(generation),editable:editable,send:send,hasSources:sources.length>0};
+        panel._neutralRecruitmentState=state;
+        panel.RemoveAndDeleteChildren();
         panel.visible=sources.length>0;
         if (!sources.length) { return; }
         var title=$.CreatePanel("Label",panel,"");title.text=text("title");title.AddClass("NeutralRecruitTitle");
@@ -27,15 +45,16 @@ var RpgNeutralRecruitment = (function () {
                     : (source.allow_ancient===true || Number(source.allow_ancient)===1 ? " · "+text("ancient") : ""));
             var controls=[];
             function submit() {
+                if (panel._neutralRecruitmentState!==state || !state.editable) { return; }
                 var choices=[];
                 for (var j=0;j<controls.length;j++) {
                     var control=controls[j],chosen=control.select.GetSelected(),unit=chosen && control.byId[chosen.id];
                     if (!control.select.enabled || !unit) { return; }
                     if (unit.unit_name) { choices.push(unit.unit_name); }
                 }
-                var payload={hero_entindex:Number(hero.hero_index),source_name:source.source_name,rule_generation:generation};
+                var payload={hero_entindex:state.heroIndex,source_name:source.source_name,rule_generation:state.generation};
                 if (multiple) { payload.unit_names=choices; } else { payload.unit_name=choices[0] || ""; }
-                send(payload);
+                state.send(payload);
             }
             for (var slot=0;slot<slots;slot++) {
                 if (multiple) {
@@ -52,15 +71,17 @@ var RpgNeutralRecruitment = (function () {
                     if (unit.unit_name===saved[slot]) { selected=option.id; }
                 });
                 select.SetSelected(selected);
-                select.enabled=phase==="setup" && hero.can_edit!==false && Number(hero.hero_index)>=0;
+                select.enabled=editable;
                 controls.push({select:select,byId:byId});
                 select.SetPanelEvent("oninputsubmit",submit);
             }
         });
     }
     function result(panel,data,hero,generation) {
-        if (!panel || !hero || Number(data.rule_generation)!==Number(generation)
-            || Number(data.hero_entindex)!==Number(hero.hero_index)) { return; }
+        var state=panel && panel._neutralRecruitmentState;
+        if (!state || !state.hasSources || !data || !hero || Number(data.rule_generation)!==Number(generation)
+            || Number(data.hero_entindex)!==Number(hero.hero_index)
+            || Number(data.rule_generation)!==state.generation || Number(data.hero_entindex)!==state.heroIndex) { return; }
         var notice=panel.FindChildTraverse("NeutralRecruitNotice") || $.CreatePanel("Label",panel,"NeutralRecruitNotice");
         notice.AddClass("NeutralRecruitHint");
         notice.text=Number(data.success)===1 ? text("saved") : text("error");
