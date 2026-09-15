@@ -713,6 +713,25 @@ assert(latest(destinationHud,emberHero).destination==="remnant_safe","destinatio
 click(destinationHud,"RadiantRuleSettings0");
 assert(panel(destinationHud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_remnant_safe","destination survives reopening");
 click(destinationHud,"RuleSettingsClose");
+// Floor-cast (point) skills expose the same destination picker with offset modes,
+// and the backstep distance only exists while an offset mode is selected.
+var offsetHud = runHud(), offsetHero = "npc_dota_hero_axe";
+offsetHud.subscriptions.rpg_shop_state({lineup_text:offsetHero,owned_text:offsetHero});
+offsetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:953,hero_name:offsetHero,rule_key:offsetHero,
+    can_edit:1,rules_ready:1,actions_text:"axe_berserkers_call;attack",
+    rules:[{action:"axe_berserkers_call",enabled:1,target_team:"enemy"}]});
+click(offsetHud,"RadiantRuleSettings0");
+assert(!panel(offsetHud,"V2_destination_distance"),"plain target destination has no distance input");
+choice(offsetHud,"V2Destination","destination_away_from_target");
+assert(panel(offsetHud,"V2_destination_distance"),"offset destination reveals the distance input");
+input(offsetHud,"V2_destination_distance",400);
+click(offsetHud,"RuleSettingsApply");
+var offsetWire=latest(offsetHud,offsetHero);
+assert(offsetWire.destination==="away_from_target" && Number(offsetWire.destination_distance)===400,"offset destination serializes with its distance");
+click(offsetHud,"RadiantRuleSettings0");
+assert(panel(offsetHud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_away_from_target"
+    && panel(offsetHud,"V2_destination_distance").text==="400","offset destination and distance survive reopening");
+click(offsetHud,"RuleSettingsClose");
 var grabHud=runHud(), tinyHero="npc_dota_hero_tiny";
 grabHud.subscriptions.rpg_shop_state({lineup_text:tinyHero,owned_text:tinyHero});
 grabHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:951,hero_name:tinyHero,rule_key:tinyHero,

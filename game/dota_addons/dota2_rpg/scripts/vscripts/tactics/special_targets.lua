@@ -43,18 +43,33 @@ Special.destination_actions = {
     ember_spirit_fire_remnant = true, ember_spirit_activate_fire_remnant = true,
     elder_titan_ancestral_spirit = true, elder_titan_move_spirit = true,
 }
+-- 点目标落点偏移：以规则选中的敌人锚点为参照计算施法位置。这些模式只负责选点，
+-- 原生施法位置/射程校验仍由 ActionAdapter 完成。
+Special.offset_destinations = {
+    away_from_target = true,
+    target_front = true,
+    target_behind = true,
+    around_target = true,
+}
 Special.destinations = {target=true, self=true, remnant_nearest=true, remnant_farthest=true,
-    remnant_near_enemy=true, remnant_safe=true}
+    remnant_near_enemy=true, remnant_safe=true, away_from_target=true, target_front=true,
+    target_behind=true, around_target=true}
 function Special.ValidDestination(name, mode)
-    return mode == nil or mode == "target" or (Special.destination_actions[name] == true
-        and Special.destinations[mode] == true
-        and (not mode:match("^remnant_") or name == "ember_spirit_activate_fire_remnant"))
+    if mode == nil or mode == "" or mode == "target" then return true end
+    -- 偏移落点对任意动作开放；非点目标动作在运行时按无效落点拒绝。
+    if type(mode) == "string" and Special.offset_destinations[mode] then return true end
+    return Special.destination_actions[name] == true and Special.destinations[mode] == true
+        and (not mode:match("^remnant_") or name == "ember_spirit_activate_fire_remnant")
 end
 -- This selects a native point destination; native cast/location/range checks
 -- remain in ActionAdapter. No remnant is created or teleported by this module.
 function Special.SelectDestination(rule, spec, ctx, conditions)
     local mode = (rule.action or {}).destination or "target"
     if mode == "target" then return false end
+    -- 偏移落点必须先由目标选择器选出锚点，交给战术引擎处理；这里直接调用视为无效。
+    if Special.offset_destinations[mode] then
+        return true, nil, nil, "offset_destination_requires_engine"
+    end
     if not Special.ValidDestination(spec.logical_id, mode) or spec.target_mode ~= "point" then
         return true, nil, nil, "invalid_destination"
     end
@@ -109,6 +124,100 @@ function Special.SelectDestination(rule, spec, ctx, conditions)
     local selected = candidates[1]
     if selected == nil then return true,nil,nil,"no_owned_remnant_destination" end
     return result(selected)
+end
+-- 偏移落点：away_from_target 从施法者背向敌人起算，贴近边缘时扫描可站立方向；
+-- target_front/target_behind 以敌人当前朝向为轴，around_target 取"你→敌人"连线的
+-- 敌人近侧。后三者相对敌人量取距离，不因施法者更近而收缩。
+local OFFSET_SWEEP = {0, 15, -15, 30, -30, 45, -45, 60, -60, 75, -75, 90, -90}
+local DEFAULT_OFFSET_DISTANCE = 400
+
+local function horizontal_direction(from, to)
+    local a, b = call(from, "GetAbsOrigin"), call(to, "GetAbsOrigin")
+    if a == nil or b == nil then return nil end
+    local dx, dy = b.x - a.x, b.y - a.y
+    local length = math.sqrt(dx * dx + dy * dy)
+    if length <= 0.001 then return nil end
+    return dx / length, dy / length
+end
+
+local function facing_direction(unit)
+    local forward = call(unit, "GetForwardVector")
+    if forward == nil then return nil end
+    local dx, dy = tonumber(forward.x), tonumber(forward.y)
+    if dx == nil or dy == nil then return nil end
+    local length = math.sqrt(dx * dx + dy * dy)
+    if length <= 0.001 then return nil end
+    return dx / length, dy / length
+end
+
+local function rotated_point(from, dir_x, dir_y, degrees, distance, z)
+    local radians = degrees * math.pi / 180
+    local cos, sin = math.cos(radians), math.sin(radians)
+    local x = dir_x * cos - dir_y * sin
+    local y = dir_x * sin + dir_y * cos
+    return Vector(from.x + x * distance, from.y + y * distance, z)
+end
+
+local function walkable(from, point)
+    if GridNav == nil or GridNav.CanFindPath == nil then return true end
+    local ok, path = pcall(GridNav.CanFindPath, GridNav, from, point)
+    return not ok or path ~= false
+end
+
+local function native_legal_location(source, point)
+    if source == nil or source.CastFilterResultLocation == nil then return true end
+    local ok, result = pcall(source.CastFilterResultLocation, source, point)
+    return ok and result == (UF_SUCCESS or 0)
+end
+
+-- 上限只在背向自身移动时生效：远离越彻底越好，但没有理由超过施法距离。
+local function backstep_distance(wanted, range)
+    local distance = wanted > 0 and wanted or (range or DEFAULT_OFFSET_DISTANCE)
+    if range ~= nil then distance = math.min(distance, range) end
+    return math.max(0, distance)
+end
+
+function Special.OffsetDestination(mode, caster, anchor, spec, action, actions)
+    if spec == nil or spec.target_mode ~= "point" then return nil, "invalid_destination" end
+    if not valid(caster) or not valid(anchor) then return nil, "invalid_offset_anchor" end
+    local origin, center = call(caster, "GetAbsOrigin"), call(anchor, "GetAbsOrigin")
+    if origin == nil or center == nil then return nil, "invalid_offset_anchor" end
+    local range = nil
+    if actions ~= nil and actions.GetRequiredRange ~= nil then
+        range = tonumber(actions:GetRequiredRange(caster, spec, nil))
+        if range ~= nil and (range <= 0 or range ~= range or range == math.huge) then range = nil end
+    end
+    local wanted = tonumber(action and action.destination_distance) or 0
+    local source = spec.source or spec.ability
+    if mode == "away_from_target" then
+        local dir_x, dir_y = horizontal_direction(anchor, caster)
+        if dir_x == nil then dir_x, dir_y = facing_direction(caster) end
+        if dir_x == nil then return nil, "invalid_offset_direction" end
+        local distance = backstep_distance(wanted, range)
+        if distance <= 0 then return nil, "invalid_backstep_distance" end
+        for _, degrees in ipairs(OFFSET_SWEEP) do
+            local point = rotated_point(origin, dir_x, dir_y, degrees, distance, origin.z)
+            if walkable(origin, point) and native_legal_location(source, point) then return point, nil end
+        end
+        return nil, "no_away_destination"
+    end
+    local dir_x, dir_y
+    if mode == "around_target" then
+        local ux, uy = horizontal_direction(caster, anchor)
+        if ux == nil then return nil, "invalid_offset_direction" end
+        dir_x, dir_y = -ux, -uy
+    elseif mode == "target_front" or mode == "target_behind" then
+        dir_x, dir_y = facing_direction(anchor)
+        if dir_x == nil then return nil, "invalid_offset_direction" end
+        if mode == "target_behind" then dir_x, dir_y = -dir_x, -dir_y end
+    else
+        return nil, "unsupported_offset_mode"
+    end
+    local distance = wanted > 0 and wanted or DEFAULT_OFFSET_DISTANCE
+    local point = Vector(center.x + dir_x * distance, center.y + dir_y * distance, center.z)
+    if not walkable(origin, point) then return nil, "no_offset_destination" end
+    if not native_legal_location(source, point) then return nil, "invalid_native_location" end
+    return point, nil
 end
 -- Grab selection is native-nearest, independent of the landing target. Never
 -- filter first and claim Tiny will grab a farther preferred unit instead.

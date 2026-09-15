@@ -1,5 +1,5 @@
 -- Authoring fields preserved identically by legacy conversion, snapshots and saves.
-local O={fields={"desired_autocast_state","cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds"}}
+local O={fields={"desired_autocast_state","cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds","destination_distance"}}
 function O.Copy(source,target)
     for _,field in ipairs(O.fields) do if source[field]~=nil and source[field]~="" then target[field]=source[field] end end
     local value=target.desired_autocast_state
@@ -19,6 +19,11 @@ function O.Validate(action)
             if not n or n<lo or n>hi then return false,"invalid_"..field end
             action[field]=n
         end
+    end
+    if action.destination_distance~=nil then
+        local n=C.Number(action.destination_distance)
+        if not n or n<0 or n>3000 then return false,"invalid_destination_distance" end
+        action.destination_distance=n
     end
     return true
 end

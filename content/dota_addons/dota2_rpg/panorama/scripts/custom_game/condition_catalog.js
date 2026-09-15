@@ -85,7 +85,7 @@ var RpgConditionCatalog = (function () {
         }
         parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
-        ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance"].forEach(function (key) {
+        ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance", "destination_distance"].forEach(function (key) {
             if (settings[key] !== undefined) {
                 var value = settings[key];
                 if (key === "movement_mode" || key === "movement_direction" || key === "positioning_mode" || typeof value === "boolean") { value = text(key + "_" + value); }
@@ -175,6 +175,8 @@ var RpgConditionCatalog = (function () {
             movement_loop:true, movement_interruptible:false, movement_direction:"auto"};
     }
     var editorGeneration=0;
+    // 相对敌人锚点的落点偏移；这些模式需要额外的落点距离。
+    var OFFSET_DESTINATIONS=["away_from_target","target_front","target_behind","around_target"];
     function open(rule, initial, onApply, options) {
         var generation=++editorGeneration;
         options = options || {};
@@ -469,7 +471,7 @@ var RpgConditionCatalog = (function () {
             draft.use_conditions=[]; draft.target_filters=[]; draft.target_priorities=[];
             draft.desired_toggle_state=null; draft.desired_autocast_state=null; draft.destination="target";
             Object.keys(draft).forEach(function(key) {
-                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0) { delete draft[key]; }
+                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key==="destination_distance") { delete draft[key]; }
             });
             open(rule,draft,onApply,options);
         });
@@ -534,22 +536,36 @@ var RpgConditionCatalog = (function () {
             var normalized = RpgRuleSync.actionSettings(draft, action);
             Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
             Object.keys(normalized).forEach(function (key) { draft[key] = normalized[key]; });
+            // 非偏移落点不需要落点距离，避免把旧值带给服务端。
+            if (OFFSET_DESTINATIONS.indexOf(draft.destination) < 0) { delete draft.destination_distance; }
         });
         var approachRow = $.CreatePanel("Panel", body, "V2ApproachRow"); approachRow.AddClass("V2Selector");
         label(approachRow,"",text("approach_title"));
         var approach = draft.forced ? "approach_chase" : "approach_wait";
         choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) { approach=value; });
         readers.push(function() { draft.forced=approach === "approach_chase"; });
-        if (["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"].indexOf(options.abilityName) >= 0) {
+        // 地板释放（点目标）技能/物品可指定落点方式；残焰类保留原有专属落点。
+        var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
+        var remnantAction = remnantAbilities.indexOf(options.abilityName) >= 0;
+        var floorCast = !!(cap && cap.mode === "point");
+        if (floorCast || remnantAction) {
             var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");
             label(destinationRow,"",text("destination"));
-            var destination = draft.destination || "target", modes = ["target", "self"];
+            var destination = draft.destination || "target";
+            var modes = ["target"];
+            if (floorCast) { modes = modes.concat(OFFSET_DESTINATIONS); }
+            if (remnantAction) { modes.push("self"); }
             if (options.abilityName === "ember_spirit_activate_fire_remnant") {
                 modes = modes.concat(["remnant_nearest", "remnant_farthest", "remnant_near_enemy", "remnant_safe"]);
             }
+            if (modes.indexOf(destination) < 0) { destination = "target"; }
             choose(destinationRow,"V2DestinationSelect",modes.map(function(mode) { return {id:"destination_"+mode}; }),
-                "destination_"+destination,function(value) { destination=value.replace("destination_",""); });
+                "destination_"+destination,function(value) {
+                    // 落点方式决定是否显示距离输入，重开编辑器让界面与草稿保持一致。
+                    reopen({destination:value.replace("destination_","")});
+                });
             readers.push(function() { draft.destination=destination; });
+            if (OFFSET_DESTINATIONS.indexOf(destination) >= 0) { settingInput("destination_distance"); }
         }
         if (stateKey) {
             var toggle = $.CreatePanel("Panel", body, "V2ToggleRow"); toggle.AddClass("V2Selector");

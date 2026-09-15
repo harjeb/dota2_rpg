@@ -22,6 +22,14 @@ local DEFAULT_ABILITY_CHASE_TIMEOUT = 1.50
 local DEFAULT_ATTACK_CHASE_TIMEOUT = 2.50
 local DEFAULT_MAX_CHASE_DISTANCE = 1200
 
+-- 以选中敌人为参照的落点偏移；需要目标选择器先选出锚点。
+local OFFSET_DESTINATIONS = {
+    away_from_target = true,
+    target_front = true,
+    target_behind = true,
+    around_target = true,
+}
+
 local function now()
     return GameRules:GetGameTime()
 end
@@ -343,7 +351,26 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
     return false
 end
 
+-- 偏移落点自己完成锚点筛选与几何计算，不再走常规点目标选点。
+function TacticEngine:ResolveOffsetDestination(rule, spec, ctx, mode)
+    if spec.target_mode ~= "point" then return nil, nil, "invalid_destination" end
+    local candidates = ctx.get_candidates ~= nil
+        and ctx.get_candidates(ctx.caster, spec, rule.target or {}) or {}
+    local filtered = self.selector:FilterCandidates(candidates, rule.target_filters, ctx, spec)
+    if #filtered == 0 then return nil, nil, "no_legal_aoe_anchor" end
+    self.selector:SortCandidates(filtered, rule.target_priorities, ctx)
+    local anchor = filtered[1]
+    local point, reason = require("tactics/special_targets").OffsetDestination(
+        mode, ctx.caster, anchor, spec, rule.action, self.actions)
+    if point == nil then return nil, nil, reason end
+    return point, anchor, nil
+end
+
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
+    local destination = rule.action ~= nil and rule.action.destination or nil
+    if destination ~= nil and OFFSET_DESTINATIONS[destination] then
+        return self:ResolveOffsetDestination(rule, spec, ctx, destination)
+    end
     local handled, point, anchor, reason = require("tactics/special_targets").SelectDestination(rule, spec, ctx, self.conditions)
     if handled then return point, anchor, reason end
     if spec.target_mode == "vector" then

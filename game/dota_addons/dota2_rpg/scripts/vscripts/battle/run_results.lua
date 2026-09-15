@@ -64,6 +64,15 @@ function Results.Resend(game, playerId)
     if playerId ~= game.playerId then return end
     Results.Publish(game, ensure(game), safeCall(PlayerResource, "GetPlayer", playerId))
 end
+-- The SteamWorks HTTP response callback must not re-enter engine event sending.
+-- Responses only mark the run dirty; the game think loop flushes the publish on
+-- the next tick, from an ordinary main-loop context.
+function Results.FlushPublish(game)
+    local run = ensure(game)
+    if not run.publishPending then return end
+    run.publishPending = nil
+    Results.Publish(game, run)
+end
 
 local function whole(value, minimum, maximum)
     return type(value) == "number" and value >= minimum and value <= maximum and value == math.floor(value)
@@ -143,12 +152,12 @@ function Results.Submit(game, run)
             local ok, data = pcall(Json.decode, response.Body or "")
             if ok and acceptResponse(run, data) then
                 run.result.status = "success"
-                Results.Publish(game, run)
+                run.publishPending = true
                 return
             end
         elseif code >= 400 and code < 500 and code ~= 408 and code ~= 429 then
             run.result.status = "error"
-            Results.Publish(game, run)
+            run.publishPending = true
             return
         end
         if attempt < 4 then
@@ -158,7 +167,7 @@ function Results.Submit(game, run)
             end, 2 ^ attempt)
         else
             run.result.status = "error"
-            Results.Publish(game, run)
+            run.publishPending = true
         end
     end
     send = function()
