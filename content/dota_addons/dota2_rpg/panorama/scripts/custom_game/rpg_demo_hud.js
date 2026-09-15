@@ -806,7 +806,7 @@
                         clearRuleMark(side, authored);
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
-                    }, {heroLevel:getHeroLevel(side,editingHeroIndex),isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function (kind) { return targetActors(side,editingHeroIndex,kind); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
+                    }, {heroLevel:getHeroLevel(side,editingHeroIndex),difficulty:shopState.campaignDifficulty,isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function (kind) { return targetActors(side,editingHeroIndex,kind); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -998,7 +998,7 @@
             clearRuleMark(side, original);
             renderSide(side); sendRuleToServer(side,heroIndex,index);
         },{isCurrent:function() { return editIsCurrent() && getActionDetail(side,heroIndex,actionKey)===chosenActionDetail; },
-            abilityName:getActionDetail(side,heroIndex,actionKey),heroLevel:getHeroLevel(side,heroIndex),
+            abilityName:getActionDetail(side,heroIndex,actionKey),heroLevel:getHeroLevel(side,heroIndex),difficulty:shopState.campaignDifficulty,
             getCapability:function() { return getRuleCapability(side,heroIndex,actionKey); },
             actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function(kind) { return targetActors(side,heroIndex,kind); },
             readOnly:!canEditHeroRules(side,heroIndex)});
@@ -1264,6 +1264,7 @@
         return true;
     }
     var shopState = {
+        campaignDifficulty: "default",
         gold: 500,
         offers: [],
         owned: [],
@@ -1278,6 +1279,10 @@
 
     function onShopState(data) {
         if (!acceptRuleGeneration(data)) { return; }
+        if (data && data.campaign_difficulty !== undefined) {
+            shopState.campaignDifficulty = ["easy", "default", "hard"].indexOf(data.campaign_difficulty) >= 0
+                ? data.campaign_difficulty : "default";
+        }
         // Publish the authoritative wallet before optional inventory/menu rendering.
         if (data && data.gold !== undefined) { updateWalletLabel(data.gold); }
         updateRunLives(data);

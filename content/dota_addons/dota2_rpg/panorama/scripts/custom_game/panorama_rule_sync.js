@@ -349,9 +349,11 @@ var RpgRuleSync = (function () {
     return {
         actionSettings: actionSettings,
         buybackSettings: buybackSettings,
-        buybackCost: function (level) {
+        buybackCost: function (level, difficulty) {
             level = Math.max(1, Math.min(30, Math.floor(numberValue(level, 1))));
-            return 100 + 50 * level + 5 * level * level;
+            var base = 100 + 50 * level + 5 * level * level;
+            var multiplier = difficulty === "easy" ? 0.75 : difficulty === "hard" ? 1.25 : 1;
+            return Math.floor(base * multiplier / 5 + 0.5) * 5;
         },
         bool: bool,
         forgetHero: forgetHero,

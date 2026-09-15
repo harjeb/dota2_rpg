@@ -200,7 +200,7 @@ var RpgConditionCatalog = (function () {
             var level = Number(options.heroLevel);
             if (isFinite(level) && level >= 1) {
                 label(body, "V2BuybackCost", text("buyback_cost").replace("{level}", Math.min(30, Math.floor(level)))
-                    .replace("{cost}", RpgRuleSync.buybackCost(level))).AddClass("V2Hint");
+                    .replace("{cost}", RpgRuleSync.buybackCost(level, options.difficulty))).AddClass("V2Hint");
             }
             body.enabled = !options.readOnly;
             $("#V2ClearConditions").enabled = false;

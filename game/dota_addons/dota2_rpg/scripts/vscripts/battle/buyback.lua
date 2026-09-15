@@ -1,9 +1,11 @@
 -- Death-only campaign action. Process before wipe detection, using the shared wallet.
 local RespawnPolicy = require("battle.respawn_policy")
 local B = {}
-function B.Cost(level)
+local priceMultipliers = {easy = 0.75, default = 1, hard = 1.25}
+function B.Cost(level, difficulty)
     level = math.max(1, math.min(30, math.floor(tonumber(level) or 1)))
-    return 100 + 50 * level + 5 * level * level
+    local base = 100 + 50 * level + 5 * level * level
+    return math.floor(base * (priceMultipliers[difficulty] or 1) / 5 + 0.5) * 5
 end
 local function valid(hero)
     return hero ~= nil and not hero:IsNull() and hero.IsRealHero and hero:IsRealHero()
@@ -58,9 +60,9 @@ function B.Process(game)
             states[hero] = state
             if hero:IsAlive() then
                 state.failed = nil
-            elseif not state.failed and not state.processing and not RespawnPolicy.IsReturning(hero)
+            elseif not state.used and not state.failed and not state.processing and not RespawnPolicy.IsReturning(hero)
                 and B.Enabled(game, hero) and hero.RespawnHero then
-                local cost = B.Cost(hero:GetLevel())
+                local cost = B.Cost(hero:GetLevel(), game.campaignDifficulty)
                 if game:GetGoldBalance() >= cost then
                     local saved = cooldowns(hero)
                     state.processing = true
@@ -74,6 +76,7 @@ function B.Process(game)
                             hero:SetRespawnPosition(state.position)
                             hero:RespawnHero(false, false)
                             assert(hero:IsAlive(), "RespawnHero did not revive hero")
+                            state.used = true -- Only BeginBattle resets a successful buyback allowance.
                             -- Respawn policy handles the native spawn event. Restore the combat
                             -- acquisition settings and resources without refreshing cooldowns.
                             hero:SetRespawnsDisabled(false)
@@ -96,7 +99,10 @@ function B.Process(game)
                             hero.rpgDeathBeforeRespawn = nil
                         end)
                         state.processing = nil
-                        if not hero:IsAlive() then
+                        if hero:IsAlive() then
+                            -- Even a later cleanup error must not grant another paid revival.
+                            state.used = true
+                        else
                             state.failed = true
                             game:AddGold(cost)
                             hero:SetRespawnsDisabled(true)

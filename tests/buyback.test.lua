@@ -81,7 +81,13 @@ local function game(heroes, gold)
 end
 
 test("cost curve and level bounds", function()
-    for level=1,30 do assert(Buyback.Cost(level) == 100+50*level+5*level*level) end
+    for level=1,30 do
+        local base=100+50*level+5*level*level
+        for difficulty,rate in pairs({easy=.75,default=1,hard=1.25}) do
+            assert(Buyback.Cost(level,difficulty)==math.floor(base*rate/5+.5)*5)
+        end
+        assert(Buyback.Cost(level)==base and Buyback.Cost(level,"unknown")==base)
+    end
     assert(Buyback.Cost(1)==155 and Buyback.Cost(10)==1100 and Buyback.Cost(30)==6100)
     assert(Buyback.Cost(0)==155 and Buyback.Cost(31)==6100 and Buyback.Cost("10")==1100)
 end)
@@ -113,11 +119,26 @@ test("stable shared wallet, duplicate rules and repeated ticks", function()
     g:AddGold(155); Buyback.Process(g)
     assert(b.alive and g.spends==2)
     a.alive=false; g:AddGold(155); Buyback.Process(g)
-    assert(a.alive and a.respawns==2 and g.spends==3, "a later death may buy back again")
+    assert(not a.alive and a.respawns==1 and g.spends==2 and g.gold==155,
+        "a second death in the same mission must not buy back")
+    a.rules[1].enabled=false; Buyback.Process(g); a.rules[1].enabled=true; Buyback.Process(g)
+    assert(not a.alive and g.spends==2, "toggling or duplicate rules cannot reset the allowance")
+    g.battleManager:StartBattle(g.battleManager.teamRules)
+    Buyback.Process(g)
+    assert(a.alive and a.respawns==2 and g.spends==3, "the next battle starts a fresh allowance")
+end)
+test("difficulty price uses the campaign setting and exact affordability", function()
+    for difficulty,cost in pairs({easy=825,default=1100,hard=1375}) do
+        local h=hero(10); local g=game({h},cost-1); g.campaignDifficulty=difficulty
+        Buyback.Process(g); assert(not h.alive and g.spends==0)
+        g:AddGold(1); Buyback.Process(g)
+        assert(h.alive and g.spends==1 and g.gold==0)
+    end
 end)
 test("native reincarnation, enemy, arena and non-lineup exclusion", function()
     local h=hero(); local g=game({h},1000); h.returning=true
     Buyback.Process(g); assert(g.spends==0)
+    assert(not g.battleManager.buybackState[h].used, "native reincarnation does not consume paid allowance")
     h.returning=false; h.team=3; Buyback.Process(g); assert(g.spends==0)
     h.team=2; g.battleManager.arenaActive=true; Buyback.Process(g); assert(g.spends==0)
     g.battleManager.arenaActive=false; assert(not Buyback.IsEligible(g,hero()))
@@ -130,6 +151,7 @@ test("failed respawn refunds once and suppresses repeated charges for that death
         local h=hero(); h.fail=failure; local g=game({h},155)
         Buyback.Process(g); Buyback.Process(g); Buyback.Process(g)
         assert(g.gold==155 and g.spends==1 and g.refunds==1 and h.respawns==1 and h.disabled)
+        assert(not g.battleManager.buybackState[h].used, "a failed revive must not spend the allowance")
         h.fail=nil; h.alive=true; Buyback.Process(g); h.alive=false; Buyback.Process(g)
         assert(h.alive and g.spends==2 and g.gold==0, "new death clears failed-attempt latch")
     end
@@ -160,6 +182,14 @@ test("actual wipe gate buys back affordable full wipe and ends unaffordable wipe
     assert(not g.battleManager:CheckBattleEnd() and h.alive and g.winner==nil and g.gold==0)
     h=hero(); g=game({h},154)
     assert(g.battleManager:CheckBattleEnd() and g.winner=="dire" and g.spends==0)
+end)
+test("a second full wipe ends battle despite enough money", function()
+    now=10
+    local h=hero(); local g=game({h},10000)
+    assert(not g.battleManager:CheckBattleEnd() and h.alive)
+    h.alive=false
+    assert(g.battleManager:CheckBattleEnd() and g.winner=="dire")
+    assert(g.spends==1 and g.gold==9845 and h.respawns==1)
 end)
 test("actual wipe gate resolves timeout before spending", function()
     now=120
