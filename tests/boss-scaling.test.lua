@@ -9,6 +9,7 @@ MODIFIER_PROPERTY_SPELL_AMPLIFY_PERCENTAGE = 3
 MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE = 4
 MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS = 5
 MODIFIER_PROPERTY_MAGICAL_RESISTANCE_BONUS = 6
+MODIFIER_PROPERTY_PREATTACK_BONUS_DAMAGE = 7
 local server = true
 function IsServer() return server end
 local linked
@@ -75,8 +76,8 @@ for _, tier in ipairs({ {6, 100, 100, 25}, {10, 200, 150, 40}, {16, 300, 200, 50
     assert(power:GetModifierSpellAmplify_Percentage() == tier[3])
     assert(power:GetModifierPercentageCooldown() == tier[4])
     local properties = power:DeclareFunctions()
-    assert(#properties == 6)
-    for index = 1, 6 do assert(properties[index] == index) end
+    assert(#properties == 7)
+    for index = 1, 7 do assert(properties[index] == index) end
     assert(not power:IsHidden() and not power:IsPurgable() and not power:RemoveOnDeath())
     assert(not power:AllowIllusionDuplicate() and power.transmitter)
     assert(Scaling.Apply(hero, config) == power and hero.adds == 1 and power.sent == 1)
@@ -250,4 +251,18 @@ for _, getter in ipairs({false, function() error("native getter unavailable") en
     assert(fresh:GetMaxHealth() == 21000 and freshPower:GetModifierMagicalResistanceBonus() == 0)
 end
 assert(Scaling.Apply(unit(), {tags={"boss"}, boss_magic_resistance_pct=80}) ~= nil)
-print("PASS: Boss stat tiers, final MR target, native formula, refresh, equipment changes, temporary effects, replication, death and invalid getters")
+local finalBoss = unit()
+local finalConfig = {tags={"boss"}, boss_bonus_attack_damage=300, boss_attack_damage_pct=100}
+local flat = Scaling.Apply(finalBoss, finalConfig)
+assert(flat:GetModifierPreAttack_BonusDamage() == 300)
+Scaling.Apply(finalBoss, finalConfig)
+assert(flat:GetModifierPreAttack_BonusDamage() == 300 and finalBoss.adds == 1, "refresh must not stack flat attack")
+local client = setmetatable({GetParent=function() return finalBoss end}, Power)
+client:HandleCustomTransmitterData(flat:AddCustomTransmitterData())
+assert(client:GetModifierPreAttack_BonusDamage() == 300, "client attack display receives the flat bonus")
+finalBoss.illusion=true
+assert(flat:GetModifierPreAttack_BonusDamage() == 0, "illusions cannot inherit boss flat attack")
+finalBoss.illusion=false
+Scaling.Apply(finalBoss, {tags={"boss"}})
+assert(flat:GetModifierPreAttack_BonusDamage() == 0, "other boss configurations default to zero flat attack")
+print("PASS: Boss stat tiers, flat attack, final MR target, native formula, refresh, equipment changes, temporary effects, replication, death and invalid getters")

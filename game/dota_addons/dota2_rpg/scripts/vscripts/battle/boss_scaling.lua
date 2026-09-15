@@ -51,6 +51,7 @@ function BossScaling.Apply(unit, entry)
     -- Absolute HP is applied after leveling/equipment, including a negative
     -- bonus when the native level-30 hero already exceeds the target.
     local targetHealth = bounded(entry.boss_max_health, 0, 0, 1000000)
+    local bonusAttack = bounded(entry.boss_bonus_attack_damage, 0, 0, 10000)
     local attack = bounded(entry.boss_attack_damage_pct, 0, 0, 1000)
     local spell = bounded(entry.boss_spell_amp_pct, 0, 0, 1000)
     local cooldown = bounded(entry.boss_cooldown_reduction_pct, 0, 0, 80)
@@ -58,7 +59,7 @@ function BossScaling.Apply(unit, entry)
     local resistance = bounded(entry.boss_magic_resistance_bonus_pct, 0, 0, 80)
     local targetMR = bounded(entry.boss_magic_resistance_pct, nil, 0, 100)
     local previous = unit:FindModifierByName(MODIFIER)
-    if targetMR == nil and targetHealth == 0 and hpMultiplier == 1 and attack == 0 and spell == 0 and cooldown == 0 and armor == 0 and resistance == 0 and not valid(previous) then
+    if targetMR == nil and targetHealth == 0 and hpMultiplier == 1 and bonusAttack == 0 and attack == 0 and spell == 0 and cooldown == 0 and armor == 0 and resistance == 0 and not valid(previous) then
         return nil
     end
     unit:CalculateStatBonus(true)
@@ -70,6 +71,7 @@ function BossScaling.Apply(unit, entry)
     local modifier = unit:AddNewModifier(unit, nil, MODIFIER, {
         health_bonus = targetHealth > 0 and (math.floor(targetHealth) - baseline)
             or math.floor(baseline * (hpMultiplier - 1)),
+        bonus_attack_damage = bonusAttack,
         attack_damage_pct = attack,
         spell_amp_pct = spell,
         cooldown_reduction_pct = cooldown,

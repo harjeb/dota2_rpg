@@ -8,6 +8,7 @@ function modifier_rpg_boss_power:GetTexture() return "item_heart" end
 
 local function assign(self, values)
     self.health_bonus = tonumber(values.health_bonus) or 0
+    self.bonus_attack_damage = tonumber(values.bonus_attack_damage) or 0
     self.attack_damage_pct = tonumber(values.attack_damage_pct) or 0
     self.spell_amp_pct = tonumber(values.spell_amp_pct) or 0
     self.cooldown_reduction_pct = tonumber(values.cooldown_reduction_pct) or 0
@@ -35,6 +36,7 @@ end
 function modifier_rpg_boss_power:AddCustomTransmitterData()
     return {
         health_bonus = self.health_bonus,
+        bonus_attack_damage = self.bonus_attack_damage,
         attack_damage_pct = self.attack_damage_pct,
         spell_amp_pct = self.spell_amp_pct,
         cooldown_reduction_pct = self.cooldown_reduction_pct,
@@ -55,6 +57,7 @@ function modifier_rpg_boss_power:DeclareFunctions()
         MODIFIER_PROPERTY_COOLDOWN_PERCENTAGE,
         MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS,
         MODIFIER_PROPERTY_MAGICAL_RESISTANCE_BONUS,
+        MODIFIER_PROPERTY_PREATTACK_BONUS_DAMAGE,
     }
 end
 
@@ -75,6 +78,10 @@ end
 
 function modifier_rpg_boss_power:GetModifierHealthBonus()
     return valueForRealUnit(self, "health_bonus")
+end
+
+function modifier_rpg_boss_power:GetModifierPreAttack_BonusDamage()
+    return valueForRealUnit(self, "bonus_attack_damage")
 end
 
 function modifier_rpg_boss_power:GetModifierTotalDamageOutgoing_Percentage(params)

@@ -20,7 +20,7 @@ class LateCampaignBalanceTests(unittest.TestCase):
         self.assertEqual(AUTHOR['BOSSES'][30]['boss_max_health'], 50000)
         # 终局 Boss 的手调值：钉住它们，避免被顺手改回或漏改两个数据源。
         self.assertEqual(AUTHOR['BOSSES'][30], dict(boss_max_health=50000,
-                         boss_attack_damage_pct=100, boss_bonus_armor=100,
+                         boss_attack_damage_pct=100, boss_bonus_attack_damage=300, boss_bonus_armor=100,
                          boss_magic_resistance_bonus_pct=80))
         self.assertEqual(AUTHOR['BOSSES'][20], dict(boss_max_health=20000,
                          boss_attack_damage_pct=75, boss_bonus_armor=15,
