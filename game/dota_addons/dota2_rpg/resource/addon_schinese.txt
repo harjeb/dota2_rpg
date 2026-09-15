@@ -205,7 +205,7 @@
 		"dota2_rpg_v2_buyback_enabled" "自动买活：已启用（点击停用）"
 		"dota2_rpg_v2_buyback_disabled" "自动买活：已停用（点击启用）"
 		"dota2_rpg_v2_buyback_cost" "当前难度下{level}级买活消耗{cost}共享金币；每名英雄每场仅限一次。"
-		"dota2_rpg_build_tag"			"界面版本 85"
+		"dota2_rpg_build_tag"			"界面版本 86"
 		"dota2_rpg_loading_battlefield"	"正在载入战场…"
 		"npc_rpg_skill_test_target"		"技能测试怪"
 		"dota2_rpg_lives_title" "剩余生命"

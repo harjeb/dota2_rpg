@@ -49,11 +49,11 @@ var RpgConditionHelpData = {
         "en": "Conditions, filters and ordering"
       },
       "description": {
-        "zh": "使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。多条条件和筛选分别按AND计算，排序按顺序比较；没有合格目标就不施放。",
-        "en": "Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Conditions and filters are AND gates; ordering is lexicographic. No legal target means no cast."
+        "zh": "使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。两组各自选择同时满足或按优先级：同时满足要求全部通过；使用条件按优先级时任一满足即通过，目标筛选按优先级时采用首个有合法目标的组，再组内排序。没有合格目标就不施放。",
+        "en": "Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Each group independently selects Match all or Priority. Match all requires every clause. Priority use conditions pass at the first match; priority target filters use the first group with legal candidates, then rank within it. No legal target means no cast."
       },
-      "zh": "条件、筛选与排序的分工: 使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。多条条件和筛选分别按AND计算，排序按顺序比较；没有合格目标就不施放。",
-      "en": "Conditions, filters and ordering: Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Conditions and filters are AND gates; ordering is lexicographic. No legal target means no cast."
+      "zh": "条件、筛选与排序的分工: 使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。两组各自选择同时满足或按优先级：同时满足要求全部通过；使用条件按优先级时任一满足即通过，目标筛选按优先级时采用首个有合法目标的组，再组内排序。没有合格目标就不施放。",
+      "en": "Conditions, filters and ordering: Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Each group independently selects Match all or Priority. Match all requires every clause. Priority use conditions pass at the first match; priority target filters use the first group with legal candidates, then rank within it. No legal target means no cast."
     },
     {
       "id": "units",
@@ -132,8 +132,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -470,8 +470,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -654,8 +654,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -934,8 +934,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1140,8 +1140,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1279,8 +1279,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1469,8 +1469,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1511,8 +1511,8 @@ var RpgConditionHelpData = {
           "en": "Existing skill presets are available; choose the matching variant, then check thresholds."
         },
         {
-          "zh": "附近敌我按施法者队伍判定。优先队友没有合格队友时才回退自身。玛西和猛犸的友方增益可提前施加，不加附近敌人门槛；其他普通战斗增益保留各自门槛。",
-          "en": "Nearby teams are relative to the caster. Prefer teammate falls back to self only without a qualifying teammate. Marci Bodyguard and Magnus Empower omit nearby-enemy gates for early buffing; ordinary combat buffs keep their own gates."
+          "zh": "附近使用条件的敌我相对于施法者；附近目标筛选的敌我相对于候选目标。优先队友没有合格队友时才回退自身。玛西和猛犸的友方增益可提前施加，不加附近敌人门槛；其他普通战斗增益保留各自门槛。",
+          "en": "Nearby use conditions classify teams relative to the caster; nearby target filters classify them relative to the candidate. Prefer teammate falls back to self only without a qualifying teammate. Marci Bodyguard and Magnus Empower omit nearby-enemy gates for early buffing; ordinary combat buffs keep their own gates."
         }
       ],
       "covered_ability_ids": [
@@ -1596,8 +1596,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1806,8 +1806,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -1940,8 +1940,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2086,8 +2086,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2203,8 +2203,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2310,8 +2310,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2424,8 +2424,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2530,8 +2530,8 @@ var RpgConditionHelpData = {
           "en": "Set target, use conditions, filters and ordering for the intended mode below."
         },
         {
-          "zh": "有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。",
-          "en": "If available, choose the matching preset for this ability, check thresholds, save and check native availability."
+          "zh": "选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。",
+          "en": "Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown."
         }
       ],
       "settings": [
@@ -2665,8 +2665,8 @@ var RpgConditionHelpData = {
           "en": "Configure this additional workflow manually; example abilities may have separate basic presets."
         },
         {
-          "zh": "不提供定时放波、提前取消或危险自动打断；成功施法事件不等于持续施法完成。",
-          "en": "No timed release, early cancellation or danger interruption; cast success is not channel completion."
+          "zh": "已登记的对应释放动作可用当前持续施法时长及释放可用条件配置，详见持续施法与对应释放；未适配的蓄力流程不能照搬。成功施法事件不等于持续施法完成。",
+          "en": "Registered matching release actions can use channel duration and release availability conditions; see Channeling and matching releases. Unsupported charge workflows cannot use this recipe. Cast success is not channel completion."
         }
       ],
       "covered_ability_ids": [],
@@ -2809,6 +2809,15 @@ var RpgConditionHelpData = {
             "en": "Trample"
           },
           "has_preset": true
+        },
+        {
+          "ability": "pangolier_gyroshell",
+          "hero": "npc_dota_hero_pangolier",
+          "label": {
+            "zh": "地雷滚滚",
+            "en": "Rolling Thunder"
+          },
+          "has_preset": false
         }
       ],
       "steps": [
@@ -2852,8 +2861,8 @@ var RpgConditionHelpData = {
             "en": "Movement mode"
           },
           "value": {
-            "zh": "缩地：循环穿越；践踏：绕行；距离150；最长15秒",
-            "en": "Shukuchi: cycle; Trample: orbit; distance 150; maximum 15 seconds"
+            "zh": "缩地：循环穿越；践踏：绕行；距离150、最长15秒。滚动模板：绕行、距离150、最长20秒",
+            "en": "Shukuchi: cycle; Trample: orbit; distance 150, maximum 15 seconds. Gyroshell: orbit, distance 150, maximum 20 seconds"
           }
         }
       ],
@@ -2870,7 +2879,8 @@ var RpgConditionHelpData = {
       "covered_ability_ids": [],
       "applicable_ability_ids": [
         "weaver_shukuchi",
-        "primal_beast_trample"
+        "primal_beast_trample",
+        "pangolier_gyroshell"
       ],
       "coverage_role": "supplemental",
       "preset_count": 0,
@@ -2996,6 +3006,427 @@ var RpgConditionHelpData = {
       }
     },
     {
+      "id": "condition_modes",
+      "title": {
+        "zh": "同时满足、按优先级与规则顺序",
+        "en": "Match all, Priority and rule order"
+      },
+      "description": {
+        "zh": "使用条件和目标筛选有各自独立的组合模式；它们与行动规则的先后顺序不同。",
+        "en": "Use conditions and target filters have independent combination modes, separate from action rule order."
+      },
+      "steps": [
+        {
+          "zh": "需要同时满足血量、魔法等门槛时选择“同时满足”；任一条件即可触发时选择“按优先级”。",
+          "en": "Choose Match all for mandatory health and mana gates; choose Priority when any clause may trigger the action."
+        },
+        {
+          "zh": "目标筛选按优先级时，先找第一项有合法可用目标的组，再按目标排序挑选；后面的筛选不是额外限制。",
+          "en": "Priority target filters use the first tier with legal viable candidates, then rank within it. Later filters are not additional requirements."
+        },
+        {
+          "zh": "血量≤50%并且距离≤600，应放在“同时满足”。想优先治疗指定队友、否则治疗其他低血量友军，可将指定友方与低血量筛选放到“按优先级”，但指定友方组不受后面的血量门槛约束。",
+          "en": "HP ≤50% AND distance ≤600 requires Match all. To prefer a specified ally and otherwise heal low-health allies, use Priority tiers; the specified-ally tier is not constrained by the later health filter."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "每条规则容量",
+            "en": "Per-rule capacity"
+          },
+          "value": {
+            "zh": "最多4个使用条件、4个目标筛选、2个排序；每英雄最多32条规则。",
+            "en": "Up to 4 use conditions, 4 target filters and 2 priorities; 32 rules per hero."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "留空不增加限制；已填条件全部不匹配则失败。排序只在合格目标之间比较，不是条件门槛。",
+          "en": "Empty lists add no gate; populated lists with no match fail. Priorities rank eligible targets rather than imposing thresholds."
+        },
+        {
+          "zh": "引擎先尝试非普攻规则，再尝试普攻。开始追击会占用本次决策；技能追击期间仅前面的非普攻规则可抢占，普攻追击会让位给非普攻规则。",
+          "en": "The engine evaluates non-attack rules before attacks. Starting a chase consumes the decision; an ability chase yields only to earlier non-attack rules, while an attack chase yields to non-attack rules."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "approach_timeout",
+      "title": {
+        "zh": "等待射程与自动接近目标",
+        "en": "Wait for range and automatically approach"
+      },
+      "description": {
+        "zh": "接近策略决定射程外目标能否触发追击，不会扩大原生施法距离。",
+        "en": "Approach policy determines whether out-of-range targets trigger a chase; it does not extend native cast range."
+      },
+      "steps": [
+        {
+          "zh": "打开行动的条件设置，在接近策略中选择“等待进入射程”或“自动接近目标”。",
+          "en": "Open action settings and choose Wait for target to enter range or Approach target automatically."
+        },
+        {
+          "zh": "选择自动接近后填写追击超时，点击应用；再次打开会保留设置。",
+          "en": "For automatic approach, enter a chase timeout and Apply. Reopening retains the value."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "追击超时",
+            "en": "Chase timeout"
+          },
+          "value": {
+            "zh": "0.1～120秒，可填小数；技能、物品和普攻默认3秒。",
+            "en": "0.1–120 seconds, including decimals; skills, items and attacks default to 3 seconds."
+          }
+        },
+        {
+          "label": {
+            "zh": "默认追击距离",
+            "en": "Default chase distance"
+          },
+          "value": {
+            "zh": "距本次追击起点的水平直线位移最多2000，不是累计行走路程。",
+            "en": "Up to 2000 horizontal units from the chase start, not cumulative path length."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "等待模式只选射程内合格目标；找不到时可继续尝试后续规则。自动接近模式可以选射程外合格目标，接近到原生射程后再施放。",
+          "en": "Wait mode selects eligible in-range targets and can fall through if none exist. Automatic approach may choose an eligible out-of-range target and cast after entering native range."
+        },
+        {
+          "zh": "超时、超过位移限制或目标不再合法会结束当前追击；重新评估时同一规则仍可能立即再次开始追击。120秒不是保证追满120秒，控制、条件和目标变化仍会影响执行。",
+          "en": "Timeout, displacement limits or invalid targets end the chase. Reevaluation can immediately select the same rule again. A 120-second setting does not guarantee 120 seconds of movement; control, conditions and targets still matter."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "facing_retreat",
+      "title": {
+        "zh": "面向敌人筛选与背离敌人撤退",
+        "en": "Facing filters and retreating away from enemies"
+      },
+      "description": {
+        "zh": "面向敌人是角度检查；米拉娜跳跃和对自身原力法杖的背离目标模式会先转身再施放。",
+        "en": "Facing an enemy is an angle check. Mirana Leap and self Force Staff can turn away from an enemy before casting."
+      },
+      "steps": [
+        {
+          "zh": "面向发动的技能：目标选敌方，目标筛选选同时满足，添加F41面向敌人及距离上限。",
+          "en": "For a facing-based spell, choose enemy targets and Match all filters; add F41 facing enemy and a distance cap."
+        },
+        {
+          "zh": "撤退：选择米拉娜跳跃或原力法杖，以敌人为方向参照，目的地选择背离目标。原力法杖实际对自己施放。",
+          "en": "For retreat, choose Mirana Leap or Force Staff, use an enemy as the direction reference and select Away from target. Force Staff actually targets the caster."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "F41面向敌人",
+            "en": "F41 facing enemy"
+          },
+          "value": {
+            "zh": "正前方左右各15°，总夹角30°，包含边界；无可调角度或距离参数。",
+            "en": "Horizontal ±15°, total 30°, inclusive boundary; no adjustable angle or distance parameter."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "F41不会主动转身，不检查技能宽度、不预测移动，也不保证命中；按优先级会让距离与朝向成为不同候选组。",
+          "en": "F41 does not turn the caster, check spell width, predict movement or guarantee hits. Priority mode makes distance and facing separate candidate tiers."
+        },
+        {
+          "zh": "这两种撤退动作不显示落点距离；转身过程可能产生少量行走，确认朝向后才施放。目标失效、移动受限等情况会取消；不保证安全落点或越障。",
+          "en": "These retreat actions do not expose destination distance. Turning may cause a small walk before facing is confirmed and casting proceeds. Invalid targets or movement restrictions can cancel it; safe landings and obstacle crossing are not guaranteed."
+        }
+      ],
+      "examples": [
+        {
+          "ability": "mirana_leap",
+          "hero": "npc_dota_hero_mirana",
+          "label": {
+            "zh": "跳跃",
+            "en": "Leap"
+          },
+          "has_preset": false
+        }
+      ],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [
+        "mirana_leap"
+      ],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "action_observation",
+      "title": {
+        "zh": "冷却、动作下令与成功连招",
+        "en": "Cooldown, orders and successful action chains"
+      },
+      "description": {
+        "zh": "U44检查正在冷却；U21～U23检查下令历史；U39检查成功执行。三者不能互相替代。",
+        "en": "U44 checks cooldown, U21–U23 inspect order history and U39 checks successful execution. They are different observations."
+      },
+      "steps": [
+        {
+          "zh": "需要在另一技能冷却期间使用当前动作时，添加U44并选择所需英雄的技能；默认动作引用为当前动作。",
+          "en": "To act while another ability is cooling down, add U44 and select that hero's ability; the default reference is the current action."
+        },
+        {
+          "zh": "需要跳刀成功后衔接刃甲等连招时使用U39，并选择前置技能或物品和时间窗口。",
+          "en": "For Blink into Blade Mail or another chain, use U39 with the prerequisite skill or item and a time window."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "U44指定技能正在冷却中",
+            "en": "U44 selected ability on cooldown"
+          },
+          "value": {
+            "zh": "原生剩余冷却>0时通过；就绪、技能不存在或无法读取时不通过。",
+            "en": "Passes when native cooldown remaining is greater than zero; ready, missing or unreadable abilities fail."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "U21/U22从未下令时不通过，U23统计下令次数而不是命中次数。U39当前动作成功后消费一次前置触发，成功不代表命中或持续施法结束。",
+          "en": "U21/U22 fail without prior orders; U23 counts orders, not hits. U39 consumes a prerequisite trigger when the current action succeeds. Success is not impact or channel completion."
+        },
+        {
+          "zh": "把U44指向当前待施放技能通常会与技能必须就绪的要求冲突；此条件常用于观察另一个技能。",
+          "en": "Referencing the action being cast with U44 usually conflicts with its readiness requirement; use it to observe a different ability."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "channel_release",
+      "title": {
+        "zh": "持续施法与对应释放",
+        "en": "Channeling and matching releases"
+      },
+      "description": {
+        "zh": "已登记父技能与结束动作的组合，可以观察当前引导时长后执行对应释放。",
+        "en": "Registered parent and release pairs can execute their matching release after observing current channel duration."
+      },
+      "steps": [
+        {
+          "zh": "先配置启动技能，再为动作列表中可用的对应结束动作建立独立规则。光之守卫冲击波对应释放为keeper_of_the_light_illuminate_end。",
+          "en": "Configure startup, then add a separate rule for its available release action. Illuminate uses keeper_of_the_light_illuminate_end."
+        },
+        {
+          "zh": "结束动作的使用条件选同时满足，添加U40当前持续施法时长≥所需秒数及U43对应释放动作可用。",
+          "en": "For the release action, select Match all and add U40 channel duration ≥ the desired seconds plus U43 release action available."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "观察条件",
+            "en": "Observation conditions"
+          },
+          "value": {
+            "zh": "U40/U41使用当前原生引导计时；U42观察生命周期阶段；U43要求对应释放已学习、可见且激活。",
+            "en": "U40/U41 use current native channel time; U42 observes lifecycle phase; U43 requires a learned, visible, active matching release."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "没有当前持续施法时，时长条件不按0秒通过。下令时间、成功施法时间都不是持续施法完成时间。",
+          "en": "Without a current channel, duration checks do not pass as zero seconds. Order time and cast success are not channel completion."
+        },
+        {
+          "zh": "仅支持明确匹配的结束动作，不能用普通技能任意打断自身引导；未适配的非引导蓄力或多阶段技能不属于此流程。",
+          "en": "Only explicitly mapped releases are supported; ordinary spells cannot arbitrarily interrupt the caster's channel. Unsupported non-channel charges and multistage spells are outside this workflow."
+        }
+      ],
+      "examples": [
+        {
+          "ability": "keeper_of_the_light_illuminate",
+          "hero": "npc_dota_hero_keeper_of_the_light",
+          "label": {
+            "zh": "冲击波",
+            "en": "Illuminate"
+          },
+          "has_preset": true
+        }
+      ],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [
+        "keeper_of_the_light_illuminate"
+      ],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "specified_targets",
+      "title": {
+        "zh": "指定友方或敌方目标",
+        "en": "Specified allied or enemy targets"
+      },
+      "description": {
+        "zh": "通过F39/F40选择阵容头像，固定规则的候选对象。",
+        "en": "Use F39/F40 roster portraits to select a specific candidate for a rule."
+      },
+      "steps": [
+        {
+          "zh": "先选对应目标阵营，再选择指定敌方或指定友方头像。需要指定对象同时低血量时，组合模式必须选同时满足。",
+          "en": "Choose the target team, then its specified enemy or ally portrait. Use Match all when that unit must also satisfy a health gate."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "失效与回退",
+            "en": "Invalid references and fallback"
+          },
+          "value": {
+            "zh": "指定目标死亡、离场或不合法时该筛选不匹配；只有显式配置按优先级后续组或另一条规则才会回退。",
+            "en": "A dead, absent or illegal specified target does not match; fallback requires an explicit later Priority tier or another rule."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "友方按英雄身份恢复；敌方引用受当前关卡约束，换关后需重新检查选择。点目标使用选中单位当前位置，不能绕过原生目标限制。",
+          "en": "Allied references follow hero identity; enemy references are tied to the current stage and need review after a stage change. Point casts use the selected unit's current position and retain native restrictions."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
+      "id": "buyback",
+      "title": {
+        "zh": "买活行动",
+        "en": "Buyback action"
+      },
+      "description": {
+        "zh": "买活使用独立的启用开关，不使用普通技能的目标、筛选或追击设置。",
+        "en": "Buyback has its own enable switch and does not use ordinary spell targets, filters or chase settings."
+      },
+      "steps": [
+        {
+          "zh": "为英雄添加买活行动并启用；战斗中死亡后由系统检查是否可以付费复活。",
+          "en": "Add and enable a Buyback action for the hero; after death in combat the system checks paid revival eligibility."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "每场限制",
+            "en": "Per-battle limit"
+          },
+          "value": {
+            "zh": "每个英雄每场战斗最多成功付费买活一次；实际价格以界面与当前难度为准。",
+            "en": "Each hero can successfully buy back once per battle; use the displayed price for the current difficulty."
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "金币不足、处于原生重生流程等情况不会强制买活；启用买活不会跳过资格检查。",
+          "en": "Insufficient gold or native reincarnation can prevent buyback; enabling it does not bypass eligibility checks."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
       "id": "buff_state",
       "title": {
         "zh": "增益、层数与剩余时间",
@@ -3043,12 +3474,12 @@ var RpgConditionHelpData = {
           "en": "Select the action first. Check yourself in Use conditions; check the selected enemy or ally in Target filters."
         },
         {
-          "zh": "缩地可直接使用上面的状态名称；其他技能要填写准确的状态内部名称，不能填写中文技能名。",
-          "en": "Use the status name above for Shukuchi. Other spells need their exact modifier name, not their displayed skill name."
+          "zh": "缩地可直接使用上面的状态名称；其他技能从已观察状态列表选择对应状态；内部名称用于核对，不是中文技能名。未观察到的状态不能作为新选项直接选择。",
+          "en": "Use the status name above for Shukuchi. For other spells, select the matching observed status. Internal names help identify it; unobserved statuses cannot be newly selected."
         },
         {
-          "zh": "如果想“没有状态，或者状态快结束”都施放，建立两条规则，分别设置两种情况。",
-          "en": "To act when a status is absent OR nearly expired, create two separate rules, one for each case."
+          "zh": "如果想“没有状态，或者状态快结束”都施放，将使用条件切到“按优先级”，分别添加两项。另有必须满足的血量门槛时，应拆成两条“同时满足”规则并各自添加血量门槛。",
+          "en": "For absent OR nearly expired, select Priority use conditions and add both clauses. If a health gate must always hold, use two Match all rules and repeat that gate in each."
         }
       ],
       "notes": [
@@ -3617,8 +4048,8 @@ var RpgConditionHelpData = {
           "en": "Configure this additional workflow manually; example abilities may have separate basic presets."
         },
         {
-          "zh": "祈求配球、复制/偷取、定时释放、专属双落点、自动法球与攻击时机，以及石鳞剑士滚动转向没有通用模板。已有小小抓取支持见“抓取对象与投掷落点”。",
-          "en": "Orb sequences, copy/steal, timed releases, special dual endpoints, autocast attack timing and Pangolier rolling/steering have no generic recipe here. See Grabbed units and Toss destinations for supported Tiny handling."
+          "zh": "祈求配球、复制/偷取、定时释放、专属双落点、自动法球与攻击时机，没有通用完整流程。石鳞剑士已有持续移动滚动模板，基础绕行见持续移动章节；不保证原生转向、碰撞或收益。已有小小抓取支持见“抓取对象与投掷落点”。",
+          "en": "Orb sequences, copy/steal, timed releases, special dual endpoints, autocast attack timing have no universal complete workflow here. Pangolier has a persistent movement Gyroshell template for basic orbiting, without guarantees about native steering, collisions or outcomes. See Grabbed units and Toss destinations for supported Tiny handling."
         }
       ],
       "covered_ability_ids": [],
@@ -3634,6 +4065,1003 @@ var RpgConditionHelpData = {
       "preset_status": {
         "zh": "本页额外流程需手动配置；示例的基础技能可能另有预设。",
         "en": "Configure this additional workflow manually; example abilities may have separate basic presets."
+      }
+    },
+    {
+      "id": "reference_use",
+      "title": {
+        "zh": "使用条件完整索引",
+        "en": "All use conditions"
+      },
+      "description": {
+        "zh": "当前菜单共 37 项；按技能能力决定哪些项目可以选择。",
+        "en": "37 current menu entries; availability depends on the selected action."
+      },
+      "examples": [],
+      "steps": [
+        {
+          "zh": "按编号查找菜单项；百分比填0～100，秒数填秒，距离填游戏单位。",
+          "en": "Find entries by code. Percentages use 0–100, time uses seconds and distance uses game units."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "U01 总是",
+            "en": "U01 Always"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U02 自身生命百分比 ≤",
+            "en": "U02 Own health % ≤"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U03 自身生命百分比 ≥",
+            "en": "U03 Own health % ≥"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U04 自身魔法百分比 ≤",
+            "en": "U04 Own mana % ≤"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U05 自身魔法百分比 ≥",
+            "en": "U05 Own mana % ≥"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U06 存活友军数 ≥",
+            "en": "U06 Living allies ≥"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "U07 存活敌人数 ≥",
+            "en": "U07 Living enemies ≥"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "U08 存活敌人数 ≤",
+            "en": "U08 Living enemies ≤"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "U10 附近友军数 ≥",
+            "en": "U10 Nearby allies ≥"
+          },
+          "value": {
+            "zh": "数值, 半径",
+            "en": "Value, Radius"
+          }
+        },
+        {
+          "label": {
+            "zh": "U11 附近敌人数 ≥",
+            "en": "U11 Nearby enemies ≥"
+          },
+          "value": {
+            "zh": "数值, 半径",
+            "en": "Value, Radius"
+          }
+        },
+        {
+          "label": {
+            "zh": "U12 半径内没有敌人",
+            "en": "U12 No enemy within radius"
+          },
+          "value": {
+            "zh": "半径",
+            "en": "Radius"
+          }
+        },
+        {
+          "label": {
+            "zh": "U13 战斗时间 ≥",
+            "en": "U13 Battle time ≥"
+          },
+          "value": {
+            "zh": "秒",
+            "en": "Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U14 战斗时间 ≤",
+            "en": "U14 Battle time ≤"
+          },
+          "value": {
+            "zh": "秒",
+            "en": "Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U15 自身最近受到伤害",
+            "en": "U15 Own recent damage"
+          },
+          "value": {
+            "zh": "秒",
+            "en": "Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U16 任意友军最近受到伤害",
+            "en": "U16 Any ally recently damaged"
+          },
+          "value": {
+            "zh": "秒",
+            "en": "Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U21 距指定动作下令至少",
+            "en": "U21 Seconds since action order at least"
+          },
+          "value": {
+            "zh": "秒, 选择技能 / 装备",
+            "en": "Seconds, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U22 距指定动作下令至多",
+            "en": "U22 Seconds since action order at most"
+          },
+          "value": {
+            "zh": "秒, 选择技能 / 装备",
+            "en": "Seconds, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U23 本场动作使用次数 <",
+            "en": "U23 Action orders this battle <"
+          },
+          "value": {
+            "zh": "数值, 选择技能 / 装备",
+            "en": "Value, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U24 技能充能次数 ≥",
+            "en": "U24 Ability charges ≥"
+          },
+          "value": {
+            "zh": "数值, 选择技能 / 装备",
+            "en": "Value, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U27 自身具有指定状态",
+            "en": "U27 Own modifier present"
+          },
+          "value": {
+            "zh": "选择状态",
+            "en": "Choose status"
+          }
+        },
+        {
+          "label": {
+            "zh": "U28 自身没有指定状态",
+            "en": "U28 Own modifier absent"
+          },
+          "value": {
+            "zh": "选择状态",
+            "en": "Choose status"
+          }
+        },
+        {
+          "label": {
+            "zh": "U29 自身状态层数 ≥",
+            "en": "U29 Own modifier stacks ≥"
+          },
+          "value": {
+            "zh": "选择状态, 数值",
+            "en": "Choose status, Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "U30 自身状态层数至多",
+            "en": "U30 Self modifier stacks at most"
+          },
+          "value": {
+            "zh": "选择状态, 数值",
+            "en": "Choose status, Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "U31 自身状态剩余秒数至少",
+            "en": "U31 Self modifier remaining seconds at least"
+          },
+          "value": {
+            "zh": "选择状态, 秒",
+            "en": "Choose status, Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U32 自身状态剩余时间 ≤",
+            "en": "U32 Own modifier time remaining ≤"
+          },
+          "value": {
+            "zh": "选择状态, 秒",
+            "en": "Choose status, Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "U33 被抓单位是敌方",
+            "en": "U33 Grabbed unit is an enemy"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U34 被抓单位是友方",
+            "en": "U34 Grabbed unit is an ally"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U35 被抓单位是英雄",
+            "en": "U35 Grabbed unit is a hero"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U36 被抓单位是小怪",
+            "en": "U36 Grabbed unit is a creep"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U37 被抓单位生命百分比 ≤",
+            "en": "U37 Grabbed unit health percent <="
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U38 被抓单位生命百分比 ≥",
+            "en": "U38 Grabbed unit health percent >="
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "U39 成功使用指定技能 / 装备后再使用（秒内，仅一次）",
+            "en": "U39 After successful ability / item use (within seconds, once)"
+          },
+          "value": {
+            "zh": "秒, 选择技能 / 装备",
+            "en": "Seconds, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U40 当前持续施法时长 >= 秒",
+            "en": "U40 Current channel elapsed >= seconds"
+          },
+          "value": {
+            "zh": "秒, 选择技能 / 装备",
+            "en": "Seconds, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U41 当前持续施法时长 <= 秒",
+            "en": "U41 Current channel elapsed <= seconds"
+          },
+          "value": {
+            "zh": "秒, 选择技能 / 装备",
+            "en": "Seconds, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U42 观察到的技能生命周期阶段",
+            "en": "U42 Observed action lifecycle phase"
+          },
+          "value": {
+            "zh": "数值, 选择技能 / 装备",
+            "en": "Value, Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U43 当前蓄力的对应释放动作可用",
+            "en": "U43 Matching channel release is available"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "U44 指定技能正在冷却中",
+            "en": "U44 Selected ability is on cooldown"
+          },
+          "value": {
+            "zh": "选择技能 / 装备",
+            "en": "Choose ability / item"
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "这是当前菜单索引；配置方法见对应教程。",
+          "en": "This is the current menu index; see the relevant tutorials for configuration."
+        },
+        {
+          "zh": "使用条件与目标筛选分别选择同时满足或按优先级；目标排序按第一项、第二项依次比较。",
+          "en": "Use conditions and target filters have independent Match all / Priority modes. Target priorities compare the first criterion, then the second."
+        }
+      ],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "reference",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "这是当前菜单索引；配置方法见对应教程。",
+        "en": "This is the current menu index; see the relevant tutorials for configuration."
+      }
+    },
+    {
+      "id": "reference_target",
+      "title": {
+        "zh": "目标筛选完整索引",
+        "en": "All target filters"
+      },
+      "description": {
+        "zh": "当前菜单共 37 项；按技能能力决定哪些项目可以选择。",
+        "en": "37 current menu entries; availability depends on the selected action."
+      },
+      "examples": [],
+      "steps": [
+        {
+          "zh": "按编号查找菜单项；百分比填0～100，秒数填秒，距离填游戏单位。",
+          "en": "Find entries by code. Percentages use 0–100, time uses seconds and distance uses game units."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "F01 目标生命百分比 ≤",
+            "en": "F01 Target health % ≤"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "F02 目标生命百分比 ≥",
+            "en": "F02 Target health % ≥"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "F03 目标魔法百分比 ≤",
+            "en": "F03 Target mana % ≤"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "F04 目标魔法百分比 ≥",
+            "en": "F04 Target mana % ≥"
+          },
+          "value": {
+            "zh": "百分比 %",
+            "en": "Percent %"
+          }
+        },
+        {
+          "label": {
+            "zh": "F05 目标生命值 ≤",
+            "en": "F05 Target health ≤"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F06 目标生命值 ≥",
+            "en": "F06 Target health ≥"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F07 目标已损失生命值 ≥",
+            "en": "F07 Target missing health ≥"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F08 目标损失生命值至多",
+            "en": "F08 Target missing health at most"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F09 目标距离 ≤",
+            "en": "F09 Target distance ≤"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F10 目标距离 ≥",
+            "en": "F10 Target distance ≥"
+          },
+          "value": {
+            "zh": "数值",
+            "en": "Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F11 附近友军数 ≥",
+            "en": "F11 Nearby allies ≥"
+          },
+          "value": {
+            "zh": "数值, 半径",
+            "en": "Value, Radius"
+          }
+        },
+        {
+          "label": {
+            "zh": "F12 附近敌人数 ≥",
+            "en": "F12 Nearby enemies ≥"
+          },
+          "value": {
+            "zh": "数值, 半径",
+            "en": "Value, Radius"
+          }
+        },
+        {
+          "label": {
+            "zh": "F13 排除自己",
+            "en": "F13 Exclude self"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F14 英雄",
+            "en": "F14 Hero"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F15 召唤物",
+            "en": "F15 Summon"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F17 目标是幻象",
+            "en": "F17 Target is an illusion"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F19 目标归属于施法者",
+            "en": "F19 Target belongs to caster"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F20 正在施法（含前摇）",
+            "en": "F20 Casting (including cast phase)"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F21 正在持续施法",
+            "en": "F21 Channeling"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F22 受到控制",
+            "en": "F22 Controlled"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F23 眩晕",
+            "en": "F23 Stunned"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F24 沉默",
+            "en": "F24 Silenced"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F25 缠绕",
+            "en": "F25 Rooted"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F26 技能免疫",
+            "en": "F26 Spell immune"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F27 没有技能免疫",
+            "en": "F27 Not spell immune"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F30 目标有可驱散的增益",
+            "en": "F30 Target has a purgable buff"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F31 目标有可驱散的减益",
+            "en": "F31 Target has a purgable debuff"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "F32 目标最近受到伤害",
+            "en": "F32 Target recently damaged"
+          },
+          "value": {
+            "zh": "秒",
+            "en": "Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "F33 目标具有指定状态",
+            "en": "F33 Target modifier present"
+          },
+          "value": {
+            "zh": "选择状态",
+            "en": "Choose status"
+          }
+        },
+        {
+          "label": {
+            "zh": "F34 目标没有指定状态",
+            "en": "F34 Target modifier absent"
+          },
+          "value": {
+            "zh": "选择状态",
+            "en": "Choose status"
+          }
+        },
+        {
+          "label": {
+            "zh": "F35 目标状态层数 ≥",
+            "en": "F35 Target modifier stacks ≥"
+          },
+          "value": {
+            "zh": "选择状态, 数值",
+            "en": "Choose status, Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F36 目标状态层数至多",
+            "en": "F36 Target modifier stacks at most"
+          },
+          "value": {
+            "zh": "选择状态, 数值",
+            "en": "Choose status, Value"
+          }
+        },
+        {
+          "label": {
+            "zh": "F37 目标状态剩余秒数至少",
+            "en": "F37 Target modifier remaining seconds at least"
+          },
+          "value": {
+            "zh": "选择状态, 秒",
+            "en": "Choose status, Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "F38 目标状态剩余时间 ≤",
+            "en": "F38 Target modifier time remaining ≤"
+          },
+          "value": {
+            "zh": "选择状态, 秒",
+            "en": "Choose status, Seconds"
+          }
+        },
+        {
+          "label": {
+            "zh": "F39 指定敌方目标",
+            "en": "F39 Specified enemy target"
+          },
+          "value": {
+            "zh": "指定目标",
+            "en": "Specified target"
+          }
+        },
+        {
+          "label": {
+            "zh": "F40 指定友方目标",
+            "en": "F40 Specified allied target"
+          },
+          "value": {
+            "zh": "指定目标",
+            "en": "Specified target"
+          }
+        },
+        {
+          "label": {
+            "zh": "F41 面向敌人（30°锥形）",
+            "en": "F41 Facing enemy (30° cone)"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "这是当前菜单索引；配置方法见对应教程。",
+          "en": "This is the current menu index; see the relevant tutorials for configuration."
+        },
+        {
+          "zh": "使用条件与目标筛选分别选择同时满足或按优先级；目标排序按第一项、第二项依次比较。",
+          "en": "Use conditions and target filters have independent Match all / Priority modes. Target priorities compare the first criterion, then the second."
+        }
+      ],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "reference",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "这是当前菜单索引；配置方法见对应教程。",
+        "en": "This is the current menu index; see the relevant tutorials for configuration."
+      }
+    },
+    {
+      "id": "reference_priority",
+      "title": {
+        "zh": "目标排序完整索引",
+        "en": "All target priorities"
+      },
+      "description": {
+        "zh": "当前菜单共 14 项；按技能能力决定哪些项目可以选择。",
+        "en": "14 current menu entries; availability depends on the selected action."
+      },
+      "examples": [],
+      "steps": [
+        {
+          "zh": "按编号查找菜单项；百分比填0～100，秒数填秒，距离填游戏单位。",
+          "en": "Find entries by code. Percentages use 0–100, time uses seconds and distance uses game units."
+        }
+      ],
+      "settings": [
+        {
+          "label": {
+            "zh": "P01 距离最近",
+            "en": "P01 Nearest"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P02 距离最远",
+            "en": "P02 Farthest"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P03 生命百分比最低",
+            "en": "P03 Lowest health %"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P04 生命百分比最高",
+            "en": "P04 Highest health %"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P05 生命值最低",
+            "en": "P05 Lowest health"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P06 生命值最高",
+            "en": "P06 Highest health"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P07 损失生命值最多",
+            "en": "P07 Most missing health"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P08 护甲最低",
+            "en": "P08 Lowest armor"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P09 护甲最高",
+            "en": "P09 Highest armor"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P10 攻击力最低",
+            "en": "P10 Lowest attack damage"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P11 攻击力最高",
+            "en": "P11 Highest attack damage"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P12 魔法抗性最低",
+            "en": "P12 Lowest magic resistance"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P13 魔法抗性最高",
+            "en": "P13 Highest magic resistance"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        },
+        {
+          "label": {
+            "zh": "P14 队友优先，无合法队友时选自身",
+            "en": "P14 Teammates first, self if no legal teammate"
+          },
+          "value": {
+            "zh": "无参数",
+            "en": "No parameters"
+          }
+        }
+      ],
+      "notes": [
+        {
+          "zh": "这是当前菜单索引；配置方法见对应教程。",
+          "en": "This is the current menu index; see the relevant tutorials for configuration."
+        },
+        {
+          "zh": "使用条件与目标筛选分别选择同时满足或按优先级；目标排序按第一项、第二项依次比较。",
+          "en": "Use conditions and target filters have independent Match all / Priority modes. Target priorities compare the first criterion, then the second."
+        }
+      ],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "reference",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "这是当前菜单索引；配置方法见对应教程。",
+        "en": "This is the current menu index; see the relevant tutorials for configuration."
       }
     }
   ],

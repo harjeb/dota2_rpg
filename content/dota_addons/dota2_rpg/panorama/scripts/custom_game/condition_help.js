@@ -40,8 +40,8 @@
         section(t("怎么使用这份教程", "Using this guide"));
         lines([
             t("左侧按技能用途浏览，也可以搜索示例技能或英雄名称。模板中的数值是起点，可按阵容和关卡调整。", "Browse by purpose or search for an example skill or hero. Template values are starting points; tune them for your lineup and stage."),
-            t("有“预设”按钮时，可先应用现成预设，再按教程调整。没有按钮时，照着目标、使用条件、筛选和排序逐项填写。", "Use an existing preset when available, then adjust it. Otherwise enter the target, use conditions, filters and priorities shown in the guide."),
-            t("同一行条件需要全部满足；不同规则按顺序尝试。优先级高的动作放在前面，普通攻击通常放最后。", "Conditions within one rule must all pass. Rules are tried in order: put important actions first and basic attacks near the end."),
+            t("选择动作时会载入可用的技能预设，随后在条件设置中编辑并应用；也可按完整索引查找条件编号和参数。", "Selecting an action loads an available skill preset; edit it in Condition settings and Apply. The complete indexes list condition codes and parameters."),
+            t("使用条件和目标筛选分别选择“同时满足”或“按优先级”；需要共同成立的门槛用同时满足。引擎先尝试非普攻规则，再尝试普攻。", "Use conditions and target filters independently select Match all or Priority. Use Match all for combined requirements. The engine tries non-attack rules before attacks."),
             t("教程不会自动修改你的规则。阅读后关闭帮助，回到对应技能的设置中应用。", "The guide does not change your rules. Close it and apply your settings to the relevant skill.")
         ]);
         if (data.summary && data.summary.note) { section(t("覆盖范围", "Coverage")); label(body, data.summary.note, "HelpParagraph"); }
@@ -63,7 +63,7 @@
             });
         }
         if (category.settings && category.settings.length) {
-            section(t("条件模板", "Condition template"));
+            section(category.coverage_role === "reference" ? t("条件与参数", "Conditions and parameters") : t("条件模板", "Condition template"));
             category.settings.forEach(function (setting) {
                 var row = $.CreatePanel("Panel", body, ""); row.AddClass("HelpSettingRow");
                 label(row, setting.label, "HelpSettingKey"); label(row, setting.value, "HelpSettingValue");
@@ -107,7 +107,7 @@
     $("#ConditionHelpClear").SetPanelEvent("onactivate", function () { search.text = ""; query = ""; renderNav(); });
     $("#ConditionHelpTitle").text = t("技能条件指南", "Skill condition guide");
     $("#ConditionHelpSubtitle").text = t("按用途找模板，再到技能的“条件设置”中填写。", "Find a template by purpose, then enter it in the skill's Condition settings.");
-    $("#ConditionHelpSearchHint").text = t("搜索类型、示例技能或英雄", "Search types or example skills / heroes");
+    $("#ConditionHelpSearchHint").text = t("搜索条件编号、参数、技能或英雄", "Search condition codes, parameters, skills or heroes");
     $("#ConditionHelpFooter").text = t("帮助仅供参考 · 战斗不会暂停 · Esc 或点击右上角关闭", "Reference guide · Battle continues · Esc or the top-right button closes this page");
     $("#ConditionHelpCloseLabel").text = t("关闭 ×", "Close ×");
     $("#ConditionHelpClearLabel").text = t("清空", "Clear");

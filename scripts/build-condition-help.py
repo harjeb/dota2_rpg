@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 from collections import Counter
 from pathlib import Path
 
@@ -48,7 +49,7 @@ SPECS = [
 ('ally_buff', '友方增益', 'Ally buffs', 'ally_combat_buff teammate_buff',
  '普通友方增益；区分战斗中增益和可提前施加的增益。', 'Ordinary ally buffs; distinguish combat buffs from pre-combat buffs.',
  '友方；优先队友，然后最近', 'Ally; prefer teammate, then nearest', '通常无额外条件', 'Usually no extra gate', '战斗增益：目标700范围内敌人≥1；提前增益：不加此项', 'Combat buff: ≥1 enemy within 700 of target; pre-combat: omit this filter',
- '附近敌我按施法者队伍判定。优先队友没有合格队友时才回退自身。玛西和猛犸的友方增益可提前施加，不加附近敌人门槛；其他普通战斗增益保留各自门槛。', 'Nearby teams are relative to the caster. Prefer teammate falls back to self only without a qualifying teammate. Marci Bodyguard and Magnus Empower omit nearby-enemy gates for early buffing; ordinary combat buffs keep their own gates.'),
+ '附近使用条件的敌我相对于施法者；附近目标筛选的敌我相对于候选目标。优先队友没有合格队友时才回退自身。玛西和猛犸的友方增益可提前施加，不加附近敌人门槛；其他普通战斗增益保留各自门槛。', 'Nearby use conditions classify teams relative to the caster; nearby target filters classify them relative to the candidate. Prefer teammate falls back to self only without a qualifying teammate. Marci Bodyguard and Magnus Empower omit nearby-enemy gates for early buffing; ordinary combat buffs keep their own gates.'),
 ('self_buff', '自身增益与变身启动', 'Self buffs and form activation', 'self_combat_buff',
  '启动已审查的普通自身战斗增益。', 'Activate reviewed ordinary self combat buffs.',
  '自身；无需目标排序', 'Self; no target ordering needed', '自身800范围内敌人≥1', 'At least 1 enemy within 800 of caster', '无额外筛选', 'No extra filters',
@@ -101,7 +102,7 @@ def category(spec, rows):
         examples=[example(r) for r in shown],
         steps=[text('选择英雄技能并打开规则设置。', 'Choose the hero ability and open rule settings.'),
                text('按模板设置目标、使用条件、筛选及排序。', 'Set target, use conditions, filters and ordering for the intended mode below.'),
-               text('有预设时选择该技能的对应预设，再核对阈值、技能等级和冷却。', 'If available, choose the matching preset for this ability, check thresholds, save and check native availability.')],
+               text('选择动作时会载入可用预设；直接编辑条件并应用，再核对技能等级和冷却。', 'Selecting an action loads an available preset. Edit its conditions, apply, then check skill level and cooldown.')],
         settings=[dict(label=text('UI目标与排序','UI target and ordering'),value=text(tz,te)),
                   dict(label=text('使用条件','Use conditions'),value=text(uz,ue)),
                   dict(label=text('目标筛选','Target filters'),value=text(fz,fe))],
@@ -124,6 +125,33 @@ def extra(cid, zh, en, dz, de, ids, steps, settings, notes, by_id):
         preset_status=text('本页额外流程需手动配置；示例的基础技能可能另有预设。','Configure this additional workflow manually; example abilities may have separate basic presets.'))
 
 
+def condition_reference():
+    """Read the live editor catalog so newly exposed conditions enter the guide."""
+    script = """const fs=require('fs'),vm=require('vm'); const ctx={};
+vm.createContext(ctx); vm.runInContext(fs.readFileSync('content/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.js','utf8'),ctx);
+process.stdout.write(JSON.stringify(ctx.RpgConditionCatalog.groups));"""
+    groups = json.loads(subprocess.check_output(['node', '-e', script], cwd=ROOT, encoding='utf-8'))
+    locales = {}
+    for lang, locale in [('zh', 'schinese'), ('en', 'english')]:
+        raw = (ROOT / f'game/dota_addons/dota2_rpg/resource/addon_{locale}.txt').read_text(encoding='utf-8-sig')
+        locales[lang] = dict(re.findall(r'"dota2_rpg_v2_([^"\n]+)"\s+"([^"\n]*)"', raw))
+    result = []
+    for group, zh, en in [('use', '使用条件完整索引', 'All use conditions'), ('target', '目标筛选完整索引', 'All target filters'), ('priority', '目标排序完整索引', 'All target priorities')]:
+        settings = []
+        for entry in groups[group]:
+            labels = {lang: entry['code'] + ' ' + locales[lang][entry['id']] for lang in locales}
+            fields = ['percent' if key == 'value' and '_pct_' in entry['id'] else 'value' if key == 'value_text' else key for key in entry['fields']]
+            values = {lang: ', '.join(locales[lang][key] for key in fields) if fields else {'zh':'无参数', 'en':'No parameters'}[lang] for lang in locales}
+            settings.append(dict(label=labels, value=values))
+        result.append(dict(id='reference_' + group, title=text(zh, en),
+            description=text(f'当前菜单共 {len(settings)} 项；按技能能力决定哪些项目可以选择。', f'{len(settings)} current menu entries; availability depends on the selected action.'),
+            examples=[], steps=[text('按编号查找菜单项；百分比填0～100，秒数填秒，距离填游戏单位。', 'Find entries by code. Percentages use 0–100, time uses seconds and distance uses game units.')],
+            settings=settings, notes=[text('使用条件与目标筛选分别选择同时满足或按优先级；目标排序按第一项、第二项依次比较。', 'Use conditions and target filters have independent Match all / Priority modes. Target priorities compare the first criterion, then the second.')],
+            covered_ability_ids=[], applicable_ability_ids=[], coverage_role='reference', preset_count=0, has_preset=False,
+            preset_status=text('这是当前菜单索引；配置方法见对应教程。', 'This is the current menu index; see the relevant tutorials for configuration.')))
+    return result
+
+
 def build():
     raw=SOURCE.read_bytes(); source=json.loads(raw); rows=source['rows']; by_id={r['id']:r for r in rows}
     categories=[category(s,rows) for s in SPECS]
@@ -132,7 +160,7 @@ def build():
         ['keeper_of_the_light_illuminate','witch_doctor_death_ward'],
         [('为启动规则选择技能原有目标类型。','Use the spell’s native target mode for startup.'),('按对应伤害教程设置敌人门槛并保存。','Set combat gates using the relevant damage tutorial and save.'),('保留正常引导；不要用施法经过时间猜测引导完成。','Allow normal channeling; do not infer completion from action elapsed time.')],
         [(('使用条件','Use conditions'),('附近800敌人≥1（启动示例）','≥1 enemy within 800 (startup example)')),(('目标与排序','Target and ordering'),('敌方；最近；按原生技能决定单位/地点/无目标','Enemy; nearest; native spell decides unit/point/no-target'))],
-        [('不提供定时放波、提前取消或危险自动打断；成功施法事件不等于持续施法完成。','No timed release, early cancellation or danger interruption; cast success is not channel completion.')],by_id))
+        [('已登记的对应释放动作可用当前持续施法时长及释放可用条件配置，详见持续施法与对应释放；未适配的蓄力流程不能照搬。成功施法事件不等于持续施法完成。','Registered matching release actions can use channel duration and release availability conditions; see Channeling and matching releases. Unsupported charge workflows cannot use this recipe. Cast success is not channel completion.')],by_id))
     charged=[r['id'] for r in rows if r['expression_covered'] and any(v.startswith('charged_') for v in r['preset_variants'])]
     categories.append(extra('charges','充能：保留一层资源','Charges: reserve a charge',
         '仅限原生充能可观察的技能；不是所有次数或层数资源。','Only spells with observable native charges; not arbitrary counters or stacks.',charged[:3],
@@ -141,9 +169,9 @@ def build():
         [('充能无法观察时条件不成立；不把modifier层数或英雄专属资源当作技能充能。','Unobservable charges fail the condition; modifier stacks and hero-specific resources are not native charges.')],by_id))
     categories.append(extra('persistent_movement','持续移动：缩地与践踏','Persistent movement: Shukuchi and Trample',
         '先启动技能，再用持续移动动作维持靠近目标的移动。','Activate the spell, then use a persistent movement action to move around the target.',
-        ['weaver_shukuchi','primal_beast_trample'],
+        ['weaver_shukuchi','primal_beast_trample','pangolier_gyroshell'],
         [('先建立缩地或践踏施法规则。','Create a Shukuchi or Trample cast rule first.'),('新建持续移动动作，选择缩地或践踏移动模板。','Create a persistent movement action and select the Shukuchi or Trample movement template.'),('选择敌方目标，检查增益ID、触发技能和最长持续时间后保存。','Select an enemy target; check buff ID, trigger ability and maximum duration before saving.')],
-        [(('UI目标与排序','UI target and ordering'),('敌方；最近','Enemy; nearest')),(('使用条件与筛选','Use conditions and filters'),('先使用技能对应基础门槛；移动由对应增益约束','Use the spell’s basic gates; the matching buff constrains movement')),(('移动模式','Movement mode'),('缩地：循环穿越；践踏：绕行；距离150；最长15秒','Shukuchi: cycle; Trample: orbit; distance 150; maximum 15 seconds'))],
+        [(('UI目标与排序','UI target and ordering'),('敌方；最近','Enemy; nearest')),(('使用条件与筛选','Use conditions and filters'),('先使用技能对应基础门槛；移动由对应增益约束','Use the spell’s basic gates; the matching buff constrains movement')),(('移动模式','Movement mode'),('缩地：循环穿越；践踏：绕行；距离150、最长15秒。滚动模板：绕行、距离150、最长20秒','Shukuchi: cycle; Trample: orbit; distance 150, maximum 15 seconds. Gyroshell: orbit, distance 150, maximum 20 seconds'))],
         [('模板使用modifier_weaver_shukuchi / modifier_primal_beast_trample；停止、死亡、增益消失或超时会结束。地形及技能伤害间隔不由本教程保证。','Templates use modifier_weaver_shukuchi / modifier_primal_beast_trample; stop, death, buff loss or timeout ends movement. Terrain and damage tick timing are not guaranteed.')],by_id))
     categories.append(extra('combo','连招：跳刀 → 刃甲 → 吼','Combo: Blink → Blade Mail → Call',
         '用前置动作成功后的条件，把同一英雄的技能和装备接起来。','Chain skills and items on the same hero using a successful prerequisite action.',
@@ -163,7 +191,8 @@ def build():
         ['invoker_invoke','morphling_replicate','ancient_apparition_ice_blast','pangolier_gyroshell'],
         [('确认技能在当前形态、升级和阶段中确实可用。','Confirm the ability exists in the current form, upgrade and phase.'),('检查技能专属对象、阶段动作或子技能是否有专用支持。','Check support for special objects, phase actions or sub-abilities.'),('未确认支持时，暂不启用该自动规则；普通条件不能补齐缺少的专属流程。','Leave the automated rule disabled until support is confirmed; ordinary conditions cannot supply missing special workflows.')],
         [(('UI目标/条件/筛选/排序','UI target/conditions/filters/ordering'),('无通用配置；按专属机制逐技能检查','No generic configuration; review the special contract per ability'))],
-        [('祈求配球、复制/偷取、定时释放、专属双落点、自动法球与攻击时机，以及石鳞剑士滚动转向没有通用模板。已有小小抓取支持见“抓取对象与投掷落点”。','Orb sequences, copy/steal, timed releases, special dual endpoints, autocast attack timing and Pangolier rolling/steering have no generic recipe here. See Grabbed units and Toss destinations for supported Tiny handling.')],by_id))
+        [('祈求配球、复制/偷取、定时释放、专属双落点、自动法球与攻击时机，没有通用完整流程。石鳞剑士已有持续移动滚动模板，基础绕行见持续移动章节；不保证原生转向、碰撞或收益。已有小小抓取支持见“抓取对象与投掷落点”。','Orb sequences, copy/steal, timed releases, special dual endpoints, autocast attack timing have no universal complete workflow here. Pangolier has a persistent movement Gyroshell template for basic orbiting, without guarantees about native steering, collisions or outcomes. See Grabbed units and Toss destinations for supported Tiny handling.')],by_id))
+    categories.extend(condition_reference())
     active=[r for r in rows if r['active']]; covered=sorted({a for c in categories for a in c['covered_ability_ids']})
     presets=[r['id'] for r in active if r['expression_covered']]
     assert set(covered)==set(presets), 'Every reviewed primary family must have a tutorial'
@@ -187,7 +216,7 @@ def build():
         description=text(f'沿用项目22类机制划分，排除纯被动后共{type_total}类；其中{type_covered}类提供基础设置教程（{type_percent}%）。',f'Using the project’s 22 existing mechanism types, {type_total} remain after excluding pure passives. {type_covered} have basic setup tutorials ({type_percent}%).'),
         denominator_note=text('类型可以重叠，一个技能可能参考多页。比例表示基础教学覆盖，不代表每个技能都可套同一模板；再次释放、自动法球与攻击时机、专属双目标、英雄专属流程四类暂不计入。','Types can overlap, so a spell may use several pages. This measures basic teaching coverage, not a universal recipe for every spell. Recasts, autocast attack timing, special dual targets and hero-specific workflows are not counted.'),
         validation_note=text('逐技能已审查预设和原生实机验证是独立审计指标。','Per-skill reviewed presets and native execution validation are separate audit measures.'))
-    basics=[dict(id='pipeline',title=text('条件、筛选与排序的分工','Conditions, filters and ordering'),description=text('使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。多条条件和筛选分别按AND计算，排序按顺序比较；没有合格目标就不施放。','Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Conditions and filters are AND gates; ordering is lexicographic. No legal target means no cast.')),
+    basics=[dict(id='pipeline',title=text('条件、筛选与排序的分工','Conditions, filters and ordering'),description=text('使用条件决定何时尝试；目标筛选决定谁有资格；排序从合格目标中挑选。两组各自选择同时满足或按优先级：同时满足要求全部通过；使用条件按优先级时任一满足即通过，目标筛选按优先级时采用首个有合法目标的组，再组内排序。没有合格目标就不施放。','Use conditions decide when to try; target filters determine eligibility; priorities rank eligible targets. Each group independently selects Match all or Priority. Match all requires every clause. Priority use conditions pass at the first match; priority target filters use the first group with legal candidates, then rank within it. No legal target means no cast.')),
         dict(id='units',title=text('阈值与原生限制','Thresholds and native limits'),description=text('UI百分比填写0–100；秒数填写秒；距离填写游戏单位。附近使用条件以自身为中心，附近目标筛选以目标为中心。条件通过仍需原生可用、距离、魔法和冷却合法。','UI percentages use 0–100; time uses seconds; distances use game units. Nearby use gates center on the caster; nearby target filters center on the candidate. Availability, range, mana and cooldown still apply.')),
         dict(id='presets',title=text('预设是起点','Presets are a starting point'),description=text('先按具体技能选择预设，再核对自身/友方/敌方、阈值和施法方式。每页说明其适用模式，不代表该技能所有专属机制都使用同一配置。','Choose the preset for the specific ability, then check self/ally/enemy, thresholds and casting mode. Each page covers its stated mode; a spell’s special mechanics may require different settings.'))]
     # Keep simple renderers compatible: basics can be passed directly to a {zh,en} text helper.
@@ -210,7 +239,7 @@ def outputs():
         '## Historical type mapping / 历史类型映射','',
         '| 类型 | 主题 | 本次基础教学 | 对应章节 |', '|---|---|---|---|']
     lines += [f"| {t['id']} | {t['title']} | {t['status']} | {', '.join(t['pages']) or '—'} |" for t in data['type_coverage']]
-    lines += ['', 'G09说明有无/层数/剩余时间及OR拆行；G11用存活敌人数代替附近门槛；G13只教已实现的小小抓取/落点并说明自动抓树；G15教升级后新增技能单独配置与重新检查范围；G16只教自损技能的自身血量下限；G17用迷雾缠绕分别配置敌友两条规则。这些基础流程不声称预测伤害、传送落点、对象全覆盖、自动形态规划或友军误伤收益。', '',
+    lines += ['', 'G09说明有无/层数/剩余时间及按优先级实现OR；G11用存活敌人数代替附近门槛；G13只教已实现的小小抓取/落点并说明自动抓树；G15教升级后新增技能单独配置与重新检查范围；G16只教自损技能的自身血量下限；G17用迷雾缠绕分别配置敌友两条规则。这些基础流程不声称预测伤害、传送落点、对象全覆盖、自动形态规划或友军误伤收益。', '',
         '## Per-ID audit / 逐技能审查口径','',
         f"Source: `{s['source']}`. SHA-256: `{s['source_sha256']}`.",'',
         f"原始 {s['total_rows']} 行；主动分母 **{s['active_denominator']}**；排除被动 {s['passive_excluded']}。按 `active` 保留旧版、升级、隐藏与子技能，不以常用程度缩小分母。",'',

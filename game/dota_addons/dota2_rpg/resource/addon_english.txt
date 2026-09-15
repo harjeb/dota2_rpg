@@ -205,7 +205,7 @@
 		"dota2_rpg_v2_buyback_enabled" "Auto buyback: enabled (click to disable)"
 		"dota2_rpg_v2_buyback_disabled" "Auto buyback: disabled (click to enable)"
 		"dota2_rpg_v2_buyback_cost" "Current difficulty cost at level {level}: {cost} shared gold. Once per hero per battle."
-		"dota2_rpg_build_tag"			"UI version 85"
+		"dota2_rpg_build_tag"			"UI version 86"
 		"dota2_rpg_loading_battlefield"	"Loading the battlefield…"
 		"npc_rpg_skill_test_target"		"Skill test target"
 		"dota2_rpg_lives_title" "Lives remaining"

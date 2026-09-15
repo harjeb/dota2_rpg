@@ -1,6 +1,6 @@
 # Condition help coverage / 条件教程覆盖
 
-沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 26 个浏览章节，章节与机制类型并非一一对应。
+沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 36 个浏览章节，章节与机制类型并非一一对应。
 
 类型教学覆盖的判定：该历史主题至少有一份当前可照填的基础设置或配置流程，列出实例与限制。分类原本就可重叠；一个技能可参考多页。它不表示实现该历史标签列出的所有高级诉求，也不是全技能ID覆盖率或实机通过率。G18、G19、G20、G21未计入：普通矢量首击说明也不等于G20专属双点几何。
 
@@ -31,7 +31,7 @@
 | G20 | 矢量/双点/双目标 | deferred | — |
 | G21 | 英雄特有机制 | deferred | — |
 
-G09说明有无/层数/剩余时间及OR拆行；G11用存活敌人数代替附近门槛；G13只教已实现的小小抓取/落点并说明自动抓树；G15教升级后新增技能单独配置与重新检查范围；G16只教自损技能的自身血量下限；G17用迷雾缠绕分别配置敌友两条规则。这些基础流程不声称预测伤害、传送落点、对象全覆盖、自动形态规划或友军误伤收益。
+G09说明有无/层数/剩余时间及按优先级实现OR；G11用存活敌人数代替附近门槛；G13只教已实现的小小抓取/落点并说明自动抓树；G15教升级后新增技能单独配置与重新检查范围；G16只教自损技能的自身血量下限；G17用迷雾缠绕分别配置敌友两条规则。这些基础流程不声称预测伤害、传送落点、对象全覆盖、自动形态规划或友军误伤收益。
 
 ## Per-ID audit / 逐技能审查口径
 
@@ -70,6 +70,13 @@ Source: `data/native_skill_conditions.json`. SHA-256: `4f0eb846b552edd8d82083d7e
 | charges | 充能：保留一层资源 | 0 | 0 | supplemental |
 | persistent_movement | 持续移动：缩地与践踏 | 0 | 0 | supplemental |
 | combo | 连招：跳刀 → 刃甲 → 吼 | 0 | 0 | supplemental |
+| condition_modes | 同时满足、按优先级与规则顺序 | 0 | 0 | supplemental |
+| approach_timeout | 等待射程与自动接近目标 | 0 | 0 | supplemental |
+| facing_retreat | 面向敌人筛选与背离敌人撤退 | 0 | 0 | supplemental |
+| action_observation | 冷却、动作下令与成功连招 | 0 | 0 | supplemental |
+| channel_release | 持续施法与对应释放 | 0 | 0 | supplemental |
+| specified_targets | 指定友方或敌方目标 | 0 | 0 | supplemental |
+| buyback | 买活行动 | 0 | 0 | supplemental |
 | buff_state | 增益、层数与剩余时间 | 0 | 0 | supplemental |
 | global | 全图与远距离技能 | 0 | 0 | supplemental |
 | special_objects | 抓取对象与投掷落点 | 0 | 0 | supplemental |
@@ -77,6 +84,9 @@ Source: `data/native_skill_conditions.json`. SHA-256: `4f0eb846b552edd8d82083d7e
 | risk | 消耗自身生命的技能 | 0 | 0 | supplemental |
 | dual_target | 同一技能治疗友方、伤害敌方 | 0 | 0 | supplemental |
 | special | 特殊技能与未覆盖范围 | 0 | 0 | supplemental |
+| reference_use | 使用条件完整索引 | 0 | 0 | reference |
+| reference_target | 目标筛选完整索引 | 0 | 0 | reference |
+| reference_priority | 目标排序完整索引 | 0 | 0 | reference |
 
 Supplemental pages overlap primary abilities or explain limitations; do not sum example counts. Supplemental `has_preset=false` refers to the additional workflow, while `examples[].has_preset` refers to the example ability’s basic preset.
 
