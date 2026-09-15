@@ -117,4 +117,19 @@ for _, rule in ipairs(Defaults.CreateForHero(rangedHero)) do
     local ok, reason = service:ValidateRule(0, rangedHero, rule)
     assert(ok, reason)
 end
+-- Native Reincarnation now has an active form; defaults must not spend it.
+local reincarnation = spell("skeleton_king_reincarnation", {team=1})
+local king = {GetAbilityCount=function() return 1 end, GetAbilityByIndex=function() return reincarnation end}
+local kingRules = Defaults.CreateForHero(king)
+assert(#kingRules == 2 and kingRules[1].action.logical_id == "skeleton_king_reincarnation")
+assert(kingRules[1].enabled == false and kingRules[2].enabled == true,
+    "Reincarnation stays visible but inactive while basic attacks remain enabled")
+kingRules[1].enabled = true
+assert(Defaults.Normalize(kingRules, king)[1].enabled == false,
+    "refresh regenerates old generated defaults with Reincarnation inactive")
+kingRules[1].is_default = nil
+assert(Defaults.Normalize(kingRules, king)[1].enabled == true,
+    "explicit player-authored active Reincarnation is preserved")
+assert(reincarnation:IsActivated() and reincarnation:GetLevel() == 1,
+    "default policy does not disable the native ability or its death revive")
 print("default rules tests passed")

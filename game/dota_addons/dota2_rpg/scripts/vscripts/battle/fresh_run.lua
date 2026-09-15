@@ -108,6 +108,6 @@ function Fresh.Reset(game)
     end
     game:InitializeRecruitmentState()
     game.goldWalletInitialized = false
-    game:SetGoldBalance(game.initialGold or 500)
+    game:SetGoldBalance(game.initialGold or 1500)
 end
 return Fresh

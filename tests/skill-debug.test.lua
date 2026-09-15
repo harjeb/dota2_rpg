@@ -357,6 +357,15 @@ test("exit from fight creates fresh normal run and restores recruitment and gold
     eq(g.calls.OnShopBuy[2],"purchase")
     for _,enemy in ipairs(g.battleManager.teamHeroes[3]) do eq(enemy.controllingPlayerId,nil) end
 end)
+test("fresh campaign reset defaults to 1500 and preserves configured starting gold",function()
+    for _, configured in ipairs({false, 725}) do
+        local f,g=fixture()
+        g.initialGold = configured or nil
+        g.runLives, g.placeholderHero = nil, nil
+        require("battle.fresh_run").Reset(g)
+        eq(g.gold, configured or 1500)
+    end
+end)
 test("settlement reset callback cannot reset a later normal run",function()
     local f,g=fixture(); f:enter(); g:OnStartBattle(); g:EndBattle("good")
     local stale=f.thinks.RpgSkillDebugReset.fn; f:emit("exit",{PlayerID=7}); stale()

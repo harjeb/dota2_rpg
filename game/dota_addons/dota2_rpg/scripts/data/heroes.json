@@ -500,5 +500,5 @@
   "bench_slot_cost": 200,
   "bench_slot_max": 5,
   "lineup_max": 5,
-  "initial_gold": 500
+  "initial_gold": 1500
 }

@@ -174,7 +174,7 @@ $luaChecks = @(
        ) },
     @{ File = "game\dota_addons\dota2_rpg\scripts\vscripts\data\progression_data.lua";
        Patterns = @(
-           'INITIAL_GOLD = 500',
+           'INITIAL_GOLD = 1500',
            'TIME_BONUS_CAP = 0.10',
            'XP_REFERENCE_PARTY_SIZE = 5',
            'XP_TO_LEVEL',

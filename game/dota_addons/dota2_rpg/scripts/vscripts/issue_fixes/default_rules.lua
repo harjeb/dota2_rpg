@@ -102,6 +102,9 @@ function DefaultRules.CreateForHero(hero)
             local rule = DefaultRules.CreateAttackNearestRule()
             rule.id = "default_ability_" .. name
             rule.action = { kind = "ability", logical_id = name }
+            -- Reincarnation may expose a native active cast. Leave it visible but
+            -- disabled by default so its death-triggered revive stays available.
+            if name == "skeleton_king_reincarnation" then rule.enabled = false end
             rule.target.team = team
             if team == "ally" and partner_buffs[name] then
                 rule.target_filters = { { type = "exclude_self" } }

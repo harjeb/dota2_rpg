@@ -108,7 +108,7 @@ local heroData = {
 	bench_slot_cost = "200",
 	bench_slot_max = "5",
 	lineup_max = "5",
-	initial_gold = "500",
+	initial_gold = "1500",
 }
 
 local nativeIdLoads = 0
@@ -294,12 +294,12 @@ assertEqual(#game.heroPool.strength, 2, "strength pool size")
 assertEqual(#game.heroPool.agility, 2, "agility pool size")
 assertEqual(#game.heroPool.intelligence, 2, "intelligence pool size")
 assertEqual(#game.heroPool.universal, 2, "universal pool size")
-assertEqual(game.shopCosts.initial_gold, 500, "configured initial gold")
+assertEqual(game.shopCosts.initial_gold, 1500, "configured initial gold")
 
 game.gold = game.shopCosts.initial_gold
 math.randomseed(12345)
 game:RollShop()
-assertEqual(game.gold, 500, "initial shop gold")
+assertEqual(game.gold, 1500, "initial shop gold")
 assertEqual(#game.shopOffers, 5, "shop offer size")
 assert(game.broadcastCalled, "shop state was not broadcast")
 

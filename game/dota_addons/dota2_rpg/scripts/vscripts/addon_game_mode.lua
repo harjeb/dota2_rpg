@@ -355,7 +355,7 @@ function CDota2RpgDemo:InitGameMode()
 	})
 
 	-- 经济/商店/阵容：项目消费与 Valve 原版商店共用同一个玩家钱包。
-	self.initialGold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 500
+	self.initialGold = (ProgressionData and ProgressionData.INITIAL_GOLD) or self.shopCosts.initial_gold or 1500
 	self.gold = self.initialGold
 	self.goldWalletInitialized = false
 	self.nativeGoldSnapshot = nil
@@ -531,7 +531,7 @@ function CDota2RpgDemo:LoadHeroPool()
 		bench_slot = tonumber(data.bench_slot_cost) or SHOP_BENCH_SLOT_COST,
 		bench_slot_max = tonumber(data.bench_slot_max) or BENCH_SLOT_MAX,
 		lineup_max = tonumber(data.lineup_max) or LINEUP_MAX,
-		initial_gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or 500,
+		initial_gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or 1500,
 	}
 	-- 招募池 = 已通过预缓存验证的子集；全目录条目需逐个验证后才开放（DESIGN §7）
 	local sourcePool = data.recruitable ~= nil and data.recruitable or data
@@ -630,7 +630,7 @@ function CDota2RpgDemo:EnsureGoldWalletInitialized()
 	elseif nativeGold ~= nil and PlayerResource.SetGold ~= nil then
 		-- The live mirror may already have read zero before player connection.
 		self:SetGoldBalance(self.initialGold or (ProgressionData and ProgressionData.INITIAL_GOLD)
-			or (self.shopCosts and self.shopCosts.initial_gold) or 500)
+			or (self.shopCosts and self.shopCosts.initial_gold) or 1500)
 		decision = "seed-startup"
 	else
 		-- Retry when the player and native wallet APIs become available.
@@ -5112,7 +5112,7 @@ function CDota2RpgDemo:BroadcastShopState(player)
 		bench_slot_max = self.shopCosts.bench_slot_max,
 		lineup_max = self.shopCosts.lineup_max,
 		free_recruit_choices = self.freeRecruitChoices or 0,
-		initial_gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or 500,
+		initial_gold = (ProgressionData and ProgressionData.INITIAL_GOLD) or 1500,
 		lives_remaining = RunLives.Ensure(self).remaining,
 		max_lives = RunLives.MAX_LIVES,
 		run_failed = self.runFailed and 1 or 0,

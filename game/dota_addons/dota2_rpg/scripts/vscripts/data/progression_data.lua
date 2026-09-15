@@ -1,7 +1,7 @@
 local M = {}
 
 -- 已确认的开局规则。
-M.INITIAL_GOLD = 500
+M.INITIAL_GOLD = 1500
 M.STARTER_FREE_RECRUITS = 2
 M.TIME_BONUS_CAP = 0.10
 -- DESIGN.md §2.4/§2.6：原成长曲线按五名主力校准。
