@@ -8,6 +8,7 @@ local Positioning = require("tactics/positioning")
 local NativeEvents = require("tactics/native_events")
 local NeutralAttack = require("tactics/neutral_attack")
 local SustainedCast = require("tactics/sustained_cast")
+local ChargeControl = require("tactics/charge_control")
 local Compatibility = require("tactics/rule_compatibility")
 local Lifecycle = require("tactics/action_lifecycle")
 local StateControl = require("tactics/state_controller")
@@ -220,7 +221,7 @@ function TacticEngine:Think()
     for _, unit in ipairs(units) do
         if is_alive(unit) then
             local state = self:GetState(unit)
-            if state.facing_retreat ~= nil or state.aoe_walk ~= nil or AoeReaction.HasRules(self.get_rules(unit))
+            if state.charge ~= nil or state.facing_retreat ~= nil or state.aoe_walk ~= nil or AoeReaction.HasRules(self.get_rules(unit))
                 or current_time >= state.next_eval then
                 state.next_eval = current_time + self.tick_interval
                 self:EvaluateUnit(unit, state, current_time)
@@ -263,6 +264,8 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
     Lifecycle.Observe(unit, current_time)
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
+    -- An owned charge precedes reactions, movement, waits and explicit release rows.
+    if ChargeControl.Continue(self, unit, state, ctx, rules) then return end
     state.events = state.events or NativeEvents.Attach(unit)
     if AoeReaction.Try(self, unit, state, ctx, rules) then return end
     if current_time < (state.wait_until or 0) then return end
@@ -666,6 +669,7 @@ function TacticEngine:IssueAction(unit, state, ctx, rule, rule_index, spec, targ
         return false, reason
     end
     if reason == "attack_persisted" then return true, nil end
+    ChargeControl.Requested(unit, state, rule, spec, ctx.now)
     if spec.source and not StateControl.IsManaged(spec) then
         Lifecycle.Requested(unit, Context.Call(spec.source,"GetAbilityName") or spec.logical_id, ctx.now)
     end

@@ -124,6 +124,42 @@ assert(R.Try(engine,unit,state,ctx(22.25),rules) and #orders==count,'hold pendin
 assert(R.Try(engine,unit,state,ctx(22.6),rules) and orders[#orders].OrderType==DOTA_UNIT_ORDER_CAST_NO_TARGET,'unconfirmed order permits next response')
 require('tactics/native_events').RecordSuccess(unit,defend.name,22.61)
 assert(not R.Try(engine,unit,state,ctx(22.65),rules),'only native success consumes threat response')
+-- Active damage fields must permit escape after activation, and stop at their safe edge.
+local Geometry=require('tactics/aoe_geometry')
+local field=threat(11,25);field.active_from=25;field.active_until=35;field.expires_at=35
+list={field};rules={rule};unit.position=Vector(100,0,0)
+assert(not R.Try(engine,unit,state,ctx(26),rules))
+assert(R.Try(engine,unit,state,ctx(26.2),rules),'escape a currently active field')
+assert(orders[#orders].OrderType==DOTA_UNIT_ORDER_MOVE_TO_POSITION)
+unit.position=orders[#orders].Position
+assert(R.Try(engine,unit,state,ctx(27),rules),'hold outside until persistent field expires')
+list={};assert(not R.Try(engine,unit,state,ctx(35),rules))
+-- A defensive cast cannot permanently prevent walking out of an active field.
+unit.position=Vector(100,0,0);field.id=12;field.active_from=36;field.active_until=45;field.expires_at=45;field.impact_at=36
+list={field};state.aoe_pending[12]={started_at=36,fraction=0,consumed=true}
+assert(R.Match(ctx(37),rule.use_conditions[1]),'walking remains available after defense succeeds')
+-- A thin persistent wall on the shortest route cannot be crossed en route to a clear endpoint.
+local wall={id=13,shape='line',position=Vector(230,-1000,0),endpoint=Vector(230,1000,0),radius=4,
+ phase='released',impact_at=36,active_from=36,active_until=45,expires_at=45}
+list={field,wall};local route=assert(R.SafePoint(engine,unit,ctx(37)))
+assert(route.x<230,'choose an escape on this side of the active wall')
+-- Delayed field activation is checked in transit, not only at the final destination.
+wall.active_from=37.2;wall.impact_at=37.2
+local later=assert(R.SafePoint(engine,unit,ctx(37)))
+assert(later.x<230,'do not cross a field that activates during travel')
+-- A mine with little trigger time left cannot use a slow persistent-zone walk.
+list={field};field.escape_deadline=37.1
+assert(not R.SafePoint(engine,unit,ctx(37)),'walk must clear known mine entry deadline')
+field.escape_deadline=38
+assert(R.SafePoint(engine,unit,ctx(37)),'enough trigger time permits walking out')
+field.escape_deadline=nil
+-- Geometry preserves a ring safe center and supports short sideways line exits.
+local ring={shape='ring',position=Vector(0,0,0),radius=400,inner_radius=300}
+assert(not Geometry.Contains(ring,Vector(0,0,0),24))
+assert(Geometry.Contains(ring,Vector(350,0,0),24))
+local exits=Geometry.Candidates(ring,Vector(350,0,0),72);local inward=false
+for _,p in ipairs(exits) do if p.x<280 and p.x>0 and math.abs(p.y)<1 then inward=true end end
+assert(inward,'ring permits escape toward the safe interior')
 -- Integration: reaction-equipped heroes evaluate on the native 50ms engine think path.
 rule.enabled=true;state.next_eval=99;list={};local evaluations=0
 local evaluate=engine.EvaluateUnit

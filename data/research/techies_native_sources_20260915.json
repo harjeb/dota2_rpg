@@ -1,0 +1,13 @@
+{
+  "retrieved_on": "2026-09-15",
+  "scope": "Exact names from upstream native unit definitions and server binary strings. Name presence is not proof of in-game Lua API behavior or timing.",
+  "unit_source": "https://github.com/dotabuff/d2vpkr/blob/master/dota/scripts/npc/npc_units.txt",
+  "unit_source_sha256": "cbffa0e75f7802bae9d6dccff7d06821588f38e9a51ad53d6a643d75385bb4f4",
+  "mine_base_class": "npc_dota_techies_mines",
+  "mine_units": ["npc_dota_techies_land_mine", "npc_dota_techies_stasis_trap", "npc_dota_techies_snare_trap", "npc_dota_techies_remote_mine", "npc_dota_techies_innate_mine"],
+  "strings_source": "https://github.com/SteamTracking/GameTracking-Dota2/blob/master/game/dota/bin/win64/server_strings.txt",
+  "strings_source_sha256": "d9ba53f58b6f6cae480c10c5680e95601ab6122cd6b14051bd0d5c8192ea30ab",
+  "thinker_class": "npc_dota_thinker",
+  "modifiers": ["modifier_techies_sticky_bomb_throw", "modifier_techies_sticky_bomb_chase", "modifier_techies_sticky_bomb_countdown", "modifier_techies_sticky_bomb_slow", "modifier_techies_sticky_bomb_slow_secondary", "modifier_techies_reactive_tazer", "modifier_techies_land_mine", "modifier_techies_remote_mine", "modifier_techies_mutually_assured_destruction"],
+  "charge_modifiers_also_confirmed_present": ["modifier_alchemist_unstable_concoction", "modifier_hoodwink_sharpshooter_windup", "modifier_primal_beast_onslaught_windup"]
+}

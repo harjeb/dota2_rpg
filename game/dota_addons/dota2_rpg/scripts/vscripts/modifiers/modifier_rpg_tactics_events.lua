@@ -34,5 +34,7 @@ function modifier_rpg_tactics_events:OnAbilityEndChannel(event)
     local interrupted = type(event.interrupted)=="boolean" and event.interrupted or nil
     -- Explicit false cannot use Lua's and/or shortcut.
     if event.interrupted==false then interrupted=false end
-    require("tactics/action_lifecycle").ChannelEnded(self:GetParent(),event.ability:GetAbilityName(),GameRules:GetGameTime(),interrupted)
+    local now = GameRules:GetGameTime()
+    require("tactics/aoe_threats").OnChannelEnd(self:GetParent(), event.ability, now, interrupted)
+    require("tactics/action_lifecycle").ChannelEnded(self:GetParent(),event.ability:GetAbilityName(),now,interrupted)
 end

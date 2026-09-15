@@ -65,6 +65,21 @@
       ]
     },
     {
+      "id":"charge_release",
+      "title":{"zh":"UI89：指定蓄力时间与最大蓄力", "en":"UI89: specified charge time and maximum charge"},
+      "description":{"zh":"在已适配的启动技能上设置蓄力释放，保留普通使用条件与目标筛选。", "en":"Configure release on a supported charging start ability alongside ordinary use conditions and target filters."},
+      "example_ids":["keeper_of_the_light_illuminate"],
+      "steps":[
+        {"zh":"打开强力击、冲击波、乾坤之跃、驯兽术、突、狙杀、不稳定化合物或气运之末的条件设置，在蓄力释放中选择指定蓄力时间或最大蓄力。", "en":"Open settings for Powershot, Illuminate, Primal Spring, Tame the Beasts, Onslaught, Sharpshooter, Unstable Concoction or Fortune's End. Choose specified charge time or maximum charge."},
+        {"zh":"指定时间可填0～120秒（默认1秒）；0表示原生释放允许后尽快释放，超过原生上限则按上限处理。最大蓄力使用技能原生蓄力上限。点击应用后可重开检查。", "en":"Specified time accepts 0–120 seconds (default 1). Zero requests release as soon as native release permits; values above the native maximum are capped. Maximum charge uses that native limit. Apply and reopen to check the setting."}
+      ],
+      "settings":[{"label":{"zh":"关闭与条件模式", "en":"Disabled and condition modes"},"value":{"zh":"关闭时保留原有行为。蓄力释放独立于使用条件的同时满足／按优先级，不占用4个使用条件槽位。", "en":"Disabled preserves existing behavior. Release timing is independent of Match all / Priority and does not consume one of the four use-condition slots."}}],
+      "notes":[
+        {"zh":"只提供上述8个启动技能，不把所有持续施法视为蓄力。结束按钮不配置蓄力；普通持续施法仍可使用对应结束动作流程。", "en":"Only these eight start abilities expose the setting. Ordinary channels are not treated as charge skills, and release buttons do not receive charge settings. Other supported channels retain their matching-release workflow."},
+        {"zh":"不稳定化合物按最大有效酝酿时间释放，不等待自爆；突使用起步蓄力时间而非冲刺持续时间。控制、打断及原生释放可用性仍影响执行，不保证命中。", "en":"Unstable Concoction uses maximum effective brew time rather than waiting for self-explosion. Onslaught uses startup charge time rather than dash duration. Control, interruption and native release availability still affect execution; hits are not guaranteed."}
+      ]
+    },
+    {
       "id":"channel_release",
       "title":{"zh":"持续施法与对应释放", "en":"Channeling and matching releases"},
       "description":{"zh":"已登记父技能与结束动作的组合，可以观察当前引导时长后执行对应释放。", "en":"Registered parent and release pairs can execute their matching release after observing current channel duration."},
@@ -249,8 +264,8 @@
       ],
       "notes": [
         {
-          "zh": "当前仅支持观察光击阵、撕裂大地、洪流，并非所有范围技能。不会自动取消自己正在进行的原生施法或持续施法。",
-          "en": "Initial observation supports Light Strike Array, Split Earth and Torrent, not every area spell. Responses do not automatically cancel your own native cast or channel."
+          "zh": "仅观察已释放、可见且已适配的范围技能，包括延迟爆炸和持续区域，并考虑行走路径避让；具体支持名单参见 docs/AOE_THREAT_COVERAGE.md。不会自动取消自己正在进行的原生施法或持续施法。",
+          "en": "Observes released, visible, reviewed area abilities, including delayed impacts and persistent areas, with walking-path avoidance. See docs/AOE_THREAT_COVERAGE.md for the supported profiles. Responses do not automatically cancel your own native cast or channel."
         },
         {
           "zh": "使用当前选定动作，不自动另选技能。自身/无目标技能可防护；普通点目标自动选安全逃离点。单体技能须合法指向自身；不支持矢量、开关、自动施法或被动动作，也不能同时指定额外落点/预测偏移。任意技能不保证保护效果，仍须确认实际防御或位移用途。",

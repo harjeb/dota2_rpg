@@ -98,6 +98,16 @@ var RpgRuleSync = (function () {
         }
         return out;
     }
+    // Reviewed base charging actions only; ordinary channels and release buttons are excluded.
+    var chargingAbilities = ["windrunner_powershot", "keeper_of_the_light_illuminate", "monkey_king_primal_spring",
+        "ringmaster_tame_the_beasts", "primal_beast_onslaught", "hoodwink_sharpshooter", "alchemist_unstable_concoction", "oracle_fortunes_end"];
+    function chargeAllowed(action) { return chargingAbilities.indexOf(action) >= 0; }
+    function chargeSettings(input, action) {
+        if (!chargeAllowed(action) || ["time", "max"].indexOf(input.charge_mode) < 0) { return {}; }
+        var out = {charge_mode:input.charge_mode};
+        if (out.charge_mode === "time") { out.charge_time = Math.max(0, Math.min(120, numberValue(input.charge_time, 1))); }
+        return out;
+    }
     function predictionAllowed(rule, capability, action) {
         action = action || rule.action || "attack";
         if (["attack","basic_attack","buyback","sustained_move"].indexOf(action) >= 0) { return false; }
@@ -268,6 +278,8 @@ var RpgRuleSync = (function () {
             var prediction = predictionSettings(rule);
             Object.keys(prediction).forEach(function(key) { payload[key] = prediction[key]; });
         }
+        var charge = chargeSettings(rule, args.actionName || action);
+        Object.keys(charge).forEach(function(key) { payload[key] = charge[key]; });
         var condition = useCondition(rule);
         putCondition(payload, "use_condition_1", condition);
 
@@ -366,6 +378,8 @@ var RpgRuleSync = (function () {
         ["cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds"].forEach(function(key) { if (source[key]!==undefined && source[key]!=="") { rule[key]=source[key]; } });
         rule.desired_autocast_state=bool(source.desired_autocast_state,null);
         rule.allow_unverified_modifiers=bool(source.allow_unverified_modifiers,false);
+        var charge = chargeSettings(source, rule.action);
+        Object.keys(charge).forEach(function(key) { rule[key] = charge[key]; });
         var prediction = predictionSettings(source);
         if (predictionAllowed(rule)) { Object.keys(prediction).forEach(function(key) { rule[key] = prediction[key]; }); }
         var settings = actionSettings(source, rule.action);
@@ -375,6 +389,8 @@ var RpgRuleSync = (function () {
 
     return {
         actionSettings: actionSettings,
+        chargeAllowed: chargeAllowed,
+        chargeSettings: chargeSettings,
         predictionAllowed: predictionAllowed,
         predictionSettings: predictionSettings,
         buybackSettings: buybackSettings,
@@ -414,6 +430,8 @@ var RpgRuleSync = (function () {
                 var prediction = predictionSettings(rule);
                 Object.keys(prediction).forEach(function(key) { settings[key] = prediction[key]; });
             }
+            var charge = chargeSettings(rule, rule.action);
+            Object.keys(charge).forEach(function(key) { settings[key] = charge[key]; });
             var extra = actionSettings(rule, rule.action);
             Object.keys(extra).forEach(function (key) { settings[key] = extra[key]; });
             return JSON.parse(JSON.stringify(settings));

@@ -796,6 +796,7 @@
                         if (!editIsCurrent()) { return false; }
                         delete authored.min_aoe_hits;
                         delete authored.prediction_direction; delete authored.prediction_distance;
+                        delete authored.charge_mode; delete authored.charge_time;
                         Object.keys(draft).forEach(function (key) { authored[key] = draft[key]; });
                         if (draft.target !== undefined) {
                             authored.target_attr = "distance";
@@ -956,6 +957,7 @@
             if (rules[index].action !== actionKey) {
                 rules[index].destination = "target";
                 delete rules[index].prediction_direction; delete rules[index].prediction_distance;
+                delete rules[index].charge_mode; delete rules[index].charge_time;
             }
             rules[index].action=actionKey; closeEditorMenus();
             clearRuleMark(side, rules[index]);

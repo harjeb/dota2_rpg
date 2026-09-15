@@ -1,6 +1,6 @@
 # Condition help coverage / 条件教程覆盖
 
-沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 37 个浏览章节，章节与机制类型并非一一对应。
+沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 38 个浏览章节，章节与机制类型并非一一对应。
 
 类型教学覆盖的判定：该历史主题至少有一份当前可照填的基础设置或配置流程，列出实例与限制。分类原本就可重叠；一个技能可参考多页。它不表示实现该历史标签列出的所有高级诉求，也不是全技能ID覆盖率或实机通过率。G18、G19、G20、G21未计入：普通矢量首击说明也不等于G20专属双点几何。
 
@@ -74,6 +74,7 @@ Source: `data/native_skill_conditions.json`. SHA-256: `4f0eb846b552edd8d82083d7e
 | approach_timeout | 等待射程与自动接近目标 | 0 | 0 | supplemental |
 | facing_retreat | 面向敌人筛选与背离敌人撤退 | 0 | 0 | supplemental |
 | action_observation | 冷却、动作下令与成功连招 | 0 | 0 | supplemental |
+| charge_release | UI89：指定蓄力时间与最大蓄力 | 0 | 0 | supplemental |
 | channel_release | 持续施法与对应释放 | 0 | 0 | supplemental |
 | specified_targets | 指定友方或敌方目标 | 0 | 0 | supplemental |
 | buyback | 买活行动 | 0 | 0 | supplemental |

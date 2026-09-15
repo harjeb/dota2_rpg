@@ -1,0 +1,11 @@
+{
+  "source_url": "https://raw.githubusercontent.com/dotabuff/d2vpkr/master/dota/scripts/npc/items.txt",
+  "retrieved_on": "2026-09-15",
+  "scope": "Selected native field names and reference values from upstream items.txt; not the installed game version. Runtime reads live values. Debuff durations are not persistent area lifetimes.",
+  "items": {
+    "item_meteor_hammer": {"AbilityChannelTime": "2", "land_time": ".5", "impact_radius": "400", "burn_duration": "6"},
+    "item_shivas_guard": {"blast_radius": "825", "blast_speed": "400", "blast_debuff_duration": "4.0"},
+    "item_blood_grenade": {"speed": "1100", "radius": "300", "debuff_duration": "5"},
+    "item_gungir": {"radius": "325", "bonus_aoe": "75", "radius_tooltip": "400", "duration": "2.0"}
+  }
+}

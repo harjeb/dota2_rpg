@@ -65,7 +65,7 @@ end
 for _,bad in ipairs({'unsupported','position','radius','delay','numeric','nan','infinite','throw'}) do
     A.Reset();viewer=unit(2);enemy=unit(3)
     local a=ability('lina_light_strike_array')
-    if bad=='unsupported' then a.name='invoker_sun_strike'
+    if bad=='unsupported' then a.name='unreviewed_native_aoe'
     elseif bad=='position' then a.point=nil
     elseif bad=='radius' then a.values.light_strike_array_aoe=0
     elseif bad=='delay' then a.values.light_strike_array_delay_time=nil

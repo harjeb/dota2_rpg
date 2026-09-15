@@ -1,6 +1,7 @@
--- Explicit emergency responses to observed native circles. No enemy rule/order introspection.
+-- Emergency responses to observed released areas. No enemy rule/order introspection.
 local Context = require('tactics/condition_context')
 local Threats = require('tactics/aoe_threats')
+local Geometry = require('tactics/aoe_geometry')
 local R = {}
 local function distance(a,b)
     local x,y=a.x-b.x,a.y-b.y
@@ -8,7 +9,13 @@ local function distance(a,b)
 end
 local function hull(unit) return tonumber(Context.Call(unit,'GetHullRadius')) or 24 end
 local function inside(unit,point,threat,padding)
-    return distance(point,threat.position) <= threat.radius+hull(unit)+(padding or 0)
+    return Geometry.Contains(threat,point,hull(unit)+(padding or 0))
+end
+local function starts(threat) return threat.active_from or threat.impact_at end
+local function finishes(threat) return threat.active_until or threat.expires_at or starts(threat) end
+local function persistent(threat) return finishes(threat)>starts(threat) end
+local function relevant(threat,now)
+    return threat.phase=='released' and finishes(threat)>now and starts(threat)-now<=3
 end
 function R.Condition(rule)
     for _,c in ipairs(rule.use_conditions or {}) do if c.type=='incoming_aoe' then return c end end
@@ -43,8 +50,12 @@ function R.Match(ctx,condition)
     local current,seen={},{}
     for _,t in ipairs(records(ctx)) do
         seen[t.id]=true
-        if t.phase=='released' and t.impact_at>ctx.now and t.impact_at-ctx.now<=3
-            and inside(ctx.caster,ctx.caster:GetAbsOrigin(),t) then current[#current+1]=t end
+        if relevant(t,ctx.now) and inside(ctx.caster,ctx.caster:GetAbsOrigin(),t) then
+            current[#current+1]=t
+        elseif state.aoe_pending[t.id] and state.aoe_pending[t.id].consumed then
+            -- A fresh entry into a persistent area is a new exposure.
+            state.aoe_pending[t.id]=nil
+        end
     end
     for id in pairs(state.aoe_pending) do if not seen[id] then state.aoe_pending[id]=nil end end
     table.sort(current,function(a,b) return a.impact_at==b.impact_at and a.id<b.id or a.impact_at<b.impact_at end)
@@ -60,7 +71,7 @@ function R.Match(ctx,condition)
         local high=tonumber(condition.reaction_max_ms) or 500
         local ready_at=pending.started_at+(low+(high-low)*pending.fraction)/1000
         update_submission(ctx,pending)
-        if not pending.consumed and not pending.submitted and ctx.now>=ready_at then
+        if (not pending.consumed or (condition.response or 'walk')=='walk') and not pending.submitted and ctx.now>=ready_at then
             ctx.aoe_match={threat=t,condition=condition,pending=pending}
             return true
         end
@@ -87,11 +98,41 @@ local function safe_walk(unit,ctx,goal,threats)
     local d=distance(origin,goal)
     local speed=tonumber(Context.Call(unit,'GetIdealSpeed')) or 0
     if speed<=0 then return false end
+    local travel=d/speed
+    local function point_at(seconds)
+        local fraction=d>0 and math.max(0,math.min(1,(seconds-0.1)*speed/d)) or 1
+        return {x=origin.x+(goal.x-origin.x)*fraction,y=origin.y+(goal.y-origin.y)*fraction}
+    end
     for _,other in ipairs(threats) do
-        if inside(unit,goal,other,24) then return false end
-        local fraction=d>0 and math.max(0,math.min(1,(other.impact_at-ctx.now-0.1)*speed/d)) or 1
-        local atImpact={x=origin.x+(goal.x-origin.x)*fraction,y=origin.y+(goal.y-origin.y)*fraction}
-        if inside(unit,atImpact,other,8) then return false end
+        if finishes(other)>ctx.now then
+            if inside(unit,goal,other,24) then return false end
+            if type(other.escape_deadline)=='number' and inside(unit,point_at(other.escape_deadline-ctx.now),other,8) then
+                return false
+            end
+            if not persistent(other) then
+                if inside(unit,point_at(starts(other)-ctx.now),other,8) then return false end
+            else
+                local first=math.max(0,starts(other)-ctx.now)
+                local last=math.min(0.1+travel,finishes(other)-ctx.now)
+                if first<=last then
+                    local escaping=starts(other)<=ctx.now and inside(unit,origin,other,8)
+                    local previous=Geometry.SignedDistance(other,origin)
+                    -- Sample active travel every <=16 units, including activation and arrival.
+                    local count=math.max(1,math.ceil((last-first)*speed/16))
+                    for i=0,count do
+                        local p=point_at(first+(last-first)*i/count)
+                        local within=inside(unit,p,other,8)
+                        local clearance=Geometry.SignedDistance(other,p)
+                        if within then
+                            if not escaping or clearance<previous-0.01 then return false end
+                        else
+                            escaping=false
+                        end
+                        previous=clearance
+                    end
+                end
+            end
+        end
     end
     return true
 end
@@ -100,11 +141,8 @@ function R.SafePoint(engine,unit,ctx,spec)
     local threats=records(ctx)
     local best,bestDistance
     for _,threat in ipairs(threats) do
-        local initial=math.atan2(origin.y-threat.position.y,origin.x-threat.position.x)
-        for step=0,15 do
-            local angle=initial+step*math.pi/8
-            local radius=threat.radius+hull(unit)+48
-            local p=Vector(threat.position.x+math.cos(angle)*radius,threat.position.y+math.sin(angle)*radius,origin.z)
+        for _,candidate in ipairs(Geometry.Candidates(threat,origin,hull(unit)+48)) do
+            local p=Vector(candidate.x,candidate.y,candidate.z or origin.z)
             if type(GetGroundPosition)=='function' then p=GetGroundPosition(p,unit) end
             local d=distance(origin,p)
             local safe=traversable(p)

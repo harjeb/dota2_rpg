@@ -86,6 +86,10 @@ var RpgConditionCatalog = (function () {
         if (desired !== undefined && desired !== null && desired !== "") {
             parts.push(text("toggle_title") + ": " + text(desired === true || desired === 1 || desired === "1" || desired === "true" ? "toggle_on" : "toggle_off"));
         }
+        if (settings.charge_mode) {
+            parts.push(text("charge_title") + ": " + text("charge_" + settings.charge_mode)
+                + (settings.charge_mode === "time" ? " / " + settings.charge_time : ""));
+        }
         if (settings.prediction_direction) {
             parts.push(text("prediction_title") + ": " + text("prediction_" + settings.prediction_direction) + " / " + RpgRuleSync.predictionSettings(settings).prediction_distance);
         }
@@ -537,7 +541,7 @@ var RpgConditionCatalog = (function () {
             draft.use_conditions=[]; draft.target_filters=[]; draft.target_priorities=[];
             draft.desired_toggle_state=null; draft.desired_autocast_state=null; draft.destination="target";
             Object.keys(draft).forEach(function(key) {
-                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key.indexOf("prediction_")===0 || key==="destination_distance") { delete draft[key]; }
+                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key.indexOf("prediction_")===0 || key.indexOf("charge_")===0 || key==="destination_distance") { delete draft[key]; }
             });
             open(rule,draft,onApply,options);
         });
@@ -558,6 +562,20 @@ var RpgConditionCatalog = (function () {
                 settingInput("prediction_distance");
             }
         } else { delete draft.prediction_direction; delete draft.prediction_distance; }
+        if (RpgRuleSync.chargeAllowed(options.abilityName || rule.action)) {
+            label(body, "V2ChargeTitle", text("charge_title")).AddClass("V2SectionTitle");
+            label(body, "V2ChargeHint", text("charge_hint")).AddClass("V2Hint");
+            var chargeRow = $.CreatePanel("Panel", body, "V2ChargeRow"); chargeRow.AddClass("V2Selector");
+            choose(chargeRow, "V2ChargeSelect", ["disabled", "time", "max"].map(function(value) {
+                return {id:"charge_" + value};
+            }), "charge_" + (draft.charge_mode || "disabled"), function(value) {
+                reopen({charge_mode:value === "charge_disabled" ? undefined : value.replace("charge_", "")});
+            });
+            if (draft.charge_mode === "time") {
+                draft.charge_time = RpgRuleSync.chargeSettings(draft, options.abilityName || rule.action).charge_time;
+                settingInput("charge_time");
+            }
+        } else { delete draft.charge_mode; delete draft.charge_time; }
         label(body, "", text("action_title")).AddClass("V2SectionTitle");
         var action = rule.action || "attack";
         var extra = RpgRuleSync.actionSettings(draft, action);
@@ -670,6 +688,9 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
             if (options.readOnly || generation !== editorGeneration) { return; }
             readers.forEach(function (read) { read(); });
+            var charge = RpgRuleSync.chargeSettings(draft, options.abilityName || action);
+            delete draft.charge_mode; delete draft.charge_time;
+            Object.keys(charge).forEach(function(key) { draft[key] = charge[key]; });
             var prediction = RpgRuleSync.predictionAllowed(draft, options.getCapability ? options.getCapability() : baseCap, options.abilityName || action)
                 ? RpgRuleSync.predictionSettings(draft) : {};
             delete draft.prediction_direction; delete draft.prediction_distance;
