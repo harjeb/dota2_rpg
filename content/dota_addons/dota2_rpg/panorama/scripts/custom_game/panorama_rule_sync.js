@@ -89,7 +89,8 @@ var RpgRuleSync = (function () {
             numeric("positioning_distance", 0); numeric("positioning_tolerance", 50);
         }
         // 只有相对敌人锚点的落点偏移携带距离；其余落点不发送该字段。
-        if (["away_from_target","target_front","target_behind","around_target"].indexOf(String(input.destination || "")) >= 0) {
+        if (action !== "mirana_leap" && action !== "item_force_staff" &&
+                ["away_from_target","target_front","target_behind","around_target"].indexOf(String(input.destination || "")) >= 0) {
             out.destination_distance = Math.max(0, Math.min(3000, numberValue(input.destination_distance, 400)));
         }
         return out;
@@ -280,7 +281,7 @@ var RpgRuleSync = (function () {
             payload.desired_autocast_state=bool(rule.desired_autocast_state,false) ? "1" : "0";
         }
         payload.allow_unverified_modifiers=bool(rule.allow_unverified_modifiers,false) ? 1 : 0;
-        var settings = actionSettings(rule, action);
+        var settings = actionSettings(rule, args.actionName === "mirana_leap" || args.actionName === "item_force_staff" ? args.actionName : action);
         Object.keys(settings).forEach(function (key) { payload[key] = typeof settings[key] === "boolean" ? (settings[key] ? 1 : 0) : settings[key]; });
         if (action === "sustained_move") { payload.action_id = "sustained_move"; payload.action_name = ""; }
         return payload;

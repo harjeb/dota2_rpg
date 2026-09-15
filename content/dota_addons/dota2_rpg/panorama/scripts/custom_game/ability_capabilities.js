@@ -40,6 +40,10 @@ var RpgAbilityCapabilities = (function () {
             cap.magic_immune_enemy=-1; cap.magic_immune_ally=-1;
         }
         cap.mode=mode; cap.role=native ? "native_unit" : mode==="point" || mode==="vector" ? "anchor" : "trigger";
+        if ((cap.name==="mirana_leap" || cap.name==="item_force_staff") && rule.destination==="away_from_target") {
+            cap.teams={self:0,ally:0,enemy:1}; cap.types={hero:1,monster:1,summon:1};
+            cap.magic_immune_enemy=-1; cap.role="anchor";
+        }
         return cap;
     }
     function conditionReason(cap,group,c,targetTeam) {

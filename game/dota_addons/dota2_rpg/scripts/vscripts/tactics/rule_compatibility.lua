@@ -74,6 +74,16 @@ function R.Validate(hero,rule,options)
     if contradiction then errors[#errors+1]=contradiction end
     local cap=options.capability or A.ForAction(hero,rule.action,{runtime=options.runtime})
     local action=rule.action
+    if require("tactics/facing_retreat").IsAction(action, cap and cap.name) then
+        if (rule.target or {}).team ~= "enemy" then errors[#errors+1]=issue("retreat_requires_enemy_anchor") end
+        if cap then
+            local anchorCap={}; for k,v in pairs(cap) do anchorCap[k]=v end
+            anchorCap.teams={self=0,ally=0,enemy=1}
+            anchorCap.types={hero=1,monster=1,summon=1}
+            anchorCap.magic_immune_enemy=1
+            cap=anchorCap
+        end
+    end
     if action.cast_variant and action.cast_variant~="default" then
         errors[#errors+1]=issue("alternate_adapter_unavailable")
     end

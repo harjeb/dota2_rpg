@@ -238,6 +238,7 @@ var RpgConditionCatalog = (function () {
             draft.target_types=["hero","monster","summon"].filter(function(type) { return !types || types[type]!==0; }).join(",");
             return key;
         }
+        var ownRetreat=options.abilityName==="mirana_leap" || options.abilityName==="item_force_staff";
         var stateKey=normalizeNativeSettings(baseCap);
         var cap=capAPI ? capAPI.derive(baseCap,draft) : null;
         var strict=!!options.getCapability;
@@ -486,9 +487,13 @@ var RpgConditionCatalog = (function () {
         // Choose the team before reading detailed filters or movement options.
         label(body, "V2TargetTeamTitle", text("target_team")).AddClass("V2SectionTitle");
         // POINT teams select a location anchor, not the units the spell can affect.
-        label(body, "V2TargetTeamHint", text(cap && cap.mode === "point" ? "point_target_team_hint" : "target_team_hint")).AddClass("V2Hint");
+        label(body, "V2TargetTeamHint", text(ownRetreat && draft.destination==="away_from_target" ? "own_retreat_hint" : cap && cap.mode === "point" ? "point_target_team_hint" : "target_team_hint")).AddClass("V2Hint");
         var team = $.CreatePanel("Panel", body, "V2TargetTeamRow"); team.AddClass("V2Selector");
         var targetTeam = draft.target_team || String(draft.target || rule.target || "enemy").split("_")[0];
+        if (ownRetreat && cap && cap.teams[targetTeam]===0) {
+            targetTeam=draft.destination==="away_from_target" ? "enemy" : "self";
+            draft.target_team=targetTeam; draft.target=targetTeam==="self" ? "self" : targetTeam+"_distance_nearest";
+        }
         choose(team, "V2TeamSelect", restrict([{id:"team_self"}, {id:"team_ally"}, {id:"team_enemy"}],function(entry) {
             return cap && cap.teams[entry.id.substring(5)]===0 ? "target_team_incompatible" : "";
         }), "team_" + targetTeam, function (id) {
@@ -570,7 +575,7 @@ var RpgConditionCatalog = (function () {
             Object.keys(draft).forEach(function (key) { if (key.indexOf("movement_") === 0 || key.indexOf("positioning_") === 0) { delete draft[key]; } });
             Object.keys(normalized).forEach(function (key) { draft[key] = normalized[key]; });
             // 非偏移落点不需要落点距离，避免把旧值带给服务端。
-            if (OFFSET_DESTINATIONS.indexOf(draft.destination) < 0) { delete draft.destination_distance; }
+            if (ownRetreat || OFFSET_DESTINATIONS.indexOf(draft.destination) < 0) { delete draft.destination_distance; }
         });
         var approachRow = $.CreatePanel("Panel", body, "V2ApproachRow"); approachRow.AddClass("V2Selector");
         label(approachRow,"",text("approach_title"));
@@ -581,12 +586,13 @@ var RpgConditionCatalog = (function () {
         var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
         var remnantAction = remnantAbilities.indexOf(options.abilityName) >= 0;
         var floorCast = !!(cap && cap.mode === "point");
-        if (floorCast || remnantAction) {
+        if (floorCast || remnantAction || ownRetreat) {
             var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");
             label(destinationRow,"",text("destination"));
             var destination = draft.destination || "target";
             var modes = ["target"];
-            if (floorCast) { modes = modes.concat(OFFSET_DESTINATIONS); }
+            if (ownRetreat) { modes.push("away_from_target"); }
+            else if (floorCast) { modes = modes.concat(OFFSET_DESTINATIONS); }
             if (remnantAction) { modes.push("self"); }
             if (options.abilityName === "ember_spirit_activate_fire_remnant") {
                 modes = modes.concat(["remnant_nearest", "remnant_farthest", "remnant_near_enemy", "remnant_safe"]);
@@ -598,7 +604,7 @@ var RpgConditionCatalog = (function () {
                     reopen({destination:value.replace("destination_","")});
                 });
             readers.push(function() { draft.destination=destination; });
-            if (OFFSET_DESTINATIONS.indexOf(destination) >= 0) { settingInput("destination_distance"); }
+            if (!ownRetreat && OFFSET_DESTINATIONS.indexOf(destination) >= 0) { settingInput("destination_distance"); }
         }
         if (stateKey) {
             var toggle = $.CreatePanel("Panel", body, "V2ToggleRow"); toggle.AddClass("V2Selector");

@@ -3,6 +3,7 @@ local TargetSelector = require("tactics/target_selector")
 local ActionAdapter = require("tactics/action_adapter")
 local Context = require("tactics/condition_context")
 local Movement = require("tactics/persistent_movement")
+local FacingRetreat = require("tactics/facing_retreat")
 local Positioning = require("tactics/positioning")
 local NativeEvents = require("tactics/native_events")
 local NeutralAttack = require("tactics/neutral_attack")
@@ -104,6 +105,7 @@ function TacticEngine:GetState(unit)
     local id = entity_index(unit)
     local state = self.states[id]
     if state ~= nil and state.unit ~= unit then
+        FacingRetreat.Release(self, state.unit, state, {}, false)
         Movement.Release(self, state.unit, state, {}, false)
         pcall(NativeEvents.Detach, state.unit)
         Lifecycle.Reset(state.unit)
@@ -127,14 +129,14 @@ end
 
 function TacticEngine:IsExclusiveMovement(unit)
     local state = self.states[entity_index(unit)]
-    return state ~= nil and state.unit == unit and state.movement ~= nil
+    return state ~= nil and state.unit == unit and (state.movement ~= nil or state.facing_retreat ~= nil)
 end
 
 function TacticEngine:HasActiveOrder(unit)
     if self.get_phase() ~= "FIGHT" then return false end
     local state = self.states[entity_index(unit)]
     if not state or state.unit ~= unit then return false end
-    return state.chase ~= nil or state.movement ~= nil or (state.wait_until or 0) > now()
+    return state.chase ~= nil or state.movement ~= nil or state.facing_retreat ~= nil or (state.wait_until or 0) > now()
         or (state.posture_order ~= nil and (state.posture_order.expires or 0) > now())
         or NeutralAttack.HasTactic(unit)
 end
@@ -144,6 +146,7 @@ function TacticEngine:ResetUnit(unit)
     local state = self.states[id]
     NeutralAttack.Release(unit)
     if state and state.unit == unit then
+        FacingRetreat.Release(self, unit, state, {}, true)
         Movement.Release(self, unit, state, {}, false)
         self.states[id] = nil
     end
@@ -155,6 +158,7 @@ end
 function TacticEngine:Reset()
     for _, state in pairs(self.states) do
         NeutralAttack.Release(state.unit)
+        FacingRetreat.Release(self, state.unit, state, {}, true)
         if state.movement then Movement.Release(self, state.unit, state, {}, true)
         else Movement.StopOrder(self, state.unit, state.posture_order, {}) end
         pcall(NativeEvents.Detach, state.unit)
@@ -194,6 +198,7 @@ function TacticEngine:Think()
     -- still recorded. Stage reset handles roster changes; dead handles release.
     for id, state in pairs(self.states) do
         if not is_alive(state.unit) then
+            FacingRetreat.Release(self, state.unit, state, {}, false)
             Movement.Release(self, state.unit, state, {}, true)
             pcall(NativeEvents.Detach, state.unit)
         Lifecycle.Reset(state.unit)
@@ -205,7 +210,7 @@ function TacticEngine:Think()
     for _, unit in ipairs(self.get_battle_units() or {}) do
         if is_alive(unit) then
             local state = self:GetState(unit)
-            if current_time >= state.next_eval then
+            if state.facing_retreat ~= nil or current_time >= state.next_eval then
                 state.next_eval = current_time + self.tick_interval
                 self:EvaluateUnit(unit, state, current_time)
             end
@@ -252,6 +257,7 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
     state.events = state.events or NativeEvents.Attach(unit)
+    if FacingRetreat.Continue(self, unit, state, ctx, rules) then return end
     Movement.Observe(unit, state, rules, self, ctx)
     -- Expiry/filters must still be checked when available spells keep borrowing
     -- the order; the original movement deadline never resets for a cast.
@@ -382,6 +388,9 @@ end
 
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
     local destination = rule.action ~= nil and rule.action.destination or nil
+    if FacingRetreat.IsAction(rule.action, (spec.capability or {}).name) then
+        return FacingRetreat.Select(self, rule, spec, ctx)
+    end
     if destination ~= nil and OFFSET_DESTINATIONS[destination] then
         return self:ResolveOffsetDestination(rule, spec, ctx, destination)
     end
@@ -473,6 +482,9 @@ function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
         return false, target_reason
     end
 
+    if FacingRetreat.IsAction(rule.action, (spec.capability or {}).name) then
+        return FacingRetreat.Start(self, unit, state, ctx, rule, rule_index, spec, anchor)
+    end
     if spec.logical_id == "sustained_move" then
         return Movement.Start(self, unit, state, ctx, rule, rule_index, spec, anchor or target_or_point)
     end
