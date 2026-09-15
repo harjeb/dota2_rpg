@@ -131,11 +131,6 @@ local function acceptResponse(run, data)
 end
 
 function Results.Submit(game, run)
-    if not Difficulty.Ranked(game) then
-        run.payload = nil
-        if run.result then run.result.status = "difficulty_unranked" end
-        return
-    end
     if run.submitted then return end
     run.submitted = true
     if type(Config.endpoint) ~= "string" or not Config.endpoint:match("^https://") or not CreateHTTPRequestScriptVM then
@@ -193,18 +188,13 @@ end
 function Results.Finish(game, cleared, settlement)
     local run = ensure(game)
     if run.result then return run.result end
-    local summary = Score.Calculate(game.runLives and game.runLives.remaining, run.completed, run.remainingMs, cleared)
+    local summary = Score.Calculate(game.runLives and game.runLives.remaining, run.completed, run.remainingMs, cleared, Difficulty.Name(game))
     summary.settlement_generation = game.settlementGeneration
     summary.status = "pending"
     for name, value in pairs(Difficulty.Metadata(game)) do summary[name] = value end
     run.result = summary
     settlement.run_complete = 1
     for name, value in pairs(summary) do settlement[name] = value end
-    if not Difficulty.Ranked(game) then
-        summary.status = "difficulty_unranked"
-        settlement.status = summary.status
-        return summary
-    end
     local account = safeCall(PlayerResource, "GetSteamAccountID", game.playerId)
     local steamId = Results.SteamId(account)
     if not steamId or not run.eligible or (cleared and run.completed ~= Score.TOTAL_STAGES) then
@@ -225,7 +215,7 @@ function Results.Finish(game, cleared, settlement)
         speedrun_time_ms = cleared and summary.remaining_time_ms or nil,
         stage_count = summary.stage_count, game_version = Config.game_version,
         remaining_hearts = summary.remaining_hearts, remaining_time_ms = summary.remaining_time_ms,
-        score_version = Score.VERSION,
+        score_version = Score.VERSION, campaign_difficulty = Difficulty.Name(game),
     }
     return summary
 end

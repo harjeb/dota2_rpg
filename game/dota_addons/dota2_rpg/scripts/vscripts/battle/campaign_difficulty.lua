@@ -15,9 +15,12 @@ function Difficulty.Scale(game, value)
     if value ~= value or value == math.huge or value == -math.huge then return 0 end
     return math.max(0, math.floor(value * Difficulty.Multiplier(game) + 0.5))
 end
-function Difficulty.Ranked(game) return Difficulty.Name(game) == "default" end
+function Difficulty.ScoreNumerator(name)
+    return ({easy = 7, default = 10, hard = 20})[name] or 10
+end
 function Difficulty.Metadata(game)
     return { campaign_difficulty = Difficulty.Name(game), reward_multiplier = Difficulty.Multiplier(game),
+        score_multiplier = Difficulty.ScoreNumerator(Difficulty.Name(game)) / 10,
         difficulty_version = Difficulty.VERSION, difficulty_locked = game.campaignDifficultyLocked and 1 or 0 }
 end
 function Difficulty.Select(game, payload)

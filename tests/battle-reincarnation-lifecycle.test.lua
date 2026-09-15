@@ -221,7 +221,7 @@ for _,winner in ipairs({"radiant", "dire", "timeout", "draw"}) do
     assert(g.currentLevelId=="ch01", "all terminal replays restart chapter one")
     assert(g.refreshCount==0 and g.scrollPurchases.low==0 and g.scrollPurchases.high==0)
     assert(next(g.heroData)==nil and next(g.heroRulesByName)==nil and g.heroRulesByName~=rules)
-    assert(g.gold==500 and g.freeRecruitChoices==2 and g.benchSlots==0)
+    assert(g.gold==1500 and g.freeRecruitChoices==2 and g.benchSlots==0)
     assert(commanderReplacements==1 and g.placeholderHero==g.stash and g.stash.rpgPlaceholderReady)
     assert(next(g.stash.permanent)==nil and g.stash.xp==0, "commander native consumable flags/XP are not retained")
     assert(stashItem.removed and groundItem.removed and orphanItem.removed and heroItem.removed and drop.removed and bench.removed)

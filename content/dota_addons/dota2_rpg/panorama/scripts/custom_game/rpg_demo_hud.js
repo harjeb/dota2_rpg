@@ -2284,7 +2284,7 @@
         var cleared = Number(data.cleared) === 1;
         $("#RunScoreTitle").text = rankText(cleared ? "run_score_clear" : "run_score_failed");
         $("#RunScoreValue").text = String(Math.max(0, Math.floor(Number(data.score) || 0)));
-        $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0]);
+        $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0, data.score_multiplier || 1]);
         $("#RunMetrics").text = rankText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
         var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
         $("#RunRankStatus").text = rankText("rank_" + status);

@@ -129,7 +129,8 @@ function runHud() {
     panorama.RegisterForUnhandledEvent = function (name, callback) { unhandledEvents[name] = callback; };
     panorama.Localize = function (token) {
         if (token === "#dota2_rpg_remaining_time") { return "剩余时间"; }
-        return token === "#dota2_rpg_reward_xp" ? "XP %s1 (active %s2 / bench %s3)" : token;
+        if (token === "#dota2_rpg_run_score_breakdown") { return "(%s1 + %s2 + %s3) x %s4"; }
+        return token === "#dota2_rpg_reward_xp" ? "XP %s1 (each %s2 / heroes %s3)" : token;
     };
     var timers = [];
     var walletTimers = [];
@@ -792,11 +793,11 @@ function visible(h, id) {
     return true;
 }
 var rewards = runHud();
-var victory = {winner:"radiant", settlement_generation:21, gold:123, xp_per_active_hero:45,
-    xp_per_bench_hero:12, loot_text:"item_blink;item_branches"};
+var victory = {winner:"radiant", settlement_generation:21, gold:123, xp_pool:90,
+    xp_per_owned_hero:45, xp_recipient_count:2, loot_text:"item_blink;item_branches"};
 rewards.subscriptions.rpg_settlement(victory);
 assert(visible(rewards,"RewardLabel") && visible(rewards,"LootPopupItems"), "gold XP and equipment visible simultaneously through actual XML ancestors");
-assert(panel(rewards,"RewardLabel").text.includes("123") && panel(rewards,"RewardLabel").text.includes("active 45 / bench 12"), "summary contains gold and XP");
+assert(panel(rewards,"RewardLabel").text.includes("123") && panel(rewards,"RewardLabel").text.includes("each 45 / heroes 2"), "summary contains gold and XP");
 assert(panel(rewards,"LootPopupItems").children.length === 2 && rewards.timers.length === 1, "one frame and one timer for all rewards");
 var firstTimer = rewards.timers[0];
 click(rewards,"LootPopupConfirm");
@@ -839,6 +840,13 @@ var summary = {winner:"radiant",run_complete:1,cleared:1,settlement_generation:4
     core_score:420000,time_bonus_score:36000,clear_bonus_score:1000000,remaining_hearts:5,stage_count:30,total_stages:30,remaining_time_ms:3600000};
 ranked.subscriptions.rpg_settlement(summary);
 assert(visible(ranked,"RunLeaderboard") && panel(ranked,"RunScoreValue").text === "1456000", "terminal summary displays authoritative score");
+for (const multiplier of [0.7, 1, 2]) {
+    const scaledHud=runHud();
+    scaledHud.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",run_complete:1,settlement_generation:40});
+    scaledHud.subscriptions.rpg_settlement(Object.assign({},summary,{score:Math.floor(1456000*multiplier),score_multiplier:multiplier}));
+    assert(panel(scaledHud,"RunScoreValue").text===String(Math.floor(1456000*multiplier)), "server scaled score displays unchanged");
+    assert(panel(scaledHud,"RunScoreBreakdown").text==="(420000 + 36000 + 1000000) x "+multiplier, "breakdown includes difficulty multiplier");
+}
 assert(ranked.timers.length === 0 && panel(ranked,"RunRankStatus").text === "#dota2_rpg_rank_pending", "terminal does not auto-hide while awaiting network");
 var accepted = Object.assign({}, summary, {status:"success",score_rank:1,score_total:10,score_global_record:1,speedrun_rank:3,speedrun_total:8,speedrun_personal_record:1});
 ranked.subscriptions.rpg_leaderboard_result(accepted);

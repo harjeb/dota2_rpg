@@ -21,6 +21,16 @@ for hearts = 0, 5 do
 end
 assert(minClear > maxFailure)
 assert(Score.Calculate(5, 30, 3600000, true).score == 1456000)
+for name, numerator in pairs({easy=7, default=10, hard=20}) do
+    for hearts=0,5 do
+        for stages=0,30 do
+            local base=Score.Calculate(hearts,stages,stages*119321,stages==30)
+            local scaled=Score.Calculate(hearts,stages,stages*119321,stages==30,name)
+            assert(scaled.score==math.floor(base.score*numerator/10))
+            assert(scaled.remaining_time_ms==base.remaining_time_ms and scaled.base_score==base.score)
+        end
+    end
+end
 assert(Score.Calculate(0, 0, 0, false).score == 100000)
 assert(Score.Calculate(5, 0, 0, false).core_score == 210000)
 assert(Score.Calculate(0, 30, 0, false).core_score == 200000)

@@ -29,7 +29,17 @@ function B.Enabled(game, hero)
     end
     return false
 end
+local function hardQuota(game)
+    if game.campaignDifficulty ~= "hard" then return nil end
+    local quota = game.hardBuybackState
+    if not quota or quota.chapter ~= game.currentLevelId then
+        quota = {chapter = game.currentLevelId, used = false, processing = false}
+        game.hardBuybackState = quota
+    end
+    return quota
+end
 function B.BeginBattle(game)
+    hardQuota(game)
     game.battleManager.buybackState = {}
     for _, hero in ipairs(game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
         if valid(hero) then
@@ -51,6 +61,8 @@ end
 function B.Process(game)
     local manager = game.battleManager
     if not manager or manager.phase ~= "fight" or game.phase ~= "fight" or manager.arenaActive then return end
+    local quota = hardQuota(game)
+    if quota and (quota.used or quota.processing) then return end
     local states = manager.buybackState or {}
     manager.buybackState = states
     -- Stable lineup order also defines priority when only one buyback is affordable.
@@ -66,6 +78,7 @@ function B.Process(game)
                 if game:GetGoldBalance() >= cost then
                     local saved = cooldowns(hero)
                     state.processing = true
+                    if quota then quota.processing = true end
                     if game:SpendGold(cost) then
                         local ok, err = pcall(function()
                             -- A death followed by buyback can occur between two tactic ticks.
@@ -76,7 +89,8 @@ function B.Process(game)
                             hero:SetRespawnPosition(state.position)
                             hero:RespawnHero(false, false)
                             assert(hero:IsAlive(), "RespawnHero did not revive hero")
-                            state.used = true -- Only BeginBattle resets a successful buyback allowance.
+                            state.used = true
+                            if quota then quota.used = true end
                             -- Respawn policy handles the native spawn event. Restore the combat
                             -- acquisition settings and resources without refreshing cooldowns.
                             hero:SetRespawnsDisabled(false)
@@ -102,6 +116,7 @@ function B.Process(game)
                         if hero:IsAlive() then
                             -- Even a later cleanup error must not grant another paid revival.
                             state.used = true
+                            if quota then quota.used = true end
                         else
                             state.failed = true
                             game:AddGold(cost)
@@ -112,6 +127,10 @@ function B.Process(game)
                         end
                     end
                     state.processing = nil
+                    if quota then
+                        quota.processing = false
+                        if quota.used then return end
+                    end
                 end
             end
         end

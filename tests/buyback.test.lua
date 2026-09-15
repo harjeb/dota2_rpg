@@ -197,4 +197,88 @@ test("actual wipe gate resolves timeout before spending", function()
     assert(g.battleManager:CheckBattleEnd() and g.winner=="timeout" and g.spends==0 and h.respawns==0)
     now=10
 end)
+test("hard quota is shared across heroes and chapter retries", function()
+    local a,b=hero(),hero(); local g=game({a,b},10000)
+    g.campaignDifficulty="hard"; g.currentLevelId=4; Buyback.BeginBattle(g)
+    local quota=g.hardBuybackState
+    Buyback.Process(g)
+    assert(a.alive and not b.alive and g.spends==1 and quota.used and not quota.processing)
+    a.alive=false; Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(g.hardBuybackState==quota and g.spends==1 and not a.alive and not b.alive)
+    g.currentLevelId=5; Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(g.hardBuybackState~=quota and g.hardBuybackState.chapter==5 and g.spends==2)
+end)
+test("hard payment reserves the team quota before nested processing", function()
+    local a,b=hero(),hero(); local g=game({a,b},10000)
+    g.campaignDifficulty="hard"; g.currentLevelId=1; Buyback.BeginBattle(g)
+    local spend=g.SpendGold
+    function g:SpendGold(n)
+        assert(self.hardBuybackState.processing)
+        Buyback.Process(self)
+        assert(b.respawns==0 and self.spends==0)
+        return spend(self,n)
+    end
+    Buyback.Process(g)
+    assert(a.alive and not b.alive and g.spends==1 and not g.hardBuybackState.processing)
+end)
+test("hard rejected payment releases reservation without consumption", function()
+    local h=hero(); local g=game({h},10000); g.campaignDifficulty="hard"; g.rejectSpend=true
+    Buyback.Process(g)
+    assert(not g.hardBuybackState.used and not g.hardBuybackState.processing and g.spends==0)
+    g.rejectSpend=false; Buyback.Process(g)
+    assert(h.alive and g.spends==1 and g.hardBuybackState.used)
+end)
+test("hard failed revival refunds and leaves quota for another hero", function()
+    for _,failure in ipairs({true,"throw"}) do
+        local a,b=hero(),hero(); a.fail=failure
+        local g=game({a,b},10000); g.campaignDifficulty="hard"
+        local add=g.AddGold
+        function g:AddGold(n)
+            assert(self.hardBuybackState.processing and not self.hardBuybackState.used)
+            Buyback.Process(self)
+            assert(b.respawns==0)
+            add(self,n)
+        end
+        Buyback.Process(g); Buyback.Process(g)
+        assert(not a.alive and b.alive and g.spends==2 and g.refunds==1)
+        assert(g.gold==10000-Buyback.Cost(1,"hard"))
+        assert(g.hardBuybackState.used and not g.hardBuybackState.processing)
+    end
+end)
+test("hard successful revival consumes quota despite cleanup failure", function()
+    local a,b=hero(),hero(); local g=game({a,b},10000); g.campaignDifficulty="hard"
+    function a:Stop() error("mock cleanup failure") end
+    Buyback.Process(g); Buyback.Process(g)
+    assert(a.alive and not b.alive and g.spends==1 and g.refunds==0 and g.hardBuybackState.used)
+end)
+test("easy and default retain per-hero per-battle allowances", function()
+    for _,difficulty in ipairs({"easy","default"}) do
+        local a,b=hero(),hero(); local g=game({a,b},10000); g.campaignDifficulty=difficulty
+        g.hardBuybackState={chapter=1,used=true,processing=false}
+        Buyback.Process(g)
+        assert(a.alive and b.alive and g.spends==2)
+        a.alive=false; b.alive=false; Buyback.BeginBattle(g); Buyback.Process(g)
+        assert(a.alive and b.alive and g.spends==4)
+    end
+end)
+test("fresh run clears persisted hard quota", function()
+    local originalRequire=require
+    local fresh=assert(loadfile(root .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/fresh_run.lua"))
+    setfenv(fresh,setmetatable({require=function(name)
+        if name=="battle.respawn_policy" then return originalRequire(name) end
+        return {Reset=function() end,Clear=function() end,Ensure=function() end}
+    end},{__index=_G}))
+    local g=game({},1000); g.hardBuybackState={chapter=1,used=true,processing=true}
+    g.battleManager.teamHeroes={[2]={},[3]={}}
+    g.battleManager.StopBattle=function() end
+    g.battleManager.ResetBattleStats=function() end
+    g.tacticBridge.ResetState=function() end
+    g.GetStashUnit=function() return nil end
+    g.InitializeRecruitmentState=function() end
+    g.SetGoldBalance=function(self,n) self.gold=n end
+    fresh().Reset(g)
+    assert(g.hardBuybackState==nil)
+    g.campaignDifficulty="hard"; g.currentLevelId=1; Buyback.BeginBattle(g)
+    assert(not g.hardBuybackState.used and not g.hardBuybackState.processing)
+end)
 print("PASS: " .. cases .. " buyback backend scenarios")
