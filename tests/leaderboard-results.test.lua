@@ -109,7 +109,12 @@ for i=1,4 do
         player_name="速通玩家"..i,value=i==1 and 0 or i,is_self=1}
 end
 requests[2].callback({StatusCode=201,Body=Json.encode(result)})
+assert(events[#events].data.status=="pending", "the HTTP callback must not send engine events directly")
+Results.FlushPublish(g)
 assert(events[#events].data.status=="success" and events[#events].data.score_rank==1)
+local flushed=#events
+Results.FlushPublish(g)
+assert(#events==flushed, "flush without a pending response must not resend")
 local mapped=events[#events].data
 assert(mapped.score_list_available==1 and mapped.score_list_count==5 and mapped.score_list_player_rank==1)
 assert(mapped.speedrun_list_available==1 and mapped.speedrun_list_count==4 and mapped.speedrun_list_player_rank==3)
@@ -189,4 +194,4 @@ IsInToolsMode=function() return true end
 settle(debug,false,120,0)
 assert(Results.Finish(debug,false,{}).status=="ineligible")
 IsInToolsMode=nil
-print("PASS permanent score, exact SteamID, run accounting, idempotent retry, rank mapping and replay isolation")
+print("PASS permanent score, exact SteamID, run accounting, idempotent retry, deferred publish, rank mapping and replay isolation")
