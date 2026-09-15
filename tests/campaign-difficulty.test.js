@@ -32,13 +32,15 @@ publish();click(hud,"CampaignDifficulty_hard");
 const script=fs.readFileSync(path.join(root,"content/dota_addons/dota2_rpg/panorama/scripts/custom_game/campaign_difficulty.js"),"utf8");
 require("vm").runInContext(script,hud.context);publish();
 assert(p("CampaignDifficulty_hard").BHasClass("CampaignDifficultySelected"));
-const keys=[];
+const keys=[],versions=[];
 for(const locale of ["english","schinese"]){
     const text=fs.readFileSync(path.join(root,"game/dota_addons/dota2_rpg/resource/addon_"+locale+".txt"),"utf8");
     const tokens=Object.fromEntries([...text.matchAll(/"(dota2_rpg_(?:difficulty_[^"]+|rank_difficulty_unranked|build_tag))"\s+"([^"]*)"/g)].map(m=>[m[1],m[2]]));
-    assert(tokens.dota2_rpg_build_tag.endsWith("79"));
+    const version=Number((tokens.dota2_rpg_build_tag.match(/(\d+)$/)||[])[1]);
+    assert(version>=79); versions.push(version);
     keys.push(Object.keys(tokens).sort());
     for(const name of ["easy","default","hard","title","hint","ranking","confirm","rewards"]){assert(tokens["dota2_rpg_difficulty_"+name]);}
 }
 assert.deepStrictEqual(keys[0],keys[1]);
-console.log("PASS campaign entry difficulty: actual XML scripts, owner gates, default selection, draft refresh/reload persistence, immutable server selection, arena isolation, bilingual UI79");
+assert.strictEqual(versions[0],versions[1],"both locales must advertise the same build");
+console.log("PASS campaign entry difficulty: actual XML scripts, owner gates, default selection, draft refresh/reload persistence, immutable server selection, arena isolation, matching bilingual build versions");

@@ -270,8 +270,8 @@ end
 -- 规则槽数量 = 主动技能数 + 主动装备数 + 1 条普通攻击（DESIGN.md §2.2）
 -- 被动技能不生成规则槽；A 杖/魔晶解锁的新技能、新买入的主动装备会自动增加槽位；
 -- item_N 对应物品栏 N-1 的当前物品
-local function BuildHeroActionSlots(hero)
-	return AbilityCatalog.ListActions(hero)
+local function BuildHeroActionSlots(hero, includeBuyback)
+	return AbilityCatalog.ListActions(hero, includeBuyback)
 end
 
 function Precache(context)
@@ -4950,7 +4950,7 @@ function CDota2RpgDemo:BroadcastHeroInfo(player)
 		for index, hero in ipairs(heroes) do
 			if TacticEngine.IsValidUnit(hero) then
 				local descriptions = {}
-				local slots = BuildHeroActionSlots(hero)
+				local slots = BuildHeroActionSlots(hero, require("battle/buyback").IsEligible(self, hero))
 				for _, action in ipairs(slots) do
 					local _, detail = DescribeAction(hero, action)
 					table.insert(descriptions, detail ~= "" and detail or action)

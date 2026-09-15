@@ -10,6 +10,7 @@ local resends = 0
 local modules = {
     ["issue_fixes.shop_transport"] = dofile(scripts .. "issue_fixes/shop_transport.lua"),
     ["battle.unit_helpers"] = { IsValidUnit = function(u) return u ~= nil end },
+    ["battle/buyback"] = { IsEligible = function() return false end },
     ["tactics/ability_catalog"] = catalog,
     ["tactics/rule_snapshot"] = {
         HeroKey = function(_,h) return h.key end,

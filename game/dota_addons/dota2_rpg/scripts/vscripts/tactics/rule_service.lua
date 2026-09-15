@@ -1,6 +1,7 @@
 local Conditions = require("tactics/condition_registry")
 local Compatibility = require("tactics/rule_compatibility")
 local Options = require("tactics/action_options")
+local BuybackRule = require("tactics/buyback_rule")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -26,6 +27,7 @@ local REMOVED_CONDITIONS = {
 
 function RuleService.StripRemovedConditions(rule)
     if type(rule) ~= "table" then return rule end
+    BuybackRule.Normalize(rule)
     rule.use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode)
     rule.target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode)
     for _, field in ipairs({ "use_conditions", "target_filters" }) do
@@ -47,7 +49,7 @@ local Context = require("tactics/condition_context")
 local finite = Context.Number
 local VALID_TEAMS = { self = true, ally = true, enemy = true }
 local VALID_APPROACH = { range_only = true, allow_approach = true }
-local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = true, wait = true }
+local VALID_ACTION_KINDS = { ability = true, item = true, attack = true, move = true, wait = true, buyback = true }
 
 local NUMERIC_LIMITS = {
     channel_elapsed_gte = { 0, 86400 },
@@ -236,7 +238,7 @@ function RuleService:DecodeFlat(args)
     require("tactics/movement_contract").Copy(args, rule.action)
     Options.Copy(args, rule.action)
     rule.allow_unverified_modifiers = args.allow_unverified_modifiers == true or args.allow_unverified_modifiers == 1 or args.allow_unverified_modifiers == "1"
-    return rule
+    return BuybackRule.Normalize(rule)
 end
 
 function RuleService:ValidateCondition(condition, registry)
@@ -320,6 +322,12 @@ function RuleService:ValidateCondition(condition, registry)
 end
 
 function RuleService:ValidateRule(player_id, hero, rule)
+    if type(rule) == "table" and type(rule.action) == "table" then
+        if (rule.action.kind == "buyback") ~= (rule.action.logical_id == "buyback") then
+            return false, "invalid_buyback_action"
+        end
+        BuybackRule.Normalize(rule)
+    end
     if type(rule) ~= "table" or type(rule.action) ~= "table" or type(rule.target) ~= "table"
         or type(rule.target_filters) ~= "table" or type(rule.use_conditions) ~= "table"
         or type(rule.target_priorities) ~= "table" then return false, "invalid_rule" end
@@ -533,6 +541,7 @@ function RuleService:UpdateRule(player_id, hero_index, slot, flat_args)
 end
 
 function RuleService:SyncRule(_player_id, hero, slot, rule)
+    BuybackRule.Normalize(rule)
     local hero_key = self.get_hero_key(hero)
     if hero_key == nil or hero_key == "" then
         return

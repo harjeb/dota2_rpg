@@ -123,6 +123,7 @@ function Snapshot.ForHero(manager, hero)
     local result = {}
     local rules = manager.getRules ~= nil and manager.getRules(hero) or {}
     for _, rule in ipairs(rules or {}) do
+        require("tactics/buyback_rule").Normalize(rule)
         local action = rule.action or {}
         local name = action.logical_id or action.name or "attack"
         if action.kind == "attack" then

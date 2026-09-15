@@ -187,6 +187,35 @@ var RpgConditionCatalog = (function () {
         delete draft.min_aoe_hits;
         ["use_conditions", "target_filters", "target_priorities"].forEach(function (key) { draft[key] = draft[key] || []; });
         $("#RuleSettingsError").text = "";
+        if (rule.action === "buyback") {
+            label(body, "V2BuybackHelp", text("buyback_hint")).AddClass("V2Hint");
+            var buybackEnabled = RpgRuleSync.bool(rule.enabled, true);
+            var enabledButton = $.CreatePanel("Button", body, "V2BuybackEnabled"); enabledButton.AddClass("V2Button");
+            var enabledLabel = label(enabledButton, "V2BuybackEnabledLabel", text(buybackEnabled ? "buyback_enabled" : "buyback_disabled"));
+            enabledButton.SetPanelEvent("onactivate", function () {
+                if (options.readOnly || generation !== editorGeneration) { return; }
+                buybackEnabled = !buybackEnabled;
+                enabledLabel.text = text(buybackEnabled ? "buyback_enabled" : "buyback_disabled");
+            });
+            var level = Number(options.heroLevel);
+            if (isFinite(level) && level >= 1) {
+                label(body, "V2BuybackCost", text("buyback_cost").replace("{level}", Math.min(30, Math.floor(level)))
+                    .replace("{cost}", RpgRuleSync.buybackCost(level))).AddClass("V2Hint");
+            }
+            body.enabled = !options.readOnly;
+            $("#V2ClearConditions").enabled = false;
+            $("#V2ClearConditions").SetPanelEvent("onactivate", function () {});
+            $("#RuleSettingsApply").enabled = !options.readOnly;
+            $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
+                if (options.readOnly || generation !== editorGeneration) { return; }
+                var settings = RpgRuleSync.buybackSettings(); settings.enabled = buybackEnabled;
+                if (onApply(settings) === false) { $("#RuleSettingsError").text = text("edit_conflict"); return; }
+                root.SetHasClass("Hidden", true);
+            });
+            $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
+            root.SetHasClass("Hidden", false);
+            return;
+        }
         var activeMenu = null;
         var capAPI=typeof RpgAbilityCapabilities!=="undefined" ? RpgAbilityCapabilities : null;
         var baseCap=options.getCapability ? options.getCapability() : options.capability;
@@ -315,7 +344,7 @@ var RpgConditionCatalog = (function () {
                 if (selfOnly && hero.actor !== "") { return; }
                 label(menu, "", hero.label).AddClass("V2Category");
                 hero.abilities.forEach(function (name, abilityIndex) {
-                    if (selfOnly && (!name || name === "attack" || name === "basic_attack" || name === "sustained_move" || name.indexOf("item_") === 0)) { return; }
+                    if (selfOnly && (!name || name === "attack" || name === "basic_attack" || name === "buyback" || name === "sustained_move" || name.indexOf("item_") === 0)) { return; }
                     var option = button(menu, id + "Option_" + heroIndex + "_" + abilityIndex, "", function () {
                         current.action_id = name;
                         if (hero.actor) { current.action_actor = hero.actor; } else { delete current.action_actor; }

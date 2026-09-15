@@ -132,6 +132,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 	end
 
     if legacy.action == "sustained_move" then actionKind = "move" end
+    if legacy.action == "buyback" then actionKind = "buyback" end
 	local target, filters, priorities = decomposeLegacyTarget(legacy.target)
     if legacy.target_team then target.team = legacy.target_team end
 
@@ -148,7 +149,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
     if type(legacy.target_filters) == "table" then filters = legacy.target_filters end
     if type(legacy.target_priorities) == "table" then priorities = legacy.target_priorities end
 
-	return RuleService.StripRemovedConditions({
+	return require("tactics/buyback_rule").Normalize(RuleService.StripRemovedConditions({
 		id = tostring(legacy.id or ("legacy_rule_" .. slot)),
         is_default = legacy.is_default == true,
 		enabled = legacy.enabled ~= false and legacy.enabled ~= 0 and legacy.enabled ~= "0",
@@ -166,7 +167,7 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 		target_priorities = priorities,
 		use_conditions = useConditions,
 		approach = (legacy.forced == true or legacy.forced == 1 or legacy.forced == "1") and "allow_approach" or "range_only",
-	})
+	}))
 end
 
 function TacticBridge.new(options)
@@ -517,7 +518,7 @@ function TacticBridge:Install()
 		if action == nil then
 			return nil
 		end
-		if action.kind == "attack" or action.kind == "move" or action.kind == "wait" then
+		if action.kind == "attack" or action.kind == "move" or action.kind == "wait" or action.kind == "buyback" then
 			return action.logical_id
 		end
 		local logical = tostring(action.logical_id or "")
@@ -528,6 +529,9 @@ function TacticBridge:Install()
 		if not is_current_lineup_hero(hero, player_id) then
 			return false
 		end
+        if action.kind == "buyback" then
+            return require("battle/buyback").IsEligible(gameMode, hero)
+        end
 		if action.kind == "attack" or action.kind == "move" or action.kind == "wait" then
 			return true
 		end
@@ -668,6 +672,11 @@ function TacticBridge:OnEntityHurt(event)
     if not is_valid_entity(victim) then return false end
     self.combatMemory:RecordDamage(victim)
     return true
+end
+
+function TacticBridge:ResetUnit(unit)
+    self.unitObservation = nil
+    if self.tacticEngine then self.tacticEngine:ResetUnit(unit) end
 end
 
 function TacticBridge:OnThink()

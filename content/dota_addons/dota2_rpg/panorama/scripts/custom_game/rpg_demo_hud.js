@@ -13,7 +13,8 @@
         item_5: "#dota2_rpg_action_item_5",
         item_6: "#dota2_rpg_action_item_6",
         attack: "#dota2_rpg_action_attack",
-        sustained_move: "#dota2_rpg_action_sustained_move"
+        sustained_move: "#dota2_rpg_action_sustained_move",
+        buyback: "#dota2_rpg_action_buyback"
     };
 
     // 组合式目标：先选属性，再选阵营与极值
@@ -135,8 +136,18 @@
         return actions;
     }
 
+    function getHeroLevel(side, heroIndex) {
+        var entry = heroSlots[side.toLowerCase() + "_" + (heroIndex + 1)];
+        var saved = entry && saveData.heroes && saveData.heroes[entry.name];
+        if (saved && Number(saved.level) >= 1) { return Number(saved.level); }
+        if (entry && typeof Entities !== "undefined" && Entities.GetLevel && Number(entry.hero_index) >= 0) {
+            return Entities.GetLevel(Number(entry.hero_index));
+        }
+        return null;
+    }
+
     function getActionDetail(side, heroIndex, action) {
-        if (action === "sustained_move") { return ""; }
+        if (action === "sustained_move" || action === "buyback") { return ""; }
         var key = side.toLowerCase() + "_" + (heroIndex + 1);
         var entry = heroSlots ? heroSlots[key] : null;
         if (!entry) {
@@ -196,7 +207,7 @@
                 var entry = heroSlots[team.toLowerCase() + "_" + (index + 1)];
                 if (!entry || entry.name !== hero.name || entry.hero_index < 0) { return; }
                 var abilities = entry.abilities_text !== undefined ? splitList(entry.abilities_text)
-                    : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action !== "sustained_move" && action.indexOf("item_") !== 0; })
+                    : getSlotActions(team, index).filter(function (action) { return action !== "attack" && action !== "buyback" && action !== "sustained_move" && action.indexOf("item_") !== 0; })
                         .map(function (action) { return getActionDetail(team, index, action); });
                 getSlotActions(team, index).forEach(function (action) {
                     var detail = getActionDetail(team, index, action);
@@ -795,7 +806,7 @@
                         clearRuleMark(side, authored);
                         renderSide(side);
                         sendRuleToServer(side,editingHeroIndex,idx);
-                    }, {isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function (kind) { return targetActors(side,editingHeroIndex,kind); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
+                    }, {heroLevel:getHeroLevel(side,editingHeroIndex),isCurrent:editIsCurrent,getCapability:typeof RpgAbilityCapabilities === "undefined" ? undefined : function() { return getRuleCapability(side,editingHeroIndex,authored.action); },abilityName:getActionDetail(side,editingHeroIndex,authored.action),actionHeroes:actionHeroes(side,editingHeroIndex),targetActors:targetActors(side,editingHeroIndex),getTargetActors:function (kind) { return targetActors(side,editingHeroIndex,kind); },readOnly:!canEditHeroRules(side,editingHeroIndex)});
                 });
                 var upButton = createMoveButton(row, side, idx, "Up", "^");
                 var downButton = createMoveButton(row, side, idx, "Down", "v");
@@ -966,6 +977,9 @@
             next.target_team=["enemy","ally","self"].filter(function(team) { return selectedCapability.teams[team]===1; })[0] || "enemy";
             next.target=next.target_team==="self" ? "self" : next.target_team+"_distance_nearest";
         }
+        if (actionKey === "buyback") {
+            next = RpgRuleSync.buybackSettings(); next.action = "buyback"; next.enabled = original.enabled;
+        }
         delete next.min_aoe_hits;
         closeEditorMenus();
         // A skill switch is a draft, not a saved mutation. Cancelling preserves the old rule.
@@ -984,7 +998,7 @@
             clearRuleMark(side, original);
             renderSide(side); sendRuleToServer(side,heroIndex,index);
         },{isCurrent:function() { return editIsCurrent() && getActionDetail(side,heroIndex,actionKey)===chosenActionDetail; },
-            abilityName:getActionDetail(side,heroIndex,actionKey),
+            abilityName:getActionDetail(side,heroIndex,actionKey),heroLevel:getHeroLevel(side,heroIndex),
             getCapability:function() { return getRuleCapability(side,heroIndex,actionKey); },
             actionHeroes:actionHeroes(side,heroIndex),getTargetActors:function(kind) { return targetActors(side,heroIndex,kind); },
             readOnly:!canEditHeroRules(side,heroIndex)});

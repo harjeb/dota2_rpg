@@ -17,7 +17,7 @@ require = function(name)
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end, FlushPublish=function() end} end
     if name == "issue_fixes.runtime_log" then return runtimeLog end
     if name == "battle.battle_manager" or name == "battle.unit_helpers"
-        or name == "battle.item_cooldowns"
+        or name == "battle.item_cooldowns" or name == "battle.buyback"
         or name == "battle.fresh_run" or name == "issue_fixes/undying" or name == "battle.run_lives" or name == "battle.respawn_policy" then return nativeRequire(name) end
     if name == "battle.campaign_loot" then return {Award=function() return {} end} end
     if name == "battle.tempest_double" then return hooks end

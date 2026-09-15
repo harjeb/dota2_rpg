@@ -25,7 +25,7 @@ require=function(name)
     if name=="battle.campaign_difficulty" then return dofile(modules.."battle/campaign_difficulty.lua") end
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end, FlushPublish=function() end} end
     if name=="battle.battle_manager" or name=="battle.unit_helpers" or name=="battle.run_lives"
-        or name=="battle.respawn_policy" or name=="issue_fixes/undying" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
+        or name=="battle.buyback" or name=="battle.respawn_policy" or name=="issue_fixes/undying" or name=="issue_fixes/gris_gris" or name=="issue_fixes/jinada_income" then return nativeRequire(name) end
     if hooks[name] then return hooks[name] end
     if name=="battle.damage_stats" then return {new=function() return {Start=noop,Stop=noop} end} end
     return {Install=noop,Clear=noop,Write=function(message) logs[#logs+1]=message end,Event=noop}
@@ -40,6 +40,8 @@ local function unit(name,real)
         hp=417,mana=93,cooldown=27,learned=3,items={},stateWrites=0}
     function u:IsNull() return self.invalid==true end
     function u:IsRealHero() return self.real end
+    function u:GetAbsOrigin() return Vector(self.id * 100, 0, 0) end
+    function u:GetTeamNumber() return self.team or DOTA_TEAM_GOODGUYS end
     function u:IsAlive() return self.alive end
     function u:IsReincarnating() return self.reviving end
     function u:HasModifier(name) return self.mods[name] == true end

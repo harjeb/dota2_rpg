@@ -11,6 +11,7 @@
 local UnitHelpers = require("battle.unit_helpers")
 local Behavior = require("tactics/ability_behavior")
 local RespawnPolicy = require("battle.respawn_policy")
+local Buyback = require("battle.buyback")
 local TacticEngine = UnitHelpers -- compatibility name for validity checks only
 
 if BattleManager == nil then
@@ -121,6 +122,7 @@ function BattleManager:StartBattle(rulesByTeam)
 	self.battleStartedAt = GameRules:GetGameTime()
 
 	self.phase = "fight"
+	Buyback.BeginBattle(self.gameMode)
 end
 
 function BattleManager:StopBattle()
@@ -186,6 +188,8 @@ function BattleManager:CheckBattleEnd()
 		self.gameMode:EndBattle("timeout", DOTA_TEAM_BADGUYS)
 		return true
 	end
+	-- Death actions must run before either team can be declared wiped out.
+	Buyback.Process(self.gameMode)
 	-- Aegis/Wraith King and Undying's native death-to-rebirth delays are not a team wipe.
 	-- Target selection and the ordinary alive counter still require IsAlive.
 	local radiantAlive = self:GetAliveCount(DOTA_TEAM_GOODGUYS, true)

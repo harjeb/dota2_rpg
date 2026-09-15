@@ -74,7 +74,7 @@ function Catalog.ListAbilities(hero)
     return names
 end
 
-function Catalog.ListActions(hero)
+function Catalog.ListActions(hero, includeBuyback)
     local actions = {}
     for _, ability in ipairs(editable_abilities(hero)) do
         if not ability:IsPassive() then
@@ -89,12 +89,14 @@ function Catalog.ListActions(hero)
             end
         end
     end
+    if includeBuyback == true then table.insert(actions, "buyback") end
     table.insert(actions, "sustained_move")
     table.insert(actions, "attack")
     return actions
 end
 
 function Catalog.DescribeAction(hero, action)
+    if action == "buyback" then return "buyback", "" end
     if action == "sustained_move" then return "move", "" end
     if action == "attack" then return "attack", "" end
     if action == "ultimate" then

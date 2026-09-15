@@ -139,6 +139,19 @@ function TacticEngine:HasActiveOrder(unit)
         or NeutralAttack.HasTactic(unit)
 end
 
+function TacticEngine:ResetUnit(unit)
+    local id = entity_index(unit)
+    local state = self.states[id]
+    NeutralAttack.Release(unit)
+    if state and state.unit == unit then
+        Movement.Release(self, unit, state, {}, false)
+        self.states[id] = nil
+    end
+    pcall(NativeEvents.Detach, unit)
+    Lifecycle.Reset(unit)
+    StateControl.Reset(unit)
+end
+
 function TacticEngine:Reset()
     for _, state in pairs(self.states) do
         NeutralAttack.Release(state.unit)
@@ -333,6 +346,7 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
         local is_cast = rule ~= nil and rule.action ~= nil and (rule.action.kind == "ability" or rule.action.kind == "item")
         local selected = mode == "cast" and is_cast or mode ~= "cast" and ((mode == "attack") == is_attack)
         if rule ~= nil and rule.enabled ~= false and selected
+            and not (rule.action and rule.action.kind == "buyback")
             and not require("tactics/enemy_attack_objectives").IsRule(rule) then
             local executed, reason = self:TryRule(unit, state, ctx, rule, index)
             if executed then

@@ -108,6 +108,12 @@ end
 function A.ForAction(hero,action,options)
     options=options or {}
     local kind=action and action.kind
+    if kind=="buyback" then
+        return {version=A.VERSION,name="buyback",mode="buyback",role="death_policy",support="builtin",
+            teams={self=1,ally=0,enemy=0},types={hero=1,monster=0,summon=0},cast={},cast_preferences={auto=1},
+            variants={default=1},modifiers={},modifier_details={},modifiers_omitted=1,
+            magic_immune_enemy=-1,magic_immune_ally=-1,release_parent=""}
+    end
     if kind=="attack" or kind=="move" or kind=="wait" then
         local modifiers,modifierDetails={},{}
         if not options.runtime then modifiers,modifierDetails=Modifiers.List(hero,nil) end

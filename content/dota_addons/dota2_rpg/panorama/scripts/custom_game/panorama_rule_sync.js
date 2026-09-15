@@ -66,7 +66,13 @@ var RpgRuleSync = (function () {
         if (value === false || value === 0 || value === "0" || value === "false") { return false; }
         return fallback;
     }
+    function buybackSettings() {
+        return {target:"self",target_team:"self",target_types:"hero",target_side:"self",target_attr:"",
+            condition:"always",forced:false,use_conditions:[],target_filters:[],target_priorities:[],
+            use_conditions_mode:"all",target_filters_mode:"all"};
+    }
     function actionSettings(input, action) {
+        if (action === "buyback") { return {}; }
         input = input || {};
         var out = {};
         function choice(key, values, fallback) { out[key] = values.indexOf(input[key]) >= 0 ? input[key] : fallback; }
@@ -144,6 +150,7 @@ var RpgRuleSync = (function () {
 
     function actionKind(action) {
         action = String(action || "attack");
+        if (action === "buyback") { return "buyback"; }
         if (action === "sustained_move") { return "move"; }
         if (action === "attack" || action === "basic_attack") {
             return "attack";
@@ -229,6 +236,13 @@ var RpgRuleSync = (function () {
         if (args.ruleCount !== undefined) {
             payload.rule_count = Math.max(1, Math.min(32, Math.floor(numberValue(args.ruleCount, 1))));
         }
+        if (action === "buyback") {
+            payload.action_kind = "buyback"; payload.action_id = "buyback"; payload.action_name = "";
+            payload.enabled = bool(rule.enabled, true) ? 1 : 0;
+            payload.target = "self"; payload.target_mode = "self"; payload.target_team = "self"; payload.target_types = "hero";
+            payload.approach = "range_only"; payload.use_conditions_mode = "all"; payload.target_filters_mode = "all";
+            return payload;
+        }
         var condition = useCondition(rule);
         putCondition(payload, "use_condition_1", condition);
 
@@ -294,6 +308,10 @@ var RpgRuleSync = (function () {
             .sort(function(a,b) { return Number(a)-Number(b); }).map(function(key) { return input[key]; });
     }
     function fromServer(source) {
+        if (source.action === "buyback" || source.action_kind === "buyback" || source.action_id === "buyback") {
+            var buyback = buybackSettings(); buyback.action = "buyback"; buyback.enabled = bool(source.enabled, true);
+            return buyback;
+        }
         var team = source.target_team || "enemy";
         var priorities = list(source.target_priorities);
         var priority = priorities[0] && priorities[0].type || "nearest";
@@ -330,6 +348,11 @@ var RpgRuleSync = (function () {
 
     return {
         actionSettings: actionSettings,
+        buybackSettings: buybackSettings,
+        buybackCost: function (level) {
+            level = Math.max(1, Math.min(30, Math.floor(numberValue(level, 1))));
+            return 100 + 50 * level + 5 * level * level;
+        },
         bool: bool,
         forgetHero: forgetHero,
         reset: reset,
@@ -338,6 +361,7 @@ var RpgRuleSync = (function () {
         list: list,
         serialize: serialize,
         initialSettings: function (rule) {
+            if (rule.action === "buyback") { return buybackSettings(); }
             var use = useCondition(rule);
             if (use.type.indexOf("_pct_") >= 0) { use.value *= 100; }
             var settings = {

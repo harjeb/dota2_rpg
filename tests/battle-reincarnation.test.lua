@@ -11,6 +11,8 @@ require("battle.battle_manager")
 local function unit(alive, reviving)
     return { alive = alive, reviving = reviving,
         IsNull = function(self) return self.invalid == true end,
+        IsRealHero = function() return true end,
+        GetAbsOrigin = function() return {x=100,y=200,z=0} end,
         IsAlive = function(self) return self.alive end,
         IsReincarnating = function(self) return self.reviving end }
 end
@@ -18,6 +20,7 @@ local result
 local game = { EndBattle = function(_, winner) result = winner end }
 local manager = setmetatable({}, BattleManager)
 manager:constructor(game)
+game.battleManager = manager
 manager.phase, manager.battleStartedAt = "fight", 0
 local ally, enemy = unit(false, true), unit(true, false)
 manager.teamHeroes = { [2] = { ally }, [3] = { enemy } }
