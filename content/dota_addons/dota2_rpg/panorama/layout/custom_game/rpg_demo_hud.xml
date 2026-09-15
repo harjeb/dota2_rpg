@@ -17,6 +17,7 @@
 		<include src="file://{resources}/scripts/custom_game/rule_diagnostics.js" />
 		<include src="file://{resources}/scripts/custom_game/native_shop_wallet.js" />
         <include src="file://{resources}/scripts/custom_game/shop_transport.js" />
+        <include src="file://{resources}/scripts/custom_game/neutral_recruitment.js" />
         <include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
 		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
@@ -57,6 +58,7 @@
 			</Panel>
 			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
 				<Panel id="RadiantHeroStrip" class="HeroStrip" />
+                <Panel id="NeutralRecruitment" class="NeutralRecruitment" visible="false" />
 				<Panel class="ColumnHeader">
 					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
 				</Panel>

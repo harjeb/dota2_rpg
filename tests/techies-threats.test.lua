@@ -17,7 +17,7 @@ local function unit(team,name)
 end
 local viewer,other=unit(2),unit(4)
 local scans,world=0,{}
-Entities={FindAllByClassname=function(_,name) assert(name=='npc_dota_techies_mines' or name=='npc_dota_thinker');scans=scans+1;return world end}
+Entities={FindAllByClassname=function(_,name) assert(name=='npc_dota_techies_mines' or name=='npc_dota_thinker' or name=='npc_dota_techies_minefield_sign');scans=scans+1;return world end}
 local function mine(name,spell,values)
     local m=unit(3,name); local a=ability(spell,values)
     m.owner={FindAbilityByName=function(_,n) if n==spell then return a end end}
@@ -30,7 +30,7 @@ local r=assert(T.Threats(viewer,2)[1]);local id=r.id
 assert(r.radius==500 and r.active_from==2 and r.active_until>2 and id>1e9)
 assert(#T.Threats(other,2)==0)
 assert(r.escape_deadline==2.8,'known entry deadline reserves discovery interval')
-T.Observe({viewer},2.05);assert(scans==2,'known objects do not trigger full scan')
+T.Observe({viewer},2.05);assert(scans==3,'known objects do not trigger full scan')
 assert(T.Threats(viewer,2.05)[1].escape_deadline==2.8,'entry deadline never slides with observations')
 m.seen[2]=false;m.pos.x=90
 local reads=m.reads
@@ -96,6 +96,98 @@ for _,phase in ipairs({'countdown','chase','throw'}) do
  bomb.seen[2]=false;bomb.pos.x=150;local count=bomb.reads
  T.Observe({viewer},30.1);assert(bomb.reads==count,'hidden thinker position never read')
 end
+-- Minefield Sign: actual Scepter source state, never cosmetic placement or a
+-- victim aura interpreted as a field centered on that moving victim.
+T.Reset()
+local sign=unit(3,'npc_dota_techies_minefield_sign')
+local planter=unit(3);planter.scepter=false;planter.upgradeReads=0
+planter.HasScepter=function(s) s.upgradeReads=s.upgradeReads+1;return s.scepter end
+local values={trigger_radius=200,aura_radius=1000,minefield_duration=10,lifetime=240}
+local signAbility=ability('techies_minefield_sign',values)
+local function signMod(remaining)
+ return {GetAbility=function() return signAbility end,GetCaster=function() return planter end,
+  GetRemainingTime=function(s) return s.remaining end,remaining=remaining}
+end
+local thinker=signMod(240)
+sign.mods.modifier_techies_minefield_sign_thinker=thinker
+world={sign}
+T.Observe({viewer,other},50)
+assert(#T.Threats(viewer,50)==0,'cosmetic thinker without Scepter is not dangerous')
+planter.scepter=true;planter.seen[2]=false
+local upgradeReads=planter.upgradeReads
+T.Observe({viewer,other},50.05)
+assert(planter.upgradeReads==upgradeReads and #T.Threats(viewer,50.05)==0,'hidden inventory cannot establish upgrade')
+planter.seen[2]=true
+T.Observe({viewer,other},50.1)
+r=assert(T.Threats(viewer,50.1)[1])
+assert(r.radius==200 and r.minefield_state=='trigger' and r.envelope and not r.movement_triggered)
+assert(r.expires_at==53.1 and #T.Threats(other,50.1)==0,'trigger area has bounded per-team memory')
+local signId=r.id
+-- Activation hidden from team 2 cannot expand its previously observed trigger.
+sign.seen[2]=false;sign.seen[4]=true;planter.seen={}
+local active=signMod(10)
+sign.mods.modifier_techies_minefield_sign_scepter=active
+sign.pos.x=400;local signReads=sign.reads;upgradeReads=planter.upgradeReads
+T.Observe({viewer,other},50.2)
+r=T.Threats(viewer,50.2)[1];local enemyView=T.Threats(other,50.2)[1]
+assert(r.radius==200 and r.position.x==20 and r.minefield_state=='trigger','hidden activation does not leak')
+assert(enemyView.radius==1000 and enemyView.minefield_state=='active' and enemyView.movement_triggered)
+assert(enemyView.envelope and enemyView.position.x==400 and planter.upgradeReads==upgradeReads,'active proof needs no hidden upgrade read')
+assert(sign.reads==signReads+1,'only visible team samples active source')
+-- Visible activation changes radius in place. No guessed movement/damage timer.
+sign.seen[2]=true;active.remaining=9.7
+T.Observe({viewer,other},50.5)
+r=T.Threats(viewer,50.5)[1]
+assert(r.id==signId and r.radius==1000 and r.impact_at==50.5 and not r.escape_deadline)
+sign.seen[2]=false;sign.seen[4]=false;sign.alive=false;sign.pos.x=900
+signReads=sign.reads
+T.Observe({viewer,other},50.6)
+assert(sign.reads==signReads and T.Threats(viewer,50.6)[1].position.x==400,'hidden destruction freezes snapshot')
+assert(#T.Threats(viewer,53.5)==0,'hidden active state has bounded memory')
+sign.seen[4]=true;T.Observe({viewer,other},53.6)
+assert(#T.Threats(other,53.6)==0,'visible Sign destruction clears immediately')
+-- Full duration is capped from the first observed activation, not renewed by polls.
+T.Reset();sign.alive=true;sign.seen={[2]=true};active.remaining=99;world={sign}
+for t=60,69 do
+ if t==65 then sign.mods.modifier_techies_minefield_sign_thinker=signMod(200) end
+ T.Observe({viewer},t);assert(T.Threats(viewer,t)[1].expires_at<=70)
+end
+T.Observe({viewer},70)
+assert(#T.Threats(viewer,70)==0,'stale remaining timer cannot extend minefield_duration')
+T.Observe({viewer},70.1)
+assert(#T.Threats(viewer,70.1)==0,'expired modifier cannot reactivate itself')
+sign.mods.modifier_techies_minefield_sign_scepter=nil;planter.seen[2]=true
+T.Observe({viewer},70.2)
+assert(#T.Threats(viewer,70.2)==0,'completed field cannot revert to pending trigger')
+-- A new native active modifier may be learned; its remaining time is authoritative.
+active=signMod(.5);sign.mods.modifier_techies_minefield_sign_scepter=active
+T.Observe({viewer},71)
+assert(T.Threats(viewer,71)[1].expires_at==71.5)
+assert(#T.Threats(viewer,71.5)==0,'actual remaining duration ends the field')
+T.Reset(sign);assert(#T.Threats(viewer,71.1)==0,'Sign object reset clears state')
+T.Observe({viewer},72);assert(#T.Threats(viewer,72)==1)
+T.Reset();assert(#T.Threats(viewer,72)==0,'global Sign reset')
+-- Bad timers/radii/ownership and aura recipients fail closed.
+for _,invalid in ipairs({'timer','duration','radius','ability','friendly','unknown'}) do
+ T.Reset();active=signMod(2);sign.mods.modifier_techies_minefield_sign_scepter=active
+ values.minefield_duration=10;values.aura_radius=1000;planter.team=3
+ if invalid=='timer' then active.GetRemainingTime=function() error('missing timer') end end
+ if invalid=='duration' then values.minefield_duration=0 end
+ if invalid=='radius' then values.aura_radius=0/0 end
+ if invalid=='ability' then active.GetAbility=function() return ability('wrong',values) end end
+ if invalid=='friendly' then planter.team=2 end
+ if invalid=='unknown' then planter.team=nil end
+ T.Observe({viewer},80);assert(#T.Threats(viewer,80)==0,invalid..' Sign fails closed')
+end
+T.Reset();planter.team=3;values.aura_radius=1000
+local victim=unit(2);victim.mods.modifier_techies_minefield_sign_scepter_aura=signMod(10)
+world={};T.Observe({viewer,victim},81)
+assert(#T.Threats(viewer,81)==0,'moving victim aura does not relocate or create the minefield')
+local field=unit(3,'npc_dota_thinker');field.mods.modifier_techies_minefield_sign_scepter=signMod(2)
+world={field};T.Observe({viewer},81.3)
+assert(T.Threats(viewer,81.3)[1].radius==1000,'visible source thinker can carry active field')
+field.mods={};T.Observe({viewer},81.4)
+assert(#T.Threats(viewer,81.4)==0,'visible active modifier removal clears the field')
 -- Main threat API merges source observations and resets their state.
 local A=require('tactics/aoe_threats')
 A.Reset();world={mine('npc_dota_techies_land_mine','techies_land_mines',{radius=500,proximity_threshold=1})}

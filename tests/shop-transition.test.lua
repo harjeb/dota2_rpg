@@ -10,6 +10,10 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
+    if name == "battle/neutral_recruitment" then
+        return { GetOptions = function() return {} end, Clear = function() end,
+            OnThink = function() end, Precache = function() end }
+    end
     if name == "battle.campaign_difficulty" then return dofile(moduleRoot .. "battle/campaign_difficulty.lua") end
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end, FlushPublish=function() end} end
     if name == "issue_fixes.bootstrap" or name == "battle.skill_debug" then return { Install = function() end } end

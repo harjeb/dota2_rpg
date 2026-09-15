@@ -427,6 +427,10 @@ function TacticBridge:Install()
                 return last ~= nil and GameRules:GetGameTime() - last <= seconds
             end,
 			get_candidates = function(caster, action_spec, ruleTarget)
+                local recruit = require("battle/neutral_recruitment")
+                local sourceName = action_spec and (action_spec.name or action_spec.logical_id) or ""
+                local reserved = recruit.Candidates(gameMode, caster, resolveActionName(caster, sourceName))
+                if #reserved > 0 then return reserved end
 				local wantedTeam = tostring(ruleTarget and ruleTarget.team or "enemy")
 				local types = {}
 				if ruleTarget ~= nil and ruleTarget.types ~= nil then
@@ -445,7 +449,7 @@ function TacticBridge:Install()
 				end
 				local candidates = {}
 				for _, unit2 in ipairs(pool) do
-					if is_alive(unit2) then
+					if is_alive(unit2) and not recruit.IsReserved(unit2) then
 						local isHero = unit2.IsRealHero ~= nil and unit2:IsRealHero()
                         local isSummon = Context.IsSummon(unit2, roots)
 						if types["hero"] and isHero
@@ -620,12 +624,10 @@ function TacticBridge:Install()
 	self.tacticEngine = TacticEngine.new({
 		order_gate = orderGate,
 		get_phase = getPhase,
-		get_battle_units = function()
-            local available = {}
-            for _, unit in ipairs(getBattleUnits()) do
-                if not (gameMode.treeGrabBusy or {})[unit] then available[#available+1] = unit end
-            end
-            return available
+		get_battle_units = getBattleUnits,
+        should_pause_unit = function(unit)
+            return (gameMode.treeGrabBusy or {})[unit]
+                or require("battle/neutral_recruitment").IsBusy(gameMode, unit)
         end,
 		get_rules = manager.getRules,
 		build_context = buildContext,

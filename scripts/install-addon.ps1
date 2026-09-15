@@ -51,6 +51,7 @@ if ($Compile) {
         (Join-Path $targetContent "panorama\styles\custom_game\arena_hud.css"),
         (Join-Path $targetContent "panorama\scripts\custom_game\native_shop_wallet.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\shop_transport.js"),
+        (Join-Path $targetContent "panorama\scripts\custom_game\neutral_recruitment.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\panorama_rule_sync.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\condition_catalog.js"),
         (Join-Path $targetContent "panorama\scripts\custom_game\ability_capabilities.js"),

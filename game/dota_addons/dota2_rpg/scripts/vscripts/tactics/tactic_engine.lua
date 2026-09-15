@@ -75,6 +75,7 @@ function TacticEngine.new(options)
         get_rules = assert(options.get_rules, "get_rules is required"),
         build_context = assert(options.build_context, "build_context is required"),
         on_debug = options.on_debug,
+        should_pause_unit = options.should_pause_unit,
         conditions = options.conditions or Conditions,
         selector = options.selector or TargetSelector.new(options.conditions or Conditions),
         actions = options.actions or ActionAdapter.new(order_gate),
@@ -138,6 +139,7 @@ end
 
 function TacticEngine:HasActiveOrder(unit)
     if self.get_phase() ~= "FIGHT" then return false end
+    if self.should_pause_unit and self.should_pause_unit(unit) then return true end
     local state = self.states[entity_index(unit)]
     if not state or state.unit ~= unit then return false end
     return state.chase ~= nil or state.movement ~= nil or state.facing_retreat ~= nil or state.aoe_walk ~= nil or (state.wait_until or 0) > now()
@@ -262,6 +264,9 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
     end
 
     Lifecycle.Observe(unit, current_time)
+    -- Keep externally casting heroes in observation/target rosters while the
+    -- recruitment controller owns their native order.
+    if self.should_pause_unit and self.should_pause_unit(unit) then return end
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
     -- An owned charge precedes reactions, movement, waits and explicit release rows.

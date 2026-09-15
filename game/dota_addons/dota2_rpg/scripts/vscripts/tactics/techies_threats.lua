@@ -7,6 +7,13 @@
 -- not exposed: the visible-entry deadline below is a conservative estimate.
 local M = {}
 local objects, roster, sequence, nextScan = {}, {}, 1000000000, -math.huge
+local signs = {}
+local SIGN = 'npc_dota_techies_minefield_sign'
+local SIGN_ABILITY = 'techies_minefield_sign'
+local SIGN_THINKER = 'modifier_techies_minefield_sign_thinker'
+local SIGN_ACTIVE = 'modifier_techies_minefield_sign_scepter'
+local signTrigger = {radius='trigger_radius',envelope=true,state='trigger'}
+local signActive = {radius='aura_radius',envelope=true,state='active'}
 local SCAN_INTERVAL, MEMORY = .2, 3
 local mines = {
     npc_dota_techies_land_mine = {ability='techies_land_mines', radius='radius', arm='activation_delay',trigger='proximity_threshold'},
@@ -55,6 +62,12 @@ local function ability(o,p)
     end
 end
 local function prune(now)
+    for o,teams in pairs(signs) do
+        for team,s in pairs(teams) do
+            if now>=s.lastSeen+MEMORY then teams[team]=nil end
+        end
+        if not next(teams) then signs[o]=nil end
+    end
     for o,entries in pairs(objects) do
         for key,r in pairs(entries) do
             for team,s in pairs(r.snapshots) do
@@ -84,11 +97,58 @@ local function record(o,key,team,p,a,now,impact,expiry)
     r.snapshots[team]={id=r.id,caster=o,ability=a,position=pos,radius=radius,shape='circle',
         phase='released',released_at=r.firstSeen[team],impact_at=impact,
         expires_at=expiry,active_from=impact,active_until=expiry,
-        escape_deadline=escape,envelope=p.envelope or nil}
+        escape_deadline=escape,envelope=p.envelope or nil,
+        minefield_state=p.state,movement_triggered=p.state=='active' or nil}
 end
 local function clearTeam(o,team,key)
     for k,r in pairs(objects[o] or {}) do
         if not key or k==key then r.snapshots[team]=nil end
+    end
+end
+-- Native strings establish the modifier names; upstream schema distinguishes the
+-- source's Scepter duration from the victim aura's movement accumulator. Do not
+-- read the thinker's private m_bTriggered or invent activation from nearby heroes.
+local function observeSign(o,team,now)
+    clearTeam(o,team,'sign')
+    local name=call(o,'GetUnitName')
+    if name~=SIGN and name~='npc_dota_thinker' then return end
+    local active=call(o,'FindModifierByName',SIGN_ACTIVE)
+    local thinker=call(o,'FindModifierByName',SIGN_THINKER)
+    if not active and not thinker and not signs[o] then return end
+    local entries=signs[o] or {}; signs[o]=entries
+    local s=entries[team]
+    if not s or (s.thinker~=thinker and (not active or s.active~=active)) then
+        s={}; entries[team]=s
+    end
+    s.thinker=thinker
+    s.lastSeen=now
+    if active then
+        local a=call(active,'GetAbility')
+        local caster=call(active,'GetCaster')
+        local enemy=call(caster,'GetTeamNumber')
+        local remaining=call(active,'GetRemainingTime')
+        local duration=call(a,'GetSpecialValueFor','minefield_duration')
+        if call(a,'GetAbilityName')~=SIGN_ABILITY or not finite(enemy) or enemy==team
+            or not finite(remaining) or remaining<=0 or not finite(duration) or duration<=0 then return end
+        -- A new modifier is a new activation. Repeated observations cannot restart
+        -- the full duration, even if a native timer is stale or unexpectedly long.
+        if s.active~=active then s.active=active; s.deadline=now+math.min(remaining,duration) end
+        s.deadline=math.min(s.deadline,now+remaining)
+        s.triggered=true
+        record(o,'sign',team,signActive,a,now,now,math.min(s.deadline,now+MEMORY))
+    elseif thinker and name==SIGN and not s.triggered then
+        local a=call(thinker,'GetAbility')
+        local caster=call(thinker,'GetCaster')
+        local enemy=call(caster,'GetTeamNumber')
+        -- Ordinary/cosmetic signs are not hazards. The generic thinker is not
+        -- upgrade evidence, and a hidden owner's inventory must never be polled.
+        if call(a,'GetAbilityName')==SIGN_ABILITY and finite(enemy) and enemy~=team
+            and visible(team,caster) and call(caster,'HasScepter')==true then
+            local remaining=call(thinker,'GetRemainingTime')
+            if finite(remaining) and remaining>0 then
+                record(o,'sign',team,signTrigger,a,now,now,now+math.min(MEMORY,remaining))
+            end
+        end
     end
 end
 function M.Observe(units,now)
@@ -101,9 +161,10 @@ function M.Observe(units,now)
     end
     -- Revisit known objects every observation, but discover mine entities only 5 Hz.
     for o in pairs(objects) do candidates[o]=true end
+    for o in pairs(signs) do candidates[o]=true end
     if now>=nextScan then
         nextScan=now+SCAN_INTERVAL
-        for _,class in ipairs({'npc_dota_techies_mines','npc_dota_thinker'}) do
+        for _,class in ipairs({'npc_dota_techies_mines','npc_dota_thinker',SIGN}) do
             for _,o in ipairs(call(Entities,'FindAllByClassname',class) or {}) do candidates[o]=true end
         end
     end
@@ -112,8 +173,11 @@ function M.Observe(units,now)
             -- Position, modifiers, life state and owner specials are read only after
             -- actual object visibility. Hidden destruction only ages out old knowledge.
             if visible(team,o) then
-                if call(o,'IsNull')==true or call(o,'IsAlive')==false then clearTeam(o,team)
+                if call(o,'IsNull')==true or call(o,'IsAlive')==false then
+                    clearTeam(o,team)
+                    if signs[o] then signs[o][team]=nil end
                 else
+                    observeSign(o,team,now)
                     local sourceTeam=call(o,'GetTeamNumber')
                     local p=mines[call(o,'GetUnitName')]
                     if p then
@@ -175,7 +239,7 @@ function M.Threats(viewer,now)
     return result
 end
 function M.Reset(unit)
-    if unit then objects[unit]=nil; roster[unit]=nil
-    else objects={}; roster={}; nextScan=-math.huge end
+    if unit then objects[unit]=nil; signs[unit]=nil; roster[unit]=nil
+    else objects={}; signs={}; roster={}; nextScan=-math.huge end
 end
 return M

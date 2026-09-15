@@ -7,7 +7,16 @@ function Vector(x,y,z) return {x=x,y=y,z=z} end
 DOTA_TEAM_GOODGUYS, DOTA_TEAM_BADGUYS = 2, 3
 local catalog = dofile(scripts .. "tactics/ability_catalog.lua")
 local resends = 0
+local recruitSelections = {}
 local modules = {
+    ["battle/neutral_recruitment"] = {
+        GetOptions = function() return {} end,
+        Clear = function() end, OnThink = function() end, Precache = function() end,
+        Select = function(game, hero, source, unit)
+            recruitSelections[#recruitSelections+1] = {game=game, hero=hero, source=source, unit=unit}
+            return true
+        end,
+    },
     ["issue_fixes.shop_transport"] = dofile(scripts .. "issue_fixes/shop_transport.lua"),
     ["battle.unit_helpers"] = { IsValidUnit = function(u) return u ~= nil end },
     ["battle/buyback"] = { IsEligible = function() return false end },
@@ -178,4 +187,24 @@ CustomGameEventManager:Send_ServerToPlayer(players[0],"rpg_item_sell_result",{ok
 CustomGameEventManager:Send_ServerToAllClients("rpg_settlement",{settlement_generation=99})
 assert(#sent==2 and sent[1].event=="rpg_item_sell_result" and sent[2].event=="rpg_settlement")
 tick(); assert(#sent==30)
+-- Exercise the real event boundary; backend selection semantics have their own suite.
+local ally = game.battleManager.teamHeroes[2][1]
+local function selectPayload(owner, generation, entity)
+    return {PlayerID=owner, rule_generation=generation, hero_entindex=entity,
+        source_name="chen_holy_persuasion", unit_name="npc_dota_neutral_kobold"}
+end
+sent={}
+assert(game:OnNeutralRecruitSelect(nil, selectPayload(1, 8, ally:entindex())) == false)
+assert(game:OnNeutralRecruitSelect(nil, selectPayload(0, 7, ally:entindex())) == false)
+assert(game:OnNeutralRecruitSelect(nil, selectPayload(0, 8, 999)) == false)
+assert(game:OnNeutralRecruitSelect(nil, selectPayload(0, 8, 10)) == false, "enemy roster is unauthorized")
+assert(#recruitSelections == 0 and #sent == 0, "rejected requests never select or publish")
+assert(game:OnNeutralRecruitSelect(nil, selectPayload(0, 8, ally:entindex())) == true)
+assert(#recruitSelections == 1)
+local selection = recruitSelections[1]
+assert(selection.game == game and selection.hero == ally)
+assert(selection.source == "chen_holy_persuasion" and selection.unit == "npc_dota_neutral_kobold")
+local reply = sent[#sent]
+assert(reply.event == "rpg_neutral_recruit_result" and reply.player == players[0])
+assert(reply.data.success == 1 and reply.data.rule_generation == 8 and reply.data.hero_entindex == ally:entindex())
 print(string.format("state-publication: reset %d -> %d events; reconnect 32 targeted; generation, settlement, async, retry PASS",baseline,optimized))

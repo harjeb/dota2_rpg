@@ -30,6 +30,10 @@ local walletLogs = {}
 local failWalletLog = false
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
+    if name == "battle/neutral_recruitment" then
+        return { GetOptions = function() return {} end, Clear = function() end,
+            OnThink = function() end, Precache = function() end }
+    end
     if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end, FlushPublish=function() end} end
 	if name == "battle.skill_debug" then return { Install = function() end } end
 	if name == "issue_fixes.runtime_log" then

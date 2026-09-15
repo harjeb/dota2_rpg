@@ -4,6 +4,7 @@ local Fresh = {}
 local function valid(u) return u ~= nil and (not u.IsNull or not u:IsNull()) end
 function Fresh.Reset(game)
     require("battle.run_results").Reset(game)
+    require("battle.neutral_recruitment").Clear(game, true)
     -- Keep the confirmed difficulty; reset only fractional native reward credits.
     game.difficultyGoldRemainders, game.difficultyXpRemainders = nil, nil
     -- Invalidate closures BEFORE removing entities (native removal can re-enter).

@@ -1,3 +1,4 @@
+#base "npc_units_neutral_recruitment.txt"
 "DOTAUnits"
 {
     "npc_rpg_skill_test_target"

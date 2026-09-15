@@ -404,8 +404,16 @@ end
 gm.treeGrabBusy={[caster]=true}
 local included=false
 for _,u in ipairs(engineOptions.get_battle_units()) do if u==caster then included=true end end
-check(not included,"native tree cast reserves caster from tactic orders")
+check(included and engineOptions.should_pause_unit(caster),"native tree cast pauses orders while retaining observer roster")
 gm.treeGrabBusy={}
+check(not engineOptions.should_pause_unit(caster),"tree reservation releases ordinary tactics")
+local pending={rpg_recruit_pending=true,GetTeamNumber=function() return DOTA_TEAM_NEUTRALS or 4 end}
+gm.neutralRecruitActive={[caster]={unit=pending,deadline=GameRules:GetGameTime()+1}}
+check(engineOptions.should_pause_unit(caster),"neutral recruitment pauses orders")
+included=false
+for _,u in ipairs(engineOptions.get_battle_units()) do if u==caster then included=true end end
+check(included,"recruiting hero remains in observer roster")
+gm.neutralRecruitActive={}
 bridge:RecordAuxiliaryAction(caster,"tiny_tree_grab")
 check(real.get_action_use_count(caster,"tiny_tree_grab")==1 and real.get_action_elapsed(caster,"tiny_tree_grab")==0,
     "automatic native tree order participates in action history")

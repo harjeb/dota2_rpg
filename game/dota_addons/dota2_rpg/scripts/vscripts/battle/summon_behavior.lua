@@ -108,7 +108,8 @@ local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestra
 function Summons.OnSpawn(game,unit)
     if Techies.Track(game,unit,Summons.ResolveOwner) then return true end
     if Summons.TrackUndyingSummon(game,unit) then return false end
-    if not valid(unit) or call(unit,"IsTempestDouble")==true or excluded[call(unit,"GetUnitName")] then return false end
+    if not valid(unit) or require("battle/neutral_recruitment").IsReserved(unit)
+        or call(unit,"IsTempestDouble")==true or excluded[call(unit,"GetUnitName")] then return false end
     local owner=Summons.ResolveOwner(game,unit)
     local campaignSkeleton=call(unit,"GetUnitName")=="npc_dota_dark_troll_warlord_skeleton_warrior"
         and call(unit,"GetTeamNumber")== (DOTA_TEAM_BADGUYS or 3)
@@ -234,7 +235,8 @@ function Summons.OnThink(game)
                     DOTA_UNIT_TARGET_TEAM_ENEMY,(DOTA_UNIT_TARGET_HERO or 1)+(DOTA_UNIT_TARGET_BASIC or 2),
                     (DOTA_UNIT_TARGET_FLAG_FOW_VISIBLE or 0)+(DOTA_UNIT_TARGET_FLAG_MAGIC_IMMUNE_ENEMIES or 0),FIND_CLOSEST,false)
                 for _,enemy in ipairs(ok and found or {}) do
-                    if valid(enemy) and call(enemy,"IsAlive")~=false and call(enemy,"IsInvulnerable")~=true
+                    if valid(enemy) and not require("battle/neutral_recruitment").IsReserved(enemy)
+                        and call(enemy,"IsAlive")~=false and call(enemy,"IsInvulnerable")~=true
                         and call(enemy,"IsAttackImmune")~=true and call(enemy,"IsOutOfGame")~=true
                         and call(enemy,"GetTeamNumber")~=unit:GetTeamNumber()
                         and (target==nil or distance(unit,enemy)<distance(unit,target)) then target=enemy end

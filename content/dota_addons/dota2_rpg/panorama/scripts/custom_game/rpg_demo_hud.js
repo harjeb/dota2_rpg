@@ -1119,6 +1119,11 @@
 
     function renderSide(side) {
         if (side !== "Radiant") { return; }
+        if (typeof RpgNeutralRecruitment !== "undefined") {
+            RpgNeutralRecruitment.render($("#NeutralRecruitment"),heroSlots["radiant_"+(selectedHeroIndex.Radiant+1)],phase,ruleGeneration,function(payload) {
+                GameEvents.SendCustomGameEventToServer("rpg_neutral_recruit_select",payload);
+            });
+        }
         var locked = !canEditHeroRules(side,selectedHeroIndex[side]);
         var hidePanels = phase !== "setup";
         var rules = getSelectedRules(side);
@@ -2589,6 +2594,11 @@
     GameEvents.Subscribe("rpg_shop_state_chunk", shopTransport.chunk);
 
     GameEvents.Subscribe("rpg_levels_state", onLevelsState);
+    GameEvents.Subscribe("rpg_neutral_recruit_result", function(data) {
+        if (typeof RpgNeutralRecruitment !== "undefined") {
+            RpgNeutralRecruitment.result($("#NeutralRecruitment"),data,heroSlots["radiant_"+(selectedHeroIndex.Radiant+1)],ruleGeneration);
+        }
+    });
     GameEvents.Subscribe("rpg_hero_slots", function (data) {
         if (!data || !data.slot_key || !acceptRuleGeneration(data)) {
             return;
@@ -2601,6 +2611,7 @@
         heroSlots[slotKey] = {
             name: String(data.hero_name || ""),
             target_actor: String(data.target_actor || ""),
+            neutral_recruitment: data.neutral_recruitment || [],
             rule_key: String(data.rule_key || data.hero_name || "")+ (data.rule_key ? "" : ":"+slotKey),
             hero_index: Number(data.hero_index !== undefined ? data.hero_index : -1),
             actions_text: String(data.actions_text || ""),

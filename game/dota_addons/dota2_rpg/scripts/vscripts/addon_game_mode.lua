@@ -21,6 +21,7 @@ local CampaignLoot = require("battle.campaign_loot")
 local TempestDouble = require("battle.tempest_double")
 local SpecialTargets = require("tactics/special_targets")
 local SummonBehavior = require("battle/summon_behavior")
+local NeutralRecruitment = require("battle/neutral_recruitment")
 local TinyTree = require("issue_fixes/tiny_tree")
 local EnemyDiagnostics = require("battle.enemy_diagnostics")
 local SkillDebug = require("battle.skill_debug")
@@ -276,6 +277,7 @@ end
 
 function Precache(context)
 	PRECACHE_CONTEXT = context
+    NeutralRecruitment.Precache(context)
 	local started = type(RealTime) == "function" and RealTime() or nil
 	local levels = UnwrapKeyValues(LoadKeyValues("scripts/data/levels.kv"), "levels")
 	local startup = StagePrecache.Startup(context, levels)
@@ -476,6 +478,9 @@ function CDota2RpgDemo:InitGameMode()
 	CustomGameEventManager:RegisterListener("rpg_scroll_buy", function(eventSourceIndex, payload)
 		return self:OnScrollBuy(eventSourceIndex, payload)
 	end)
+    CustomGameEventManager:RegisterListener("rpg_neutral_recruit_select", function(eventSourceIndex, payload)
+        self:OnNeutralRecruitSelect(eventSourceIndex, payload)
+    end)
 	CustomGameEventManager:RegisterListener("rpg_shard_buy", function(eventSourceIndex, payload)
 		return self:OnShardBuy(eventSourceIndex, payload)
 	end)
@@ -4577,6 +4582,7 @@ function CDota2RpgDemo:RunLifecycleStep(name, callback)
 end
 
 function CDota2RpgDemo:OnThink()
+    self:RunLifecycleStep("neutral_recruitment", function() NeutralRecruitment.OnThink(self) end)
 	self:RunLifecycleStep("tempest_think", function() TempestDouble.OnThink(self) end)
 	self:RunLifecycleStep("summon_think", function() SummonBehavior.OnThink(self) end)
 	self:RunLifecycleStep("gris_gris_think", function() GrisGris.OnThink(self) end)
@@ -4604,6 +4610,7 @@ function CDota2RpgDemo:OnThink()
 			self:ReconcileNativePurchaseOrders()
 			-- Capture native TRAIN_ABILITY results before a later roster rebuild.
 			local abilitiesChanged = self:SyncRosterAbilities()
+            if abilitiesChanged then self:BroadcastHeroInfo() end
 			-- Purchase notifications may precede inventory insertion/combination.
 			-- Keep polling after the event is consumed, but publish only actual
 			-- changes (including delayed results and same-entity stack merges).
@@ -4683,6 +4690,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	local settlementGeneration = self.settlementGeneration
 	self:RunLifecycleStep("tempest_clear", function() TempestDouble.Clear(self) end)
 	self:RunLifecycleStep("special_targets_clear", function() SpecialTargets.Clear(self) end)
+    self:RunLifecycleStep("neutral_recruitment_clear", function() NeutralRecruitment.Clear(self, false) end)
 	self:RunLifecycleStep("summon_clear", function() SummonBehavior.Clear(self) end)
 	self:RunLifecycleStep("tiny_tree_clear", function() TinyTree.Clear(self) end)
 	local lifeReward = { gold = 0, items = {} }
@@ -4931,6 +4939,22 @@ local function DescribeAction(hero, action)
 	return AbilityCatalog.DescribeAction(hero, action)
 end
 
+function CDota2RpgDemo:OnNeutralRecruitSelect(_, payload)
+    if type(payload) ~= "table" or self.playerId == nil or tonumber(payload.PlayerID) ~= self.playerId
+        or tonumber(payload.rule_generation) ~= (self.ruleGeneration or 0) then return false end
+    local hero
+    for _, candidate in ipairs(self.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
+        if TacticEngine.IsValidUnit(candidate) and candidate:entindex() == tonumber(payload.hero_entindex) then hero=candidate; break end
+    end
+    if not hero then return false end
+    local ok, reason = NeutralRecruitment.Select(self, hero, payload.source_name, payload.unit_name)
+    self:BroadcastHeroInfo()
+    self:SendStateTo(PlayerResource:GetPlayer(self.playerId), "rpg_neutral_recruit_result", {
+        hero_entindex=hero:entindex(), rule_generation=self.ruleGeneration or 0,
+        success=ok and 1 or 0, reason=reason or "" })
+    return ok
+end
+
 function CDota2RpgDemo:BroadcastHeroInfo(player)
 	if self:QueueStatePublication("BroadcastHeroInfo", player) then return end
 	local roster = {}
@@ -4962,6 +4986,7 @@ function CDota2RpgDemo:BroadcastHeroInfo(player)
 					slot_key = side.key .. "_" .. index,
 					hero_index = hero:entindex(),
 					hero_name = hero:GetUnitName(),
+                    neutral_recruitment = side.team == DOTA_TEAM_GOODGUYS and NeutralRecruitment.GetOptions(self, hero) or {},
 					actions_text = table.concat(slots, ";"),
 					abilities_text = table.concat(AbilityCatalog.ListAbilities(hero), ";"),
 					details_text = table.concat(descriptions, ";"),
