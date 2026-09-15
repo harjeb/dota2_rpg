@@ -141,6 +141,8 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
     -- numbered clauses. Only the original eight-condition path uses percent units.
     local decoded = RuleService.DecodeFlat(nil, legacy)
     if legacy.target_types then target.types = decoded.target.types end
+    target.prediction_direction = decoded.target.prediction_direction
+    target.prediction_distance = decoded.target.prediction_distance
     if #decoded.use_conditions > 0 then useConditions = decoded.use_conditions end
     if #decoded.target_filters > 0 then filters = decoded.target_filters end
     if #decoded.target_priorities > 0 then priorities = decoded.target_priorities end
@@ -319,6 +321,7 @@ function TacticBridge:Install()
         if self.unitObservation == nil or self.unitObservation.time ~= observedAt then
             local observed, ownerRoots, available = Context.ExpandBattleUnits(roster)
             self.unitObservation = {time=observedAt,units=observed,roots=ownerRoots,available=available}
+            require("tactics/point_prediction").Observe(observed, observedAt)
         end
         local units, roots, ownershipAvailable = self.unitObservation.units,self.unitObservation.roots,self.unitObservation.available
         for _, member in ipairs(roster) do
@@ -357,6 +360,7 @@ function TacticBridge:Install()
 		end
 		return {
 			caster = unit,
+            prediction_time = observedAt,
             special_objects = gameMode.specialObjects or {},
 			allies = allies,
 			enemies = enemies,

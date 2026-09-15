@@ -84,6 +84,9 @@ var RpgConditionCatalog = (function () {
         if (desired !== undefined && desired !== null && desired !== "") {
             parts.push(text("toggle_title") + ": " + text(desired === true || desired === 1 || desired === "1" || desired === "true" ? "toggle_on" : "toggle_off"));
         }
+        if (settings.prediction_direction) {
+            parts.push(text("prediction_title") + ": " + text("prediction_" + settings.prediction_direction) + " / " + RpgRuleSync.predictionSettings(settings).prediction_distance);
+        }
         parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
         ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance", "destination_distance"].forEach(function (key) {
@@ -509,13 +512,27 @@ var RpgConditionCatalog = (function () {
             draft.use_conditions=[]; draft.target_filters=[]; draft.target_priorities=[];
             draft.desired_toggle_state=null; draft.desired_autocast_state=null; draft.destination="target";
             Object.keys(draft).forEach(function(key) {
-                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key==="destination_distance") { delete draft[key]; }
+                if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key.indexOf("prediction_")===0 || key==="destination_distance") { delete draft[key]; }
             });
             open(rule,draft,onApply,options);
         });
         slots("use", "use_conditions", 4, "use_title");
         slots("target", "target_filters", 4, "target_title");
         slots("priority", "target_priorities", 2, "priority_title");
+        if (baseCap && RpgRuleSync.predictionAllowed(draft, baseCap, options.abilityName || rule.action)) {
+            label(body, "V2PredictionTitle", text("prediction_title")).AddClass("V2SectionTitle");
+            label(body, "V2PredictionHint", text("prediction_hint")).AddClass("V2Hint");
+            var predictionRow = $.CreatePanel("Panel", body, "V2PredictionRow"); predictionRow.AddClass("V2Selector");
+            choose(predictionRow, "V2PredictionSelect", ["disabled","forward","backward"].map(function(value) {
+                return {id:"prediction_" + value};
+            }), "prediction_" + (draft.prediction_direction || "disabled"), function(value) {
+                reopen({prediction_direction:value === "prediction_disabled" ? undefined : value.replace("prediction_", "")});
+            });
+            if (draft.prediction_direction) {
+                draft.prediction_distance = RpgRuleSync.predictionSettings(draft).prediction_distance;
+                settingInput("prediction_distance");
+            }
+        } else { delete draft.prediction_direction; delete draft.prediction_distance; }
         label(body, "", text("action_title")).AddClass("V2SectionTitle");
         var action = rule.action || "attack";
         var extra = RpgRuleSync.actionSettings(draft, action);
@@ -628,6 +645,10 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
             if (options.readOnly || generation !== editorGeneration) { return; }
             readers.forEach(function (read) { read(); });
+            var prediction = RpgRuleSync.predictionAllowed(draft, options.getCapability ? options.getCapability() : baseCap, options.abilityName || action)
+                ? RpgRuleSync.predictionSettings(draft) : {};
+            delete draft.prediction_direction; delete draft.prediction_distance;
+            Object.keys(prediction).forEach(function(key) { draft[key] = prediction[key]; });
             var missing = action === "sustained_move" && movementBuffMode === "movement_buff_custom" && !draft.movement_buff;
             [["use", "use_conditions"], ["target", "target_filters"]].forEach(function (spec) {
                 draft[spec[1]].forEach(function (condition) {

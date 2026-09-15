@@ -211,6 +211,8 @@ function RuleService:DecodeFlat(args)
         target = {
             team = tostring(args.target_team or "enemy"),
             types = {},
+            prediction_direction = args.prediction_direction,
+            prediction_distance = args.prediction_distance,
         },
         use_conditions_mode = Conditions.NormalizeMode(args.use_conditions_mode),
         target_filters_mode = Conditions.NormalizeMode(args.target_filters_mode),
@@ -376,6 +378,21 @@ function RuleService:ValidateRule(player_id, hero, rule)
     end
     if rule.action.logical_id == "" then
         return false, "missing_action_id"
+    end
+    local target = rule.target
+    if target.prediction_direction == "" then target.prediction_direction = nil end
+    if target.prediction_direction ~= nil and target.prediction_direction ~= "forward"
+        and target.prediction_direction ~= "backward" then return false, "invalid_prediction_direction" end
+    if target.prediction_distance == "" then target.prediction_distance = nil end
+    if target.prediction_distance ~= nil then
+        local distance = finite(target.prediction_distance)
+        if distance == nil or distance < 0 or distance > 3000 then return false, "invalid_prediction_distance" end
+        target.prediction_distance = distance
+    end
+    if target.prediction_direction ~= nil then
+        if target.prediction_distance == nil then target.prediction_distance = 200 end
+    else
+        target.prediction_distance = nil
     end
     if type(rule.target.types) ~= "table" then return false, "invalid_target_types" end
     for _, unitType in pairs(rule.target.types) do
@@ -561,6 +578,8 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
         destination = rule.action.destination or "target",
         cast_preference = rule.action.cast_preference or "auto",
         target_types = table.concat(rule.target.types or {}, ","),
+        prediction_direction = rule.target.prediction_direction,
+        prediction_distance = rule.target.prediction_direction and (rule.target.prediction_distance or 200) or nil,
         id = rule.id,
         enabled = rule.enabled and 1 or 0,
         action_kind = rule.action.kind,

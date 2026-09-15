@@ -388,6 +388,12 @@ end
 
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
     local destination = rule.action ~= nil and rule.action.destination or nil
+    if require("tactics/point_prediction").Enabled(rule) and
+        ((spec.kind ~= "ability" and spec.kind ~= "item") or spec.target_mode ~= "point"
+        or spec.cast_type ~= "point" or spec.self_centered_point
+        or (destination ~= nil and destination ~= "target" and destination ~= "")) then
+        return nil,nil,"prediction_requires_point"
+    end
     if FacingRetreat.IsAction(rule.action, (spec.capability or {}).name) then
         return FacingRetreat.Select(self, rule, spec, ctx)
     end

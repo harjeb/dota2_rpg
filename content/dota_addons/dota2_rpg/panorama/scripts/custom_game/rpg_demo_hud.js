@@ -795,6 +795,7 @@
                     RpgConditionCatalog.open(authored, RpgRuleSync.initialSettings(authored), function (draft) {
                         if (!editIsCurrent()) { return false; }
                         delete authored.min_aoe_hits;
+                        delete authored.prediction_direction; delete authored.prediction_distance;
                         Object.keys(draft).forEach(function (key) { authored[key] = draft[key]; });
                         if (draft.target !== undefined) {
                             authored.target_attr = "distance";
@@ -952,7 +953,10 @@
             return;
         }
         if (typeof RpgAbilityCapabilities === "undefined") {
-            if (rules[index].action !== actionKey) { rules[index].destination = "target"; }
+            if (rules[index].action !== actionKey) {
+                rules[index].destination = "target";
+                delete rules[index].prediction_direction; delete rules[index].prediction_distance;
+            }
             rules[index].action=actionKey; closeEditorMenus();
             clearRuleMark(side, rules[index]);
             sendRuleToServer(side,selectedHeroIndex[side],index); renderSide(side); return;
@@ -1202,6 +1206,7 @@
             ruleCount: rules.length,
             rule: rule,
             actionId: rule.action,
+            capability: typeof RpgAbilityCapabilities === "undefined" ? null : getRuleCapability(side, heroIndex, rule.action),
             actionName: rule.action === "attack" ? "" : getActionDetail(side, heroIndex, rule.action)
         });
     }

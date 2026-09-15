@@ -98,6 +98,20 @@ var RpgRuleSync = (function () {
         }
         return out;
     }
+    function predictionAllowed(rule, capability, action) {
+        action = action || rule.action || "attack";
+        if (["attack","basic_attack","buyback","sustained_move"].indexOf(action) >= 0) { return false; }
+        if (rule.destination && rule.destination !== "target") { return false; }
+        if (!capability) { return true; }
+        var cap = typeof RpgAbilityCapabilities !== "undefined" ? RpgAbilityCapabilities.derive(capability, rule) : capability;
+        return cap.mode === "point" && cap.cast && cap.cast.point === 1 && cap.cast.vector !== 1
+            && !cap.blocked_reason && rule.cast_preference !== "unit";
+    }
+    function predictionSettings(input) {
+        if (input.prediction_direction !== "forward" && input.prediction_direction !== "backward") { return {}; }
+        return {prediction_direction:input.prediction_direction,
+            prediction_distance:Math.max(0, Math.min(3000, numberValue(input.prediction_distance, 200)))};
+    }
     function targetTeam(target) {
         if (target === "self") {
             return "self";
@@ -247,6 +261,10 @@ var RpgRuleSync = (function () {
             payload.approach = "range_only"; payload.use_conditions_mode = "all"; payload.target_filters_mode = "all";
             return payload;
         }
+        if (predictionAllowed(rule, args.capability, args.actionName || action)) {
+            var prediction = predictionSettings(rule);
+            Object.keys(prediction).forEach(function(key) { payload[key] = prediction[key]; });
+        }
         var condition = useCondition(rule);
         putCondition(payload, "use_condition_1", condition);
 
@@ -345,6 +363,8 @@ var RpgRuleSync = (function () {
         ["cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds"].forEach(function(key) { if (source[key]!==undefined && source[key]!=="") { rule[key]=source[key]; } });
         rule.desired_autocast_state=bool(source.desired_autocast_state,null);
         rule.allow_unverified_modifiers=bool(source.allow_unverified_modifiers,false);
+        var prediction = predictionSettings(source);
+        if (predictionAllowed(rule)) { Object.keys(prediction).forEach(function(key) { rule[key] = prediction[key]; }); }
         var settings = actionSettings(source, rule.action);
         Object.keys(settings).forEach(function (key) { rule[key] = settings[key]; });
         return rule;
@@ -352,6 +372,8 @@ var RpgRuleSync = (function () {
 
     return {
         actionSettings: actionSettings,
+        predictionAllowed: predictionAllowed,
+        predictionSettings: predictionSettings,
         buybackSettings: buybackSettings,
         buybackCost: function (level, difficulty) {
             level = Math.max(1, Math.min(30, Math.floor(numberValue(level, 1))));
@@ -385,6 +407,10 @@ var RpgRuleSync = (function () {
                 desired_toggle_state: rule.desired_toggle_state === undefined ? null : rule.desired_toggle_state
             };
             ["desired_autocast_state","cast_variant","state_policy","state_mana_on","state_mana_off","state_hold_seconds","allow_unverified_modifiers"].forEach(function(key) { if (rule[key]!==undefined) { settings[key]=rule[key]; } });
+            if (predictionAllowed(rule)) {
+                var prediction = predictionSettings(rule);
+                Object.keys(prediction).forEach(function(key) { settings[key] = prediction[key]; });
+            }
             var extra = actionSettings(rule, rule.action);
             Object.keys(extra).forEach(function (key) { settings[key] = extra[key]; });
             return JSON.parse(JSON.stringify(settings));

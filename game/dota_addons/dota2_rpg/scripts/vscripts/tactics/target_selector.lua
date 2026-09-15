@@ -215,6 +215,27 @@ function TargetSelector:SelectPoint(rule, action_spec, ctx)
         candidates = ctx.get_candidates(ctx.caster, action_spec, rule.target or {}) or {}
     end
 
+    local prediction = require("tactics/point_prediction")
+    if prediction.Enabled(rule) then
+        -- Pick the winning anchor before evaluating the offset. A blocked point
+        -- must not silently switch targets or fall back to the anchor's feet.
+        local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec, rule.target_filters_mode)
+        self:SortCandidates(legal, rule.target_priorities, ctx)
+        local anchor = legal[1]
+        if not anchor then return nil,nil,"no_legal_aoe_anchor" end
+        local point = prediction.Point(rule,anchor,ctx.prediction_time)
+        if not point then return nil,nil,"invalid_prediction_point" end
+        local source = action_spec.source or action_spec.ability
+        if source and source.CastFilterResultLocation then
+            local ok,result = pcall(source.CastFilterResultLocation,source,point)
+            if not ok or result ~= (UF_SUCCESS or 0) then return nil,nil,"invalid_native_location" end
+        end
+        if rule.approach ~= "allow_approach" and ctx.is_in_range and not ctx.is_in_range(action_spec,point) then
+            return nil,nil,"no_legal_point_in_range"
+        end
+        return point,anchor,nil
+    end
+
     local legal = self:FilterCandidates(candidates, rule.target_filters, ctx, action_spec, rule.target_filters_mode, function(anchor)
         local point = anchor:GetAbsOrigin()
         local source = action_spec.source or action_spec.ability

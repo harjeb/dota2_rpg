@@ -139,6 +139,8 @@ function Snapshot.ForHero(manager, hero)
         result[#result+1] = { action=name, enabled=rule.enabled ~= false and 1 or 0,
             target_team=rule.target and rule.target.team or "enemy",
             target_types=table.concat(rule.target and rule.target.types or {"hero","monster","summon"}, ","),
+            prediction_direction=rule.target and rule.target.prediction_direction,
+            prediction_distance=rule.target and rule.target.prediction_direction and (rule.target.prediction_distance or 200) or nil,
             forced=rule.approach == "allow_approach" and 1 or 0,
             chase_timeout=rule.chase_timeout, max_chase_distance=rule.max_chase_distance,
             use_conditions_mode=require("tactics/condition_registry").NormalizeMode(rule.use_conditions_mode),

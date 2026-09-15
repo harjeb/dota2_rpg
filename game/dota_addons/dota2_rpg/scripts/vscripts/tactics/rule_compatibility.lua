@@ -74,6 +74,15 @@ function R.Validate(hero,rule,options)
     if contradiction then errors[#errors+1]=contradiction end
     local cap=options.capability or A.ForAction(hero,rule.action,{runtime=options.runtime})
     local action=rule.action
+    if (rule.target or {}).prediction_direction ~= nil and (rule.target or {}).prediction_direction ~= "" then
+        local destination=action.destination
+        if (action.kind~="ability" and action.kind~="item")
+            or (destination~=nil and destination~="" and destination~="target")
+            or action.cast_preference=="unit"
+            or (cap and (cap.mode~="point" or cap.cast.point~=1 or cap.cast.vector==1 or cap.blocked_reason)) then
+            errors[#errors+1]=issue("prediction_requires_point_action")
+        end
+    end
     if require("tactics/facing_retreat").IsAction(action, cap and cap.name) then
         if (rule.target or {}).team ~= "enemy" then errors[#errors+1]=issue("retreat_requires_enemy_anchor") end
         if cap then
