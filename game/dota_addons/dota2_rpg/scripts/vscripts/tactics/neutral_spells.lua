@@ -2,6 +2,20 @@
 -- imply centered damage: directional hero spells also carry that behavior.
 local Context = require('tactics/condition_context')
 local M = {}
+-- Recruitment aliases retain the original native ability contracts.
+function M.CanonicalName(unit)
+    local name = tostring(Context.Call(unit, 'GetUnitName') or '')
+    return (name:gsub('^npc_rpg_recruit_', 'npc_dota_neutral_'))
+end
+function M.IsCompanion(game, unit)
+    if game.phase ~= 'fight' or not (game.neutralRecruitUnits or {})[unit]
+        or Context.Call(unit, 'IsNull') == true or Context.Call(unit, 'IsAlive') ~= true
+        or Context.Call(unit, 'IsRealHero') == true
+        or require('battle/neutral_recruitment').IsReserved(unit) then return false end
+    local team = Context.Call(unit, 'GetTeamNumber')
+    return M.CanonicalName(unit):match('^npc_dota_neutral_') ~= nil
+        and (team == (DOTA_TEAM_GOODGUYS or 2) or team == (DOTA_TEAM_BADGUYS or 3))
+end
 local centered = {
     centaur_khan_war_stomp = true,
     ogre_bruiser_ogre_smash = true,

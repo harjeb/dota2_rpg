@@ -4947,7 +4947,9 @@ function CDota2RpgDemo:OnNeutralRecruitSelect(_, payload)
         if TacticEngine.IsValidUnit(candidate) and candidate:entindex() == tonumber(payload.hero_entindex) then hero=candidate; break end
     end
     if not hero then return false end
-    local ok, reason = NeutralRecruitment.Select(self, hero, payload.source_name, payload.unit_name)
+    local choice = payload.unit_name
+    if payload.source_name == "chen_holy_persuasion" and payload.unit_names ~= nil then choice = payload.unit_names end
+    local ok, reason = NeutralRecruitment.Select(self, hero, payload.source_name, choice)
     self:BroadcastHeroInfo()
     self:SendStateTo(PlayerResource:GetPlayer(self.playerId), "rpg_neutral_recruit_result", {
         hero_entindex=hero:entindex(), rule_generation=self.ruleGeneration or 0,

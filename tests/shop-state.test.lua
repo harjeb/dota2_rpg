@@ -30,6 +30,7 @@ local walletLogs = {}
 local failWalletLog = false
 local moduleRoot = repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/"
 require = function(name)
+    if name == "tactics/neutral_spells" then return {IsCompanion=function() return false end} end
     if name == "battle/neutral_recruitment" then
         return { GetOptions = function() return {} end, Clear = function() end,
             OnThink = function() end, Precache = function() end }

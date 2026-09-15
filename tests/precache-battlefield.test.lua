@@ -20,6 +20,7 @@ DOTA_TEAM_BADGUYS = 3
 function IsServer() return true end
 
 require = function(moduleName)
+    if moduleName == "tactics/neutral_spells" then return {IsCompanion=function() return false end} end
     if moduleName == "battle/neutral_recruitment" or moduleName == "battle/neutral_recruitment_catalog" then
         return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/" .. moduleName .. ".lua")
     end

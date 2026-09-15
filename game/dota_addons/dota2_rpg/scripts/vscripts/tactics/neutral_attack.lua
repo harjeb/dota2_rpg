@@ -12,7 +12,7 @@ local function needs_force(unit)
     return call(unit,"GetClassname") ~= "npc_dota_creature"
 end
 function M.IsNeutral(unit)
-    local name = tostring(call(unit,"GetUnitName") or "")
+    local name = require("tactics/neutral_spells").CanonicalName(unit)
     return name:match("^npc_dota_neutral_")~=nil or name=="npc_rpg_skill_test_target"
 end
 function M.ValidTarget(unit,target)

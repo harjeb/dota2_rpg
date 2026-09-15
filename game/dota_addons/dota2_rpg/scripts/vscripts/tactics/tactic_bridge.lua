@@ -13,6 +13,7 @@ local CombatMemory = require("tactics/combat_memory")
 local TacticEngine = require("tactics/tactic_engine")
 local RuleService = require("tactics/rule_service")
 local DefaultRules = require("issue_fixes.default_rules")
+local NeutralSpells = require("tactics/neutral_spells")
 
 local function is_valid_entity(entity)
 	return entity ~= nil and (entity.IsNull == nil or not entity:IsNull())
@@ -208,6 +209,7 @@ function TacticBridge:Install()
 		if not is_valid_entity(unit) then
 			return false
 		end
+        if NeutralSpells.IsCompanion(gameMode, unit) then return true end
 		if (gameMode.managedSummons or {})[unit] or (gameMode.tempestDoubles or {})[unit]
             or (gameMode.specialObjects or {})[unit] then return true end
 		if unit.benchHeroName ~= nil then
@@ -234,6 +236,14 @@ function TacticBridge:Install()
 		for _, unit in ipairs(gameMode.battleManager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
 			table.insert(units, unit)
 		end
+        local seen = {}
+        for _, unit in ipairs(units) do seen[unit] = true end
+        for unit in pairs(gameMode.neutralRecruitUnits or {}) do
+            if not seen[unit] and NeutralSpells.IsCompanion(gameMode, unit) then
+                units[#units + 1] = unit
+                seen[unit] = true
+            end
+        end
 		return units
 	end
 
@@ -269,6 +279,9 @@ function TacticBridge:Install()
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
+        if NeutralSpells.IsCompanion(gameMode, unit) then
+            return require("issue_fixes.enemy_rules").CreateForUnit(unit, {}, getBattleUnits())
+        end
         -- Arena defenders execute the exact canonical player configuration.
         -- An empty authored list remains empty; presets use the normal defaults.
         if gameMode.battleManager.arenaActive and unit.arenaRules ~= nil then return unit.arenaRules end

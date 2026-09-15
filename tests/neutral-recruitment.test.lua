@@ -205,6 +205,98 @@ target=game.neutralRecruitActive[enchant].unit
 enchant.items[0]=nil;Recruit.OnThink(game);assert(target.removed,"moving item out of active inventory cancels pending recruitment")
 Recruit.Clear(game,true)
 
+-- Chen accepts dense event maps and repeats, and preserves saved choices when live caps shrink.
+local multi=unit("npc_dota_hero_chen",2)
+local persuasion=ability("chen_holy_persuasion",4,{level_req=6,max_units=4})
+multi.abilities.chen_holy_persuasion=persuasion
+multi.abilities.chen_hand_of_god=ability("chen_hand_of_god",3,{ancient_creeps_scepter=2})
+local mg=gameWith(multi)
+local function selectMany(names) return Recruit.Select(mg,multi,persuasion.name,names) end
+assert(selectMany({["1"]=ancient,["2"]=small,["3"]=ancient,["4"]=small}))
+for _,bad in ipairs({{[1]=small,[3]=small},{[0]=small},{["01"]=small},
+    {[1]=small,["1"]=small},{small,false},{small,small,small,small,small},{ancient,ancient,ancient}}) do
+    assert(not selectMany(bad),"invalid or over-cap list rejected")
+end
+assert(#Recruit.GetOptions(mg,multi)[1].selected_units==4,"rejection is atomic")
+persuasion.values.max_units=2
+multi.abilities.chen_hand_of_god.values.ancient_creeps_scepter=1
+local limited=Recruit.GetOptions(mg,multi)[1]
+assert(limited.max_ancients==1 and #limited.selected_units==2 and limited.selected_units[2]==small)
+persuasion.values.max_units=4
+assert(#Recruit.GetOptions(mg,multi)[1].selected_units==3,"saved list survives cap changes")
+assert(selectMany({small,small,small}))
+mg.phase="fight"
+local before=creates
+Recruit.OnThink(mg)
+local first=Recruit.Candidates(mg,multi,persuasion.name)[1]
+assert(first and creates==before+1)
+Recruit.OnThink(mg)
+assert(creates==before+1,"one pending attempt at a time")
+first.team=2;first.owner=multi;persuasion.ready=false
+Recruit.OnThink(mg);Recruit.OnThink(mg)
+assert(creates==before+1,"cooldown and mana gate subsequent spawn")
+persuasion.ready=true;multi.stunned=true
+Recruit.OnThink(mg);assert(creates==before+1)
+multi.stunned=false
+Recruit.OnThink(mg)
+local second=Recruit.Candidates(mg,multi,persuasion.name)[1]
+assert(second and second~=first and creates==before+2,"duplicate species gets distinct target")
+persuasion.values.max_units=1
+Recruit.OnThink(mg)
+assert(second.removed,"cap drop cancels pending over-cap target")
+for i=1,10 do Recruit.OnThink(mg) end
+assert(creates==before+2,"finite queue cannot replace forever after cap drop")
+persuasion.values.max_units=4;Recruit.OnThink(mg)
+assert(creates==before+3,"restored cap permits the remaining unconsumed choice")
+Recruit.Clear(mg,false);mg.phase="setup";persuasion.values.max_units=4
+assert(#Recruit.GetOptions(mg,multi)[1].selected_units==3)
+assert(selectMany({}) and #Recruit.GetOptions(mg,multi)[1].selected_units==0)
+-- Native units already controlled by Chen consume the live cap.
+assert(selectMany({small,small}))
+persuasion.values.max_units=1
+local existing=unit("npc_dota_neutral_kobold",2);existing.owner=multi
+function existing:HasModifier(name) return name=="modifier_chen_holy_persuasion" end
+Entities={FindAllByClassname=function() return {existing} end}
+mg.phase="fight";before=creates;Recruit.OnThink(mg)
+assert(creates==before,"native controlled population prevents replacement")
+mg.neutralRecruitUnits[existing]={hero=multi,source=persuasion.name,ancient=false}
+existing.owner=unit("npc_dota_hero_enchantress",2)
+Recruit.OnThink(mg)
+assert(creates==before+1,"same-team theft releases original Chen capacity and resumes unconsumed choice")
+local recovered=Recruit.Candidates(mg,multi,persuasion.name)[1]
+recovered.team=2;recovered.owner=multi;Recruit.OnThink(mg)
+Recruit.OnThink(mg);assert(creates==before+1,"same cap does not replenish attempted choices")
+persuasion.values.max_units=2;Recruit.OnThink(mg)
+assert(creates==before+2,"cap increase permits the next saved choice without restarting the queue")
+Entities=nil;Recruit.Clear(mg,false)
+mg.phase="setup";persuasion.values.max_units=4
+assert(selectMany({ancient,small}))
+local blocker=unit(ancient,2);blocker.owner=multi
+function blocker:HasModifier(name) return name=="modifier_chen_holy_persuasion" end
+function blocker:IsAncient() return true end
+Entities={FindAllByClassname=function() return {blocker} end}
+mg.phase="fight";before=creates;Recruit.OnThink(mg)
+assert(creates==before and mg.neutralRecruitStates[multi][persuasion.name].cursor==0,"temporary ancient capacity preserves first queued choice")
+blocker.alive=false;Recruit.OnThink(mg)
+assert(creates==before+1 and mg.neutralRecruitActive[multi].unitName==ancient,"ancient death resumes pending ordered choice")
+Entities=nil;Recruit.Clear(mg,false)
+mg.phase="setup"
+assert(selectMany({small,small}))
+local rebuilt=unit("npc_dota_hero_chen",2);rebuilt.abilities=multi.abilities
+mg.battleManager.teamHeroes[2]={rebuilt}
+assert(#Recruit.GetOptions(mg,rebuilt)[1].selected_units==2,"ordered choices survive roster rebuild")
+mg.phase="fight";before=creates;Recruit.OnThink(mg)
+nativeAccept=false;Recruit.OnThink(mg)
+assert(not Recruit.IsBusy(mg,rebuilt))
+nativeAccept=true;Recruit.OnThink(mg)
+assert(creates==before+2,"failed attempt advances to next choice")
+local last=Recruit.Candidates(mg,rebuilt,persuasion.name)[1]
+last.team=2;last.owner=rebuilt
+Recruit.OnThink(mg)
+for i=1,10 do Recruit.OnThink(mg) end
+assert(creates==before+2,"completed queue stays completed")
+Recruit.Clear(mg,false)
+
 -- Chen's ancient allowance comes from the live Hand of God shard special,
 -- not a guessed Scepter flag. Count/level options track the native values.
 local chen=unit("npc_dota_hero_chen",2)

@@ -207,4 +207,13 @@ assert(selection.source == "chen_holy_persuasion" and selection.unit == "npc_dot
 local reply = sent[#sent]
 assert(reply.event == "rpg_neutral_recruit_result" and reply.player == players[0])
 assert(reply.data.success == 1 and reply.data.rule_generation == 8 and reply.data.hero_entindex == ally:entindex())
+local multi=selectPayload(0,8,ally:entindex())
+multi.unit_names={["1"]="npc_dota_neutral_kobold",["2"]="npc_dota_neutral_kobold"}
+assert(game:OnNeutralRecruitSelect(nil,multi))
+assert(recruitSelections[2].unit==multi.unit_names,"Chen list is forwarded intact instead of legacy scalar")
+multi.unit_names={};assert(game:OnNeutralRecruitSelect(nil,multi))
+assert(recruitSelections[3].unit==multi.unit_names,"empty Chen list clears all choices")
+multi.source_name="enchantress_enchant"
+assert(game:OnNeutralRecruitSelect(nil,multi))
+assert(recruitSelections[4].unit==multi.unit_name,"other sources retain scalar selection contract")
 print(string.format("state-publication: reset %d -> %d events; reconnect 32 targeted; generation, settlement, async, retry PASS",baseline,optimized))

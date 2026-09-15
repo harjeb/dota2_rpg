@@ -10,6 +10,7 @@ DOTA_TEAM_GOODGUYS = 2
 DOTA_TEAM_BADGUYS = 3
 TacticEngine = { IsValidUnit = function() return false end }
 require = function(name)
+    if name == "tactics/neutral_spells" then return {IsCompanion=function() return false end} end
     if name == "battle/neutral_recruitment" then
         return { GetOptions = function() return {} end, Clear = function() end,
             OnThink = function() end, Precache = function() end }

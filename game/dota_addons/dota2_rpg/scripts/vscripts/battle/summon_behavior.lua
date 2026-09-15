@@ -2,6 +2,7 @@ local Summons={}
 local Undying=require("issue_fixes/undying")
 local Nevermore=require("issue_fixes/nevermore")
 local Techies=require("issue_fixes/techies")
+local NeutralSpells=require("tactics/neutral_spells")
 local function call(unit,method,...)
     if unit==nil then return nil end
     local ok,fn=pcall(function() return unit[method] end)
@@ -216,6 +217,10 @@ function Summons.OnThink(game)
         if not valid(unit) or call(unit,"IsAlive")==false or not owner
             or call(owner,"GetTeamNumber")~=call(unit,"GetTeamNumber") then
             game.managedSummons[unit]=nil
+        elseif NeutralSpells.IsCompanion(game,unit) then
+            -- The tactic engine owns both spell and attack orders. Its native
+            -- cast/approach state must never race this half-second attack loop.
+            state.owner=owner
         elseif now>=state.nextOrder and call(unit,"IsChanneling")~=true and call(unit,"IsUsingAbility")~=true
             and call(unit,"IsStunned")~=true and call(unit,"IsCommandRestricted")~=true and call(unit,"IsOutOfGame")~=true then
             state.nextOrder=now+.5

@@ -35,19 +35,50 @@ local function limits(hero,definition,ability)
     local level=tonumber(call(ability,"GetLevel")) or 0
     local maxLevel=definition.level and special(ability,definition.level) or 0
     local ancient=false
+    local maxAncients=0
     if definition.name=="item_helm_of_the_overlord" then ancient=special(ability,"is_overlord")>0
     elseif definition.name=="chen_holy_persuasion" then
         local ultimate=call(hero,"FindAbilityByName","chen_hand_of_god")
-        ancient=valid(ultimate) and (tonumber(call(ultimate,"GetLevel")) or 0)>0
-            and special(ultimate,"ancient_creeps_scepter")>0
+        maxAncients=valid(ultimate) and (tonumber(call(ultimate,"GetLevel")) or 0)>0
+            and math.max(0,math.floor(special(ultimate,"ancient_creeps_scepter"))) or 0
+        ancient=maxAncients>0
     end
-    return level,maxLevel,ancient,special(ability,definition.count)
+    return level,maxLevel,ancient,math.max(0,math.floor(special(ability,definition.count))),maxAncients
 end
 local function eligible(hero,definition,ability,entry)
     if not valid(ability) or not entry then return false end
     local level,maxLevel,ancient,count=limits(hero,definition,ability)
     return level>0 and count>0 and (not definition.level or maxLevel>0)
         and (maxLevel==0 or entry.level<=maxLevel) and (not entry.ancient or ancient)
+end
+local function isChen(definition) return definition.name=="chen_holy_persuasion" end
+-- Custom events may encode array keys as strings. Reject holes, aliases and metadata.
+local function normalize(value)
+    if type(value)=="string" then return value=="" and {} or {value} end
+    if type(value)~="table" then return nil end
+    local result,count={},0
+    for key,name in pairs(value) do
+        local index=tonumber(key)
+        if (type(key)~="number" and type(key)~="string") or not index or index<1
+            or index~=math.floor(index) or (type(key)=="string" and tostring(index)~=key)
+            or type(name)~="string" or name=="" or result[index] then return nil end
+        result[index]=name;count=count+1
+    end
+    for index=1,count do if not result[index] then return nil end end
+    return result
+end
+local function sanitized(hero,definition,ability,saved)
+    local result,ancients={},0
+    local _,_,_,count,maxAncients=limits(hero,definition,ability)
+    for _,name in ipairs(normalize(saved) or {}) do
+        local entry=byName[name]
+        if #result<count and eligible(hero,definition,ability,entry)
+            and (not entry.ancient or ancients<maxAncients) then
+            result[#result+1]=name
+            if entry.ancient then ancients=ancients+1 end
+        end
+    end
+    return result
 end
 local function controllable(hero,definition,ability)
     if not alive(hero) or not valid(ability) or call(ability,"IsFullyCastable")~=true
@@ -74,7 +105,7 @@ function Recruit.GetOptions(game,hero)
     for _,definition in ipairs(sources) do
         local ability,slot=source(hero,definition)
         if valid(ability) then
-            local level,maxLevel,ancient,count=limits(hero,definition,ability)
+            local level,maxLevel,ancient,count,maxAncients=limits(hero,definition,ability)
             local units={}
             for _,entry in ipairs(Recruit.Catalog) do
                 if eligible(hero,definition,ability,entry) then
@@ -85,7 +116,9 @@ function Recruit.GetOptions(game,hero)
             local states=(game.neutralRecruitStates or {})[hero] or {}
             options[#options+1]={source_name=definition.name,source_level=level,item_slot=slot,
                 max_level=maxLevel,max_count=count,allow_ancient=ancient,units=units,
-                selected_unit=selected[definition.name] or "",ready=controllable(hero,definition,ability),
+                selected_unit=not isChen(definition) and selected[definition.name] or "",
+                selected_units=isChen(definition) and sanitized(hero,definition,ability,selected[definition.name]) or nil,
+                max_ancients=isChen(definition) and maxAncients or nil,ready=controllable(hero,definition,ability),
                 status=level==0 and "unlearned" or (states[definition.name] and states[definition.name].status or "selected")}
         end
     end
@@ -96,9 +129,16 @@ function Recruit.Select(game,hero,sourceName,unitName)
     local definition
     for _,entry in ipairs(sources) do if entry.name==sourceName then definition=entry;break end end
     if not definition then return false,"invalid_source" end
-    unitName=tostring(unitName or "")
     local ability=source(hero,definition)
-    if unitName~="" and not eligible(hero,definition,ability,byName[unitName]) then return false,"ineligible_unit" end
+    if isChen(definition) then
+        unitName=normalize(unitName)
+        if not unitName then return false,"invalid_unit_list" end
+        if #sanitized(hero,definition,ability,unitName)~=#unitName then return false,"ineligible_unit" end
+    else
+        if type(unitName)=="table" then return false,"invalid_unit_list" end
+        unitName=tostring(unitName or "")
+        if unitName~="" and not eligible(hero,definition,ability,byName[unitName]) then return false,"ineligible_unit" end
+    end
     game.neutralRecruitChoices=game.neutralRecruitChoices or {}
     local key=heroKey(hero)
     if key==nil then return false,"invalid_hero_identity" end
@@ -129,6 +169,7 @@ local function finish(game,hero,state,status,remove)
     if remove and valid(state.unit) then call(state.unit,"RemoveSelf") end
     if valid(state.unit) then state.unit.rpg_recruit_pending=nil;call(state.unit,"RemoveModifierByName","modifier_rpg_neutral_recruit_pending") end
     state.status=status
+    if state.choices then state.status="waiting";state.issued=nil end
     restore(hero,state)
     game.neutralRecruitActive[hero]=nil
 end
@@ -179,13 +220,64 @@ local function spawn(game,hero,definition,ability,entry,state)
     if state.idleAcquire==nil then state.idleAcquire=not hero.rpg_debug_manual_cast or hero.rpg_debug_auto_acquire==true end
     state.acquisitionRange=call(hero,"GetAcquisitionRange")
     state.status="pending";state.nextOrder=0
-    game.neutralRecruitUnits[target]={hero=hero}
+    game.neutralRecruitUnits[target]={hero=hero,source=definition.name,ancient=entry.ancient}
     game.neutralRecruitActive[hero]=state
     -- This auxiliary cast can happen before the tactic engine's first unit
     -- evaluation. Install its native success observer now, so prerequisites
     -- see the actual spell execution even while normal orders are paused.
     require("tactics/native_events").Attach(hero)
     call(hero,"SetIdleAcquire",false);call(hero,"SetAcquisitionRange",0)
+end
+-- Include native controlled units as well as this battle's generated targets.
+local function controlled(game,hero)
+    local seen,count,ancients={},0,0
+    local function add(unit,record)
+        if seen[unit] or not alive(unit) then return end
+        seen[unit]=true
+        if call(unit,"GetTeamNumber")~=call(hero,"GetTeamNumber") then return end
+        local owner=call(unit,"GetOwnerEntity") or call(unit,"GetOwner")
+        local owned=owner==hero
+        local persuaded=call(unit,"HasModifier","modifier_chen_holy_persuasion")
+        local generated=record and record.hero==hero and record.source=="chen_holy_persuasion"
+            and (owner==nil or owned) and persuaded~=false
+        if generated or (owned and persuaded==true) then
+            count=count+1
+            if (record and record.ancient) or call(unit,"IsAncient")==true then ancients=ancients+1 end
+        end
+    end
+    for unit,record in pairs(game.neutralRecruitUnits or {}) do add(unit,record) end
+    for _,className in ipairs({"npc_dota_creature","npc_dota_creep_neutral"}) do
+        for _,unit in ipairs(call(Entities,"FindAllByClassname",className) or {}) do add(unit) end
+    end
+    return count,ancients
+end
+local function withinCapacity(game,hero,state)
+    if not state.choices then return true end
+    local _,_,_,cap,ancientCap=limits(hero,state.definition,state.ability)
+    local count,ancients=controlled(game,hero)
+    local entry=byName[state.unitName]
+    return state.attempts<=cap and count<cap and (not entry.ancient
+        or (state.ancientAttempts<=ancientCap and ancients<ancientCap))
+end
+local function nextChoice(game,hero,definition,ability,state)
+    local _,_,_,cap,ancientCap=limits(hero,definition,ability)
+    if state.cursor>=#state.choices then state.status="complete";return nil end
+    -- A live cap can fall and recover; preserve unconsumed choices without
+    -- refilling any choice already attempted earlier in this battle.
+    if state.attempts>=cap then return nil end
+    local count,ancients=controlled(game,hero)
+    if count>=cap then return nil end
+    while state.cursor<#state.choices do
+        local name=state.choices[state.cursor+1]
+        local entry=byName[name]
+        if eligible(hero,definition,ability,entry) then
+            if entry.ancient and (state.ancientAttempts>=ancientCap or ancients>=ancientCap) then return nil end
+            state.cursor=state.cursor+1
+            return name
+        end
+        state.cursor=state.cursor+1
+    end
+    state.status="complete"
 end
 function Recruit.OnThink(game)
     if game.phase~="fight" then
@@ -197,7 +289,9 @@ function Recruit.OnThink(game)
         for _,hero in ipairs(game.battleManager and game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS or 2] or {}) do
             local states={}
             for name,unitName in pairs((game.neutralRecruitChoices or {})[heroKey(hero)] or {}) do
-                states[name]={unitName=unitName,status="waiting"}
+                states[name]={unitName=type(unitName)=="string" and unitName or nil,
+                    choices=name=="chen_holy_persuasion" and (normalize(unitName) or {}) or nil,
+                    cursor=0,attempts=0,ancientAttempts=0,status="waiting"}
             end
             game.neutralRecruitStates[hero]=states
         end
@@ -224,7 +318,8 @@ function Recruit.OnThink(game)
             elseif not alive(hero) then finish(game,hero,active,"dead",true)
             elseif now()>=active.deadline then finish(game,hero,active,"cast_failed",true)
             elseif source(hero,active.definition)~=active.ability
-                or not eligible(hero,active.definition,active.ability,byName[active.unitName]) then
+                or not eligible(hero,active.definition,active.ability,byName[active.unitName])
+                or not withinCapacity(game,hero,active) then
                 finish(game,hero,active,"source_changed",true)
             elseif active.issued then
                 -- One submitted native cast. Do not cancel its cast point with
@@ -244,9 +339,25 @@ function Recruit.OnThink(game)
                 local state=states[definition.name]
                 if state and state.status=="waiting" then
                     local ability=source(hero,definition)
+                    if state.choices then
+                        -- Peek only when ready; waiting for native resources never consumes a choice.
+                        if controllable(hero,definition,ability) then
+                            state.unitName=nextChoice(game,hero,definition,ability,state)
+                        else state.unitName=nil end
+                    end
                     local entry=byName[state.unitName]
-                    if not eligible(hero,definition,ability,entry) then state.status="ineligible"
-                    elseif controllable(hero,definition,ability) then spawn(game,hero,definition,ability,entry,state);break end
+                    if state.choices and not entry then
+                        -- Exhausted or waiting for native resources.
+                    elseif not eligible(hero,definition,ability,entry) then state.status="ineligible"
+                    elseif controllable(hero,definition,ability) then
+                        if state.choices then
+                            state.attempts=state.attempts+1
+                            if entry.ancient then state.ancientAttempts=state.ancientAttempts+1 end
+                        end
+                        spawn(game,hero,definition,ability,entry,state)
+                        if state.choices and state.status=="spawn_failed" then state.status="waiting" end
+                        break
+                    end
                 end
             end
         end
