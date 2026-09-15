@@ -11,6 +11,8 @@ local SustainedCast = require("tactics/sustained_cast")
 local Compatibility = require("tactics/rule_compatibility")
 local Lifecycle = require("tactics/action_lifecycle")
 local StateControl = require("tactics/state_controller")
+local AoeReaction = require("tactics/aoe_reaction")
+local AoeThreats = require("tactics/aoe_threats")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -105,6 +107,7 @@ function TacticEngine:GetState(unit)
     local id = entity_index(unit)
     local state = self.states[id]
     if state ~= nil and state.unit ~= unit then
+        AoeReaction.Release(self, state.unit, state, {}, false)
         FacingRetreat.Release(self, state.unit, state, {}, false)
         Movement.Release(self, state.unit, state, {}, false)
         pcall(NativeEvents.Detach, state.unit)
@@ -129,14 +132,14 @@ end
 
 function TacticEngine:IsExclusiveMovement(unit)
     local state = self.states[entity_index(unit)]
-    return state ~= nil and state.unit == unit and (state.movement ~= nil or state.facing_retreat ~= nil)
+    return state ~= nil and state.unit == unit and (state.movement ~= nil or state.facing_retreat ~= nil or state.aoe_walk ~= nil)
 end
 
 function TacticEngine:HasActiveOrder(unit)
     if self.get_phase() ~= "FIGHT" then return false end
     local state = self.states[entity_index(unit)]
     if not state or state.unit ~= unit then return false end
-    return state.chase ~= nil or state.movement ~= nil or state.facing_retreat ~= nil or (state.wait_until or 0) > now()
+    return state.chase ~= nil or state.movement ~= nil or state.facing_retreat ~= nil or state.aoe_walk ~= nil or (state.wait_until or 0) > now()
         or (state.posture_order ~= nil and (state.posture_order.expires or 0) > now())
         or NeutralAttack.HasTactic(unit)
 end
@@ -146,6 +149,7 @@ function TacticEngine:ResetUnit(unit)
     local state = self.states[id]
     NeutralAttack.Release(unit)
     if state and state.unit == unit then
+        AoeReaction.Release(self, unit, state, {}, true)
         FacingRetreat.Release(self, unit, state, {}, true)
         Movement.Release(self, unit, state, {}, false)
         self.states[id] = nil
@@ -156,7 +160,9 @@ function TacticEngine:ResetUnit(unit)
 end
 
 function TacticEngine:Reset()
+    AoeThreats.Reset()
     for _, state in pairs(self.states) do
+        AoeReaction.Release(self, state.unit, state, {}, true)
         NeutralAttack.Release(state.unit)
         FacingRetreat.Release(self, state.unit, state, {}, true)
         if state.movement then Movement.Release(self, state.unit, state, {}, true)
@@ -198,6 +204,7 @@ function TacticEngine:Think()
     -- still recorded. Stage reset handles roster changes; dead handles release.
     for id, state in pairs(self.states) do
         if not is_alive(state.unit) then
+            AoeReaction.Release(self, state.unit, state, {}, false)
             FacingRetreat.Release(self, state.unit, state, {}, false)
             Movement.Release(self, state.unit, state, {}, true)
             pcall(NativeEvents.Detach, state.unit)
@@ -207,10 +214,14 @@ function TacticEngine:Think()
         end
     end
     local current_time = now()
-    for _, unit in ipairs(self.get_battle_units() or {}) do
+    local units = self.get_battle_units() or {}
+    for _, unit in ipairs(units) do if is_alive(unit) then self:GetState(unit) end end
+    AoeThreats.Observe(units, current_time)
+    for _, unit in ipairs(units) do
         if is_alive(unit) then
             local state = self:GetState(unit)
-            if state.facing_retreat ~= nil or current_time >= state.next_eval then
+            if state.facing_retreat ~= nil or state.aoe_walk ~= nil or AoeReaction.HasRules(self.get_rules(unit))
+                or current_time >= state.next_eval then
                 state.next_eval = current_time + self.tick_interval
                 self:EvaluateUnit(unit, state, current_time)
             end
@@ -249,14 +260,12 @@ function TacticEngine:EvaluateUnit(unit, state, current_time)
         return
     end
 
-    if current_time < (state.wait_until or 0) then
-        return
-    end
-
     Lifecycle.Observe(unit, current_time)
     local ctx = self:BuildContext(unit, current_time)
     local rules = self.get_rules(unit) or {}
     state.events = state.events or NativeEvents.Attach(unit)
+    if AoeReaction.Try(self, unit, state, ctx, rules) then return end
+    if current_time < (state.wait_until or 0) then return end
     if FacingRetreat.Continue(self, unit, state, ctx, rules) then return end
     Movement.Observe(unit, state, rules, self, ctx)
     -- Expiry/filters must still be checked when available spells keep borrowing
@@ -351,7 +360,7 @@ function TacticEngine:EvaluateRules(unit, state, ctx, rules, first_index, last_i
         local is_attack = rule ~= nil and rule.action ~= nil and rule.action.kind == "attack"
         local is_cast = rule ~= nil and rule.action ~= nil and (rule.action.kind == "ability" or rule.action.kind == "item")
         local selected = mode == "cast" and is_cast or mode ~= "cast" and ((mode == "attack") == is_attack)
-        if rule ~= nil and rule.enabled ~= false and selected
+        if rule ~= nil and rule.enabled ~= false and selected and not AoeReaction.Condition(rule)
             and not (rule.action and rule.action.kind == "buyback")
             and not require("tactics/enemy_attack_objectives").IsRule(rule) then
             local executed, reason = self:TryRule(unit, state, ctx, rule, index)
@@ -452,6 +461,7 @@ function TacticEngine:PositioningRule(unit, ctx, rule, spec, target)
 end
 
 function TacticEngine:TryRule(unit, state, ctx, rule, rule_index)
+    if AoeReaction.Condition(rule) then return false, "incoming_aoe_reaction_only" end
     ctx.condition_trace = {}
     ctx.native_target_trace = {accepted=0, rejected=0}
     local spec, resolve_reason = self.actions:Resolve(unit, rule.action, ctx)

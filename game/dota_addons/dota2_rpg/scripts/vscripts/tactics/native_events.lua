@@ -34,6 +34,8 @@ function M.Attach(unit)
 end
 function M.Detach(unit)
     if not unit then return end
+    -- Detaching/death cannot erase a released zone already seen by a team.
+    -- Battle teardown explicitly resets the threat observer.
     if unit.IsNull and unit:IsNull() then return end
     unit.rpgTacticsEvents = nil
     if unit.RemoveModifierByName then unit:RemoveModifierByName("modifier_rpg_tactics_events") end

@@ -546,7 +546,7 @@ assert(latest(hud,lion).target_filter_1_type === "","settings removal clears the
 
 var retiredUse = "dead_ally_count_gte self_strength_gte self_agility_gte owned_summons_gte owned_summons_lte action_used_within action_not_used_within".split(" ");
 var retiredTarget = "not_illusion is_creep is_invulnerable not_invulnerable has_tag not_has_tag".split(" ");
-[["use", retiredUse, 37], ["target", retiredTarget, 37], ["priority", [], 14]].forEach(function (spec) {
+[["use", retiredUse, 38], ["target", retiredTarget, 37], ["priority", [], 14]].forEach(function (spec) {
     var catalog = hud.context.RpgConditionCatalog;
     assert(catalog.groups[spec[0]].length === spec[2], "remaining menu count " + spec[0]);
     spec[1].forEach(function (id) {
@@ -1020,3 +1020,33 @@ console.log("PASS: F41 facing cone editor, explanation, stable ID, save and auth
 console.log("PASS: five hearts, loss rewards, authoritative wallet and terminal life UI");
 console.log("PASS: " + presetCount + " complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, roundtrips and removed preset controls");
 console.log("PASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation");
+
+// U45 real editor controls preserve response parameters across server refresh and copied settings.
+var incomingDraft;
+catalog.open({action:"item_blink"}, {target_team:"self",use_conditions_mode:"priority",use_conditions:[{type:"incoming_aoe"}]}, function(v) { incomingDraft=v; }, {});
+assert(catalogUI("#V2_use0Select").GetChild(0).text.indexOf("U45 ")===0,"incoming stable U45");
+assert(catalogUI("#V2_use0_reaction_min_ms").text==="80","default reaction lower bound");
+catalogUI("#V2_use0_reaction_min_ms").text="700";
+catalogUI("#V2_use0_reaction_max_ms").text="120";
+catalogClick("V2_use0_response"); catalogClick("V2_use0_responseOption_cast");
+catalogClick("RuleSettingsApply");
+assert(incomingDraft.use_conditions[0].reaction_min_ms===120 && incomingDraft.use_conditions[0].reaction_max_ms===700,"switch preserves and orders interval");
+var authoredIncoming=JSON.parse(JSON.stringify(incomingDraft.use_conditions[0]));
+for (var incomingSlot=0;incomingSlot<4;incomingSlot++) {
+    var incomingRule={action:"item_blink",target_team:"self",use_conditions_mode:"priority",use_conditions:[]};
+    incomingRule.use_conditions[incomingSlot]=JSON.parse(JSON.stringify(authoredIncoming));
+    var incomingPayload=catalogContext.RpgRuleSync.serialize({rule:incomingRule,actionId:"item_blink",actionName:"item_blink"});
+    var incomingPrefix="use_condition_"+(incomingSlot+1)+"_";
+    assert(incomingPayload.action_id==="item_blink" && incomingPayload.use_conditions_mode==="priority","keep selected action and OR mode");
+    ["response","reaction_min_ms","reaction_max_ms"].forEach(function(k) { assert(incomingPayload[incomingPrefix+k]===authoredIncoming[k],"flatten incoming field "+k); });
+    var serverIncoming={action:"item_blink",enabled:1,target_team:"self",use_conditions_mode:"priority",use_conditions:{1:authoredIncoming}};
+    var restoredIncoming=catalogContext.RpgRuleSync.fromServer(serverIncoming);
+    catalog.open(restoredIncoming,catalogContext.RpgRuleSync.initialSettings(restoredIncoming),function(v) { incomingDraft=v; },{});
+    catalogClick("RuleSettingsApply");
+    assert(JSON.stringify(incomingDraft.use_conditions[0])===JSON.stringify(authoredIncoming),"authoritative reopen keeps threat parameters");
+    incomingDraft.use_conditions[0].response="walk";
+    assert(authoredIncoming.response==="cast","copied clauses do not alias source");
+}
+var boundedIncoming=catalog.normalize("use",{type:"incoming_aoe",response:"invalid",reaction_min_ms:2500,reaction_max_ms:-1});
+assert(boundedIncoming.response==="walk" && boundedIncoming.reaction_min_ms===0 && boundedIncoming.reaction_max_ms===2000,"incoming bounds and defaults");
+console.log("incoming AoE UI roundtrips passed");

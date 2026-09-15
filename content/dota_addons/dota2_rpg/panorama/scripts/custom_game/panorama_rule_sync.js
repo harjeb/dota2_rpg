@@ -212,6 +212,9 @@ var RpgRuleSync = (function () {
 
     function putCondition(payload, prefix, condition) {
         payload[prefix + "_type"] = condition.type;
+        ["response", "reaction_min_ms", "reaction_max_ms"].forEach(function(field) {
+            if (condition[field] !== undefined) { payload[prefix + "_" + field] = condition[field]; }
+        });
         if (condition.modifier !== undefined) { payload[prefix + "_modifier"] = condition.modifier; }
         if (condition.value !== undefined) {
             payload[prefix + "_value"] = condition.value;
@@ -279,7 +282,7 @@ var RpgRuleSync = (function () {
             if (!Array.isArray(rule[spec[0]])) { return; }
             for (var i = 0; i < spec[3]; i++) {
                 var prefix = spec[1] + "_" + (i + 1);
-                ["type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier"].forEach(function (field) { delete payload[prefix + "_" + field]; });
+                ["type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier", "response", "reaction_min_ms", "reaction_max_ms"].forEach(function (field) { delete payload[prefix + "_" + field]; });
                 var raw = rule[spec[0]][i] || { type: "" };
                 var normalized = typeof RpgConditionCatalog !== "undefined" ? RpgConditionCatalog.wire(spec[2], raw) : raw;
                 putCondition(payload, prefix, normalized);

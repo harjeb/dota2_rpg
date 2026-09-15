@@ -1,6 +1,6 @@
 # Condition help coverage / 条件教程覆盖
 
-沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 36 个浏览章节，章节与机制类型并非一一对应。
+沿用 [docs/UNIQUE_SKILL_MECHANISMS.md](UNIQUE_SKILL_MECHANISMS.md) 的 G00–G21 **22 类**；排除 G14 纯被动后 **21 类**主动设置主题。已有基础教程 **17/21 = 80.95%**，落在用户要求的约80–90%范围。共 37 个浏览章节，章节与机制类型并非一一对应。
 
 类型教学覆盖的判定：该历史主题至少有一份当前可照填的基础设置或配置流程，列出实例与限制。分类原本就可重叠；一个技能可参考多页。它不表示实现该历史标签列出的所有高级诉求，也不是全技能ID覆盖率或实机通过率。G18、G19、G20、G21未计入：普通矢量首击说明也不等于G20专属双点几何。
 
@@ -83,6 +83,7 @@ Source: `data/native_skill_conditions.json`. SHA-256: `4f0eb846b552edd8d82083d7e
 | upgrades | 升级、形态与新增技能 | 0 | 0 | supplemental |
 | risk | 消耗自身生命的技能 | 0 | 0 | supplemental |
 | dual_target | 同一技能治疗友方、伤害敌方 | 0 | 0 | supplemental |
+| incoming_aoe | U45 即将被范围技能命中 | 0 | 0 | supplemental |
 | special | 特殊技能与未覆盖范围 | 0 | 0 | supplemental |
 | reference_use | 使用条件完整索引 | 0 | 0 | reference |
 | reference_target | 目标筛选完整索引 | 0 | 0 | reference |

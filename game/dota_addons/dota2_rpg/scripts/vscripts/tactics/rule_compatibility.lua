@@ -67,6 +67,21 @@ function R.Contradictions(rule)
     for _,c in ipairs(rule.use_conditions or {}) do tiny[c.type]=true end
     if tiny.tiny_grab_is_enemy and tiny.tiny_grab_is_ally then return issue("contradictory_conditions","use",0,"tiny_grab_team") end
 end
+-- Shared by save validation and runtime reaction dispatch. Capability must be
+-- known: arbitrary unit/offensive and special cast adapters cannot evade safely.
+function R.IncomingAoeCastReason(action,cap,team)
+    if action.kind~="ability" and action.kind~="item" then return "incoming_aoe_cast_requires_ability_or_item" end
+    if not cap then return "incoming_aoe_cast_requires_known_capability" end
+    local cast=cap.cast or {}
+    if cap.blocked_reason or cast.vector==1 or cast.toggle==1 or cast.autocast==1
+        or (action.destination and action.destination~="" and action.destination~="target")
+        or (action.cast_variant and action.cast_variant~="default") then
+        return "incoming_aoe_cast_unsupported"
+    end
+    if cap.mode=="none" or cap.mode=="point" then return nil end
+    if cap.mode=="unit" and team=="self" and cap.teams and cap.teams.self==1 then return nil end
+    return "incoming_aoe_cast_requires_self_or_point"
+end
 function R.Validate(hero,rule,options)
     options=options or {}
     local errors,warnings={},{}
@@ -74,6 +89,15 @@ function R.Validate(hero,rule,options)
     if contradiction then errors[#errors+1]=contradiction end
     local cap=options.capability or A.ForAction(hero,rule.action,{runtime=options.runtime})
     local action=rule.action
+    for index,condition in ipairs(rule.use_conditions or {}) do
+        if condition.type=="incoming_aoe" and condition.response=="cast" then
+            local reason=R.IncomingAoeCastReason(action,cap,(rule.target or {}).team)
+            if (rule.target or {}).prediction_direction and (rule.target or {}).prediction_direction~="" then
+                reason=reason or "incoming_aoe_cast_unsupported"
+            end
+            if reason then errors[#errors+1]=issue(reason,"use",index) end
+        end
+    end
     if (rule.target or {}).prediction_direction ~= nil and (rule.target or {}).prediction_direction ~= "" then
         local destination=action.destination
         if (action.kind~="ability" and action.kind~="item")

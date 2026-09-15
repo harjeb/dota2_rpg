@@ -24,7 +24,9 @@ function modifier_rpg_tactics_events:OnAttack(event)
 end
 function modifier_rpg_tactics_events:OnAbilityExecuted(event)
     if not IsServer() or event.unit ~= self:GetParent() or not event.ability then return end
-    require("tactics/native_events").RecordSuccess(self:GetParent(), event.ability:GetAbilityName(), GameRules:GetGameTime())
+    local now = GameRules:GetGameTime()
+    require("tactics/aoe_threats").OnExecuted(self:GetParent(), event.ability, now)
+    require("tactics/native_events").RecordSuccess(self:GetParent(), event.ability:GetAbilityName(), now)
 end
 
 function modifier_rpg_tactics_events:OnAbilityEndChannel(event)

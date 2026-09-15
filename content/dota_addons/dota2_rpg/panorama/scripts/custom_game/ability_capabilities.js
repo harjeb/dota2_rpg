@@ -49,6 +49,10 @@ var RpgAbilityCapabilities = (function () {
     function conditionReason(cap,group,c,targetTeam) {
         if (!cap) { return "capability_unavailable"; }
         var id=c.type || c.id || "";
+        if (id === "incoming_aoe" && c.response === "cast") {
+            if (cap.blocked_reason || cap.support === "builtin" || ["point", "none", "self", "unit"].indexOf(cap.mode) < 0
+                || cap.mode === "unit" && (targetTeam !== "self" || !cap.teams || cap.teams.self !== 1)) { return "incoming_aoe_cast_requires_action"; }
+        }
         if (id.indexOf("tiny_grab_")===0 && cap.name!=="tiny_toss") { return "condition_requires_tiny_toss"; }
         if (id==="release_action_available" && !cap.release_parent) { return "condition_requires_release_action"; }
         var ownActor=!c.action_actor || c.action_actor==="self";
@@ -115,6 +119,10 @@ var RpgAbilityCapabilities = (function () {
         options=options || {};
         var cap=derive(base,rule), errors=[], warnings=[], targetTeam=team(rule);
         function fail(code,group,index,detail) { errors.push({code:code,group:group || "action",index:index || 0,detail:detail || ""}); }
+        var incoming=list(rule.use_conditions).filter(function(c) { return c && c.type === "incoming_aoe"; });
+        if (incoming.length > 1) { fail("incoming_aoe_duplicate"); }
+        if (incoming.some(function(c) { return c.response === "cast"; })
+            && (rule.destination && rule.destination !== "target" || rule.prediction_direction === "forward" || rule.prediction_direction === "backward")) { fail("incoming_aoe_cast_destination"); }
         var bad=contradiction(rule); if (bad) { fail(bad); }
         if (!cap) { if (options.requireCapability) { fail("capability_unavailable"); } }
         else {

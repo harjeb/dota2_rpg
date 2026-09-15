@@ -171,6 +171,10 @@ end)
 
 -- Use conditions -----------------------------------------------------------
 
+ConditionRegistry:RegisterUseCondition("incoming_aoe", function(ctx, condition)
+    return require("tactics/aoe_reaction").Match(ctx, condition)
+end)
+
 ConditionRegistry:RegisterUseCondition("always", function(_ctx, _condition)
     return true
 end)

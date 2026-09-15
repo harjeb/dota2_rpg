@@ -111,7 +111,7 @@ local function list(input)
     local output = {}
     for _, condition in ipairs(input or {}) do
         local entry = {}
-        for _, key in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier" }) do
+        for _, key in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier", "response", "reaction_min_ms", "reaction_max_ms" }) do
             if condition[key] ~= nil then entry[key] = condition[key] end
         end
         output[#output+1] = entry

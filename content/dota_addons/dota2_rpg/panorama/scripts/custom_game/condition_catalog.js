@@ -47,10 +47,11 @@ var RpgConditionCatalog = (function () {
     // 新条件只能追加在组末尾：code 是按组内下标查下面的表得到的，
     // 插在中间会把后面所有条目的 U/F 编号整体挪位（文档编号必须稳定）。
     add("use","self_ability_on_cooldown","action","action_id");
+    add("use","incoming_aoe","battle","response,reaction_min_ms,reaction_max_ms");
     add("target", "facing_enemy", "proximity", "");
     // Stable documentation IDs retain the gaps left by retired conditions.
     var codes = {
-        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44],
+        use: [1,2,3,4,5,6,7,8,10,11,12,13,14,15,16,21,22,23,24,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45],
         target: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,20,21,22,23,24,25,26,27,30,31,32,33,34,35,36,37,38,39,40,41],
         priority: [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
     };
@@ -71,6 +72,7 @@ var RpgConditionCatalog = (function () {
                     var value = condition[key];
                     if (key === "modifier" || key === "value" && condition.type.indexOf("has_modifier") >= 0) { value = modifierOption(String(value)).label + " [" + value + "]"; }
                     if (key === "value" && condition.type === "action_phase_is") { value = phaseLabel(value); }
+                    if (condition.type === "incoming_aoe" && key === "response") { value = text(key + "_" + value); }
                     return text(key === "value" && condition.type.indexOf("_pct_") >= 0 ? "percent" : key) + "=" + String(value);
                 });
                 return (def ? entryLabel(def) : condition.type) + (values.length ? " (" + values.join(", ") + ")" : "");
@@ -115,6 +117,14 @@ var RpgConditionCatalog = (function () {
         // Preserve unknown authored conditions so future server additions are not silently erased.
         if (!def) { return clone(input); }
         var out = { type: type };
+        if (type === "incoming_aoe") {
+            out.response = input.response === "cast" ? "cast" : "walk";
+            var low = number(input.reaction_min_ms, 80, 0, 2000);
+            var high = number(input.reaction_max_ms, 500, 0, 2000);
+            out.reaction_min_ms = Math.min(low, high);
+            out.reaction_max_ms = Math.max(low, high);
+            return out;
+        }
         def.fields.forEach(function (field) {
             if (field === "modifier" || field === "action_id" || field === "target_actor" || field === "value_text") {
                 var key = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
@@ -437,11 +447,26 @@ var RpgConditionCatalog = (function () {
                         if (current.type === "facing_enemy") {
                             label(params, "V2_" + group + index + "FacingHint", text("facing_enemy_hint")).AddClass("V2Hint");
                         }
+                        if (current.type === "incoming_aoe") {
+                            label(params, "V2_" + group + index + "IncomingHint", text("incoming_aoe_hint") + "\n" + text("incoming_aoe_scope_hint")).AddClass("V2Hint");
+                        }
                         var entries = [];
                         fields.forEach(function (field) {
                             var keyName = field === "value_text" && def.fields.indexOf("value") < 0 ? "value" : field;
                             var wrap = $.CreatePanel("Panel", params, ""); wrap.AddClass("V2Field");
                             label(wrap, "", text(field === "value" && current.type.indexOf("_pct_") >= 0 ? "percent" : field === "value_text" && current.type === "action_phase_is" ? "phase_selection" : field));
+                            if (field === "response") {
+                                wrap.AddClass("V2WideField");
+                                var values = ["walk", "cast"];
+                                choose(wrap, "V2_" + group + index + "_" + field, values.map(function(value) {
+                                    return {id:value,label:text(field + "_" + value),hint:text(field + "_" + value + "_hint")};
+                                }), current[field], function(value) {
+                                    readFields();
+                                    current[field] = value;
+                                    renderFields();
+                                });
+                                return;
+                            }
                             if (field === "target_actor") {
                                 targetPicker(wrap, "V2_" + group + index + "_" + field, current, function () {
                                     current = {type: ""}; draft[key][index] = current;

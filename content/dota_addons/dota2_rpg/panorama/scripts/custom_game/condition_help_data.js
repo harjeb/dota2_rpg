@@ -3969,6 +3969,67 @@ var RpgConditionHelpData = {
       }
     },
     {
+      "id": "incoming_aoe",
+      "title": {
+        "zh": "U45 即将被范围技能命中",
+        "en": "U45 Incoming area ability"
+      },
+      "description": {
+        "zh": "为观察到的范围威胁配置一次应对，保留本行已选动作。",
+        "en": "Configure one response per observed area threat using the selected row action."
+      },
+      "settings": [
+        {
+          "label": {
+            "zh": "默认",
+            "en": "Defaults"
+          },
+          "value": {
+            "zh": "走出范围；80～500毫秒；每条规则最多一个U45。",
+            "en": "Walk; 80–500 ms; at most one U45 per rule."
+          }
+        }
+      ],
+      "steps": [
+        {
+          "zh": "选择1走出范围，或2使用本行已选装备/技能防御或跳走。仅当U45实际匹配时走位替代本行动作；按优先级/或条件选中其他条件时仍执行本行动作。",
+          "en": "Choose 1 Walk out or 2 Use the selected row item/ability to defend or escape. Walk overrides the row action only when U45 actually matches; another selected Priority/OR clause keeps the normal row action."
+        },
+        {
+          "zh": "仅应对已释放且已观察到的威胁，不根据前摇反应。首次观察到已释放威胁时抽取一次反应时间并开始计时，每个威胁仅应对一次。",
+          "en": "Respond only to observed, released threats, never windup. Sample and start reaction time at the first observation of a released threat; respond once per threat."
+        },
+        {
+          "zh": "反应最小值/最大值限制0～2000毫秒并按大小排序。将应急规则放在所需优先位置。应急时目标筛选检查自身。",
+          "en": "Reaction bounds are ordered and limited to 0–2000 ms. Place emergency rules at the desired priority. Emergency target filters inspect self."
+        }
+      ],
+      "notes": [
+        {
+          "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+          "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+        },
+        {
+          "zh": "当前仅支持观察光击阵、撕裂大地、洪流，并非所有范围技能。不会自动取消自己正在进行的原生施法或持续施法。",
+          "en": "Initial observation supports Light Strike Array, Split Earth and Torrent, not every area spell. Responses do not automatically cancel your own native cast or channel."
+        },
+        {
+          "zh": "使用当前选定动作，不自动另选技能。自身/无目标技能可防护；普通点目标自动选安全逃离点。单体技能须合法指向自身；不支持矢量、开关、自动施法或被动动作，也不能同时指定额外落点/预测偏移。任意技能不保证保护效果，仍须确认实际防御或位移用途。",
+          "en": "Uses the selected action without choosing another ability. Self/no-target actions can protect; ordinary point casts select a safe escape point. Unit casts must legally target self. Vector, toggle, autocast and passive actions are unsupported, as are simultaneous destination/prediction offsets. Arbitrary skills do not guarantee protection; verify the action actually defends or moves you."
+        }
+      ],
+      "examples": [],
+      "covered_ability_ids": [],
+      "applicable_ability_ids": [],
+      "coverage_role": "supplemental",
+      "preset_count": 0,
+      "has_preset": false,
+      "preset_status": {
+        "zh": "本页按步骤手动设置；技能的现成预设可作为起点。",
+        "en": "Configure this workflow manually; an existing skill preset can be a starting point."
+      }
+    },
+    {
       "id": "special",
       "title": {
         "zh": "特殊技能与未覆盖范围",
@@ -4074,8 +4135,8 @@ var RpgConditionHelpData = {
         "en": "All use conditions"
       },
       "description": {
-        "zh": "当前菜单共 37 项；按技能能力决定哪些项目可以选择。",
-        "en": "37 current menu entries; availability depends on the selected action."
+        "zh": "当前菜单共 38 项；按技能能力决定哪些项目可以选择。",
+        "en": "38 current menu entries; availability depends on the selected action."
       },
       "examples": [],
       "steps": [
@@ -4453,6 +4514,16 @@ var RpgConditionHelpData = {
           "value": {
             "zh": "选择技能 / 装备",
             "en": "Choose ability / item"
+          }
+        },
+        {
+          "label": {
+            "zh": "U45 即将被范围技能命中",
+            "en": "U45 About to be hit by an area ability"
+          },
+          "value": {
+            "zh": "应对方式, 最短反应时间（毫秒）, 最长反应时间（毫秒）",
+            "en": "Response, Minimum reaction time (ms), Maximum reaction time (ms)"
           }
         }
       ],

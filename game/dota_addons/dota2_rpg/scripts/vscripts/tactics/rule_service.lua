@@ -146,6 +146,9 @@ local function condition_from_flat(prefix, args)
         action_id = args[prefix .. "_action_id"],
         action_actor = args[prefix .. "_action_actor"],
         target_actor = args[prefix .. "_target_actor"],
+        response = args[prefix .. "_response"],
+        reaction_min_ms = args[prefix .. "_reaction_min_ms"],
+        reaction_max_ms = args[prefix .. "_reaction_max_ms"],
     }
 end
 
@@ -248,6 +251,30 @@ function RuleService:ValidateCondition(condition, registry)
         return false, "invalid_condition"
     end
     if registry[condition.type] == nil then return false, "unknown_condition:" .. condition.type end
+    if condition.type == "incoming_aoe" then
+        local allowed = {type=true, response=true, reaction_min_ms=true, reaction_max_ms=true}
+        for field, value in pairs(condition) do
+            if not allowed[field] then
+                if value ~= "" then return false, "unexpected_condition_parameter:" .. tostring(field) end
+                condition[field] = nil
+            end
+        end
+        if condition.response == nil or condition.response == "" then condition.response = "walk" end
+        if condition.response ~= "walk" and condition.response ~= "cast" then return false, "invalid_condition_response" end
+        for field, default in pairs({reaction_min_ms=80, reaction_max_ms=500}) do
+            local raw = condition[field]
+            local value = finite((raw == nil or raw == "") and default or raw)
+            if value == nil or value < 0 or value > 2000 then return false, "invalid_condition_" .. field end
+            condition[field] = value
+        end
+        if condition.reaction_min_ms > condition.reaction_max_ms then return false, "invalid_condition_reaction_range" end
+        return true
+    end
+    -- These parameters belong solely to incoming_aoe; stale editor fields must
+    -- not survive a change to another condition type.
+    for _, field in ipairs({"response", "reaction_min_ms", "reaction_max_ms", "feint_policy"}) do
+        condition[field] = nil
+    end
     if condition.type == "facing_enemy" then
         for field, value in pairs(condition) do
             if field ~= "type" then
@@ -431,10 +458,13 @@ function RuleService:ValidateRule(player_id, hero, rule)
             end
         end
     end
+    local incoming_count = 0
     for _, condition in ipairs(rule.use_conditions) do
         local ok, reason = self:ValidateCondition(condition, self.conditions.use_conditions)
         if not ok then return false, reason end
+        if condition.type == "incoming_aoe" then incoming_count = incoming_count + 1 end
     end
+    if incoming_count > 1 then return false, "duplicate_incoming_aoe" end
     for _, priority in ipairs(rule.target_priorities) do
         if type(priority) ~= "table" or type(priority.type) ~= "string" then return false, "invalid_priority" end
         if (priority.type == "prefer_tag" or priority.type == "prefer_affix")
@@ -601,7 +631,7 @@ function RuleService:SyncRule(_player_id, hero, slot, rule)
             local item = list[index] or {}
             local keyPrefix = prefix .. "_" .. index
             payload[keyPrefix] = item.type or ""
-            for _, field in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier" }) do
+            for _, field in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier", "response", "reaction_min_ms", "reaction_max_ms" }) do
                 payload[keyPrefix .. "_" .. field] = item[field] ~= nil and item[field] or ""
             end
         end

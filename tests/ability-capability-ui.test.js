@@ -145,3 +145,17 @@ console.log('PASS capability changes during editing normalize native intent and 
         require("assert").ok(install.includes("custom_game\\" + name), "Installer must compile " + name);
     });
 }
+
+// Emergency casts retain native targeting constraints; walking is independent of the row action.
+for (const mode of ['point','none','self','unit','vector','toggle','autocast','passive']) {
+    const emergencyCap=JSON.parse(JSON.stringify(cap)); emergencyCap.mode=mode;
+    const why=api.conditionReason(emergencyCap,'use',{type:'incoming_aoe',response:'cast'},'self');
+    assert.equal(why,['point','none','self','unit'].includes(mode)?'':'incoming_aoe_cast_requires_action',mode);
+    assert.equal(api.conditionReason(emergencyCap,'use',{type:'incoming_aoe',response:'walk'},'enemy'),'');
+}
+assert.equal(api.conditionReason(cap,'use',{type:'incoming_aoe',response:'cast'},'ally'),'incoming_aoe_cast_requires_action');
+const emergencyRule={target_team:'self',use_conditions:[{type:'incoming_aoe',response:'cast'}],destination:'away_from_target'};
+assert(api.validate(emergencyRule,cap).errors.some(e=>e.code==='incoming_aoe_cast_destination'));
+emergencyRule.destination='target'; emergencyRule.use_conditions.push({type:'incoming_aoe',response:'walk'});
+assert(api.validate(emergencyRule,cap).errors.some(e=>e.code==='incoming_aoe_duplicate'));
+console.log('PASS incoming area response capability gating');
