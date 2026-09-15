@@ -4,7 +4,8 @@ local M = {}
 M.INITIAL_GOLD = 500
 M.STARTER_FREE_RECRUITS = 2
 M.TIME_BONUS_CAP = 0.10
-M.BENCH_XP_RATE = 0.50
+-- DESIGN.md §2.4/§2.6：原成长曲线按五名主力校准。
+M.XP_REFERENCE_PARTY_SIZE = 5
 M.MAX_LEVEL = 30
 
 -- 到达对应等级所需的累计经验；索引 1 代表 1 级。
@@ -14,8 +15,8 @@ M.XP_TO_LEVEL = {
     14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200, 33700,
 }
 
--- 每名上阵英雄获得的经验；待命英雄获得 floor(value * 0.5)。
-M.STAGE_XP = {
+-- 原设计的每名主力经验，仅用于换算固定关卡总池和核对成长基准。
+M.ORIGINAL_STAGE_XP_PER_HERO = {
     120, 160, 200, 250, 320,
     360, 420, 480, 540, 650,
     700, 760, 820, 900, 1050,
@@ -24,6 +25,12 @@ M.STAGE_XP = {
     2300, 2400, 2600, 3050,
     0, -- 第 30 关为 Run 结束后的展示奖励，不再用于继续养成。
 }
+
+-- 关卡总经验不随实际上阵/拥有英雄数量增长。
+M.STAGE_XP = {}
+for stage, perHero in ipairs(M.ORIGINAL_STAGE_XP_PER_HERO) do
+    M.STAGE_XP[stage] = perHero * M.XP_REFERENCE_PARTY_SIZE
+end
 
 M.STAGE_GOLD = {
     900, 1000, 1100, 1200, 1000,

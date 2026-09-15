@@ -176,7 +176,7 @@ $luaChecks = @(
        Patterns = @(
            'INITIAL_GOLD = 500',
            'TIME_BONUS_CAP = 0.10',
-           'BENCH_XP_RATE = 0.50',
+           'XP_REFERENCE_PARTY_SIZE = 5',
            'XP_TO_LEVEL',
            'STAGE_XP',
            'RECRUIT_BANDS',

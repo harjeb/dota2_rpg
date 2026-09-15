@@ -85,17 +85,21 @@ local function scenario(winner, final, initialLives, difficulty, elapsed)
     local game = setmetatable({
         phase = "fight", campaignDifficulty=difficulty, currentLevelId = final and "ch02" or "ch01",
         runLives = { remaining = initialLives, pendingItems = {} },
-        orderedLevels = { "ch01", "ch02" }, lineup = {}, ownedHeroes = {},
+        orderedLevels = { "ch01", "ch02" }, lineup = {"active"}, ownedHeroes = {"active", "bench"},
+        heroData = {active={level=1,current_xp=0},bench={level=1,current_xp=0}},
         refreshCount = 3, scrollPurchases = { low = 2, high = 1 }, gold = 500,
         shopCosts = { lineup_max = 5 },
         heroPool = { strength = { "axe", "sven" }, agility = { "sniper" },
             intelligence = { "lina" }, universal = { "marci" } },
         shopOffers = { { hero = "old" } }, shopOfferText = "old", broadcasts = 0,
-        dataLoader = { GetLevel = function() return { time_limit = 120, reward = { gold = 100, xp_per_active_hero = 7 } } end },
+        dataLoader = { GetLevel = function() return { time_limit = 120, reward = { gold = 100, xp_pool = 35 } } end },
         battleManager = { GetBattleTime = function() return elapsed end,
             teamHeroes = { [2] = {} }, StopBattle = function() end },
         AddGold = function(self, value) self.gold = self.gold + value end,
-        AwardStageXp = function(self, value) self.awardedXp=(self.awardedXp or 0)+value end,
+        AwardStageXp = function(self, value)
+            self.awardedXp=(self.awardedXp or 0)+value
+            return CDota2RpgDemo.AwardStageXp(self,value)
+        end,
         SpendGold = function() error("automatic refresh must not spend gold") end,
         BroadcastBattleState = function() end, BroadcastLevelInfo = function() end,
         BroadcastShopState = function(self) self.broadcasts = self.broadcasts + 1 end,
@@ -123,9 +127,13 @@ local function scenario(winner, final, initialLives, difficulty, elapsed)
     equal(lastSettlement.lives_remaining, game.runLives.remaining, "authoritative lives in settlement")
     equal(lastSettlement.life_reward_gold, winner ~= "radiant" and initialLives == 4 and scaled(2000) or 0, "gold threshold")
     equal(game.gold, 500 + (winner == "radiant" and (scaled(100)+scaled(timeBonus)) or lastSettlement.life_reward_gold), "reward credited once")
-    equal(game.awardedXp or 0,winner == "radiant" and scaled(7) or 0,"XP granted once, never on defeat")
-    equal(lastSettlement.xp_per_active_hero,scaled(7),"scaled active display")
-    equal(lastSettlement.xp_per_bench_hero,math.floor(scaled(7)*.5),"bench share after difficulty rounding")
+    equal(game.awardedXp or 0,winner == "radiant" and scaled(35) or 0,"XP granted once, never on defeat")
+    equal(lastSettlement.xp_pool,winner == "radiant" and scaled(35) or 0,"authoritative total pool")
+    equal(lastSettlement.xp_recipient_count,winner == "radiant" and 2 or 0,"authoritative recipient count")
+    equal(lastSettlement.xp_per_active_hero,winner == "radiant" and scaled(35)/2 or 0,"scaled active display")
+    equal(game.heroData.active.current_xp,winner == "radiant" and scaled(35)/2 or 0,"credited active share")
+    equal(game.heroData.bench.current_xp,game.heroData.active.current_xp,"bench receives same actual credit")
+    equal(lastSettlement.xp_per_bench_hero,lastSettlement.xp_per_active_hero,"equal bench display")
     equal(lastSettlement.campaign_difficulty,difficulty or "default","settlement metadata")
     equal(lastSettlement.time_bonus,winner == "radiant" and scaled(timeBonus) or 0,"time bonus independently rounded once")
     equal(lastSettlement.life_reward_items, winner ~= "radiant" and initialLives == 2 and "item_aegis;item_cheese" or "", "last-life items")
@@ -167,6 +175,7 @@ local function scenario(winner, final, initialLives, difficulty, elapsed)
     equal(damagePacket.units[1].dps, 60, "preparation time does not dilute DPS")
     equal(damagePacket.elapsed, 2, "preparation retains battle duration")
     game.teamsSpawned = true
+    game.lineup = {}
     game:OnStartBattle(nil, {})
     equal(game.damageStats, completedStats, "empty lineup rejects start without clearing")
     game.lineup = { "axe" }

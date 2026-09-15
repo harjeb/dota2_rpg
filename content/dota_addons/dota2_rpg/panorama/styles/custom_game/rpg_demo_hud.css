@@ -1545,10 +1545,11 @@
 
 /* Explicit per-rule conditions in the compact action list. */
 .RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: transparent; text-shadow: 0px 1px 3px 3.0 #000000; padding: 8px; white-space: normal; z-index: 50; }
-.RuleSettingsButton { vertical-align: center; margin-left: 6px; margin-right: 2px; width: fill-parent-flow(1); height: 36px; background-color: #253a49; border: 1px solid #667b86; }
-.RuleSettingsButton Label { font-size: 14px; color: #e7edf2; horizontal-align: center; vertical-align: center; }
-.RuleSettingsButton.HasAdvancedSettings { border-color: #d7b85a; }
-.RuleSettingsButton:hover { brightness: 1.4; }
+.RuleSettingsButton { vertical-align: center; margin-left: 6px; margin-right: 2px; width: fill-parent-flow(1); height: 36px; background-color: gradient(linear, 0% 0%, 0% 100%, from(#453825), to(#241f19)); border: 1px solid #a48750; border-radius: 5px; box-shadow: #0006 0px 2px 4px 0px; transition-property: background-color, border; transition-duration: 0.12s; }
+.RuleSettingsButton Label { font-size: 14px; color: #f1d9a4; horizontal-align: center; vertical-align: center; text-shadow: 0px 1px 2px 2.0 #0009; }
+.RuleSettingsButton.HasAdvancedSettings { border-color: #edc879; border-left: 3px solid #edc879; background-color: gradient(linear, 0% 0%, 0% 100%, from(#5b4628), to(#30271b)); }
+.RuleSettingsButton:hover { background-color: gradient(linear, 0% 0%, 0% 100%, from(#705632), to(#44331f)); border-color: #ffe0a0; }
+.RuleSettingsButton:active { brightness: 0.85; }
 .RuleSettings { width: 100%; height: 100%; background-color: #000b; z-index: 100; }
 .RuleSettingsCard { width: 980px; height: 900px; max-height: 94%; horizontal-align: center; vertical-align: center; flow-children: down; padding: 20px; background-color: #15232dfc; border: 1px solid #71858f; box-shadow: #0009 0px 0px 20px 2px; }
 .V2Title { color: #e9d6a0; font-size: 25px; margin-bottom: 8px; }
@@ -1578,6 +1579,15 @@
 .V2Choices { width: 340px; height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
 .V2Choices .V2Button { width: 100%; height: fit-children; }
 .V2Choices .V2Button Label { width: 100%; white-space: normal; }
+/* Both combination modes stay visible as one direct switch. */
+.V2ModeSwitch { width: 345px; height: 44px; flow-children: right; padding: 3px; margin-bottom: 8px; background-color: #0d201e; border: 1px solid #345d55; border-radius: 8px; }
+.V2ModeSwitch > .V2ModeOption { width: fill-parent-flow(1); height: 36px; min-height: 36px; margin: 0px 2px; padding: 5px 8px; border: 1px solid transparent; border-radius: 5px; background-color: transparent; }
+.V2ModeSwitch > .V2ModeOption Label { width: 100%; color: #91aaa3; font-size: 17px; text-align: center; vertical-align: center; }
+.V2ModeSwitch > .V2ModeOption:hover { background-color: #24463d; border-color: #5a8c7e; }
+.V2ModeSwitch > .V2ModeOption.Selected { background-color: gradient(linear, 0% 0%, 0% 100%, from(#357e68), to(#225446)); border-color: #8cd8b7; border-bottom: 2px solid #b6f2d4; }
+.V2ModeSwitch > .V2ModeOption.Selected Label { color: #e1ffef; font-weight: bold; }
+.V2ModeSwitch > .V2ModeOption.Selected:hover { brightness: 1.15; }
+.V2ModeSwitch > .V2ModeOption:disabled { saturation: 0.25; opacity: 0.65; }
 .V2Category { color: #dabd77; font-size: 14px; margin-top: 8px; margin-bottom: 5px; }
 .V2Parameters { width: fill-parent-flow(1); height: fit-children; flow-children: right; }
 .V2Parameters.V2ActionOptions { width: 100%; }

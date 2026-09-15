@@ -2,6 +2,7 @@ local Conditions = require("tactics/condition_registry")
 local Compatibility = require("tactics/rule_compatibility")
 local Options = require("tactics/action_options")
 local BuybackRule = require("tactics/buyback_rule")
+local SpecialTargets = require("tactics/special_targets")
 local okLog, RuntimeLog = pcall(require, "issue_fixes.runtime_log")
 if not okLog then RuntimeLog = { Write = print } end
 
@@ -28,6 +29,7 @@ local REMOVED_CONDITIONS = {
 function RuleService.StripRemovedConditions(rule)
     if type(rule) ~= "table" then return rule end
     BuybackRule.Normalize(rule)
+    SpecialTargets.NormalizeRule(rule)
     rule.use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode)
     rule.target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode)
     for _, field in ipairs({ "use_conditions", "target_filters" }) do
@@ -243,7 +245,7 @@ function RuleService:DecodeFlat(args)
     require("tactics/movement_contract").Copy(args, rule.action)
     Options.Copy(args, rule.action)
     rule.allow_unverified_modifiers = args.allow_unverified_modifiers == true or args.allow_unverified_modifiers == 1 or args.allow_unverified_modifiers == "1"
-    return BuybackRule.Normalize(rule)
+    return SpecialTargets.NormalizeRule(BuybackRule.Normalize(rule))
 end
 
 function RuleService:ValidateCondition(condition, registry)
@@ -365,6 +367,7 @@ function RuleService:ValidateRule(player_id, hero, rule)
             return false, "invalid_buyback_action"
         end
         BuybackRule.Normalize(rule)
+        SpecialTargets.NormalizeRule(rule)
     end
     if type(rule) ~= "table" or type(rule.action) ~= "table" or type(rule.target) ~= "table"
         or type(rule.target_filters) ~= "table" or type(rule.use_conditions) ~= "table"
@@ -372,7 +375,7 @@ function RuleService:ValidateRule(player_id, hero, rule)
     rule.use_conditions_mode = Conditions.NormalizeMode(rule.use_conditions_mode)
     rule.target_filters_mode = Conditions.NormalizeMode(rule.target_filters_mode)
     if type(rule.action.logical_id) ~= "string" or #rule.action.logical_id > 256 then return false, "invalid_action_id" end
-    if not require("tactics/special_targets").ValidDestination(rule.action.logical_id, rule.action.destination) then
+    if not SpecialTargets.ValidDestination(rule.action.logical_id, rule.action.destination) then
         return false, "invalid_destination"
     end
     local movement_ok, movement_reason = require("tactics/movement_contract").Validate(rule.action)
@@ -598,6 +601,7 @@ end
 
 function RuleService:SyncRule(_player_id, hero, slot, rule)
     BuybackRule.Normalize(rule)
+    SpecialTargets.NormalizeRule(rule)
     local hero_key = self.get_hero_key(hero)
     if hero_key == nil or hero_key == "" then
         return

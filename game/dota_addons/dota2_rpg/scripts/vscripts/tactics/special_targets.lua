@@ -54,6 +54,17 @@ Special.offset_destinations = {
 Special.destinations = {target=true, self=true, remnant_nearest=true, remnant_farthest=true,
     remnant_near_enemy=true, remnant_safe=true, away_from_target=true, target_front=true,
     target_behind=true, around_target=true}
+-- Destination modes and ordinary target ranking share one exclusive choice.
+-- Migrate old saves that contain both; offsets use the nearest legal anchor.
+function Special.NormalizeRule(rule)
+    local action = type(rule) == "table" and rule.action or nil
+    local mode = type(action) == "table" and action.destination or nil
+    if type(mode) == "string" and mode ~= "" and mode ~= "target" then
+        rule.target_priorities = {}
+    end
+    return rule
+end
+
 function Special.ValidDestination(name, mode)
     if mode == nil or mode == "" or mode == "target" then return true end
     -- 偏移落点对任意动作开放；非点目标动作在运行时按无效落点拒绝。

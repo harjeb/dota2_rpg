@@ -183,7 +183,7 @@ def stage_rows(levels: dict[str, Any]) -> list[dict[str, Any]]:
             "英雄配置行数": sum(unit_kind(str(enemy["unit"])) == "英雄" for enemy in enemies),
             "野怪配置行数": sum(unit_kind(str(enemy["unit"])) == "野怪" for enemy in enemies),
             "首通金币": as_number(reward.get("gold", "")),
-            "每上阵英雄经验": as_number(reward.get("xp_per_active_hero", "")),
+            "关卡总经验": as_number(reward.get("xp_pool", "")),
             "限时秒数": as_number(stage.get("time_limit", "")),
             "时间奖励上限": as_number(stage.get("time_bonus_cap", "")),
             "战利品表": stage.get("loot", ""), "配置路径": f"levels/{stage_id}",

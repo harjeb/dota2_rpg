@@ -109,7 +109,9 @@ function runHud(options) {
     var rootPanel = createPanel("HudRoot");
     rootPanel.FindChildTraverse = function (id) { return panorama("#" + id); };
     panorama.GetContextPanel = function () { return rootPanel; };
-    panorama.Localize = function (token) { return token; };
+    panorama.Localize = function (token) {
+        return token === "#dota2_rpg_reward_xp" ? "XP total %s1 each %s2 heroes %s3" : token;
+    };
     panorama.Schedule = function (delay, callback) {
         if (options.deferTimers || delay === 0.25) { scheduled.push({ delay: delay, callback: callback }); }
         else { callback(); }
@@ -368,11 +370,11 @@ assert(hud.createdPanels.filter(function (p) { return p.classes.ShopOfferSlot; }
 // 结算奖励完全来自服务端字段，不能在客户端再次分配 XP 或重复加入时间奖励。
 hud.subscriptions.rpg_settlement({
     winner: "radiant", level: "ch01", gold: 150,
-    xp_per_active_hero: 1000, xp_per_bench_hero: 500, stars: 3, loot_text: "item_blink"
+    xp_pool: 1000, xp_per_owned_hero: 1000 / 6, xp_recipient_count: 6, stars: 3, loot_text: "item_blink"
 });
 assert(hud.panels["#RewardLabel"].text.indexOf("150") >= 0
-    && hud.panels["#RewardLabel"].text.indexOf("dota2_rpg_reward_xp") >= 0,
-    "settlement UI must render server-authoritative gold and active/bench XP without runtime errors");
+    && hud.panels["#RewardLabel"].text.indexOf("XP total 1000 each 166.67 heroes 6") >= 0,
+    "settlement displays authoritative pool, equal share and recipient count even when local roster is stale");
 var radiantAbility = hud.createdPanels.filter(function (p) { return p.id === "RadiantActionAbility0"; })[0];
 assert(radiantAbility.abilityname === "axe_berserkers_call", "Radiant action row uses native ability icon");
 assert(!created(hud, "DireActionAbility0"), "enemy metadata does not create editable action rows");

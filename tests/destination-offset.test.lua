@@ -84,6 +84,27 @@ local huge = service:DecodeFlat({action_kind="item",action_id="item_blink",desti
     destination_distance=99999,target_team="enemy"})
 assert(not service:ValidateRule(0,caster,huge), "offset distance above the cap is rejected")
 
+-- Conflicting old/client payloads retain their destination but lose both rankings.
+for mode in pairs(Special.destinations) do
+    local migrated = service:DecodeFlat({action_kind="ability",action_id="ember_spirit_activate_fire_remnant",
+        destination=mode,target_team="enemy",target_priority_1_type="farthest",target_priority_2_type="lowest_hp_pct"})
+    assert(migrated.action.destination==mode, "decoding preserves destination "..mode)
+    assert(#migrated.target_priorities==(mode=="target" and 2 or 0), "exclusive decoded ranking "..mode)
+    migrated.target_priorities={{type="farthest"},{type="lowest_hp_pct"}}
+    assert(service:ValidateRule(0,caster,migrated), "structured destination validates "..mode)
+    assert(#migrated.target_priorities==(mode=="target" and 2 or 0), "exclusive validated ranking "..mode)
+end
+for _, mode in ipairs({"", "target"}) do
+    local ordinary=service:DecodeFlat({action_kind="item",action_id="item_blink",destination=mode,
+        target_priority_1_type="farthest",target_priority_2_type="lowest_hp_pct"})
+    assert(#ordinary.target_priorities==2, "ordinary target ranking stays intact")
+end
+require("tactics/tactic_bridge")
+local restored=TacticBridge.ConvertLegacyRule(1,{action="item_blink",target="lowest_hp",
+    destination="target_behind",destination_distance=500,target_priorities={{type="farthest"}}})
+assert(#restored.target_priorities==0 and restored.action.destination=="target_behind"
+    and restored.action.destination_distance==500, "legacy restore clears explicit and inferred ranking")
+
 -- 引擎层：偏移落点先选出锚点，再用它计算落点；没有锚点或非点目标都安全失败。
 local Engine = require("tactics/tactic_engine")
 local engine = Engine.new({order_gate={Execute=function() return true end},
@@ -95,6 +116,11 @@ local candidates = {enemy}
 local ctx = {caster=caster,now=1,get_candidates=function() return candidates end}
 local point, anchor = engine:ResolveRuleTarget(rule, spec, ctx)
 assert(anchor==enemy and close(point,0,-400), "engine resolves the offset destination from the selected anchor")
+candidates={nearEnemy,enemy}
+rule.target_priorities={{type="farthest"},{type="lowest_hp_pct"}}
+point,anchor=engine:ResolveRuleTarget(rule,spec,ctx)
+assert(anchor==enemy and close(point,0,-400) and #rule.target_priorities==0,
+    "runtime legacy conflict uses nearest legal anchor rather than hidden farthest priority")
 candidates = {}
 assert(engine:ResolveRuleTarget(rule, spec, ctx)==nil, "missing legal anchor fails the offset destination")
 candidates = {enemy}

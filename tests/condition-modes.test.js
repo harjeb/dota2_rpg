@@ -10,8 +10,15 @@ function setup(rule={}) {
  hud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});hud.subscriptions.rpg_hero_slots(snapshot);hud.sentEvents.length=0;
  return {hud,snapshot};
 }
-function mode(hud,group,value) {click(hud,'V2_'+group+'Mode');click(hud,'V2_'+group+'ModeOption_'+value);}
-function caption(hud,group) {return panel(hud,'V2_'+group+'Mode').GetChild(0).text;}
+function mode(hud,group,value) {click(hud,'V2_'+group+'ModeOption_'+value);}
+function caption(hud,group) {
+ const row=panel(hud,'V2_'+group+'ModeRow');
+ assert.equal(row.children.length,2,'both modes are directly visible');
+ const selected=row.children.filter(button=>button.BHasClass('Selected'));
+ assert.equal(selected.length,1,'exactly one mode is highlighted');
+ assert(!panel(hud,'V2_'+group+'ModeMenu'),'mode switch has no dropdown');
+ return selected[0].GetChild(0).text;
+}
 function saved(hud) {return hud.sentEvents.filter(e=>e.name==='rpg_update_rule').at(-1).payload;}
 for(const um of ['all','priority']) for(const tm of ['all','priority']) {
  const {hud}=setup();click(hud,'RadiantRuleSettings0');

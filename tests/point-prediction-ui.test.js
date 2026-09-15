@@ -40,7 +40,7 @@ for (const action of ['lina_light_strike_array','item_blink']) {
     click(hud,'RadiantRuleSettings0'); assert(!live(hud,'V2_prediction_distance'),'disable clears saved fields');
     prediction(hud,'forward'); input(hud,'V2_prediction_distance',4000); click(hud,'RuleSettingsApply');
     assert.equal(saved(hud).prediction_distance,3000);
-    click(hud,'RadiantRuleSettings0'); click(hud,'V2DestinationSelect'); click(hud,'V2DestinationSelectOption_destination_target_behind');
+    click(hud,'RadiantRuleSettings0'); click(hud,'V2_priority0Select'); click(hud,'V2_priority0SelectOption_destination_target_behind');
     assert(!live(hud,'V2PredictionSelect'),'special destination removes prediction'); click(hud,'RuleSettingsApply');
     assert.equal(saved(hud).prediction_direction,undefined);
 }

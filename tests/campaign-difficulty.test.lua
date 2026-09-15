@@ -82,15 +82,15 @@ for _, name in ipairs({"easy","default","hard"}) do
     eq(game.gold,500+D.Scale(game,2000))
 end
 -- Progression primitives remain fixed value: shop-bought XP cannot be amplified,
--- stage reward is scaled by settlement before one normal active/bench award.
+-- stage reward is scaled by settlement before dividing the total pool equally.
 local Progression={};require("patches.progression_patch").Install(Progression)
 for _,name in ipairs({"easy","default","hard"}) do
     local game=setmetatable({campaignDifficulty=name,lineup={"a"},ownedHeroes={"a","b"},
         heroData={a={level=1,current_xp=0},b={level=1,current_xp=0}}},{__index=Progression})
     game:AddXpToHero("a",20);eq(game.heroData.a.current_xp,20)
-    game:AwardStageXp(D.Scale(game,7));eq(game.heroData.a.current_xp,20+D.Scale(game,7))
-    eq(game.heroData.b.current_xp,math.floor(D.Scale(game,7)*.5))
-    game:AwardStageXp(D.Scale(game,0));eq(game.heroData.a.current_xp,20+D.Scale(game,7))
+    game:AwardStageXp(D.Scale(game,7));eq(game.heroData.a.current_xp,20+D.Scale(game,7)/2)
+    eq(game.heroData.b.current_xp,D.Scale(game,7)/2)
+    game:AwardStageXp(D.Scale(game,0));eq(game.heroData.a.current_xp,20+D.Scale(game,7)/2)
 end
 -- Installed server boundary: connection/recovery publication, exact native filter
 -- registration, owner confirmation, campaign start/economy lock, arena bypass.

@@ -2040,18 +2040,11 @@
         if (!settlement || settlement.winner !== "radiant") {
             return null;
         }
-        var activeXp = Number(settlement.xp_per_active_hero !== undefined
-            ? settlement.xp_per_active_hero : settlement.xp_pool || 0);
-        var benchXp = Number(settlement.xp_per_bench_hero || 0);
-        var activeCount = (saveData.lineup || []).length;
-        var benchCount = Math.max(0, (saveData.owned || []).length - activeCount);
         return {
             gold: Number(settlement.gold || 0),
-            activeXp: activeXp,
-            benchXp: benchXp,
-            activeCount: activeCount,
-            benchCount: benchCount,
-            totalXp: activeXp * activeCount + benchXp * benchCount
+            totalXp: Number(settlement.xp_pool || 0),
+            perHeroXp: Number(settlement.xp_per_owned_hero || 0),
+            recipientCount: Number(settlement.xp_recipient_count || 0)
         };
     }
 
@@ -2516,8 +2509,8 @@
             }
             parts.push($.Localize("#dota2_rpg_reward_xp")
                 .replace("%s1", String(reward.totalXp))
-                .replace("%s2", String(reward.activeXp))
-                .replace("%s3", String(reward.benchXp)));
+                .replace("%s2", String(Math.round(reward.perHeroXp * 100) / 100))
+                .replace("%s3", String(reward.recipientCount)));
             var lootDrops = splitList(settlement.loot_text).filter(function (name) { return !!name; });
             showLootPopup(lootDrops);
             rewardLabel.text = parts.join("   ");

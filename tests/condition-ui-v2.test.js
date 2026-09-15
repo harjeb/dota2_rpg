@@ -714,11 +714,11 @@ destinationHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:950
     can_edit:1,rules_ready:1,actions_text:"ember_spirit_activate_fire_remnant;attack",
     rules:[{action:"ember_spirit_activate_fire_remnant",enabled:1,target_team:"enemy",destination:"remnant_nearest"}]});
 click(destinationHud,"RadiantRuleSettings0");
-choice(destinationHud,"V2Destination","destination_remnant_safe");
+choice(destinationHud,"V2_priority0","destination_remnant_safe");
 click(destinationHud,"RuleSettingsApply");
-assert(latest(destinationHud,emberHero).destination==="remnant_safe","destination serializes independently of ordinary target settings");
+assert(latest(destinationHud,emberHero).destination==="remnant_safe" && !latest(destinationHud,emberHero).target_priority_1_type,"destination replaces ordinary target priorities");
 click(destinationHud,"RadiantRuleSettings0");
-assert(panel(destinationHud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_remnant_safe","destination survives reopening");
+assert(panel(destinationHud,"V2_priority0Select").GetChild(0).text==="#dota2_rpg_v2_destination_remnant_safe","destination survives reopening in priority selector");
 click(destinationHud,"RuleSettingsClose");
 // Floor-cast (point) skills expose the same destination picker with offset modes,
 // and the backstep distance only exists while an offset mode is selected.
@@ -729,15 +729,30 @@ offsetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:953,hero
     rules:[{action:"axe_berserkers_call",enabled:1,target_team:"enemy"}]});
 click(offsetHud,"RadiantRuleSettings0");
 assert(!panel(offsetHud,"V2_destination_distance"),"plain target destination has no distance input");
-choice(offsetHud,"V2Destination","destination_away_from_target");
+assert(!panel(offsetHud,"V2DestinationSelect"),"no competing standalone destination selector");
+choice(offsetHud,"V2_priority0","lowest_hp_pct");
+choice(offsetHud,"V2_priority1","farthest");
+choice(offsetHud,"V2_priority0","destination_away_from_target");
 assert(panel(offsetHud,"V2_destination_distance"),"offset destination reveals the distance input");
+input(offsetHud,"V2_destination_distance",725);
+choice(offsetHud,"V2_priority0","destination_target_behind");
+assert(panel(offsetHud,"V2_destination_distance").text==="725","switching offset modes retains the current unsaved distance");
+choice(offsetHud,"V2_priority0","destination_away_from_target");
 input(offsetHud,"V2_destination_distance",400);
 click(offsetHud,"RuleSettingsApply");
 var offsetWire=latest(offsetHud,offsetHero);
 assert(offsetWire.destination==="away_from_target" && Number(offsetWire.destination_distance)===400,"offset destination serializes with its distance");
 click(offsetHud,"RadiantRuleSettings0");
-assert(panel(offsetHud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_away_from_target"
+assert(panel(offsetHud,"V2_priority0Select").GetChild(0).text==="#dota2_rpg_v2_destination_away_from_target"
     && panel(offsetHud,"V2_destination_distance").text==="400","offset destination and distance survive reopening");
+assert(!offsetWire.target_priority_1_type && !offsetWire.target_priority_2_type,"destination clears both ordinary priorities in payload");
+function attachedPanel(root, sought) { return root === sought || root.children.some(function(child) { return attachedPanel(child, sought); }); }
+assert(!attachedPanel(panel(offsetHud,"RuleSettingsBody"), panel(offsetHud,"V2_priority1Select")),"destination has no competing second priority");
+choice(offsetHud,"V2_priority0","nearest");
+assert(attachedPanel(panel(offsetHud,"RuleSettingsBody"), panel(offsetHud,"V2_priority1Select")) && !attachedPanel(panel(offsetHud,"RuleSettingsBody"), panel(offsetHud,"V2_destination_distance")),"ordinary ranking restores tie-breaker and removes offset distance");
+click(offsetHud,"RuleSettingsApply");
+var ordinaryWire=latest(offsetHud,offsetHero);
+assert(!ordinaryWire.destination && ordinaryWire.destination_distance===undefined && ordinaryWire.target_priority_1_type==="nearest","ordinary ranking clears destination and distance on save");
 click(offsetHud,"RuleSettingsClose");
 // Own-facing movement uses an enemy anchor without turning the native cast into an enemy cast.
 ["mirana_leap","item_force_staff"].forEach(function(action) {
@@ -751,10 +766,10 @@ click(offsetHud,"RuleSettingsClose");
     cap.cast={unit:action==="item_force_staff" ? 1:0,point:0,none:action==="mirana_leap" ? 1:0};
     cap.teams={self:1,ally:1,enemy:0}; cap.native_unit_contract.teams=cap.teams;
     click(hud,"RadiantRuleSettings0");
-    assert(!panel(hud,"V2DestinationSelectOption_destination_target_front") &&
-        !panel(hud,"V2DestinationSelectOption_destination_target_behind") &&
-        !panel(hud,"V2DestinationSelectOption_destination_around_target"),action+" offers no positional offsets");
-    choice(hud,"V2Destination","destination_away_from_target");
+    assert(!panel(hud,"V2_priority0SelectOption_destination_target_front") &&
+        !panel(hud,"V2_priority0SelectOption_destination_target_behind") &&
+        !panel(hud,"V2_priority0SelectOption_destination_around_target"),action+" offers no positional offsets");
+    choice(hud,"V2_priority0","destination_away_from_target");
     assert(panel(hud,"V2TeamSelectOption_team_enemy").enabled,action+" allows enemy retreat anchor");
     assert(!panel(hud,"V2_destination_distance"),action+" has no adjustable retreat distance");
     assert(panel(hud,"V2TargetTeamHint").text==="#dota2_rpg_v2_own_retreat_hint",action+" explains self cast and enemy anchor");
@@ -766,9 +781,9 @@ click(offsetHud,"RuleSettingsClose");
     assert(wire.destination==="away_from_target" && wire.target_team==="enemy" && wire.destination_distance===undefined,
         action+" serializes enemy retreat without stale or default distance");
     click(hud,"RadiantRuleSettings0");
-    assert(panel(hud,"V2DestinationSelect").GetChild(0).text==="#dota2_rpg_v2_destination_away_from_target" &&
+    assert(panel(hud,"V2_priority0Select").GetChild(0).text==="#dota2_rpg_v2_destination_away_from_target" &&
         !panel(hud,"V2_destination_distance"),action+" retreat survives reopening");
-    choice(hud,"V2Destination","destination_target");
+    choice(hud,"V2_priority0","nearest");
     if (action==="item_force_staff") {
         assert(!panel(hud,"V2TeamSelectOption_team_enemy").enabled,"ordinary friendly Force Staff restores native teams");
         click(hud,"RuleSettingsApply");

@@ -404,6 +404,7 @@ function TacticEngine:ResolveOffsetDestination(rule, spec, ctx, mode)
 end
 
 function TacticEngine:ResolveRuleTarget(rule, spec, ctx)
+    require("tactics/special_targets").NormalizeRule(rule)
     local destination = rule.action ~= nil and rule.action.destination or nil
     if require("tactics/point_prediction").Enabled(rule) and
         ((spec.kind ~= "ability" and spec.kind ~= "item") or spec.target_mode ~= "point"

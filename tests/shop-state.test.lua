@@ -386,7 +386,7 @@ assertEqual(recruitmentGame.gold, 0, "third recruit must charge the fixed level-
 assertEqual(#recruitmentGame.ownedHeroes, 3, "player-selected recruits must be retained")
 assertEqual(recruitmentGame.heroData.npc_dota_hero_axe.quality, "legendary", "quality changes effects, not the recruit price")
 
--- XP 使用相邻累计阈值差值；经验按上阵/待命英雄分别发放，时间奖励上限为 10%。
+-- XP 使用相邻累计阈值差值；总经验按全部拥有英雄均分，时间奖励上限为 10%。
 local progressionGame = newGame({
 	heroData = {
 		active = { level = 1, current_xp = 0, skill_points = 1 },
@@ -398,11 +398,11 @@ local progressionGame = newGame({
 progressionGame:AddXpToHero("active", 200)
 assertEqual(progressionGame.heroData.active.level, 2, "100 accumulated XP must be spent before the next level")
 assertEqual(progressionGame.heroData.active.current_xp, 100, "level two must require the 150 XP difference")
-local activeXp, benchXp = progressionGame:AwardStageXp(120)
-assertEqual(activeXp, 120, "stage XP is per active hero")
-assertEqual(benchXp, 60, "bench XP is floor(active XP * 0.5)")
-assertEqual(progressionGame.heroData.active.current_xp, 70, "active hero receives the full stage XP and levels with threshold differences")
-assertEqual(progressionGame.heroData.bench.current_xp, 60, "bench hero receives half the stage XP")
+local share, count = progressionGame:AwardStageXp(120)
+assertEqual(share, 60, "stage pool is split equally")
+assertEqual(count, 2, "bench counts as a recipient")
+assertEqual(progressionGame.heroData.active.current_xp, 10, "active hero receives equal stage share and levels with threshold differences")
+assertEqual(progressionGame.heroData.bench.current_xp, 60, "bench hero receives equal stage share")
 assertEqual(progressionGame:CalculateTimeBonus(1000, 0, 120), 100, "time bonus cap is 10 percent")
 
 -- 首次创建战场时必须自动生成报价，不能只广播空 offer_text。

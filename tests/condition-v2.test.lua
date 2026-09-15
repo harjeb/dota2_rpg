@@ -388,7 +388,13 @@ local destinationRule=bridge.ruleService:DecodeFlat({action_kind="ability",actio
     destination="remnant_safe",cast_preference="point",min_aoe_hits=2,target_team="enemy"})
 check(bridge.ruleService:ValidateRule(0,caster,destinationRule),"destination validates on native remnant activation")
 gm.battleManager.getRules=function() return {destinationRule} end
+destinationRule.target_priorities={{type="farthest"},{type="lowest_hp_pct"}}
 local destinationSnapshot=Snapshot.ForHero(gm.battleManager,caster)[1]
+check(#destinationSnapshot.target_priorities==0,"snapshot removes stale destination rankings")
+destinationRule.target_priorities={{type="farthest"},{type="lowest_hp_pct"}}
+service:SyncRule(0,caster,1,destinationRule)
+check(payload.destination=="remnant_safe" and payload.target_priority_1_type==""
+    and payload.target_priority_2_type=="", "sync publishes destination without ordinary priorities")
 local destinationRestored=Bridge.ConvertLegacyRule(1,destinationSnapshot)
 check(bridge.ruleService:ValidateRule(0,caster,destinationRestored)
     and destinationRestored.action.destination=="remnant_safe" and destinationRestored.action.cast_preference=="point"

@@ -56,7 +56,7 @@ class OpeningBalanceTests(unittest.TestCase):
                 self.assertIn(row['ai'], ('simple_nearest', 'focus_lowest_hp'))
                 self.assertGreaterEqual(float(row['hp_multiplier']), 1)
             self.assertEqual(int(runtime[key]['reward']['gold']), 800 + index * 100)
-            self.assertEqual(int(runtime[key]['reward']['xp_per_active_hero']), [120, 160, 200, 250][index - 1])
+            self.assertEqual(int(runtime[key]['reward']['xp_pool']), [600, 800, 1000, 1250][index - 1])
             self.assertEqual(runtime[key]['time_limit'], '120')
 
     def test_stage_multi_curve(self):

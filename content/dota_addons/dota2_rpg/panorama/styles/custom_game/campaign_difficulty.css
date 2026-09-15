@@ -10,4 +10,3 @@
 .CampaignDifficultyButton:disabled { opacity: 0.45; }
 .CampaignDifficultySelected { border: 2px solid #e2bc70; background-color: #495041; }
 #CampaignDifficultyRanking { color: #d4b879; font-size: 17px; }
-#CampaignDifficultyBadge { horizontal-align: center; vertical-align: top; margin-top: 58px; color: #ead7ac; font-size: 17px; background-color: #101b26dc; padding: 5px 12px; }

@@ -77,6 +77,9 @@ var RpgConditionCatalog = (function () {
                 });
                 return (def ? entryLabel(def) : condition.type) + (values.length ? " (" + values.join(", ") + ")" : "");
             });
+            if (spec[0] === "priority" && settings.destination && settings.destination !== "target") {
+                items = [text("destination_" + settings.destination)];
+            }
             var mode = spec[0] === "priority" ? "" : " · " + text(settings[spec[1] + "_mode"] === "priority" ? "mode_priority" : "mode_all");
             parts.push(text(spec[2]) + mode + ": " + (items.join("; ") || text("none")));
         });
@@ -93,7 +96,6 @@ var RpgConditionCatalog = (function () {
         if (settings.prediction_direction) {
             parts.push(text("prediction_title") + ": " + text("prediction_" + settings.prediction_direction) + " / " + RpgRuleSync.predictionSettings(settings).prediction_distance);
         }
-        parts.push(text("destination") + ": " + text("destination_" + (settings.destination || "target")));
         parts.push(text("cast_preference") + ": " + text("cast_" + (settings.cast_preference || "auto")));
         ["movement_mode", "movement_buff", "movement_trigger_ability", "movement_duration", "movement_distance", "movement_retarget", "movement_loop", "movement_interruptible", "movement_direction", "positioning_mode", "positioning_distance", "positioning_tolerance", "destination_distance"].forEach(function (key) {
             if (settings[key] !== undefined) {
@@ -258,6 +260,19 @@ var RpgConditionCatalog = (function () {
         var ownRetreat=options.abilityName==="mirana_leap" || options.abilityName==="item_force_staff";
         var stateKey=normalizeNativeSettings(baseCap);
         var cap=capAPI ? capAPI.derive(baseCap,draft) : null;
+        var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
+        var remnantAction = remnantAbilities.indexOf(options.abilityName) >= 0;
+        var floorCast = !!(cap && cap.mode === "point");
+        var destinationModes = [];
+        if (ownRetreat) { destinationModes.push("away_from_target"); }
+        else if (floorCast) { destinationModes = destinationModes.concat(OFFSET_DESTINATIONS); }
+        if (remnantAction) { destinationModes.push("self"); }
+        if (options.abilityName === "ember_spirit_activate_fire_remnant") {
+            destinationModes = destinationModes.concat(["remnant_nearest", "remnant_farthest", "remnant_near_enemy", "remnant_safe"]);
+        }
+        if (destinationModes.indexOf(draft.destination) < 0) { draft.destination = "target"; }
+        var destinationActive = draft.destination !== "target";
+        if (destinationActive) { draft.target_priorities = []; }
         var strict=!!options.getCapability;
         function explain(reason) { return capAPI ? capAPI.message(reason) : reason; }
         function reopen(changes) {
@@ -423,16 +438,26 @@ var RpgConditionCatalog = (function () {
         }
         function slots(group, key, count, title) {
             label(body, "", text(title)).AddClass("V2SectionTitle");
+            if (group === "priority") {
+                label(body, "V2PriorityDestinationHint", text(destinationModes.length ? (destinationActive ? "priority_destination_active_hint" : "priority_destination_hint") : "priority_order_hint")).AddClass("V2Hint");
+                if (destinationActive) { count = 1; }
+            }
             if (group !== "priority") {
                 var modeKey = key + "_mode";
                 draft[modeKey] = draft[modeKey] === "priority" ? "priority" : "all";
-                var modeRow = $.CreatePanel("Panel", body, "V2_" + group + "ModeRow"); modeRow.AddClass("V2Selector");
-                choose(modeRow, "V2_" + group + "Mode", [
+                var modeRow = $.CreatePanel("Panel", body, "V2_" + group + "ModeRow"); modeRow.AddClass("V2ModeSwitch");
+                [
                     {id:"all",label:text("mode_all"),hint:text("mode_all_hint")},
                     {id:"priority",label:text("mode_priority"),hint:text(group + "_mode_priority_hint")}
-                ], draft[modeKey], function(value) {
-                    if (options.readOnly) { return; }
-                    var changes = {}; changes[modeKey] = value; reopen(changes);
+                ].forEach(function(mode) {
+                    var option = button(modeRow, "V2_" + group + "ModeOption_" + mode.id, mode.label, function() {
+                        if (options.readOnly || generation !== editorGeneration || draft[modeKey] === mode.id) { return; }
+                        var changes = {}; changes[modeKey] = mode.id; reopen(changes);
+                    });
+                    option.AddClass("V2ModeOption");
+                    option.SetHasClass("Selected", draft[modeKey] === mode.id);
+                    option.enabled = !options.readOnly;
+                    tooltip(option, mode.hint);
                 });
             }
             for (var i = 0; i < count; i++) {
@@ -502,14 +527,27 @@ var RpgConditionCatalog = (function () {
                         });
                         readFields = function () { entries.forEach(function (entry) { current[entry.key] = entry.panel.text; }); current = normalize(group, current); draft[key][index] = current; };
                     }
-                    choose(selector, "V2_" + group + index + "Select", restrict([{ id: "" }].concat(groups[group]),function(entry) {
+                    var choices = [{ id: "" }].concat(groups[group]);
+                    if (group === "priority" && index === 0) {
+                        choices = choices.concat(destinationModes.map(function(mode) { return {id:"destination_" + mode, category:"destination"}; }));
+                    }
+                    choose(selector, "V2_" + group + index + "Select", restrict(choices,function(entry) {
+                        if (entry.id.indexOf("destination_") === 0) { return ""; }
                         // Reference-dependent predicates need an actor picker first;
                         // validate their final reference on Apply, not the empty menu entry.
                         if (entry.id==="channel_elapsed_gte" || entry.id==="channel_elapsed_lte" || entry.id==="action_phase_is") { return ""; }
                         var reason = entry.id && cap ? capAPI.conditionReason(cap,group,{type:entry.id},draft.target_team || targetTeam) : "";
                         if (group === "target" && draft.target_filters_mode === "priority" && (reason === "self_excluded" || reason === "condition_conflicts_with_native_targeting")) { return ""; }
                         return reason;
-                    }), current.type, function (type) {
+                    }), group === "priority" && index === 0 && destinationActive ? "destination_" + draft.destination : current.type, function (type) {
+                        if (options.readOnly || generation !== editorGeneration) { return; }
+                        if (group === "priority" && index === 0 && (destinationActive || type.indexOf("destination_") === 0)) {
+                            readers.forEach(function(read) { read(); });
+                            var destination = type.indexOf("destination_") === 0 ? type.substring(12) : "target";
+                            reopen({destination:destination, target_priorities:destination === "target" && type ? [{type:type}] : [],
+                                destination_distance:!ownRetreat && OFFSET_DESTINATIONS.indexOf(destination) >= 0 ? number(draft.destination_distance, 400, 0, 3000) : undefined});
+                            return;
+                        }
                         readFields(); current.type = type; current = normalize(group, current); draft[key][index] = current; renderFields();
                     });
                     renderFields(); readers.push(function () { readFields(); });
@@ -548,6 +586,10 @@ var RpgConditionCatalog = (function () {
         slots("use", "use_conditions", 4, "use_title");
         slots("target", "target_filters", 4, "target_title");
         slots("priority", "target_priorities", 2, "priority_title");
+        if (!ownRetreat && OFFSET_DESTINATIONS.indexOf(draft.destination) >= 0) {
+            draft.destination_distance = number(draft.destination_distance, 400, 0, 3000);
+            settingInput("destination_distance");
+        }
         if (baseCap && RpgRuleSync.predictionAllowed(draft, baseCap, options.abilityName || rule.action)) {
             label(body, "V2PredictionTitle", text("prediction_title")).AddClass("V2SectionTitle");
             label(body, "V2PredictionHint", text("prediction_hint")).AddClass("V2Hint");
@@ -652,30 +694,6 @@ var RpgConditionCatalog = (function () {
             draft.forced=approach === "approach_chase";
             draft.chase_timeout=number(timeoutEntry.text, 3, 0.1, 120);
         });
-        // 地板释放（点目标）技能/物品可指定落点方式；残焰类保留原有专属落点。
-        var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
-        var remnantAction = remnantAbilities.indexOf(options.abilityName) >= 0;
-        var floorCast = !!(cap && cap.mode === "point");
-        if (floorCast || remnantAction || ownRetreat) {
-            var destinationRow = $.CreatePanel("Panel", body, "V2DestinationRow"); destinationRow.AddClass("V2Selector");
-            label(destinationRow,"",text("destination"));
-            var destination = draft.destination || "target";
-            var modes = ["target"];
-            if (ownRetreat) { modes.push("away_from_target"); }
-            else if (floorCast) { modes = modes.concat(OFFSET_DESTINATIONS); }
-            if (remnantAction) { modes.push("self"); }
-            if (options.abilityName === "ember_spirit_activate_fire_remnant") {
-                modes = modes.concat(["remnant_nearest", "remnant_farthest", "remnant_near_enemy", "remnant_safe"]);
-            }
-            if (modes.indexOf(destination) < 0) { destination = "target"; }
-            choose(destinationRow,"V2DestinationSelect",modes.map(function(mode) { return {id:"destination_"+mode}; }),
-                "destination_"+destination,function(value) {
-                    // 落点方式决定是否显示距离输入，重开编辑器让界面与草稿保持一致。
-                    reopen({destination:value.replace("destination_","")});
-                });
-            readers.push(function() { draft.destination=destination; });
-            if (!ownRetreat && OFFSET_DESTINATIONS.indexOf(destination) >= 0) { settingInput("destination_distance"); }
-        }
         if (stateKey) {
             var toggle = $.CreatePanel("Panel", body, "V2ToggleRow"); toggle.AddClass("V2Selector");
             label(toggle, "", text("toggle_title"));
@@ -688,6 +706,7 @@ var RpgConditionCatalog = (function () {
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
             if (options.readOnly || generation !== editorGeneration) { return; }
             readers.forEach(function (read) { read(); });
+            if (draft.destination !== "target") { draft.target_priorities = []; }
             var charge = RpgRuleSync.chargeSettings(draft, options.abilityName || action);
             delete draft.charge_mode; delete draft.charge_time;
             Object.keys(charge).forEach(function(key) { draft[key] = charge[key]; });

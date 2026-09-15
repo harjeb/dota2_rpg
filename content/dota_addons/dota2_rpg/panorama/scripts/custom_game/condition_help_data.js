@@ -3149,8 +3149,8 @@ var RpgConditionHelpData = {
           "en": "For a facing-based spell, choose enemy targets and Match all filters; add F41 facing enemy and a distance cap."
         },
         {
-          "zh": "撤退：选择米拉娜跳跃或原力法杖，以敌人为方向参照，目的地选择背离目标。原力法杖实际对自己施放。",
-          "en": "For retreat, choose Mirana Leap or Force Staff, use an enemy as the direction reference and select Away from target. Force Staff actually targets the caster."
+          "zh": "撤退：选择米拉娜跳跃或原力法杖，以敌人为方向参照，在目标优先级第 1 项下拉的目的地分组中选择远离目标。目的地与普通排序互斥；原力法杖实际对自己施放。",
+          "en": "For retreat, choose Mirana Leap or Force Staff and an enemy reference. In the first Target priorities dropdown, select Away from target in the Destination group. A destination replaces ordinary ranking; Force Staff actually targets the caster."
         }
       ],
       "settings": [

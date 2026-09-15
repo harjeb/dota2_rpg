@@ -15,7 +15,6 @@
     function label(parent, id, key) {
         var p = create("Label", parent, id); p.html = false; p.text = local(key); return p;
     }
-    var badge = label(root, "CampaignDifficultyBadge", "default");
     var modal = create("Panel", root, "CampaignDifficultyModal", "CampaignDifficultyModal");
     var card = create("Panel", modal, "CampaignDifficultyCard", "CampaignDifficultyCard");
     label(card, "CampaignDifficultyTitle", "title");
@@ -46,8 +45,6 @@
         var campaign = state && flag(state.campaign_active);
         var locked = state && flag(state.difficulty_locked);
         modal.visible = !!owner && campaign && !locked;
-        badge.visible = !!state && campaign && locked;
-        if (state) { badge.text = local(state.campaign_difficulty) + " · " + local("rewards") + " ×" + state.reward_multiplier; }
         Object.keys(buttons).forEach(function (value) {
             buttons[value].enabled = !!owner && campaign && !locked && !pending;
             buttons[value].SetHasClass("CampaignDifficultySelected", draft === value);

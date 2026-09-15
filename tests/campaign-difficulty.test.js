@@ -21,11 +21,11 @@ assert.strictEqual(selections()[0].payload.difficulty,"easy");
 assert.deepStrictEqual(Object.keys(selections()[0].payload),["difficulty"],"client never sends multiplier or owner");
 click(hud,"CampaignDifficultyConfirm");assert.strictEqual(selections().length,1);
 publish({campaign_difficulty:"easy",reward_multiplier:1.5,difficulty_locked:1});
-assert(!p("CampaignDifficultyModal").visible);assert(p("CampaignDifficultyBadge").text.includes("1.5"));
+assert(!p("CampaignDifficultyModal").visible);assert(!p("CampaignDifficultyBadge"),"locked difficulty has no persistent reward multiplier badge");
 click(hud,"CampaignDifficulty_hard");assert.strictEqual(selections().length,1);
 publish({campaign_difficulty:"easy",reward_multiplier:1.5,difficulty_locked:1});
 assert(p("CampaignDifficulty_easy").BHasClass("CampaignDifficultySelected"),"reconnect retains server selection");
-publish({campaign_active:0});assert(!p("CampaignDifficultyModal").visible && !p("CampaignDifficultyBadge").visible,"arena isolated");
+publish({campaign_active:0});assert(!p("CampaignDifficultyModal").visible,"arena isolated");
 publish({owner_player_id:1});assert(!p("CampaignDifficultyModal").visible && !p("CampaignDifficultyConfirm").enabled);
 // Panorama reload retains the local draft before confirmation via context panel.
 publish();click(hud,"CampaignDifficulty_hard");

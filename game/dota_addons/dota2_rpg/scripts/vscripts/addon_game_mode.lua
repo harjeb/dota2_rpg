@@ -830,7 +830,7 @@ function CDota2RpgDemo:GrantScrollXPByUnit(unit, xp, item)
 		self.scrollStock[realScrollKind] = self.scrollStock[realScrollKind] - 1
 	end
 	self:BroadcastShopState()
-	print(string.format("[Dota2Rpg] ScrollXP: %s +%d (lv%d, xp=%d, sp=%d)",
+	print(string.format("[Dota2Rpg] ScrollXP: %s +%d (lv%d, xp=%g, sp=%d)",
 		heroName, xp, data.level, data.current_xp, data.skill_points))
 	return true
 end
@@ -4714,7 +4714,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	local timeLimit = tonumber(level ~= nil and level.time_limit or 120) or 120
 	local reward = level ~= nil and level.reward or nil
 	local baseGold = tonumber(reward ~= nil and reward.gold or 0) or 0
-	local baseXp = tonumber(reward ~= nil and (reward.xp_per_active_hero or reward.xp_pool) or 0) or 0
+	local baseXp = tonumber(reward ~= nil and reward.xp_pool or 0) or 0
 
 	-- 星级：3=全员存活 / 2=存活≥1 且 <60s / 1=险胜
 	local stars = 1
@@ -4735,12 +4735,15 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- 时间奖励上限为基础金币的 10%，且只由服务端计算一次。
 	local timeBonus = winner == "radiant" and self:CalculateTimeBonus(baseGold, clearTime, timeLimit) or 0
 	local difficulty = require("battle.campaign_difficulty")
-	-- Scale each earned stream once, before the bench share; never AddGold/AddXpToHero.
+	-- Scale the total pool once, before dividing across owned heroes.
 	baseGold = difficulty.Scale(self, baseGold)
 	timeBonus = difficulty.Scale(self, timeBonus)
 	baseXp = difficulty.Scale(self, baseXp)
-	local activeXp = baseXp
-	local benchXp = math.floor(baseXp * ((ProgressionData and ProgressionData.BENCH_XP_RATE) or 0.5))
+	local xpShare, xpRecipientCount = 0, 0
+	if winner == "radiant" then
+		xpShare, xpRecipientCount = self:AwardStageXp(baseXp)
+		xpShare, xpRecipientCount = xpShare or 0, xpRecipientCount or 0
+	end
 
 	-- 唯一一次 loot_table 掉落结算：胜利时按掉落表概率 roll 入共享仓库
 	local lootDrops = {}
@@ -4762,9 +4765,11 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		gold = winner == "radiant" and (baseGold + timeBonus) or 0,
 		base_gold = baseGold,
 		time_bonus = timeBonus,
-		xp_pool = baseXp, -- 兼容旧客户端；新客户端读取下面两个字段。
-		xp_per_active_hero = activeXp,
-		xp_per_bench_hero = benchXp,
+		xp_pool = winner == "radiant" and baseXp or 0,
+		xp_per_owned_hero = xpShare,
+		xp_recipient_count = xpRecipientCount,
+		xp_per_active_hero = xpShare, -- Legacy display fields now have equal shares.
+		xp_per_bench_hero = xpShare,
 		stars = stars,
 		clear_time = math.floor(clearTime),
 		loot_text = table.concat(lootDrops, ";"),
@@ -4775,10 +4780,9 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 		life_reward_pending = #lives.pendingItems,
 		run_failed = self.runFailed and 1 or 0,
 	}
-	-- 唯一一次奖励：胜利即入账（金币），按上阵/待命逐英雄发经验。
+	-- 胜利金币唯一入账；经验总池已在上方按拥有名单唯一分配。
 	if winner == "radiant" then
 		self:AddGold(settlement.gold)
-		self:AwardStageXp(activeXp)
 	end
 
 	local isFinalWin = winner == "radiant"
