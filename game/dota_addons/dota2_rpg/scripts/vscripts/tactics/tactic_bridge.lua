@@ -162,6 +162,8 @@ function TacticBridge.ConvertLegacyRule(slot, legacy)
 			target_team = target.team or "enemy",
 		})),
         allow_unverified_modifiers = decoded.allow_unverified_modifiers,
+        chase_timeout = decoded.chase_timeout,
+        max_chase_distance = decoded.max_chase_distance,
 		target = target,
 		target_filters = filters,
 		target_priorities = priorities,

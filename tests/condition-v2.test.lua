@@ -268,7 +268,7 @@ check(not bridge.ruleService:ValidateRule(0,caster,targetRule),"real service rej
 gm.currentLevelId="ch05"
 check(real.get_target_actor(targetKey)==enemy,"same chapter retry retains target identity")
 local actorKey=Snapshot.HeroKey(gm.battleManager,far)
-local actorArgs={action_kind="ability",action_id="native_active",
+local actorArgs={action_kind="ability",action_id="native_active",chase_timeout=4.5,max_chase_distance=2000,
     use_condition_1_type="action_elapsed_gte",use_condition_1_value=3,
     use_condition_1_action_id="native_active",use_condition_1_action_actor=actorKey,
     use_condition_2_type="action_use_count_lt",use_condition_2_value=2,
@@ -283,6 +283,7 @@ check(saved.use_conditions[1].action_actor==actorKey and saved.use_conditions[2]
 local restored=Bridge.ConvertLegacyRule(1,saved)
 check(bridge.ruleService:ValidateRule(0,caster,restored),"snapshot rehydrates to valid rule")
 check(restored.use_conditions[1].action_actor==actorKey,"rehydration preserves duplicate occurrence")
+check(saved.chase_timeout==4.5 and restored.chase_timeout==4.5 and restored.max_chase_distance==2000,"snapshot and legacy restore preserve chase settings")
 check(bridge.ruleService:UpdateRule(0,1,1,actorArgs),"actor flat update accepted")
 check(payload.use_condition_1_action_actor==actorKey and payload.use_condition_2_action_actor==actorKey,"nettable sync preserves actor fields")
 check(real.get_action_actor(actorKey)==far and real.get_action_actor("enemy:hero:0")==enemy,"duplicate enemy occurrence resolves separately")

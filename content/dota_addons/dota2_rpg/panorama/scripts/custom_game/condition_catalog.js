@@ -580,8 +580,18 @@ var RpgConditionCatalog = (function () {
         var approachRow = $.CreatePanel("Panel", body, "V2ApproachRow"); approachRow.AddClass("V2Selector");
         label(approachRow,"",text("approach_title"));
         var approach = draft.forced ? "approach_chase" : "approach_wait";
-        choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) { approach=value; });
-        readers.push(function() { draft.forced=approach === "approach_chase"; });
+        var timeoutRow = $.CreatePanel("Panel", body, "V2ChaseTimeoutRow"); timeoutRow.AddClass("V2Field"); timeoutRow.AddClass("V2MotionField");
+        label(timeoutRow, "", text("chase_timeout"));
+        var timeoutEntry = $.CreatePanel("TextEntry", timeoutRow, "V2_chase_timeout"); timeoutEntry.AddClass("V2Input");
+        timeoutEntry.maxchars = 16; timeoutEntry.text = String(draft.chase_timeout);
+        timeoutRow.SetHasClass("Hidden", approach !== "approach_chase");
+        choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) {
+            approach=value; timeoutRow.SetHasClass("Hidden", approach !== "approach_chase");
+        });
+        readers.push(function() {
+            draft.forced=approach === "approach_chase";
+            draft.chase_timeout=number(timeoutEntry.text, 3, 0.1, 5);
+        });
         // 地板释放（点目标）技能/物品可指定落点方式；残焰类保留原有专属落点。
         var remnantAbilities = ["ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant", "elder_titan_ancestral_spirit", "elder_titan_move_spirit"];
         var remnantAction = remnantAbilities.indexOf(options.abilityName) >= 0;

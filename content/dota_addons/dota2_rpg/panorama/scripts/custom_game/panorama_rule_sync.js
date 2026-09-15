@@ -74,7 +74,10 @@ var RpgRuleSync = (function () {
     function actionSettings(input, action) {
         if (action === "buyback") { return {}; }
         input = input || {};
-        var out = {};
+        var out = {chase_timeout: Math.max(0.1, Math.min(5, numberValue(input.chase_timeout, 3)))};
+        if (input.max_chase_distance !== undefined) {
+            out.max_chase_distance = Math.max(100, Math.min(2000, numberValue(input.max_chase_distance, 2000)));
+        }
         function choice(key, values, fallback) { out[key] = values.indexOf(input[key]) >= 0 ? input[key] : fallback; }
         function numeric(key, fallback) { out[key] = Math.max(0, numberValue(input[key], fallback)); }
         if (action === "sustained_move") {

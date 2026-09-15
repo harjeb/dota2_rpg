@@ -427,14 +427,20 @@ assert(latest(hud, lion).desired_toggle_state === undefined, "default toggle omi
 assert(!panel(hud,"RadiantConditionEditor0") && !panel(hud,"RadiantForceToggle0"),"outer editing controls are absent");
 click(hud,"RadiantRuleSettings0");
 choice(hud,"V2Team","team_ally"); choice(hud,"V2_priority0","farthest");
-choice(hud,"V2Approach","approach_chase"); click(hud,"RuleSettingsApply");
+choice(hud,"V2Approach","approach_chase");
+assert(panel(hud,"V2_chase_timeout").text === "3", "new chase timeout defaults to three seconds");
+input(hud,"V2_chase_timeout",4.5); click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).target_team === "ally" && latest(hud,lion).target_priority_1_type === "farthest"
     && latest(hud,lion).approach === "allow_approach", "complete settings own target and approach behavior");
 click(hud,"RadiantRuleSettings0");
 assert(panel(hud,"V2ApproachSelect").GetChild(0).text === "#dota2_rpg_v2_approach_chase","approach survives reopening");
+assert(latest(hud,lion).chase_timeout === 4.5 && panel(hud,"V2_chase_timeout").text === "4.5", "custom timeout saves and reopens");
 choice(hud,"V2Approach","approach_wait");click(hud,"RuleSettingsApply");
 assert(latest(hud,lion).approach === "range_only","approach can be disabled in settings");
 var sync = hud.context.RpgRuleSync;
+[ [undefined,3], ["",3], ["Infinity",3], [-1,0.1], [99,5], [2.75,2.75] ].forEach(function(pair) {
+    assert(sync.serialize({rule:{action:"attack",chase_timeout:pair[0]}}).chase_timeout === pair[1], "timeout normalization " + pair[0]);
+});
 [["enemy_attack_lowest", "lowest_attack_damage"], ["ally_mr_highest", "highest_magic_resistance"], ["ally_distance_nearest", "nearest"]].forEach(function (pair) {
     var payload = sync.serialize({rule: {target: pair[0]}}); assert(payload.target_priority_1_type === pair[1], "legacy priority mapping " + pair[0]);
 });
@@ -458,12 +464,13 @@ var omni = "npc_dota_hero_omniknight";
 fresh.subscriptions.rpg_shop_state({lineup_text:omni,owned_text:omni});
 fresh.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:701,hero_name:omni,rule_key:omni,
     can_edit:1,rules_ready:1,actions_text:"omniknight_purification;attack",rules:{
-        1:{action:"omniknight_purification",enabled:1,target_team:"ally",use_conditions:{1:{type:"self_hp_pct_lte",value:0.5}},target_filters:{1:{type:"hp_pct_lte",value:0.8}},target_priorities:{1:{type:"lowest_hp_pct"}}},
+        1:{action:"omniknight_purification",enabled:1,target_team:"ally",forced:1,chase_timeout:2.75,use_conditions:{1:{type:"self_hp_pct_lte",value:0.5}},target_filters:{1:{type:"hp_pct_lte",value:0.8}},target_priorities:{1:{type:"lowest_hp_pct"}}},
         2:{action:"attack",enabled:1,target_team:"enemy",use_conditions:{1:{type:"always"}}}
     }});
 assert(!fresh.sentEvents.some(function(e){return e.name === "rpg_update_rule";}),"hydration/rendering never truncates server rules with defaults");
 click(fresh,"RadiantRuleSettings0");
 assert(panel(fresh,"V2_use0_value").text === "50" && panel(fresh,"V2_target0_value").text === "80","server percentages converted once for restored editor");
+assert(panel(fresh,"V2_chase_timeout").text === "2.75", "server snapshot restores configured chase timeout");
 var beforePreset = fresh.sentEvents.length;
 assert(!panel(fresh,"V2Preset0"),"skill presets are applied by action selection, not buttons");
 assert(fresh.sentEvents.length === beforePreset,"preset only changes draft until Apply");
