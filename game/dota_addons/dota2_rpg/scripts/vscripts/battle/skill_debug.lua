@@ -1,4 +1,4 @@
--- Player-operated sandbox. Enter/exit start fresh runs; a test reset keeps its build.
+-- Player-operated sandbox. Manual reset clears skills/rules; automatic replay keeps the build.
 local Debug = { LEVEL = "skill_test", UNIT = "npc_rpg_skill_test_target", HP = 50000, GOLD = 99999 }
 local Log = require("issue_fixes.runtime_log")
 local Traceback = Log.Traceback or tostring
@@ -266,11 +266,34 @@ local function ready(game)
     game:SpawnBattleBarrier()
     broadcast(game)
 end
-function Debug.Reset(game)
+function Debug.Reset(game, keepBuild)
     local s = state(game)
     if not s.active or s.pending then return false, "wrong_phase" end
     game.settlementGeneration = (game.settlementGeneration or 0) + 1
+    s.castSerial = (s.castSerial or 0) + 1
     stop(game)
+    if not keepBuild then
+        -- Capture equipment first, then remove the old hero before respawning:
+        -- the normal roster rebuild would otherwise capture its learned skills
+        -- again (and retain Winter Wyvern's native ability upgrades).
+        for _, unit in ipairs(game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS]) do
+            if valid(unit) then
+                game:CaptureHeroInventoryForRespawn(unit)
+                Lifecycle.Remove(game, unit, "debug_skill_reset")
+            end
+        end
+        game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
+        local data = game.heroData[s.hero]
+        data.ability_levels, data.skill_points = nil, data.level
+        data.edda_retained_unit, data.edda_consumed = nil, nil
+        game.heroRulesByName = {}
+        game.battleManager.teamRules = {[DOTA_TEAM_GOODGUYS]={}, [DOTA_TEAM_BADGUYS]={}}
+        if game.tacticBridge.ruleService then game.tacticBridge.ruleService.state.rules = {} end
+        game.ruleGeneration = (game.ruleGeneration or 0) + 1
+        game.rosterAbilitySnapshot, game.equipmentSnapshot = nil, nil
+        game.battleManager:ResetBattleStats()
+        game.damageStats = nil
+    end
     ready(game)
     Log.Write("SkillDebug reset hero=" .. s.hero .. " damage=" .. s.damage)
     return true
@@ -372,7 +395,7 @@ function Debug.EndBattle(game, winner)
     Debug.Publish(game)
     GameRules:GetGameModeEntity():SetContextThink("RpgSkillDebugReset", function()
         if state(game).active and game.phase == "result" and game.settlementGeneration == generation then
-            local ok = safe(game, "reset", function() Debug.Reset(game) end)
+            local ok = safe(game, "reset", function() Debug.Reset(game, true) end)
             if not ok then Debug.Publish(game, "spawn_failed") end
         end
         return nil
@@ -455,6 +478,7 @@ function Debug.Install(game)
     end
     listen("rpg_debug_request", function() Debug.Publish(game); return true end)
     listen("rpg_debug_start", function(payload) return Debug.Start(game, payload) end)
+    listen("rpg_debug_restart", function() return Debug.Reset(game, true) end)
     listen("rpg_debug_reset", function() return Debug.Reset(game) end)
     listen("rpg_debug_exit", function() return Debug.Exit(game) end)
     listen("rpg_debug_damage", function(payload)

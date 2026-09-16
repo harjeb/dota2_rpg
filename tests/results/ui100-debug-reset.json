@@ -1,0 +1,59 @@
+{
+  "scope": "offline native API mocks and Panorama doubles; no Dota execution",
+  "results": [
+    {
+      "test": "skill-debug.test.lua",
+      "returncode": 0,
+      "stdout": "PASS fresh runs advance rule generation once before roster broadcasts and discard old rules\nPASS failed pending entry and cancellation preserve generation and rule stores\nPASS catalog request survives restricted debug facilities\nPASS trusted sorted deduplicated catalog and owner metadata\nPASS debug catalog allows heroes outside ordinary recruitment\nPASS damage boundaries reject NaN fractions and out of range\nPASS pending blocks battle and roster mutations without clearing campaign\nPASS cancel invalidates stale callbacks and retains campaign\nPASS precache timeout and exception preserve existing campaign\nPASS one level 30 hero, one 50000 HP target and 99999 gold; callback idempotence\nPASS restart retains authored rules equipment learned skills and talents; refreshes cooldowns\nPASS manual reset clears learned skills talents and rules in every test phase, retaining equipment\nPASS win death and timeout settle once with no normal awards lives or progression\nPASS exit from fight creates fresh normal run and restores recruitment and gold\nPASS fresh campaign reset defaults to 1500 and preserves configured starting gold\nPASS settlement reset callback cannot reset a later normal run\nPASS normal wrappers preserve receiver arguments returns and install idempotence\nPASS manual diagnostic flag suppresses both real script AI order paths\nPASS step 1 reopens the tactic attack only while the spell stays castable\nPASS order attribution records the source that claims the target\nPASS manual stomp exception is exact and passes the real combat filter\nPASS all debug events require engine owner metadata\nPASS duplicate hero precache callbacks and cancellation during target loading\nPASS stale phase timeout releases pending request (regression)\nPASS debug end timeout reset and exit disable pending dead heroes before cleanup\nskill-debug: 25 passed, 0 failed (native respawn semantics mocked, not proven)\n",
+      "stderr": ""
+    },
+    {
+      "test": "hero-ability-policy.test.lua",
+      "returncode": 0,
+      "stdout": "hero-ability-policy.test.lua: passed\n",
+      "stderr": ""
+    },
+    {
+      "test": "eldwurms-edda.test.lua",
+      "returncode": 0,
+      "stdout": "PASS Edda native consume, exact ownership, native rejection, duplicate grant suppression, retained upgrades, dead/alive spawn protection cleanup, lifecycle diagnostics, battle reset and fresh run\n",
+      "stderr": ""
+    },
+    {
+      "test": "item-cooldowns.test.lua",
+      "returncode": 0,
+      "stdout": "PASS: item refresh covers all slots/carriers, preserves charges, skips invalid handles and live combat\n",
+      "stderr": ""
+    },
+    {
+      "test": "respawn-policy.test.lua",
+      "returncode": 0,
+      "stdout": "[Dota2Rpg] requires: helpers=true items=true progression=true recruitment_patch=true progression_patch=true enemy_items=true tactic_bridge=true battle_manager=true data_loader=true\nPASS rejected starts never grant respawn permission\n[Dota2Rpg] Battle started on level ch01.\nPASS real start enables both teams before preparation removal and acquisition\n[Dota2Rpg] Battle started on level ch01.\nPASS WK death/rebirth on both teams preserves the exact entity and native state\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\nPASS Undying native return with false reincarnation flag keeps permission and prevents wipe\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\nPASS confirmed Undying native return removes only fountain protection after the native buff ends\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\nPASS fountain cleanup excludes other heroes, initial spawns, pending buffs and late returns\n[Dota2Rpg] Battle started on level ch01.\n[RPG][RunLives] remaining=4 gold_reward=0 items=\n[Dota2Rpg] Battle finished. Result=timeout Stars=1 Gold=0(+0) XpPool=0\nPASS Undying return does not escape deadline or settlement containment\n[Dota2Rpg] Battle started on level ch01.\nPASS same native buff name on other heroes cannot opt into Undying return\n[Dota2Rpg] Battle started on level ch01.\nPASS consumed Aegis uses native flag; later ordinary death disables automatic respawn\n[Dota2Rpg] Battle started on level ch01.\nPASS ordinary death on either team disables permission before event broadcast\n[Dota2Rpg] Battle started on level ch01.\nPASS commander bench summon and stale handles are excluded by roster identity\nPASS initial roster and pre-tag owned spawns avoid commander conversion and setup roots\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle started on level ch01.\nPASS late deaths and native rebirth outside fight remain disabled and contained\n[Dota2Rpg] Battle started on level ch01.\n[RPG][RunLives] remaining=4 gold_reward=0 items=\n[Dota2Rpg] Battle finished. Result=timeout Stars=1 Gold=0(+0) XpPool=0\n[Dota2Rpg] Battle started on level ch01.\n[RPG][RunLives] remaining=4 gold_reward=0 items=\n[Dota2Rpg] Battle finished. Result=timeout Stars=1 Gold=0(+0) XpPool=0\nPASS real settlement disables pending dead and alive heroes before cleanup, despite one bad setter\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Battle finished. Result=radiant Stars=1 Gold=0(+0) XpPool=0\n[Dota2Rpg] Battle started on level ch01.\n[Dota2Rpg] Run complete: final level cleared.\n[Dota2Rpg] Battle started on level ch01.\n[RPG][RunLives] remaining=0 gold_reward=0 items=\n[Dota2Rpg] Run ended: all five lives lost.\nPASS victory and terminal settlement disable pending rebirth without a setup escape\n[Dota2Rpg] Battle started on level ch01.\nPASS direct BattleManager stop disables dead pending heroes even with a failed setter\nPASS addon global respawn opt-in remains enabled (source guard, not native proof)\nrespawn-policy: 17 passed, 0 failed; native API semantics are mocked, not proven\n",
+      "stderr": ""
+    },
+    {
+      "test": "skill-debug.test.js",
+      "returncode": 0,
+      "stdout": "PASS: live debug XML, bilingual hero search, validated requests, asynchronous cancellation, phase gates, reset/exit and close semantics\n",
+      "stderr": ""
+    },
+    {
+      "test": "condition-ui-v2.test.js",
+      "returncode": 0,
+      "stdout": "PASS: F39 current-enemy hero/neutral/boss portraits, duplicate keys, save/reopen, stale targets, clear and fight guards\nPASS: F40 allied roster portraits, hero identity, save/reopen, bench unavailable and authoritative roundtrip\nPASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings\nPASS: F41 facing cone editor, explanation, stable ID, save and authoritative roundtrip\nPASS: five hearts, loss rewards, authoritative wallet and terminal life UI\nPASS: 505 complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, roundtrips and removed preset controls\nPASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation\nincoming AoE UI roundtrips passed\n",
+      "stderr": ""
+    },
+    {
+      "test": "rule-library.test.js",
+      "returncode": 0,
+      "stdout": "rule-library: persistence, atomic merge, bounded validation, ACK races and storage failures passed\n",
+      "stderr": ""
+    },
+    {
+      "test": "rule-library-hud.test.js",
+      "returncode": 0,
+      "stdout": "PASS: real HUD accepted backups, manual import with current entity, new-run defaults, percent roundtrip, hero accumulation, rejected backup protection, phase gate, equipment defer and import-intent reset\n",
+      "stderr": ""
+    }
+  ]
+}

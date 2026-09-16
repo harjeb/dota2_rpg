@@ -74,16 +74,20 @@ function Root:SpawnBattleBarrier() self.barriers=self.barriers+1 end
 function Root:InitializeRecruitmentState() self.recruitInitializations=self.recruitInitializations+1; self.freeRecruitChoices=3 end
 function Root:RollShop() self.shopRolls=self.shopRolls+1; self.shopOffers={normal=true} end
 for _, name in ipairs({"BroadcastLevelInfo","BroadcastBattleState","BroadcastHeroInfo","BroadcastShopState","BroadcastDamageStats"}) do Root[name]=noop end
+function Root:CaptureHeroInventoryForRespawn(old)
+    local data=self.heroData[old.name]
+    if data then
+        data.ability_levels={}
+        for _,a in ipairs(old.abilities) do data.ability_levels[a.name]=a.level end
+        self.heroInventories[old.name]=old.items
+        old.items={}
+    end
+end
 function Root:RespawnPlayerRoster()
     if self.phase ~= "setup" then return end
     self.rosterSpawns=self.rosterSpawns+1
     for _, old in ipairs(self.battleManager.teamHeroes[2]) do
-        local data=self.heroData[old.name]
-        if data then
-            data.ability_levels={}
-            for _,a in ipairs(old.abilities) do data.ability_levels[a.name]=a.level end
-            self.heroInventories[old.name]=old.items
-        end
+        self:CaptureHeroInventoryForRespawn(old)
         old:RemoveSelf()
     end
     self.battleManager.teamHeroes[2]={}
@@ -308,14 +312,14 @@ test("one level 30 hero, one 50000 HP target and 99999 gold; callback idempotenc
     eq(g.dataLoader:GetLevel(Debug.LEVEL).reward.gold,0)
     for _,name in ipairs({"OnShopBuy","OnShopRefresh","OnBenchBuy","OnLineupSet","OnSelectLevel"}) do g[name](g); eq(g.calls[name],nil) end
 end)
-test("reset retains authored rules equipment learned skills and talents; refreshes cooldowns",function()
+test("restart retains authored rules equipment learned skills and talents; refreshes cooldowns",function()
     local f,g=fixture(); f:enter(); local old=g.battleManager.teamHeroes[2][1]
     local rules={{action="ability",condition="enemy_hp_below",value=30}}; g.heroRulesByName[HERO]=rules
     local serviceRules={authored=true}; g.tacticBridge.ruleService.state.rules=serviceRules
     old.abilities[1].level=4; old.abilities[2].level=1
     local item=cooldown("item_blink"); old.items[0]=item; g.gold=2; g.phase="fight"
-    f:emit("reset",{PlayerID=7})
-    eq(g.ruleGeneration,1,"reset keeps the current rule generation")
+    f:emit("restart",{PlayerID=7})
+    eq(g.ruleGeneration,1,"restart keeps the current rule generation")
     local enemy=g.battleManager.teamHeroes[3][1]
     eq(enemy.controllingPlayerId,7); eq(enemy.controlEnabled,false)
     eq(enemy.rpg_debug_manual_cast,true); eq(enemy.rpg_debug_auto_stomp,true)
@@ -325,9 +329,38 @@ test("reset retains authored rules equipment learned skills and talents; refresh
     eq(g.heroRulesByName[HERO],rules); eq(g.battleManager.teamRules[2][1],rules)
     eq(g.tacticBridge.ruleService.state.rules,serviceRules); eq(g.gold,99999); eq(g.phase,"setup")
 end)
+test("manual reset clears learned skills talents and rules in every test phase, retaining equipment",function()
+    for _,phase in ipairs({"setup","fight","result"}) do
+        local f,g=fixture(); f:enter(345)
+        local old=g.battleManager.teamHeroes[2][1]
+        local item=cooldown("item_blink"); old.items[0]=item
+        old.abilities[1].level=4; old.abilities[2].level=1
+        g.heroRulesByName[HERO]={{authored=true}}
+        g.tacticBridge.ruleService.state.rules={old=true}
+        g.heroData[HERO].edda_retained_unit=old
+        g.heroData[HERO].edda_consumed=true
+        g:OnStartBattle(); g:EndBattle("good")
+        local stale=f.thinks.RpgSkillDebugReset.fn
+        g.phase=phase
+        f:emit("reset",{PlayerID=7})
+        local new=g.battleManager.teamHeroes[2][1]
+        eq(g.phase,"setup"); eq(g.ruleGeneration,2); eq(g.normalAwards,0)
+        assert(old.removed and new~=old)
+        eq(new.abilities[1].level,0); eq(new.abilities[2].level,0)
+        eq(g.heroData[HERO].skill_points,30); eq(g.heroData[HERO].edda_retained_unit,nil)
+        eq(g.heroData[HERO].edda_consumed,nil)
+        eq(new.items[0],item); eq(item.remaining,0); assert(not item.removed)
+        eq(g.heroRulesByName[HERO][1],"default"); eq(next(g.tacticBridge.ruleService.state.rules),nil)
+        eq(g.skillDebug.hero,HERO); eq(g.skillDebug.damage,345)
+        local spawns=g.rosterSpawns
+        g:OnStartBattle(); stale(); eq(g.rosterSpawns,spawns); eq(g.phase,"fight")
+    end
+end)
 test("win death and timeout settle once with no normal awards lives or progression",function()
     for _,winner in ipairs({"good","bad","timeout"}) do
         local f,g=fixture(); f:enter(); g.runLives=4; g:OnStartBattle(nil,{})
+        local rules={{authored=true}}; g.heroRulesByName[HERO]=rules
+        g.battleManager.teamHeroes[2][1].abilities[1].level=4
         local item=cooldown("item_blink"); item.charges=3
         g.battleManager.teamHeroes[2][1].items[8]=item
         local stored=cooldown("item_refresher"); g.stash.items[14]=stored
@@ -343,6 +376,8 @@ test("win death and timeout settle once with no normal awards lives or progressi
         end end
         eq(count,1); local reset=f.thinks.RpgSkillDebugReset.fn; reset(); local n=g.rosterSpawns; reset(); eq(g.rosterSpawns,n)
         eq(g.phase,"setup"); eq(g.runLives,4)
+        eq(g.heroRulesByName[HERO],rules); eq(g.ruleGeneration,1)
+        eq(g.battleManager.teamHeroes[2][1].abilities[1].level,4)
     end
 end)
 test("exit from fight creates fresh normal run and restores recruitment and gold",function()
@@ -527,7 +562,7 @@ end)
 test("all debug events require engine owner metadata",function()
     local f,g=fixture(); f:enter(); g:OnStartBattle()
     local spawns=g.rosterSpawns; local serial=g.skillDebug.serial; local events=#f.events
-    for _,name in ipairs({"request","start","reset","exit","damage"}) do
+    for _,name in ipairs({"request","start","reset","restart","exit","damage"}) do
         for _,payload in ipairs({{}, {PlayerID=8,hero=HERO,attack_damage=999}}) do f:emit(name,payload) end
     end
     eq(g.skillDebug.serial,serial); eq(g.rosterSpawns,spawns); eq(g.phase,"fight")
@@ -548,7 +583,7 @@ test("stale phase timeout releases pending request (regression)",function()
     eq(g.skillDebug.pending,false,"phase change must not leave pending locked after timeout")
 end)
 test("debug end timeout reset and exit disable pending dead heroes before cleanup",function()
-    for _,action in ipairs({"end","timeout","reset","exit"}) do
+    for _,action in ipairs({"end","timeout","reset","restart","exit"}) do
         local f,g=fixture(); f:enter(); g:OnStartBattle()
         local pending=g.battleManager.teamHeroes[2][1]
         pending.dead=true; pending.reincarnating=true; pending.respawnsDisabled=false

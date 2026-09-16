@@ -326,6 +326,7 @@
 						<Label id="SkillDebugInstructions" class="DebugParagraph" />
 						<Label id="SkillDebugWarning" />
 						<Button id="SkillDebugStart" class="DebugButton"><Label id="SkillDebugStartLabel" /></Button>
+						<Button id="SkillDebugRestart" class="DebugButton"><Label id="SkillDebugRestartLabel" /></Button>
 						<Button id="SkillDebugReset" class="DebugButton"><Label id="SkillDebugResetLabel" /></Button>
 						<Button id="SkillDebugExit" class="DebugButton"><Label id="SkillDebugExitLabel" /></Button>
 						<Label id="SkillDebugStatus" />

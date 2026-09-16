@@ -69,10 +69,21 @@ for (const language of ["schinese", "english"]) {
     ui.event("rpg_debug_state",{active:1,pending:0,phase:"setup",hero:PA,attack_damage:10000});
     assert(p.SkillDebug.BHasClass("Hidden") && p.ShopPanel.BHasClass("DebugHideRecruitment"));
     ui.click("SkillDebugButton"); ui.event("rpg_battle_state",{phase:"fight",run_complete:0});
-    assert(!p.SkillDebugStart.enabled && !p.SkillDebugApplyDamage.enabled && !p.SkillDebugReset.enabled);
-    assert(p.SkillDebugExit.enabled, "exit remains available during a problematic fight");
-    const inFight=ui.sent.length; ui.click("SkillDebugStart"); ui.click("SkillDebugApplyDamage"); ui.click("SkillDebugReset");
+    assert(!p.SkillDebugStart.enabled && !p.SkillDebugApplyDamage.enabled);
+    assert(p.SkillDebugExit.enabled && p.SkillDebugReset.enabled && p.SkillDebugRestart.enabled,
+        "exit, reset and restart remain available during a fight");
+    const inFight=ui.sent.length; ui.click("SkillDebugStart"); ui.click("SkillDebugApplyDamage");
     assert.strictEqual(ui.sent.length,inFight, "blocked controls do not submit gameplay mutations");
+    for (const [button,event] of [["SkillDebugRestart","rpg_debug_restart"],["SkillDebugReset","rpg_debug_reset"]]) {
+        ui.event("rpg_battle_state",{phase:"fight"});
+        ui.click(button); assert.deepStrictEqual(ui.sent.at(-1),[event,{}]);
+        const pendingCount=ui.sent.length;
+        ui.click("SkillDebugRestart"); ui.click("SkillDebugReset");
+        assert.equal(ui.sent.length,pendingCount,"pending request blocks duplicate reset/restart");
+        ui.event("rpg_debug_state",{active:1,pending:0,phase:"setup",hero:PA,error:""});
+        assert(p.SkillDebug.BHasClass("Hidden"),"successful reset/restart reveals preparation");
+        ui.click("SkillDebugButton");
+    }
     ui.event("rpg_battle_state",{phase:"setup"}); ui.type("SkillDebugDamage","333"); ui.click("SkillDebugApplyDamage");
     assert.deepStrictEqual(ui.sent.at(-1),["rpg_debug_damage",{attack_damage:333}]);
     ui.event("rpg_debug_state",{active:1,pending:0,phase:"setup",hero:PA,attack_damage:333,error:""});

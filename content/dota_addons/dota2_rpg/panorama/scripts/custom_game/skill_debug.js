@@ -30,12 +30,13 @@
         $("#SkillDebugButtonLabel").text = active ? t("调试中", "Testing") : t("技能调试", "Skill test");
         $("#SkillDebugSelected").text = selected ? name(selected) + t(" · 30 级", " · Level 30") : t("选择一名英雄", "Choose a hero");
         $("#SkillDebugStart").enabled = ready && prepare() && heroes.indexOf(selected) >= 0;
-        $("#SkillDebugReset").enabled = ready && active && state.phase !== "fight";
+        $("#SkillDebugReset").enabled = ready && active;
+        $("#SkillDebugRestart").enabled = ready && active;
         $("#SkillDebugApplyDamage").enabled = ready && active && state.phase === "setup";
         $("#SkillDebugExit").enabled = (active || yes(state.pending)) && pending !== "exit";
         if ($("#ShopPanel")) { $("#ShopPanel").SetHasClass("DebugHideRecruitment", active); }
         $("#SkillDebugStatus").text = busy() ? t("正在准备，请稍候…", "Preparing, please wait…") :
-            state.phase === "fight" ? t("战斗进行中；可退出调试，或等本次测试结束后调整。", "Battle in progress. Exit testing, or adjust after this battle.") :
+            state.phase === "fight" ? t("战斗进行中；可重新开始保留配置，或重置技能与条件，立即回到准备阶段。", "Battle in progress. Restart to keep your build, or reset skills and conditions. Both return to preparation immediately.") :
             active ? t("测试模式已开启。关闭面板即可设置条件、购买装备并开始战斗。", "Testing is active. Close this panel to edit conditions, buy items and start a battle.") :
             prepare() ? t("可开始一局新的技能测试。", "Ready to start a new skill test.") : t("等待准备阶段…", "Waiting for preparation…");
     }
@@ -91,7 +92,8 @@
                 if (data.attack_damage !== undefined) { $("#SkillDebugDamage").text = String(data.attack_damage); damageDirty = false; }
             }
             if (!failed && ((completed === "start" && yes(state.active) && state.hero === selected) ||
-                (completed === "exit" && !yes(state.active)))) {
+                (completed === "exit" && !yes(state.active)) ||
+                ((completed === "reset" || completed === "restart") && yes(state.active) && state.phase === "setup"))) {
                 if ($("#RuleSettings")) { $("#RuleSettings").AddClass("Hidden"); }
                 close();
             }
@@ -120,6 +122,7 @@
         var value = damage(); if (value === null) { return; }
         request("rpg_debug_damage", {attack_damage: value}, "damage");
     });
+    $("#SkillDebugRestart").SetPanelEvent("onactivate", function () { if ($("#SkillDebugRestart").enabled) { request("rpg_debug_restart", {}, "restart"); } });
     $("#SkillDebugReset").SetPanelEvent("onactivate", function () { if ($("#SkillDebugReset").enabled) { request("rpg_debug_reset", {}, "reset"); } });
     $("#SkillDebugExit").SetPanelEvent("onactivate", function () { if ($("#SkillDebugExit").enabled) { request("rpg_debug_exit", {}, "exit"); } });
     $("#SkillDebugTitle").text = t("技能条件调试", "Skill condition testing");
@@ -129,8 +132,9 @@
     $("#SkillDebugDamageTitle").text = t("测试怪攻击力（0～10000）", "Enemy attack damage (0–10000)");
     $("#SkillDebugApplyDamageLabel").text = t("应用攻击力", "Apply damage");
     $("#SkillDebugInstructions").text = t("进入后自行学习技能与天赋、购买装备并设置条件。测试怪是普通单位；需要队友、多个目标或仅英雄目标的技能需对应场景。", "Learn skills and talents, buy equipment and edit conditions. The enemy is a basic unit; ally, multi-target and hero-only skills require matching targets.");
-    $("#SkillDebugWarning").text = t("开始新的测试会重开当前局。重置测试保留装备与条件；退出调试后开始普通闯关的新局。", "Starting a new test replaces the current run. Reset keeps equipment and conditions. Exit starts a fresh normal run.");
+    $("#SkillDebugWarning").text = t("重新开始：保留技能、天赋、条件和装备，立即回到准备阶段。重置：保留装备，重置技能加点、天赋与条件。开始新测试或退出调试会重开当前局。", "Restart keeps skills, talents, conditions and equipment and returns to preparation immediately. Reset keeps equipment but resets skill points, talents and conditions. Starting a new test or exiting replaces the current run.");
     $("#SkillDebugStartLabel").text = t("开始新测试", "Start new test");
+    $("#SkillDebugRestartLabel").text = t("重新开始（保留配置）", "Restart (keep build)");
     $("#SkillDebugResetLabel").text = t("重置本次测试", "Reset current test");
     $("#SkillDebugExitLabel").text = t("退出调试", "Exit testing");
     $("#SkillDebugFooter").text = t("敌方行为会写入战斗日志 · 关闭面板不会退出调试 · 阅读时战斗继续", "Enemy behavior is logged · Closing this panel keeps testing active · Battle continues while reading");

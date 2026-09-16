@@ -37,7 +37,7 @@
 .DebugFieldTitle { font-size: 18px; color: #d7e9ef; margin-bottom: 8px; }
 #SkillDebugDamage { width: 100%; height: 40px; padding: 5px 8px; background-color: #0c1720; border: 1px solid #668492; color: #f0f4f6; font-size: 22px; }
 #SkillDebugApplyDamage { margin-top: 8px; margin-bottom: 14px; }
-#SkillDebugStart, #SkillDebugReset, #SkillDebugExit { width: 100%; margin-top: 10px; }
+#SkillDebugStart, #SkillDebugRestart, #SkillDebugReset, #SkillDebugExit { width: 100%; margin-top: 10px; }
 #SkillDebugStart { height: 46px; background-color: #375663; border-color: #91b5bb; }
 #SkillDebugExit { border-color: #ba8d70; }
 #SkillDebugWarning { color: #dfb97e; font-size: 17px; white-space: normal; width: 100%; margin: 12px 0px 8px 0px; }
