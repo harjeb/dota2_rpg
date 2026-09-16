@@ -1,12 +1,8 @@
 #CampaignDifficultyRoot { width: 100%; height: 100%; }
 .CampaignDifficultyModal { width: 100%; height: 100%; background-color: #050910ee; }
-.CampaignDifficultyCard { width: 690px; padding: 32px; flow-children: down; horizontal-align: center; vertical-align: center; background-color: #14202dfd; border: 1px solid #667d91; }
-.CampaignDifficultyCard Label { color: #d9e3ec; font-size: 20px; margin-bottom: 18px; white-space: normal; }
-#CampaignDifficultyTitle { font-size: 30px; color: #eed7a2; }
-.CampaignDifficultyChoices { flow-children: right; width: 100%; margin-bottom: 16px; }
-.CampaignDifficultyButton { padding: 14px 20px; margin-right: 14px; background-color: #293949; border: 1px solid #647484; }
-.CampaignDifficultyButton Label { margin-bottom: 0px; }
-.CampaignDifficultyButton:hover { brightness: 1.4; }
+.CampaignDifficultyCard { width: 660px; padding: 28px; horizontal-align: center; vertical-align: center; background-color: #14202dfd; border: 1px solid #667d91; }
+.CampaignDifficultyChoices { flow-children: right; width: 100%; }
+.CampaignDifficultyButton { width: fill-parent-flow(1); height: 100px; margin: 0px 8px; background-color: #293949; border: 1px solid #647484; transition-property: brightness, background-color, border; transition-duration: 0.15s; }
+.CampaignDifficultyButton Label { horizontal-align: center; vertical-align: center; color: #eed7a2; font-size: 28px; }
+.CampaignDifficultyButton:hover { brightness: 1.4; border-color: #e2bc70; background-color: #394957; }
 .CampaignDifficultyButton:disabled { opacity: 0.45; }
-.CampaignDifficultySelected { border: 2px solid #e2bc70; background-color: #495041; }
-#CampaignDifficultyRanking { color: #d4b879; font-size: 17px; }

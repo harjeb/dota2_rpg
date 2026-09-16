@@ -143,7 +143,8 @@ for (const switching of [false,true]) {
     api.receive = receive;
     const pending = [];
     hud.context.$.Schedule = (delay, callback) => { pending.push(callback); };
-    const flush = () => { while (pending.length) pending.shift()(); };
+    // Advance one timer batch: the continuous scroll observer schedules its next tick.
+    const flush = () => { pending.splice(0).forEach(callback => callback()); };
     click(hud,"RadiantActionSelect0"); click(hud,"ActionOpt_Radiant0_item_blink");
     choice(hud,"V2_use0","self_hp_pct_gte"); input(hud,"V2_use0_value",77);
     assert.equal(panel(hud,"RuleSettingsApply").enabled,false,"new equipment waits for real metadata");

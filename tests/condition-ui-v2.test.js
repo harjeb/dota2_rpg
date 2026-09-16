@@ -61,7 +61,11 @@ function createPanel(id) {
         actualuiscale_y: 1,
         actuallayoutwidth: id === "DropdownLayer" ? 1920 : 300,
         actuallayoutheight: id === "DropdownLayer" ? 1080 : 42,
-        position: { x: 120, y: 400 },
+        position: { x: 120, y: /^V2Section_/.test(id) ? 400 + ["use","target","priority","action"].indexOf(id.replace("V2Section_", "")) * 600 : 400 },
+        valid: true,
+        IsValid: function () { return this.valid; },
+        scrollRequests: [],
+        ScrollParentToMakePanelFit: function (horizontal, immediate) { this.scrollRequests.push([horizontal, immediate]); },
         GetPositionWithinWindow: function () { return this.id === "DropdownLayer" ? { x: 0, y: 0 } : this.position; },
         AddClass: function (name) { classes[name] = true; },
         SetHasClass: function (name, enabled) { classes[name] = Boolean(enabled); },
@@ -130,8 +134,7 @@ function runHud(options) {
     panorama.Localize = function (token) { return token; };
     var scheduled = [];
     panorama.Schedule = function (delay, callback) {
-        if (delay === 0.25) { scheduled.push(callback); }
-        else { callback(); }
+        scheduled.push({delay:delay, callback:callback});
     };
     panorama.LocalStorage = options.localStorage || {
         Get: function () { localStorageCalls++; return "null"; },
@@ -175,6 +178,13 @@ function runHud(options) {
         sentEvents: sentEvents,
         nativeSelections: nativeSelections,
         subscriptions: subscriptions,
+        scheduled: scheduled,
+        runScheduled: function (delay) {
+            var pending = scheduled.filter(function (task) { return delay === undefined || task.delay === delay; });
+            pending.forEach(function (task) { scheduled.splice(scheduled.indexOf(task), 1); });
+            pending.forEach(function (task) { task.callback(); });
+            return pending.length;
+        },
         getLocalStorageCalls: function () { return localStorageCalls; }
     };
 }
@@ -866,9 +876,9 @@ assert(panel(equipHud,"Equipped_"+lion+"_0"),"server snapshot shows original ite
     targetHud.subscriptions.rpg_hero_slots({slot_key:"radiant_1",hero_index:960,hero_name:hero,rule_key:hero,
         can_edit:1,rules_ready:1,actions_text:ability+";attack",rules:[{action:ability,enabled:1,target_team:"enemy"}]});
     click(targetHud,"RadiantRuleSettings0");
-    var body=panel(targetHud,"RuleSettingsBody"), teamRow=panel(targetHud,"V2TargetTeamRow");
-    assert(body.children.indexOf(teamRow) < body.children.indexOf(panel(targetHud,"V2_use0Select").parent.parent),
-        "team choice is visible before detailed filters and positioning");
+    var targetSection=panel(targetHud,"V2Section_target"), teamRow=panel(targetHud,"V2TargetTeamRow");
+    assert(teamRow.parent === targetSection && targetSection.children.indexOf(teamRow) < targetSection.children.indexOf(panel(targetHud,"V2_target0")),
+        "team choice is visible before detailed target filters");
     choice(targetHud,"V2Team","team_ally"); click(targetHud,"RuleSettingsApply");
     assert(latest(targetHud,hero).target_team==="ally","Marci's selected ally team reaches the server");
     click(targetHud,"RadiantRuleSettings0");

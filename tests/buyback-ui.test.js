@@ -51,7 +51,7 @@ click(hud,"RadiantRuleSettings0");
 assert.equal(panel(hud,"V2BuybackEnabledLabel").text,"#dota2_rpg_v2_buyback_disabled");
 click(hud,"RuleSettingsClose");
 click(hud,"RadiantActionSelect0"); click(hud,"ActionOpt_Radiant0_attack");
-assert(body.children.some(p => p.id === "V2TargetTeamRow"),"switching away restores normal combat editor");
+assert(body.FindChildTraverse("V2TargetTeamRow"),"switching away restores normal combat editor");
 click(hud,"RuleSettingsClose");
 const arenaHud = runHud();
 arenaHud.subscriptions.rpg_shop_state({lineup_text:hero,owned_text:hero});

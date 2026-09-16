@@ -16,19 +16,19 @@ function setup() {
 }
 const hud = setup();
 assert(panel(hud,"RuleSettingsNav_use").BHasClass("Selected"));
-assert(panel(hud,"V2TargetTeamRow").BHasClass("FantasyPageHidden"));
+assert(!panel(hud,"V2TargetTeamRow").BHasClass("FantasyPageHidden"));
 assert(!panel(hud,"V2_use0").BHasClass("FantasyPageHidden"));
 choice(hud,"V2_use0","self_hp_pct_lte"); input(hud,"V2_use0_value",37.5);
 panel(hud,"V2_use0_value").events.ontextentrychange();
 assert(panel(hud,"RuleSettingsPreview").text.includes("37.5"),"preview reads the current input");
 assert.equal(panel(hud,"RuleSettingsCount_use").text,"1");
 click(hud,"RuleSettingsNav_target");
-assert(panel(hud,"V2_use0").BHasClass("FantasyPageHidden"));
+assert(!panel(hud,"V2_use0").BHasClass("FantasyPageHidden"));
 assert(!panel(hud,"V2TargetTeamRow").BHasClass("FantasyPageHidden"));
 choice(hud,"V2_target0","hp_pct_lte"); input(hud,"V2_target0_value",65);
 click(hud,"V2_targetModeOption_priority");
 assert(panel(hud,"RuleSettingsNav_target").BHasClass("Selected"),"mode rebuild keeps active page");
-assert.equal(panel(hud,"V2_use0_value").text,"37.5","hidden page input survives a rebuild");
+assert.equal(panel(hud,"V2_use0_value").text,"37.5","other section input survives a rebuild");
 assert.equal(panel(hud,"V2_target0_value").text,"65");
 click(hud,"RuleSettingsNav_action");
 assert(panel(hud,"V2ChaseTimeoutRow").BHasClass("Hidden"),"page changes do not unhide conditionally absent controls");
@@ -36,7 +36,7 @@ click(hud,"V2ApproachSelect"); click(hud,"V2ApproachSelectOption_approach_chase"
 assert(!panel(hud,"V2ChaseTimeoutRow").BHasClass("Hidden"));
 input(hud,"V2_chase_timeout",4.25);
 click(hud,"RuleSettingsNav_use");
-assert(panel(hud,"V2ChaseTimeoutRow").BHasClass("FantasyPageHidden"));
+assert(!panel(hud,"V2ChaseTimeoutRow").BHasClass("FantasyPageHidden"));
 click(hud,"RuleSettingsNav_action");
 assert(!panel(hud,"V2ChaseTimeoutRow").BHasClass("Hidden") && !panel(hud,"V2ChaseTimeoutRow").BHasClass("FantasyPageHidden"));
 assert.equal(panel(hud,"V2_chase_timeout").text,"4.25");
@@ -89,11 +89,15 @@ for (const match of (xml+css).matchAll(/file:\/\/\{images\}\/custom_game\/fantas
     const vtex=png.replace(/\.png$/,"_png.vtex");
     assert(fs.existsSync(vtex) && fs.readFileSync(vtex,"utf8").includes('./'+match[1]));
 }
+const localeTags = [];
 for (const lang of ["english","schinese"]) {
     const locale=fs.readFileSync(path.join(__dirname,"..","game/dota_addons/dota2_rpg/resource/addon_"+lang+".txt"),"utf8");
-    assert(/"dota2_rpg_build_tag"\s+"[^"\r\n]*99"/.test(locale));
+    const tag = locale.match(/"dota2_rpg_build_tag"\s+"([^"\r\n]+)"/);
+    assert(tag, "visible build tag in " + lang);
+    localeTags.push(tag[1].match(/\d+$/)[0]);
     for (const m of xml.matchAll(/#(dota2_rpg_ui_[a-z_]+)/g)) { assert(locale.includes('"'+m[1]+'"'),"localized "+m[1]+" in "+lang); }
 }
+assert.equal(localeTags[0], localeTags[1], "both locales display the same build");
 const installer=fs.readFileSync(path.join(__dirname,"..","scripts/install-ui.ps1"),"utf8");
 assert(installer.includes('*_png.vtex') && installer.includes('fantasy_ui.css') && installer.includes('Get-FileHash'));
 console.log("PASS UI99 layout wiring, local summary strip, collapsed details, local artwork, VTEX descriptors, localization and installer contracts");

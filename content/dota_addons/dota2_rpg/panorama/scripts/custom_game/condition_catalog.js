@@ -204,9 +204,10 @@ var RpgConditionCatalog = (function () {
         var body = $("#RuleSettingsBody");
         body.RemoveAndDeleteChildren();
         var draft = clone(initial || {}), readers = [];
-        // Page selection is presentation-only. It never enters the rule payload.
+        // Navigation follows the continuous document; it never enters the rule payload.
         var selectedPage = retainedPage || "use";
         var pagePanels = {use: [], target: [], priority: [], action: []};
+        var sectionPanels = {};
         var previewReady = false, previewReaders = {};
         function uiText(id) { return $.Localize("#dota2_rpg_ui_" + id); }
         function setText(id, value) {
@@ -241,21 +242,34 @@ var RpgConditionCatalog = (function () {
             setText("RuleSettingsSectionHint", selectedPage === "action" ? uiText("nav_action_hint")
                 : uiText("section_limit").replace("%s1", counts[selectedPage]).replace("%s2", selectedPage === "priority" ? 2 : 4));
         }
-        function activatePage(page) {
+        function activatePage(page, scroll) {
             selectedPage = pagePanels[page] ? page : "use";
-            if (activeMenu) { activeMenu.SetHasClass("Hidden", true); activeMenu = null; }
-            // Separate class: do not override native visibility such as chase timeout.
+            if (scroll && activeMenu) { activeMenu.SetHasClass("Hidden", true); activeMenu = null; }
             Object.keys(pagePanels).forEach(function (key) {
                 var nav = $("#RuleSettingsNav_" + key);
-                if (nav) {
-                    nav.SetHasClass("Selected", key === selectedPage);
-                    pagePanels[key].forEach(function (node) { node.SetHasClass("FantasyPageHidden", key !== selectedPage); });
-                }
+                if (nav) { nav.SetHasClass("Selected", key === selectedPage); }
             });
             setText("RuleSettingsSectionTitle", uiText("nav_" + selectedPage));
             setText("RuleSettingsPreviewHint", uiText("tip_" + selectedPage));
-            if (typeof body.ScrollToTop === "function") { body.ScrollToTop(); }
+            var anchor = sectionPanels[selectedPage];
+            if (scroll && anchor && typeof anchor.ScrollParentToMakePanelFit === "function") {
+                anchor.ScrollParentToMakePanelFit(0, false);
+            }
             syncPreview();
+        }
+        function followScroll() {
+            if (generation !== editorGeneration ||
+                (typeof root.IsValid === "function" && !root.IsValid()) || root.BHasClass("Hidden")) { return; }
+            if (typeof body.GetPositionWithinWindow === "function" && body.actuallayoutheight > 0) {
+                var top = body.GetPositionWithinWindow().y;
+                var current = "use", threshold = top + 24 * (body.actualuiscale_y || 1);
+                Object.keys(pagePanels).forEach(function (page) {
+                    var section = sectionPanels[page];
+                    if (section && section.GetPositionWithinWindow().y <= threshold) { current = page; }
+                });
+                if (current !== selectedPage) { activatePage(current, false); }
+            }
+            if (typeof $.Schedule === "function") { $.Schedule(0.1, followScroll); }
         }
         root.SetHasClass("FantasyBuyback", rule.action === "buyback");
         setText("RuleSettingsContext", options.abilityName ? abilityLabel(options.abilityName)
@@ -792,16 +806,25 @@ var RpgConditionCatalog = (function () {
             });
         }
         capturePage("action", pageStart);
-        Object.keys(pagePanels).forEach(function (page) {
+        Object.keys(pagePanels).forEach(function (page, index) {
+            var section = $.CreatePanel("Panel", body, "V2Section_" + page);
+            section.AddClass("V2ScrollSection");
+            sectionPanels[page] = section;
+            var heading = $.CreatePanel("Panel", section, "V2SectionHeader_" + page);
+            heading.AddClass("V2ScrollHeading");
+            label(heading, "", "0" + (index + 1)).AddClass("V2ScrollNumber");
+            label(heading, "", uiText("nav_" + page)).AddClass("V2ScrollTitle");
+            label(section, "", uiText("nav_" + page + "_hint")).AddClass("V2ScrollHint");
+            pagePanels[page].forEach(function (node) { node.SetParent(section); });
             var nav = $("#RuleSettingsNav_" + page);
             if (nav) { nav.SetPanelEvent("onactivate", function () {
-                if (generation === editorGeneration) { activatePage(page); }
+                if (generation === editorGeneration) { activatePage(page, true); }
             }); }
         });
         var refreshPreview = $("#RuleSettingsPreviewRefresh");
         if (refreshPreview) { refreshPreview.SetPanelEvent("onactivate", syncPreview); }
         previewReady = true;
-        activatePage(selectedPage);
+        activatePage(selectedPage, false);
         body.enabled = !options.readOnly;
         $("#RuleSettingsApply").enabled = !options.readOnly && (!strict || !!cap);
         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
@@ -839,6 +862,15 @@ var RpgConditionCatalog = (function () {
         });
         $("#RuleSettingsClose").SetPanelEvent("onactivate", function () { root.SetHasClass("Hidden", true); });
         root.SetHasClass("Hidden", false);
+        if (typeof body.ScrollToTop === "function") { body.ScrollToTop(); }
+        if (typeof $.Schedule === "function") {
+            $.Schedule(0, function () {
+                if (generation !== editorGeneration ||
+                    (typeof root.IsValid === "function" && !root.IsValid()) || root.BHasClass("Hidden")) { return; }
+                activatePage(selectedPage, true);
+                followScroll();
+            });
+        }
     }
     function reset() {
         editorGeneration++;

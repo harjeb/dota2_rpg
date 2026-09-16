@@ -54,8 +54,12 @@
 #RuleSettingsSectionTitle { color: #ebce95; font-family: titleFont; font-size: 24px; }
 #RuleSettingsSectionHint { color: #b49a75; font-size: 13px; margin-top: 2px; }
 #RuleSettings .RuleSettingsBody { padding-right: 5px; width: 100%; height: fill-parent-flow(1); overflow: squish scroll; }
-/* Own class leaves internal Hidden state (menus, chase timeout, etc.) untouched. */
-.FantasyPageHidden { visibility: collapse; }
+/* At least a viewport per section makes native scroll-to-fit align its start. */
+#RuleSettings .V2ScrollSection { width: 100%; min-height: 100%; flow-children: down; padding: 14px 12px 22px 12px; margin-bottom: 18px; background-color: #161d22cc; border: 1px solid #574936; border-top: 2px solid #967448; }
+#RuleSettings .V2ScrollHeading { width: 100%; flow-children: right; margin-bottom: 6px; }
+#RuleSettings .V2ScrollNumber { color: #aa8750; font-size: 18px; vertical-align: center; margin-right: 12px; }
+#RuleSettings .V2ScrollTitle { color: #ebce95; font-family: titleFont; font-size: 24px; }
+#RuleSettings .V2ScrollHint { color: #9babb1; font-size: 15px; margin-bottom: 14px; white-space: normal; }
 #RuleSettings .V2SectionTitle { font-size: 17px; color: #d8b67c; margin: 6px 0px 8px 0px; }
 #RuleSettings .V2Hint { color: #beaa88; font-size: 14px; line-height: 19px; white-space: normal; width: 100%; }
 #RuleSettings .V2Condition {
