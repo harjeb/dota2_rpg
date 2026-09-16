@@ -207,7 +207,7 @@ var RpgConditionCatalog = (function () {
         // Navigation follows the continuous document; it never enters the rule payload.
         var selectedPage = retainedPage || "use";
         var pagePanels = {use: [], target: [], priority: [], action: []};
-        var sectionPanels = {};
+        var sectionPanels = {}, navigationPending = false, observedGeometry = null;
         var previewReady = false, previewReaders = {};
         function uiText(id) { return $.Localize("#dota2_rpg_ui_" + id); }
         function setText(id, value) {
@@ -253,7 +253,8 @@ var RpgConditionCatalog = (function () {
             setText("RuleSettingsPreviewHint", uiText("tip_" + selectedPage));
             var anchor = sectionPanels[selectedPage];
             if (scroll && anchor && typeof anchor.ScrollParentToMakePanelFit === "function") {
-                anchor.ScrollParentToMakePanelFit(0, false);
+                anchor.ScrollParentToMakePanelFit(0, true);
+                navigationPending = true;
             }
             syncPreview();
         }
@@ -262,11 +263,31 @@ var RpgConditionCatalog = (function () {
                 (typeof root.IsValid === "function" && !root.IsValid()) || root.BHasClass("Hidden")) { return; }
             if (typeof body.GetPositionWithinWindow === "function" && body.actuallayoutheight > 0) {
                 var top = body.GetPositionWithinWindow().y;
+                var documentTop = sectionPanels.use.GetPositionWithinWindow().y;
+                var bottom = top + body.actuallayoutheight;
+                var selected = sectionPanels[selectedPage];
+                var selectedTop = selected.GetPositionWithinWindow().y;
+                // Compact groups can share a viewport. Keep an explicitly clicked
+                // category selected until the user actually moves the document.
+                var keepSelection = navigationPending && selectedTop >= top - 2 && selectedTop < bottom;
+                navigationPending = false;
+                var geometry = Object.keys(sectionPanels).map(function (page) {
+                    return sectionPanels[page].GetPositionWithinWindow().y;
+                }).join(",") + ":" + body.actuallayoutheight + ":" + (body.actualuiscale_y || 1);
+                if (keepSelection || geometry === observedGeometry) {
+                    observedGeometry = geometry;
+                    if (typeof $.Schedule === "function") { $.Schedule(0.1, followScroll); }
+                    return;
+                }
+                observedGeometry = geometry;
                 var current = "use", threshold = top + 24 * (body.actualuiscale_y || 1);
                 Object.keys(pagePanels).forEach(function (page) {
                     var section = sectionPanels[page];
                     if (section && section.GetPositionWithinWindow().y <= threshold) { current = page; }
                 });
+                var last = sectionPanels.action;
+                if (documentTop < top - 2 && last.actuallayoutheight > 0 &&
+                    last.GetPositionWithinWindow().y + last.actuallayoutheight <= bottom + 2) { current = "action"; }
                 if (current !== selectedPage) { activatePage(current, false); }
             }
             if (typeof $.Schedule === "function") { $.Schedule(0.1, followScroll); }
@@ -539,9 +560,10 @@ var RpgConditionCatalog = (function () {
                     var current = normalize(group, draft[key][index]);
                     draft[key][index] = current;
                     var row = $.CreatePanel("Panel", body, "V2_" + group + index); row.AddClass("V2Condition");
-                    label(row, "", String(index + 1)).AddClass("V2SlotNumber");
-                    var glyph = $.CreatePanel("Image", row, ""); glyph.AddClass("FantasyConditionIcon"); glyph.hittest = false;
-                    var selector = $.CreatePanel("Panel", row, ""); selector.AddClass("V2Selector");
+                    var heading = $.CreatePanel("Panel", row, "V2_" + group + index + "Heading"); heading.AddClass("V2ConditionHeading");
+                    label(heading, "", String(index + 1)).AddClass("V2SlotNumber");
+                    var glyph = $.CreatePanel("Image", heading, ""); glyph.AddClass("FantasyConditionIcon"); glyph.hittest = false;
+                    var selector = $.CreatePanel("Panel", heading, ""); selector.AddClass("V2Selector");
                     var params = $.CreatePanel("Panel", row, ""); params.AddClass("V2Parameters");
                     var readFields = function () {};
                     function renderFields() {
@@ -554,6 +576,7 @@ var RpgConditionCatalog = (function () {
                         var icons = {resources:current.type.indexOf("mana") >= 0 ? "mana" : "health", battle:"battle",
                             proximity:"target", time:"clock", action:"action", advanced:"rune", status:"rune", identity:"target", priority:"priority"};
                         glyph.SetImage("file://{images}/custom_game/fantasy_ui/" + (icons[def.category] || {use:"trigger",target:"target",priority:"priority"}[group]) + ".png");
+                        params.SetHasClass("Hidden", active && fields.length === 0 && current.type !== "facing_enemy");
                         if (!active) { label(params, "", uiText("empty_slot")).AddClass("FantasyEmptySlot"); }
                         if (current.type === "facing_enemy") {
                             label(params, "V2_" + group + index + "FacingHint", text("facing_enemy_hint")).AddClass("V2Hint");

@@ -54,8 +54,8 @@
 #RuleSettingsSectionTitle { color: #ebce95; font-family: titleFont; font-size: 24px; }
 #RuleSettingsSectionHint { color: #b49a75; font-size: 13px; margin-top: 2px; }
 #RuleSettings .RuleSettingsBody { padding-right: 5px; width: 100%; height: fill-parent-flow(1); overflow: squish scroll; }
-/* At least a viewport per section makes native scroll-to-fit align its start. */
-#RuleSettings .V2ScrollSection { width: 100%; min-height: 100%; flow-children: down; padding: 14px 12px 22px 12px; margin-bottom: 18px; background-color: #161d22cc; border: 1px solid #574936; border-top: 2px solid #967448; }
+/* Compact groups grow only with their actual controls. */
+#RuleSettings .V2ScrollSection { width: 100%; height: fit-children; flow-children: down; padding: 10px 10px 8px 10px; margin-bottom: 10px; background-color: #161d22cc; border: 1px solid #574936; border-top: 2px solid #967448; }
 #RuleSettings .V2ScrollHeading { width: 100%; flow-children: right; margin-bottom: 6px; }
 #RuleSettings .V2ScrollNumber { color: #aa8750; font-size: 18px; vertical-align: center; margin-right: 12px; }
 #RuleSettings .V2ScrollTitle { color: #ebce95; font-family: titleFont; font-size: 24px; }
@@ -63,8 +63,8 @@
 #RuleSettings .V2SectionTitle { font-size: 17px; color: #d8b67c; margin: 6px 0px 8px 0px; }
 #RuleSettings .V2Hint { color: #beaa88; font-size: 14px; line-height: 19px; white-space: normal; width: 100%; }
 #RuleSettings .V2Condition {
-    width: 100%; height: fit-children; min-height: 86px; flow-children: right-wrap;
-    margin-bottom: 10px; padding: 12px 10px;
+    width: 100%; height: fit-children; min-height: 0px; flow-children: down;
+    margin-bottom: 6px; padding: 8px;
     background-color: #cbb388;
     background-image: url("file://{images}/custom_game/fantasy_ui/parchment.png");
     background-size: 512px 512px; border: 1px solid #b19360; border-left: 3px solid #8f693d;
@@ -78,11 +78,12 @@
     text-align: center; margin-top: 9px; margin-right: 5px;
 }
 .FantasyConditionIcon { width: 34px; height: 34px; margin-top: 5px; margin-right: 6px; }
-#RuleSettings .V2Condition .V2Selector { width: 84%; height: fit-children; }
-#RuleSettings .V2Condition .V2Parameters { width: 100%; height: fit-children; flow-children: right-wrap; padding-left: 30px; margin-top: 6px; }
-#RuleSettings .V2Condition .V2Parameters .V2Hint { color: #483723; font-size: 13px; }
+#RuleSettings .V2ConditionHeading { width: 100%; height: fit-children; flow-children: right; }
+#RuleSettings .V2Condition .V2Selector { width: fill-parent-flow(1); height: fit-children; }
+#RuleSettings .V2Condition .V2Parameters { width: 100%; height: fit-children; flow-children: right-wrap; padding-left: 0px; margin-top: 3px; }
+#RuleSettings .V2Condition .V2Parameters .V2Hint { color: #483723; font-size: 13px; height: fit-children; margin-bottom: 0px; }
 #RuleSettings .V2Condition .V2Field > Label { color: #57432a; font-size: 13px; margin-bottom: 4px; }
-#RuleSettings .V2Parameters > .V2Field { margin-left: 8px; margin-right: 0px; margin-bottom: 8px; }
+#RuleSettings .V2Parameters > .V2Field { margin-left: 0px; margin-right: 8px; margin-bottom: 3px; }
 .FantasyEmptySlot { color: #9d8768; font-size: 12px; padding-left: 7px; }
 #RuleSettings .V2Button {
     background-color: gradient(linear, 0% 0%, 0% 100%, from(#403327), to(#231c16));

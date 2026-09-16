@@ -224,7 +224,7 @@
 		"dota2_rpg_cap_incoming_aoe_duplicate"			"Use at most one incoming area condition per rule."
 		"dota2_rpg_cap_incoming_aoe_cast_destination"			"Response casts cannot combine with destination or prediction offsets."
 		"dota2_rpg_v2_incoming_aoe_scope_hint"			"Supports adapted delayed and persistent area abilities, including escape-path checks. Hidden releases are not exposed; unknown area data is not guessed. Responses do not automatically cancel your own cast, charge or channel."
-		"dota2_rpg_build_tag"			"UI version 101"
+		"dota2_rpg_build_tag"			"UI version 102"
         "dota2_rpg_neutral_title" "Neutral recruitment"
         "dota2_rpg_neutral_hint" "Choose during preparation; recruit in order during battle with native mana and cooldowns. Chen supports multiple choices, including repeats. Recruited neutrals attack and cast automatically."
         "dota2_rpg_neutral_slot" "Slot"

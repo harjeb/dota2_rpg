@@ -78,7 +78,8 @@ const code=fs.readFileSync(path.join(base,"scripts/custom_game/condition_catalog
 assert(xml.indexOf('styles/custom_game/fantasy_ui.css')>xml.indexOf('styles/custom_game/issue_fixes_ui.css'),"theme overrides load last");
 assert(/\.RunSummaryStrip\s*\{[^}]*flow-children:\s*right/.test(css));
 assert(!/Rank|Leaderboard|ui_sync_/.test(css), "offline theme has no ranking or network widgets");
-assert(/\.V2Condition\s*\{[^}]*flow-children:\s*right-wrap/.test(css));
+assert(/\.V2Condition\s*\{[^}]*flow-children:\s*down/.test(css));
+assert(/\.V2ConditionHeading\s*\{[^}]*flow-children:\s*right/.test(css));
 assert(!/\b(?:display|grid-template-columns|justify-content|align-items)\s*:|@media|var\(/.test(css),"native Panorama stylesheet, not web CSS");
 assert(xml.includes('id="RunSummaryDetails" class="SummaryDetails Hidden"'));
 assert(!xml.includes('id="RunScoreTab"') && !xml.includes('id="RunSpeedrunTab"'));

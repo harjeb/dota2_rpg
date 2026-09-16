@@ -49,7 +49,7 @@ geometry(hud,[180,650,1050,1400]); hud.runScheduled(0);
 sections.forEach(section=>{
     const anchor = panel(hud,"V2Section_"+section), before = anchor.scrollRequests.length;
     click(hud,"RuleSettingsNav_"+section);
-    assert.deepStrictEqual(anchor.scrollRequests.slice(before),[[0,false]],"nav asks native parent to reveal "+section);
+    assert.deepStrictEqual(anchor.scrollRequests.slice(before),[[0,true]],"nav asks native parent to reveal "+section);
     selected(hud,section); visibleSections(hud);
 });
 assert(hud.scheduled.length,"open starts a scheduled scroll observer");
@@ -61,9 +61,12 @@ geometry(hud,[-150,203,650,1050]); hud.runScheduled(); selected(hud,"target");
 assert(panel(hud,"RuleSettingsPreview").text.includes("71.25"),"scroll changes preview to target draft");
 geometry(hud,[-750,-350,203,600]); hud.runScheduled(); selected(hud,"priority");
 geometry(hud,[-1200,-850,-250,203]); hud.runScheduled(); selected(hud,"action");
-// Every section is at least one viewport tall, so native scroll-to-fit aligns its start.
+// Short sections use content height and remain selectable at the bottom of the document.
 const css = fs.readFileSync(path.join(__dirname,"../content/dota_addons/dota2_rpg/panorama/styles/custom_game/fantasy_ui.css"),"utf8");
-assert(/\.V2ScrollSection\s*\{[^}]*min-height:\s*100%/.test(css),"short sections can align with viewport top");
+assert(/\.V2ScrollSection\s*\{[^}]*height:\s*fit-children/.test(css));
+assert(!/\.V2ScrollSection\s*\{[^}]*min-height:\s*100%/.test(css),"no full-viewport blank section padding");
+panel(hud,"RuleSettingsBody").actuallayoutheight=600;
+geometry(hud,[-1200,-850,203,600]); hud.runScheduled(); selected(hud,"action");
 panel(hud,"RuleSettingsBody").actuallayoutheight=42;
 panel(hud,"RuleSettingsBody").actualuiscale_y=2;
 geometry(hud,[-150,227,650,1050]); hud.runScheduled(); selected(hud,"target");
@@ -104,11 +107,26 @@ assert.equal(hud.scheduled.length,0,"reset invalidates pending observer");
 assert.equal(panel(hud,"RuleSettingsBody").GetChildCount(),0,"reset disposes editor controls");
 state.open(); panel(hud,"RuleSettings").valid=false;
 hud.runScheduled(); assert.equal(hud.scheduled.length,0,"disposed root stops observer");
+// Compact categories may already share the viewport: clicking one must not
+// immediately be overwritten by the observer until the document moves again.
+const compact = setup();
+panel(compact.hud,"RuleSettingsBody").actuallayoutheight=600;
+geometry(compact.hud,[-600,-200,250,560]); compact.hud.runScheduled(0);
+click(compact.hud,"RuleSettingsNav_priority"); compact.hud.runScheduled();
+selected(compact.hud,"priority"); compact.hud.runScheduled(); selected(compact.hud,"priority");
+geometry(compact.hud,[-620,-220,230,540]); compact.hud.runScheduled(); selected(compact.hud,"action");
+// F41 has only its explanation; other parameterless conditions collapse the parameter area.
+choice(compact.hud,"V2_target0","facing_enemy");
+const facingHint=panel(compact.hud,"V2_target0FacingHint");
+assert(facingHint && !facingHint.parent.BHasClass("Hidden"));
+assert(panel(compact.hud,"V2_target0Heading").parent===panel(compact.hud,"V2_target0"));
+// Priority choices are parameterless and should not leave an empty second row.
+assert(panel(compact.hud,"V2_priority0").children[1].BHasClass("Hidden"));
 // Read-only inspection permits both anchor navigation and wheel-driven highlighting.
 const readonly = setup(); readonly.open(true);
 geometry(readonly.hud,[-150,203,650,1050]); readonly.hud.runScheduled(); selected(readonly.hud,"target");
 click(readonly.hud,"RuleSettingsNav_action"); selected(readonly.hud,"action");
-assert.deepStrictEqual(panel(readonly.hud,"V2Section_action").scrollRequests.at(-1),[0,false]);
+assert.deepStrictEqual(panel(readonly.hud,"V2Section_action").scrollRequests.at(-1),[0,true]);
 visibleSections(readonly.hud); click(readonly.hud,"RuleSettingsApply");
 assert(!panel(readonly.hud,"RuleSettingsApply").enabled && readonly.applied.length===0);
 assert.equal(JSON.stringify(readonly.initial),readonly.original);

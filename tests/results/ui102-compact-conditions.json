@@ -1,0 +1,71 @@
+{
+  "scope": "UI102 compact condition UI; offline panel doubles; native visual session not performed",
+  "test_groups": 9,
+  "passed": 9,
+  "failed": [],
+  "results": [
+    {
+      "test": "tests/condition-scroll-spy.test.js",
+      "returncode": 0,
+      "seconds": 0.203,
+      "stdout": "PASS continuous condition scroll: four sections, native anchors, geometry highlights/previews, retained drafts/payloads, lifecycle and read-only navigation\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/condition-ui-v2.test.js",
+      "returncode": 0,
+      "seconds": 4.797,
+      "stdout": "PASS: F39 current-enemy hero/neutral/boss portraits, duplicate keys, save/reopen, stale targets, clear and fight guards\nPASS: F40 allied roster portraits, hero identity, save/reopen, bench unavailable and authoritative roundtrip\nPASS: sustained movement presets, self-only trigger icons, F39, custom buffs, real HUD save/reopen/server roundtrip, safe positioning and boolean wire encodings\nPASS: F41 facing cone editor, explanation, stable ID, save and authoritative roundtrip\nPASS: five hearts, loss rewards, authoritative wallet and terminal life UI\nPASS: 505 complete template variants, legacy menu IDs preserved; U40-U43 appended, U13/U14 selection, roundtrips and removed preset controls\nPASS: real XML/UI 4/4/2 conditions, flat serialization, native switch restrictions, native actions, malformed inputs, cancellation, blank new rows, 32 rules, respawn/reorder and hero isolation\nincoming AoE UI roundtrips passed\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/condition-refresh-save.test.js",
+      "returncode": 0,
+      "seconds": 0.484,
+      "stdout": "PASS: first settings/action-switch saves survive equivalent refresh snapshots regardless of object key order; stale hero/action/changed/reordered/deleted rules and condition/priority array order remain protected; legacy hit gate removed and nearby counts preserved\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/fantasy-ui.test.js",
+      "returncode": 0,
+      "seconds": 0.187,
+      "stdout": "PASS UI98 condition navigation, retained drafts, pure live preview, actor identity, native visibility, cancellation and read-only guards\nPASS UI99 layout wiring, local summary strip, collapsed details, local artwork, VTEX descriptors, localization and installer contracts\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/condition-scrollbar.test.js",
+      "returncode": 0,
+      "seconds": 0.047,
+      "stdout": "PASS condition scrollbars hidden while wheel scrolling retained\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/buyback-ui.test.js",
+      "returncode": 0,
+      "seconds": 0.203,
+      "stdout": "PASS buyback menu, enable/disable, combat-control exclusion, canonical serialization/restoration, all 90 prices and authoritative editor difficulty wiring\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/campaign-difficulty.test.js",
+      "returncode": 0,
+      "seconds": 0.125,
+      "stdout": "PASS campaign entry: only three choices, direct selection, duplicate/retry guards, owner/server locks, reconnect, matching bilingual UI101 labels\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/rule-library-hud.test.js",
+      "returncode": 0,
+      "seconds": 0.204,
+      "stdout": "PASS: real HUD accepted backups, manual import with current entity, new-run defaults, percent roundtrip, hero accumulation, rejected backup protection, phase gate, equipment defer and import-intent reset\n",
+      "stderr": ""
+    },
+    {
+      "test": "tests/skill-debug.test.js",
+      "returncode": 0,
+      "seconds": 0.14,
+      "stdout": "PASS: live debug XML, bilingual hero search, validated requests, asynchronous cancellation, phase gates, reset/exit and close semantics\n",
+      "stderr": ""
+    }
+  ]
+}
