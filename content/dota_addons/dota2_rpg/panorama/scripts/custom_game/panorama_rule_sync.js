@@ -1,8 +1,8 @@
 /*
  * 当前 Run 规则同步器。
  *
- * 规则数据只发送到服务端内存中的 RuleService；不使用 LocalStorage，也不把整包
- * 旧版规则 payload 当成权威状态。每条规则均携带稳定的英雄实体 ID 和槽位号。
+ * 当前局的权威规则仍由 RuleService 校验；本地配置库仅保存已确认的编辑配置。
+ * 恢复配置也逐条走正常校验，每条规则携带当前英雄实体 ID 和槽位号。
  */
 var RpgRuleSync = (function () {
     "use strict";
@@ -23,6 +23,7 @@ var RpgRuleSync = (function () {
         }
     }
     function onResult(result) {
+        if (typeof RpgRuleLibrary !== "undefined") { RpgRuleLibrary.result(result); }
         var entry = result && pending[result.request_id];
         if (!entry) { return; }
         delete pending[result.request_id];
@@ -48,6 +49,7 @@ var RpgRuleSync = (function () {
     function reset() {
         // Keep requestSerial increasing: delayed replies belong to the old run.
         pending = {}; latestByKey = {}; failures = {};
+        if (typeof RpgRuleLibrary !== "undefined") { RpgRuleLibrary.resetPending(); }
         showFailures();
     }
 
@@ -335,6 +337,10 @@ var RpgRuleSync = (function () {
         Object.keys(failures).forEach(function(id) { if (failures[id].heroKey === heroKey && failures[id].slot > payload.rule_count) { delete failures[id]; } });
         pending[payload.request_id] = {key:key,heroKey:heroKey,hero:String(args.heroName || ""),slot:payload.slot};
         latestByKey[key] = payload.request_id;
+        if (typeof RpgRuleLibrary !== "undefined" && args.libraryRules) {
+            try { RpgRuleLibrary.track(payload.request_id, args.heroName, args.libraryRules, payload.slot); }
+            catch (exception) { if ($.Msg) { $.Msg("[RPGRuleLibrary] " + String(exception.message || exception)); } }
+        }
         GameEvents.SendCustomGameEventToServer("rpg_update_rule", payload);
         return true;
     }

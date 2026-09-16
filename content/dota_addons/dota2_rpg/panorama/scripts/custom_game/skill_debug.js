@@ -56,7 +56,7 @@
         if (!shown) { label(grid, heroes.length ? t("没有找到匹配的英雄。", "No matching heroes.") : t("正在获取英雄列表…", "Loading heroes…")); }
         if (grid.ScrollToTop) { grid.ScrollToTop(); }
     }
-    function close() { modal.AddClass("Hidden"); if ($("#SkillDebugButton").SetFocus) { $("#SkillDebugButton").SetFocus(); } }
+    function close() { $("#RuleLibraryDialog").AddClass("Hidden"); modal.AddClass("Hidden"); if ($("#SkillDebugButton").SetFocus) { $("#SkillDebugButton").SetFocus(); } }
     function open() { modal.RemoveClass("Hidden"); error(""); renderHeroes(); renderControls(); send("rpg_debug_request"); if (search.SetFocus) { search.SetFocus(); } }
     function request(event, payload, action) { error(""); pending = action; renderControls(); send(event, payload); }
     function serverError(code) {
@@ -134,5 +134,45 @@
     $("#SkillDebugResetLabel").text = t("重置本次测试", "Reset current test");
     $("#SkillDebugExitLabel").text = t("退出调试", "Exit testing");
     $("#SkillDebugFooter").text = t("敌方行为会写入战斗日志 · 关闭面板不会退出调试 · 阅读时战斗继续", "Enemy behavior is logged · Closing this panel keeps testing active · Battle continues while reading");
+    var library = typeof RpgRuleLibrary !== "undefined" ? RpgRuleLibrary : null;
+    function libraryCount() {
+        if (!library) { return; }
+        $("#RuleLibraryCount").text = library.status()
+            ? t("本地保存不可用，请导出备份：", "Local saving unavailable; export a backup: ") + library.status()
+            : t("已保存 ", "Saved ") + library.count() + t(" 名英雄可导出 · 新局需手动导入", " heroes available to export · Import manually in each new run");
+    }
+    $("#RuleLibraryOpenLabel").text = t("条件配置：导入／导出", "Conditions: import / export");
+    $("#RuleLibraryTitle").text = t("所有英雄的本地条件配置", "Local conditions for all heroes");
+    $("#RuleLibraryCloseLabel").text = t("返回", "Back");
+    $("#RuleLibraryExportLabel").text = t("导出所有已保存英雄", "Export all saved heroes");
+    $("#RuleLibraryImportLabel").text = t("导入并覆盖同名英雄", "Import and replace matching heroes");
+    $("#RuleLibraryHelp").text = t(
+        "新局仍清空条件，不会自动应用本地配置。修改成功的配置会按英雄收集，供统一导出。导出后点击文本框，Ctrl+A、Ctrl+C，粘贴到本地 .json 文件备份。进入新局／新测试后，将文件全部内容粘贴到这里并点击导入。只覆盖备份中的同名英雄，其他英雄保留。仅保存条件规则，不含等级、装备或进度。导入在准备阶段应用；缺少的技能／装备需先补齐。",
+        "New runs reset conditions; local configurations are never applied automatically. Accepted edits are collected by hero for export. Export, click the text box, press Ctrl+A / Ctrl+C and paste into a local .json file. After starting a new run/test, paste the entire file here and import. Matching heroes are replaced; other heroes are kept. Only condition rules are saved, not levels, equipment or progress. Imports apply during preparation after required skills/equipment are available.");
+    $("#RuleLibraryOpen").enabled = !!library;
+    $("#RuleLibraryOpen").SetPanelEvent("onactivate", function () {
+        if (!library) { return; }
+        $("#RuleLibraryDialog").RemoveClass("Hidden"); libraryCount();
+        $("#RuleLibraryStatus").text = t("可导出全部配置，或粘贴备份后导入。", "Export all configurations, or paste a backup to import.");
+    });
+    $("#RuleLibraryClose").SetPanelEvent("onactivate", function () { $("#RuleLibraryDialog").AddClass("Hidden"); });
+    $("#RuleLibraryExport").SetPanelEvent("onactivate", function () {
+        if (!library) { return; }
+        $("#RuleLibraryText").text = library.exportText();
+        $("#RuleLibraryText").SetFocus();
+        $("#RuleLibraryStatus").text = t("已生成 ", "Exported ") + library.count() + t(" 名英雄的配置。请复制并保存到本地文件。", " hero configurations. Copy and save to a local file.")
+            + (library.hasPending() ? t(" 未通过或尚未确认的修改不在备份内。", " Rejected or unconfirmed changes are excluded.") : "");
+    });
+    $("#RuleLibraryImport").SetPanelEvent("onactivate", function () {
+        if (!library) { return; }
+        try {
+            var count = library.importText(String($("#RuleLibraryText").text || ""));
+            $("#RuleLibraryStatus").text = t("已导入并保存 ", "Imported and saved ") + count + t(" 名英雄。当前局内按英雄应用；新局需重新导入。应用结果请查看条件提示。", " heroes. Applies by hero in this run; new runs require another import. Check condition notices for application results.");
+        } catch (exception) {
+            $("#RuleLibraryStatus").text = t("导入失败：", "Import failed: ") + String(exception.message || exception);
+        }
+        libraryCount();
+    });
+    if (library) { library.subscribe(libraryCount); libraryCount(); }
     renderControls(); send("rpg_debug_request");
 })();

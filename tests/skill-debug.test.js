@@ -29,8 +29,12 @@ function launch(language) {
     const $ = q => ids[q.slice(1)] || null;
     $.CreatePanel=panel; $.Language=()=>language;
     $.Localize=token=>({"#npc_dota_hero_axe":"斧王 Axe", "#npc_dota_hero_phantom_assassin":"幻影刺客 PA", "#npc_dota_hero_wisp":"艾欧 Io"}[token] || token);
-    vm.runInNewContext(source, {$,GameEvents:{Subscribe:(e,fn)=>handlers[e]=fn,
-        SendCustomGameEventToServer:(e,data)=>sent.push([e,JSON.parse(JSON.stringify(data))])}});
+    const disk = {};
+    $.LocalStorage={GetItem:key=>disk[key],SetItem:(key,value)=>{disk[key]=value;}};
+    const context = {$,GameEvents:{Subscribe:(e,fn)=>handlers[e]=fn,
+        SendCustomGameEventToServer:(e,data)=>sent.push([e,JSON.parse(JSON.stringify(data))])}};
+    vm.runInNewContext(fs.readFileSync(path.join(panorama,"scripts/custom_game/rule_library.js"),"utf8"),context);
+    vm.runInNewContext(source, context);
     return {ids,sent,click(id) {ids[id].events.onactivate();}, event(e,data) {handlers[e](data);},
         type(id,text) {ids[id].text=text; ids[id].events.ontextentrychange();}};
 }
@@ -82,6 +86,17 @@ for (const language of ["schinese", "english"]) {
         ui.click("SkillDebugButton"); const n=ui.sent.length; close();
         assert(p.SkillDebug.BHasClass("Hidden") && ui.sent.length===n, "closing the window is distinct from exiting the test");
     }
+    ui.click("SkillDebugButton"); ui.click("RuleLibraryOpen");
+    assert(!p.RuleLibraryDialog.BHasClass("Hidden"));
+    p.RuleLibraryText.text = JSON.stringify({format:"dota2_rpg_rule_library",version:1,heroes:{[HERO]:[{action:"attack",enabled:true}]}});
+    ui.click("RuleLibraryImport"); assert(p.RuleLibraryStatus.text.includes("1"));
+    ui.click("RuleLibraryExport");
+    const backup=JSON.parse(p.RuleLibraryText.text);
+    assert.equal(backup.heroes[HERO][0].action,"attack");
+    p.RuleLibraryText.text="{broken"; ui.click("RuleLibraryImport");
+    assert(/失败|failed/.test(p.RuleLibraryStatus.text));
+    ui.click("RuleLibraryExport"); assert.deepStrictEqual(JSON.parse(p.RuleLibraryText.text),backup);
+    ui.click("RuleLibraryClose"); assert(p.RuleLibraryDialog.BHasClass("Hidden"));
     assert(ui.sent.every(([event,data])=>event.startsWith("rpg_debug_") && !("PlayerID" in data)), "controls only send their explicit debug request; identity belongs to the engine");
 }
 console.log("PASS: live debug XML, bilingual hero search, validated requests, asynchronous cancellation, phase gates, reset/exit and close semantics");

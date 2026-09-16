@@ -252,6 +252,7 @@
     }
 
     var rulesBySide = { Radiant: {} };
+    var libraryRestored = {}, libraryWaiting = {};
     var selectedHeroIndex = { Radiant: 0 };
     var rowPanels = { Radiant: [] };
     // 新增行动行的金框标记：按规则对象引用记录，重排/删除不会串到别的行。
@@ -282,6 +283,8 @@
         RpgConditionCatalog.reset();
         RpgRuleSync.reset();
         rulesBySide = { Radiant: {} };
+        libraryRestored = {}; libraryWaiting = {};
+        if (typeof RpgRuleLibrary !== "undefined") { RpgRuleLibrary.resetImports(); }
         newRuleMarks = { Radiant: [] };
         heroSlots = {};
         // Fresh hero snapshots can precede the shop lineup. Discard its old names
@@ -1205,12 +1208,21 @@
             enabled: false
         };
         rules._authored = true;
+        if (typeof RpgRuleLibrary !== "undefined") {
+            libraryRestored[key] = ruleGeneration + ":" + entry.name + ":" + entry.hero_index + ":" + RpgRuleLibrary.revision(entry.name);
+            delete libraryWaiting[key];
+        }
         RpgRuleSync.sendRule({
             heroIndex: entry.hero_index,
             heroName: entry.name,
             heroKey: entry.rule_key,
             slot: ruleIndex + 1,
             ruleCount: rules.length,
+            libraryRules: rules.map(function (entryRule) {
+                var portable = JSON.parse(JSON.stringify(entryRule));
+                portable.action = getActionDetail(side, heroIndex, entryRule.action) || entryRule.action;
+                return portable;
+            }),
             rule: rule,
             actionId: rule.action,
             capability: typeof RpgAbilityCapabilities === "undefined" ? null : getRuleCapability(side, heroIndex, rule.action),
@@ -1221,6 +1233,51 @@
     function syncHeroRules(side) {
         var heroIndex = selectedHeroIndex[side];
         for (var index=0;index<getRules(side,heroIndex).length;index++) { sendRuleToServer(side,heroIndex,index); }
+    }
+
+    // Only explicit imports in this run apply. Starting a new run clears this
+    // intent; the local export collection must never replace new-run defaults.
+    // Missing equipment delays the entire imported profile.
+    function restoreLibraryRules() {
+        if (typeof RpgRuleLibrary === "undefined") { return; }
+        Object.keys(heroSlots).forEach(function (key) {
+            var match = key.match(/^radiant_(\d+)$/), entry = heroSlots[key];
+            if (!match) { return; }
+            var index = Number(match[1]) - 1, current = getRules("Radiant", index);
+            var marker = ruleGeneration + ":" + entry.name + ":" + entry.hero_index + ":" + RpgRuleLibrary.revision(entry.name);
+            if (RpgRuleLibrary.revision(entry.name) === 0
+                    || !canEditHeroRules("Radiant", index) || !current._serverHydrated
+                    || libraryRestored[key] === marker || RpgRuleLibrary.hasPending(entry.name)
+                    || (HEROES.Radiant[index] && HEROES.Radiant[index].name !== entry.name)) { return; }
+            var saved = RpgRuleLibrary.get(entry.name);
+            if (!saved) { return; }
+            var actions = getSlotActions("Radiant", index).map(function (action) {
+                return getActionDetail("Radiant", index, action) || action;
+            });
+            var missing = saved.filter(function (rule) {
+                return ["attack", "basic_attack", "sustained_move", "buyback"].indexOf(rule.action) < 0
+                    && actions.indexOf(rule.action) < 0;
+            });
+            if (missing.length) {
+                libraryWaiting[key] = localizeHeroName(entry.name) + ": " + missing.map(function (rule) { return rule.action; }).join(", ");
+                return;
+            }
+            delete libraryWaiting[key];
+            libraryRestored[key] = marker;
+            closeEditorMenus();
+            current.splice(0, current.length);
+            saved.forEach(function (rule) { if (rule.action === "basic_attack") { rule.action = "attack"; } current.push(rule); });
+            current._authored = true;
+            for (var slot = 0; slot < current.length; slot++) { sendRuleToServer("Radiant", index, slot); }
+            renderSide("Radiant");
+        });
+        var notice = $("#RuleLibraryNotice");
+        if (notice) {
+            var waiting = Object.keys(libraryWaiting).map(function (key) { return libraryWaiting[key]; });
+            notice.visible = waiting.length > 0;
+            notice.text = ($.Language && $.Language().indexOf("chinese") < 0
+                ? "Saved conditions waiting for skills/equipment: " : "已保存条件等待技能／装备就绪：") + waiting.join("; ");
+        }
     }
 
     function buildPayload() {
@@ -2348,6 +2405,7 @@
         updateRunLives(data);
         var previousPhase = phase;
         phase = data.phase || "setup";
+        restoreLibraryRules();
         if (phase !== "setup") { updateNativeShopState(false); }
         if (phase !== "setup") { $("#RuleSettings").SetHasClass("Hidden", true); }
         var fighting = phase === "fight" || phase === "battle";
@@ -2641,9 +2699,13 @@
                 current.splice(0,current.length);
                 buildRulesForHero(side,heroIndex).forEach(function(rule) { current.push(rule); });
             }
+            restoreLibraryRules();
             renderSide(side);
         }
     });
+    if (typeof RpgRuleLibrary !== "undefined") {
+        RpgRuleLibrary.subscribe(function (event) { if (event === "import") { restoreLibraryRules(); } });
+    }
     wireShopButtons();
     if ($.RegisterForUnhandledEvent) {
         // 事件与轮询共用状态处理，重复打开信号不能清掉待还原的英雄。

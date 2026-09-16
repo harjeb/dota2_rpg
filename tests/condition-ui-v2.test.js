@@ -97,7 +97,8 @@ function createPanel(id) {
     };
 }
 
-function runHud() {
+function runHud(options) {
+    options = options || {};
     var panels = {};
     var createdPanels = [];
     var sentEvents = [];
@@ -132,7 +133,7 @@ function runHud() {
         if (delay === 0.25) { scheduled.push(callback); }
         else { callback(); }
     };
-    panorama.LocalStorage = {
+    panorama.LocalStorage = options.localStorage || {
         Get: function () { localStorageCalls++; return "null"; },
         Set: function () { localStorageCalls++; }
     };

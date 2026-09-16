@@ -1,4 +1,12 @@
 .DebugHideRecruitment { visibility: collapse; }
+#RuleLibraryNotice { horizontal-align: center; vertical-align: top; margin-top: 72px; max-width: 1000px; padding: 8px; color: #efd49a; background-color: #14212bee; font-size: 18px; white-space: normal; z-index: 120; }
+.DebugLibraryRow { width: 100%; flow-children: right; margin-top: 12px; margin-bottom: 10px; }
+#RuleLibraryCount { vertical-align: center; color: #afd5c6; font-size: 17px; width: fill-parent-flow(1); white-space: normal; }
+#RuleLibraryDialog { width: 82%; height: 80%; horizontal-align: center; vertical-align: center; flow-children: down; padding: 24px; background-color: #14212bff; border: 2px solid #75b8ce; box-shadow: #000e 0px 8px 40px 0px; }
+#RuleLibraryDialog.Hidden { visibility: collapse; }
+#RuleLibraryTitle { width: fill-parent-flow(1); color: #e2eff2; font-size: 26px; }
+#RuleLibraryText { width: 100%; height: fill-parent-flow(1); white-space: normal; overflow: squish scroll; font-size: 16px; color: #e1eff4; padding: 10px; background-color: #0c1720; border: 1px solid #668492; }
+#RuleLibraryStatus { color: #efd49a; margin-top: 8px; }
 #SkillDebugButton { width: 110px; height: 46px; horizontal-align: right; vertical-align: top; margin: 18px 80px 0px 0px; background-color: #172934f5; border: 1px solid #75b8ce; border-radius: 7px; z-index: 110; }
 #SkillDebugButton Label { horizontal-align: center; vertical-align: center; font-size: 19px; color: #d1eff7; }
 #SkillDebugButton:hover { brightness: 1.4; }
