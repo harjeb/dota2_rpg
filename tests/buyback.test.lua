@@ -15,8 +15,10 @@ local function cooldown(n)
         EndCooldown = function(self) self.remaining = 0 end,
         StartCooldown = function(self, value) self.remaining = value end}
 end
+local heroSerial = 0
 local function hero(level, team)
-    local h = {level = level or 1, team = team or 2, alive = false, position = {x=12,y=34,z=0},
+    heroSerial = heroSerial + 1
+    local h = {name = "npc_dota_hero_test_" .. heroSerial, level = level or 1, team = team or 2, alive = false, position = {x=12,y=34,z=0},
         abilities = {[0]=cooldown(12), [1]=cooldown(0)}, items = {[0]=cooldown(25), [8]=cooldown(7)},
         rules = {{enabled=true, action={kind="buyback"}}}, events = {}, respawns = 0,
         modifiers = {modifier_unrelated = true}, stops = 0}
@@ -24,6 +26,7 @@ local function hero(level, team)
     function h:IsRealHero() return self.real ~= false end
     function h:GetTeamNumber() return self.team end
     function h:GetLevel() return self.level end
+    function h:GetUnitName() return self.name end
     function h:IsAlive() return self.alive end
     function h:IsReincarnating() return self.returning == true end
     function h:GetAbsOrigin() return self.position end
@@ -125,7 +128,7 @@ test("stable shared wallet, duplicate rules and repeated ticks", function()
     assert(not a.alive and g.spends==2, "toggling or duplicate rules cannot reset the allowance")
     g.battleManager:StartBattle(g.battleManager.teamRules)
     Buyback.Process(g)
-    assert(a.alive and a.respawns==2 and g.spends==3, "the next battle starts a fresh allowance")
+    assert(not a.alive and a.respawns==1 and g.spends==2, "default retry must respect hero cooldown")
 end)
 test("difficulty price uses the campaign setting and exact affordability", function()
     for difficulty,cost in pairs({easy=825,default=1100,hard=1375}) do
@@ -197,16 +200,18 @@ test("actual wipe gate resolves timeout before spending", function()
     assert(g.battleManager:CheckBattleEnd() and g.winner=="timeout" and g.spends==0 and h.respawns==0)
     now=10
 end)
-test("hard quota is shared across heroes and chapter retries", function()
+test("hard retry restores shared quota while each hero keeps its cooldown", function()
     local a,b=hero(),hero(); local g=game({a,b},10000)
     g.campaignDifficulty="hard"; g.currentLevelId=4; Buyback.BeginBattle(g)
     local quota=g.hardBuybackState
     Buyback.Process(g)
     assert(a.alive and not b.alive and g.spends==1 and quota.used and not quota.processing)
     a.alive=false; Buyback.BeginBattle(g); Buyback.Process(g)
-    assert(g.hardBuybackState==quota and g.spends==1 and not a.alive and not b.alive)
-    g.currentLevelId=5; Buyback.BeginBattle(g); Buyback.Process(g)
-    assert(g.hardBuybackState~=quota and g.hardBuybackState.chapter==5 and g.spends==2)
+    assert(g.hardBuybackState~=quota and g.spends==2 and not a.alive and b.alive,
+        "same chapter retry restores team quota for a different ready hero")
+    b.alive=false; g.currentLevelId=5; Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(not a.alive and not b.alive and g.spends==2 and not g.hardBuybackState.used,
+        "next chapter resets team quota but cannot clear hero cooldowns")
 end)
 test("hard payment reserves the team quota before nested processing", function()
     local a,b=hero(),hero(); local g=game({a,b},10000)
@@ -251,15 +256,64 @@ test("hard successful revival consumes quota despite cleanup failure", function(
     Buyback.Process(g); Buyback.Process(g)
     assert(a.alive and not b.alive and g.spends==1 and g.refunds==0 and g.hardBuybackState.used)
 end)
-test("easy and default retain per-hero per-battle allowances", function()
-    for _,difficulty in ipairs({"easy","default"}) do
-        local a,b=hero(),hero(); local g=game({a,b},10000); g.campaignDifficulty=difficulty
-        g.hardBuybackState={chapter=1,used=true,processing=false}
-        Buyback.Process(g)
-        assert(a.alive and b.alive and g.spends==2)
-        a.alive=false; b.alive=false; Buyback.BeginBattle(g); Buyback.Process(g)
-        assert(a.alive and b.alive and g.spends==4)
+test("easy retains per-hero allowance on every retry", function()
+    local a,b=hero(),hero(); local g=game({a,b},10000); g.campaignDifficulty="easy"
+    for attempt=1,4 do
+        if attempt>1 then Buyback.BeginBattle(g) end
+        a.alive=false; b.alive=false; Buyback.Process(g)
+        assert(a.alive and b.alive and g.spends==attempt*2)
+        a.alive=false; b.alive=false; Buyback.Process(g)
+        assert(not a.alive and not b.alive and g.spends==attempt*2)
     end
+end)
+test("default and hard skip exactly the next two or three battle attempts", function()
+    for difficulty,skipped in pairs({default=2,hard=3}) do
+        local h=hero(); local g=game({h},10000); g.campaignDifficulty=difficulty
+        Buyback.Process(g); assert(h.alive and g.spends==1)
+        h.alive=false
+        for attempt=1,skipped do
+            -- Mix retries and new chapters; both count and neither clears CD early.
+            g.currentLevelId=attempt<skipped and "ch01" or "ch02"
+            g.battleManager:StartBattle(g.battleManager.teamRules)
+            Buyback.Process(g); Buyback.Process(g)
+            assert(not h.alive and g.spends==1, difficulty .. " blocked attempt " .. attempt)
+        end
+        g.battleManager:StartBattle(g.battleManager.teamRules); Buyback.Process(g)
+        assert(h.alive and g.spends==2, difficulty .. " expires after all skipped battles")
+        h.alive=false; Buyback.Process(g)
+        assert(not h.alive and g.spends==2, "still only once in the eligible battle")
+        Buyback.BeginBattle(g); Buyback.Process(g)
+        assert(not h.alive and g.spends==2, "second buyback starts a new cooldown")
+    end
+end)
+test("hero identity survives entity recreation, lineup moves and rule toggles", function()
+    local a,b=hero(),hero(); local g=game({a,b},10000)
+    b.rules={}; Buyback.Process(g); assert(a.alive and g.spends==1)
+    local replacement=hero(); replacement.lineupHeroName=a.name
+    g.battleManager.teamHeroes[2]={b,replacement}
+    replacement.rules[1].enabled=false; Buyback.Process(g)
+    replacement.rules[1].enabled=true; Buyback.Process(g)
+    assert(not replacement.alive and g.spends==1, "new entity cannot bypass current cooldown")
+    Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(not replacement.alive and g.spends==1)
+    -- Benching does not erase the saved identity; an actual battle still counts.
+    g.battleManager.teamHeroes[2]={b}; Buyback.BeginBattle(g)
+    g.battleManager.teamHeroes[2]={replacement,b}; Buyback.Process(g)
+    assert(not replacement.alive and g.spends==1)
+    Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(replacement.alive and g.spends==2)
+end)
+test("arena battles and repeated prepare processing cannot advance campaign cooldown", function()
+    local h=hero(); local g=game({h},10000); Buyback.Process(g); h.alive=false
+    local battle=g.buybackBattleNumber
+    g.phase="setup"
+    for i=1,10 do Buyback.Process(g) end
+    assert(g.buybackBattleNumber==battle)
+    g.battleManager.arenaActive=true; Buyback.BeginBattle(g)
+    g.battleManager.arenaActive=false; g.arena={mode="arena"}; Buyback.BeginBattle(g)
+    assert(g.buybackBattleNumber==battle)
+    g.arena=nil; g.phase="fight"; Buyback.BeginBattle(g); Buyback.Process(g)
+    assert(not h.alive and g.spends==1, "first subsequent campaign battle is still blocked")
 end)
 test("fresh run clears persisted hard quota", function()
     local originalRequire=require
@@ -268,7 +322,8 @@ test("fresh run clears persisted hard quota", function()
         if name=="battle.respawn_policy" then return originalRequire(name) end
         return {Reset=function() end,Clear=function() end,Ensure=function() end}
     end},{__index=_G}))
-    local g=game({},1000); g.hardBuybackState={chapter=1,used=true,processing=true}
+    local g=game({},1000); g.hardBuybackState={used=true,processing=true}
+    g.buybackBattleNumber=8; g.buybackReadyBattle={npc_dota_hero_axe=12}
     g.battleManager.teamHeroes={[2]={},[3]={}}
     g.battleManager.StopBattle=function() end
     g.battleManager.ResetBattleStats=function() end
@@ -277,7 +332,7 @@ test("fresh run clears persisted hard quota", function()
     g.InitializeRecruitmentState=function() end
     g.SetGoldBalance=function(self,n) self.gold=n end
     fresh().Reset(g)
-    assert(g.hardBuybackState==nil)
+    assert(g.hardBuybackState==nil and g.buybackBattleNumber==nil and g.buybackReadyBattle==nil)
     g.campaignDifficulty="hard"; g.currentLevelId=1; Buyback.BeginBattle(g)
     assert(not g.hardBuybackState.used and not g.hardBuybackState.processing)
 end)

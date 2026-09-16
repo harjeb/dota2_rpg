@@ -2,6 +2,24 @@
 local RespawnPolicy = require("battle.respawn_policy")
 local B = {}
 local priceMultipliers = {easy = 0.75, default = 1, hard = 1.25}
+local battleCooldowns = {easy = 0, default = 2, hard = 3}
+-- Preparation can replace native entities or move heroes to the bench. Keep
+-- cooldowns on the run, keyed by the same stable name used by the roster.
+local function heroKey(hero)
+    return hero.lineupHeroName or hero.benchHeroName or hero:GetUnitName()
+end
+local function ready(game, hero)
+    local nextBattle = (game.buybackReadyBattle or {})[heroKey(hero)] or 0
+    return (game.buybackBattleNumber or 0) >= nextBattle
+end
+local function consume(game, hero, state, quota)
+    if state.used then return end
+    state.used = true
+    if quota then quota.used = true end
+    game.buybackReadyBattle = game.buybackReadyBattle or {}
+    local skipped = battleCooldowns[game.campaignDifficulty] or battleCooldowns.default
+    game.buybackReadyBattle[heroKey(hero)] = (game.buybackBattleNumber or 0) + skipped + 1
+end
 function B.Cost(level, difficulty)
     level = math.max(1, math.min(30, math.floor(tonumber(level) or 1)))
     local base = 100 + 50 * level + 5 * level * level
@@ -32,13 +50,19 @@ end
 local function hardQuota(game)
     if game.campaignDifficulty ~= "hard" then return nil end
     local quota = game.hardBuybackState
-    if not quota or quota.chapter ~= game.currentLevelId then
-        quota = {chapter = game.currentLevelId, used = false, processing = false}
+    if not quota then
+        quota = {used = false, processing = false}
         game.hardBuybackState = quota
     end
     return quota
 end
 function B.BeginBattle(game)
+    local manager = game.battleManager
+    if manager.arenaActive or (game.arena and game.arena.mode == "arena") then return end
+    -- Count actual campaign starts, including retries, once at the fight boundary.
+    -- A buyback in N with cooldown 2 becomes eligible in N+3, not N+2.
+    game.buybackBattleNumber = (game.buybackBattleNumber or 0) + 1
+    game.hardBuybackState = nil
     hardQuota(game)
     game.battleManager.buybackState = {}
     for _, hero in ipairs(game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}) do
@@ -73,7 +97,7 @@ function B.Process(game)
             if hero:IsAlive() then
                 state.failed = nil
             elseif not state.used and not state.failed and not state.processing and not RespawnPolicy.IsReturning(hero)
-                and B.Enabled(game, hero) and hero.RespawnHero then
+                and ready(game, hero) and B.Enabled(game, hero) and hero.RespawnHero then
                 local cost = B.Cost(hero:GetLevel(), game.campaignDifficulty)
                 if game:GetGoldBalance() >= cost then
                     local saved = cooldowns(hero)
@@ -89,8 +113,7 @@ function B.Process(game)
                             hero:SetRespawnPosition(state.position)
                             hero:RespawnHero(false, false)
                             assert(hero:IsAlive(), "RespawnHero did not revive hero")
-                            state.used = true
-                            if quota then quota.used = true end
+                            consume(game, hero, state, quota)
                             -- Respawn policy handles the native spawn event. Restore the combat
                             -- acquisition settings and resources without refreshing cooldowns.
                             hero:SetRespawnsDisabled(false)
@@ -115,8 +138,7 @@ function B.Process(game)
                         state.processing = nil
                         if hero:IsAlive() then
                             -- Even a later cleanup error must not grant another paid revival.
-                            state.used = true
-                            if quota then quota.used = true end
+                            consume(game, hero, state, quota)
                         else
                             state.failed = true
                             game:AddGold(cost)

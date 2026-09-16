@@ -3465,12 +3465,52 @@ var RpgConditionHelpData = {
       "settings": [
         {
           "label": {
-            "zh": "每场限制",
-            "en": "Per-battle limit"
+            "zh": "简单",
+            "en": "Easy"
           },
           "value": {
-            "zh": "每个英雄每场战斗最多成功付费买活一次；实际价格以界面与当前难度为准。",
-            "en": "Each hero can successfully buy back once per battle; use the displayed price for the current difficulty."
+            "zh": "每英雄每场最多成功买活一次，无跨场冷却。",
+            "en": "One successful buyback per hero per battle, with no cooldown between battles."
+          }
+        },
+        {
+          "label": {
+            "zh": "默认",
+            "en": "Default"
+          },
+          "value": {
+            "zh": "每英雄每场最多一次；在第N场买活后，第N+1、N+2次战斗尝试不可买活，第N+3次恢复。",
+            "en": "Once per hero per battle. After buyback in battle N, attempts N+1 and N+2 are blocked for that hero; N+3 is allowed."
+          }
+        },
+        {
+          "label": {
+            "zh": "困难",
+            "en": "Hard"
+          },
+          "value": {
+            "zh": "在第N场买活后，该英雄第N+1至N+3次战斗尝试不可买活，第N+4次恢复。全队每场合计最多成功买活一次，重试重置全队额度。",
+            "en": "After buyback in battle N, attempts N+1 through N+3 are blocked for that hero; N+4 is allowed. The whole team shares one successful buyback per battle; retries reset this team quota."
+          }
+        },
+        {
+          "label": {
+            "zh": "冷却计数与保留",
+            "en": "Cooldown counting and persistence"
+          },
+          "value": {
+            "zh": "仅实际开始的战役战斗计数，包含重试，不含竞技场。换关不清除英雄冷却，重新开局才清除。冷却按英雄名称保存，重建实体或替补换阵不会清除。",
+            "en": "Only actual campaign fight starts count, including retries; arena fights are excluded. A new stage does not clear hero cooldowns; a fresh run does. Cooldowns follow the hero name through entity recreation and bench swaps."
+          }
+        },
+        {
+          "label": {
+            "zh": "费用",
+            "en": "Cost"
+          },
+          "value": {
+            "zh": "实际共享金币费用以界面与当前难度为准；有足够金币仍须满足冷却和额度限制。",
+            "en": "Use the displayed shared gold price for the current difficulty; sufficient gold does not bypass cooldown or quota limits."
           }
         }
       ],

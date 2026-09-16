@@ -8,6 +8,7 @@ function Fresh.Reset(game)
     -- Keep the confirmed difficulty; reset only fractional native reward credits.
     game.difficultyGoldRemainders, game.difficultyXpRemainders = nil, nil
     game.hardBuybackState = nil
+    game.buybackBattleNumber, game.buybackReadyBattle = nil, nil
     -- Invalidate closures BEFORE removing entities (native removal can re-enter).
     game.ruleGeneration = (game.ruleGeneration or 0) + 1
     -- Hero precache callbacks capture this exact table: remove pending intents
