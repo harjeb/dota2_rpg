@@ -27,7 +27,7 @@ function Difficulty.Select(game, payload)
     if type(payload) ~= "table" or game.playerId == nil or tonumber(payload.PlayerID) ~= game.playerId
         or not Difficulty.Valid(payload.difficulty) or game.campaignDifficultyLocked
         or game.phase ~= "setup" or (game.arena and game.arena.mode == "arena")
-        or (game.leaderboardRun and game.leaderboardRun.startedAt) then return false end
+        or (game.runResults and game.runResults.startedAt) then return false end
     game.campaignDifficulty = payload.difficulty
     -- Confirmation is the run boundary, BEFORE any earned/preparation income.
     -- Retries, replay and reconnect retain this selection; arena never uses it.

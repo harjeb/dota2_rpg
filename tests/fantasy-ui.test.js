@@ -1,5 +1,5 @@
 "use strict";
-// UI98 uses the actual catalog/HUD scripts and XML, not a reimplementation.
+// UI99 uses the actual catalog/HUD scripts and XML, not a reimplementation.
 const assert = require("assert"), fs = require("fs"), path = require("path");
 const {runHud, click, panel, choice, input} = require("./condition-ui-v2.test");
 const hero = "npc_dota_hero_axe", lion = "npc_dota_hero_lion";
@@ -76,10 +76,11 @@ const css=fs.readFileSync(path.join(base,"styles/custom_game/fantasy_ui.css"),"u
 const xml=fs.readFileSync(path.join(base,"layout/custom_game/rpg_demo_hud.xml"),"utf8");
 const code=fs.readFileSync(path.join(base,"scripts/custom_game/condition_catalog.js"),"utf8");
 assert(xml.indexOf('styles/custom_game/fantasy_ui.css')>xml.indexOf('styles/custom_game/issue_fixes_ui.css'),"theme overrides load last");
-assert(/\.DualRankColumns\s*\{[^}]*flow-children:\s*right/.test(css));
+assert(/\.RunSummaryStrip\s*\{[^}]*flow-children:\s*right/.test(css));
+assert(!/Rank|Leaderboard|ui_sync_/.test(css), "offline theme has no ranking or network widgets");
 assert(/\.V2Condition\s*\{[^}]*flow-children:\s*right-wrap/.test(css));
 assert(!/\b(?:display|grid-template-columns|justify-content|align-items)\s*:|@media|var\(/.test(css),"native Panorama stylesheet, not web CSS");
-assert(xml.includes('id="RunRankDetails" class="RankDetails Hidden"'));
+assert(xml.includes('id="RunSummaryDetails" class="SummaryDetails Hidden"'));
 assert(!xml.includes('id="RunScoreTab"') && !xml.includes('id="RunSpeedrunTab"'));
 assert(code.includes('preview = clone(draft)'),"preview uses a separate copy");
 for (const match of (xml+css).matchAll(/file:\/\/\{images\}\/custom_game\/fantasy_ui\/([a-z_]+\.png)/g)) {
@@ -90,9 +91,9 @@ for (const match of (xml+css).matchAll(/file:\/\/\{images\}\/custom_game\/fantas
 }
 for (const lang of ["english","schinese"]) {
     const locale=fs.readFileSync(path.join(__dirname,"..","game/dota_addons/dota2_rpg/resource/addon_"+lang+".txt"),"utf8");
-    assert(/"dota2_rpg_build_tag"\s+"[^"\r\n]*98"/.test(locale));
+    assert(/"dota2_rpg_build_tag"\s+"[^"\r\n]*99"/.test(locale));
     for (const m of xml.matchAll(/#(dota2_rpg_ui_[a-z_]+)/g)) { assert(locale.includes('"'+m[1]+'"'),"localized "+m[1]+" in "+lang); }
 }
 const installer=fs.readFileSync(path.join(__dirname,"..","scripts/install-ui.ps1"),"utf8");
 assert(installer.includes('*_png.vtex') && installer.includes('fantasy_ui.css') && installer.includes('Get-FileHash'));
-console.log("PASS UI98 layout wiring, two columns, collapsed details, local artwork, VTEX descriptors, localization and installer contracts");
+console.log("PASS UI99 layout wiring, local summary strip, collapsed details, local artwork, VTEX descriptors, localization and installer contracts");

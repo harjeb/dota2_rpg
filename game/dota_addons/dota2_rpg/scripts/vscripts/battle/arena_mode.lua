@@ -1,7 +1,5 @@
 local Json = require("lib.json")
 local Profile = require("battle.arena_profile")
-local Results = require("battle.run_results")
-local Config = require("data.leaderboard_config")
 local Presets = require("battle.arena_presets")
 local Arena = {}
 local function live(u) return u and (not u.IsNull or not u:IsNull()) end
@@ -18,8 +16,6 @@ function Arena.CanEdit(g)
     return s and s.mode=="arena" and not s.practice and (s.phase=="preparing" or s.phase=="adjusting")
 end
 function Arena.CanBuy(g) return Arena.CanCampaign(g) or (Arena.CanEdit(g) and not state(g).locked) end
-local function steam(g) return Results.SteamId(PlayerResource:GetSteamAccountID(g.playerId)) end
-local function playerName(g) return PlayerResource:GetPlayerName(g.playerId) or steam(g) end
 local function publishEvent(g,event,payload)
     local player=g.playerId~=nil and PlayerResource:GetPlayer(g.playerId)
     if player then CustomGameEventManager:Send_ServerToPlayer(player,event,payload) end
@@ -40,8 +36,8 @@ function Arena.Publish(g,playerId)
     local opponent=s.opponent or {}
     local out={mode=s.mode,phase=s.phase,generation=s.generation,rating=s.rating or 1500,round=math.min(7,#s.results+1),wins=s.wins or 0,
         catalog=catalog(g),results=s.results,opponent_name=opponent.player_name or "",opponent_rating=opponent.rating,
-        can_edit=Arena.CanEdit(g),can_buy=Arena.CanBuy(g),can_start=Arena.CanEdit(g),can_test=Arena.CanEdit(g),
-        can_export=(Arena.CanEdit(g) or s.phase=="finished") and s.mode=="arena",practice=s.practice==true,test_result=s.test_result,error=s.error or "",
+        can_edit=Arena.CanEdit(g),can_buy=Arena.CanBuy(g),offline=true,can_start=false,can_test=Arena.CanEdit(g),
+        can_export=false,practice=s.practice==true,test_result=s.test_result,error=s.error or "",
         rating_before=s.rating_before,rating_after=s.rating_after,rating_change=s.rating_change,perfect_bonus=s.perfect_bonus}
     publishEvent(g,"rpg_arena_state",{state_json=Json.encode(out)})
     if g.campaignDifficultyInstalled then require("battle.campaign_difficulty").Publish(g, playerId) end
@@ -79,33 +75,6 @@ local function stop(g)
     if g.damageStats then step("damage_stop",function() g.damageStats:Stop(clock()) end) end
 end
 local failure
-local function request(g,s,path,body,done,attempt)
-    if not current(g,s) then return end
-    attempt=attempt or 1
-    local ended=false
-    local function finish(response)
-        if ended or not current(g,s) then return end
-        ended=true
-        local status=tonumber(response and response.StatusCode) or 0
-        local ok,data=false,nil
-        if response and type(response.Body)=="string" and #response.Body<=2*1024*1024 then ok,data=pcall(Json.decode,response.Body) end
-        local function deliver(ok,value,code)
-            local delivered=pcall(done,ok,value,code)
-            if not delivered then failure(g,s,"operation_failed") end
-        end
-        if status>=200 and status<300 and ok and type(data)=="table" and data.success==true then deliver(true,data,status);return end
-        if attempt<3 and (status==0 or status==408 or status==429 or status>=500) then
-            later(g,s,"http_"..path:gsub("[^%w]","_").."_"..attempt,2^attempt,function() request(g,s,path,body,done,attempt+1) end)
-        else deliver(false,ok and data or {},status) end
-    end
-    local ok=pcall(function()
-        local r=CreateHTTPRequestScriptVM(body and "POST" or "GET",Config.endpoint.."/api/v1/arena"..path)
-        r:SetHTTPRequestAbsoluteTimeoutMS(15000)
-        if body then r:SetHTTPRequestRawPostBody("application/json",body) end
-        if r:Send(finish)==false then finish({StatusCode=0}) end
-    end)
-    if not ok then finish({StatusCode=0}) end
-end
 local function precache(g,s,teams,done)
     local names,seen={},{}
     for _,team in ipairs(teams) do for _,h in ipairs(team.heroes or {}) do if not seen[h.name] then seen[h.name]=true;names[#names+1]=h.name end end end
@@ -178,26 +147,6 @@ local function setTeam(g,s)
     if not team then return false,"capture_failed" end
     s.team=team;return true
 end
-local function save(g,s)
-    if not s.finishBody then
-        local rounds={};for _,r in ipairs(s.results) do rounds[#rounds+1]={opponent_id=r.opponent_id,won=r.won,survivors=r.survivors,deaths=r.deaths} end
-        s.finishBody=Json.encode({submission_id=s.series_id,steam_id=s.steam_id,rounds=rounds,team=s.team})
-    end
-    operation(g,s,"saving",function()
-        request(g,s,"/series/"..s.series_id.."/finish",s.finishBody,function(ok,data)
-            if not ok then failure(g,s,"save_failed");return end
-            if type(data.rounds)~="table" or #data.rounds~=7 or type(data.rating_after)~="number" then failure(g,s,"save_failed");return end
-            for i,r in ipairs(data.rounds) do s.results[i].delta=r.delta end
-            s.rating_before,s.rating_after,s.rating_change,s.perfect_bonus=data.rating_before,data.rating_after,data.rating_change,data.perfect_bonus
-            s.rating=data.rating_after;s.saved=true;s.retry=nil
-            g.runComplete=true;g.phase="result";change(g,s,"finished");broadcast(g)
-        end)
-    end)
-end
-local function formalNext(g,s)
-    local opponent=s.opponents[#s.results+1]
-    operation(g,s,"transition",function() launch(g,s,opponent) end)
-end
 function Arena.EndBattle(g,winner)
     local s=state(g)
     if not Arena.IsActive(g) or g.phase~="fight" or s.phase~="fighting" then return end
@@ -206,7 +155,6 @@ function Arena.EndBattle(g,winner)
     local deaths=math.max(s.roundDeaths or 0,5-survivors)
     stop(g);g.settlementGeneration=(g.settlementGeneration or 0)+1
     local won=winner=="radiant" and survivors>0
-    local outcome={opponent_id=s.opponent.id,opponent_name=s.opponent.player_name,opponent_rating=s.opponent.rating,won=won,survivors=survivors,deaths=deaths}
     if s.practice then
         s.test_result={won=won,survivors=survivors,deaths=deaths,opponent_name=s.opponent.player_name,strength=s.opponent.strength}
         change(g,s,"transition")
@@ -217,16 +165,8 @@ function Arena.EndBattle(g,winner)
         end
         s.retry=restore;later(g,s,"practice_result",2,restore);return
     end
-    s.results[#s.results+1]=outcome;s.wins=(s.wins or 0)+(won and 1 or 0)
-    if #s.results==7 then save(g,s);return end
-    change(g,s,"transition");broadcast(g)
-    if won then later(g,s,"next_round",3,function() formalNext(g,s) end)
-    else
-        local function restore()
-            prepare(g,s,s.opponents[#s.results+1],function() change(g,s,"adjusting");s.retry=nil;broadcast(g) end)
-        end
-        s.retry=restore;later(g,s,"loss_adjust",2,restore)
-    end
+    -- A retained formal-round state may settle locally, but never upload or advance.
+    s.retry=nil;s.locked=false;change(g,s,"preparing","offline_unavailable");broadcast(g)
 end
 function Arena.OnKilled(g,unit)
     local s=state(g)
@@ -242,37 +182,7 @@ function Arena.OnKilled(g,unit)
     end
 end
 local function start(g,s)
-    if not Arena.CanEdit(g) then return end
-    local ok,why=setTeam(g,s);if not ok then s.error=why;Arena.Publish(g);return end
-    if s.locked and s.opponents then formalNext(g,s);return end
-    s.locked=true
-    local unique=(DoUniqueString("arena").."_"..(RandomInt or math.random)(1,1000000000).."_"..s.serial):gsub("[^A-Za-z0-9_-]","_")
-    s.series_id=s.steam_id.."_"..unique
-    s.startBody=Json.encode({submission_id=s.series_id,steam_id=s.steam_id,player_name=playerName(g),team=s.team})
-    local function match()
-        request(g,s,"/series",s.startBody,function(accepted,data,status)
-            if not accepted then
-                -- A prior local map instance can leave an unfinished server series.
-                -- A new explicit challenge replaces that abandoned run, never its rating.
-                if status==409 and type(data.active_series_id)=="string" and data.active_series_id:match("^[A-Za-z0-9_-]+$") and not s.replacedActive then
-                    s.replacedActive=true
-                    request(g,s,"/series/"..data.active_series_id.."/abandon",Json.encode({steam_id=s.steam_id}),function(closed)
-                        if closed then match() else failure(g,s,"match_failed") end
-                    end);return
-                end
-                failure(g,s,"match_failed");return
-            end
-            if data.series_id~=s.series_id or type(data.opponents)~="table" or #data.opponents~=7 then failure(g,s,"match_failed");return end
-            local seen={}
-            for _,o in ipairs(data.opponents) do
-                if type(o.id)~="string" or seen[o.id] or type(o.team)~="table" or #o.team.heroes~=5 then failure(g,s,"match_failed");return end
-                seen[o.id]=true
-            end
-            s.opponents=data.opponents;s.rating=data.rating;s.rating_before=data.rating
-            formalNext(g,s)
-        end)
-    end
-    operation(g,s,"matching",match)
+    s.error="offline_unavailable";Arena.Publish(g)
 end
 local function test(g,s,strength)
     if not Arena.CanEdit(g) or (strength~="lower" and strength~="similar" and strength~="higher") then return end
@@ -282,18 +192,8 @@ local function test(g,s,strength)
     operation(g,s,"transition",function() launch(g,s,opponent) end)
 end
 local function export(g,s)
-    if not Arena.IsActive(g) or not (Arena.CanEdit(g) or s.phase=="finished") then return end
-    local team=s.team
-    if Arena.CanEdit(g) then team=Profile.Capture(g) end
-    local generation=s.generation
-    if not team then publishEvent(g,"rpg_arena_export_result",{generation=generation,error="capture_failed"});return end
-    if s.exportPending then return end
-    s.exportPending=true
-    request(g,s,"/exports",Json.encode({steam_id=s.steam_id,player_name=playerName(g),team=team}),function(ok,data)
-        s.exportPending=false
-        if s.generation~=generation then return end
-        publishEvent(g,"rpg_arena_export_result",{generation=generation,url=ok and data.url or nil,filename=ok and data.filename or nil,error=not ok and "export_failed" or nil})
-    end)
+    publishEvent(g,"rpg_arena_export_result",{generation=s.generation,error="offline_unavailable"})
+    s.error="offline_unavailable"
 end
 local function newState(g,mode,rating)
     g.arenaSerial=(g.arenaSerial or 0)+1;g.arenaGeneration=(g.arenaGeneration or 0)+1
@@ -308,29 +208,12 @@ local function resetCampaign(g,s)
     change(g,s,"preparing");broadcast(g)
 end
 local function exit(g,s)
-    local oldSeries=s.series_id
     if g.phase=="fight" then stop(g) end
-    -- Change identity first so all previous round/precache/http callbacks expire.
+    -- Invalidate previous round and precache callbacks before restoring campaign.
     s.cancelled=true
-    local nextState=newState(g,"arena",s.rating)
-    nextState.steam_id=s.steam_id;nextState.series_id=oldSeries;nextState.locked=true
-    local function leave()
-        nextState.mode="select";nextState.series_id=nil;nextState.locked=false
-        local ok=pcall(resetCampaign,g,nextState)
-        if not ok then failure(g,nextState,"spawn_failed") end
-    end
-    if oldSeries and not s.saved then
-        operation(g,nextState,"matching",function()
-            request(g,nextState,"/series/"..oldSeries.."/abandon",Json.encode({steam_id=s.steam_id}),function(ok,_,status)
-                if ok or status==404 then leave()
-                elseif status==409 then
-                    request(g,nextState,"/players/"..s.steam_id,nil,function(fetched,data)
-                        if fetched then nextState.rating=data.rating;leave() else failure(g,nextState,"exit_failed") end
-                    end)
-                else failure(g,nextState,"exit_failed") end
-            end)
-        end)
-    else leave() end
+    local nextState=newState(g,"select",s.rating)
+    local ok=pcall(resetCampaign,g,nextState)
+    if not ok then failure(g,nextState,"spawn_failed") end
 end
 local function enter(g,s,payload)
     if (s.mode=="arena" and s.phase~="finished") or g.phase=="fight" or g.stageLoading then return end
@@ -341,8 +224,7 @@ local function enter(g,s,payload)
         allowed[name]=nil;names[#names+1]=name
     end
     if #names~=5 then s.error="invalid_hero";Arena.Publish(g);return end
-    local id=steam(g);if not id then s.error="invalid_player";Arena.Publish(g);return end
-    s.cancelled=true;s=newState(g,"arena",s.rating);s.steam_id=id
+    s.cancelled=true;s=newState(g,"arena",s.rating)
     g.settlementGeneration=(g.settlementGeneration or 0)+1
     g.enemySpawnRequest=nil
     local resourceTeam={heroes={}};for _,name in ipairs(names) do resourceTeam.heroes[#resourceTeam.heroes+1]={name=name} end
@@ -361,12 +243,10 @@ local function enter(g,s,payload)
             end)
             if not ready then failure(g,s,"spawn_failed");return end
             s.retry=nil;change(g,s,"preparing");broadcast(g)
-            request(g,s,"/players/"..id,nil,function(fetched,data)
-                if fetched and type(data.rating)=="number" and not s.locked then s.rating=data.rating;Arena.Publish(g) end
-            end)
+
         end)
     end
-    operation(g,s,"matching",load)
+    operation(g,s,"transition",load)
 end
 function Arena.Install(g)
     if g.arena then return end
@@ -386,7 +266,7 @@ function Arena.Install(g)
                 elseif action=="test" then test(g,s,payload.strength)
                 elseif action=="export" then export(g,s)
                 elseif action=="exit" and s.mode=="arena" then exit(g,s)
-                elseif action=="retry" and s.phase=="error" and s.retry then local retry=s.retry;change(g,s,"matching");retry() end
+                elseif action=="retry" and s.phase=="error" and s.retry then local retry=s.retry;change(g,s,"transition");retry() end
             end)
             if not ok then failure(g,state(g),"operation_failed") end
             Arena.Publish(g)

@@ -834,12 +834,48 @@ assert(!visible(terminalRewards,"ReplayRunButton"), "stale phase cannot restore 
 terminalRewards.timers[1]();
 assert(!visible(terminalRewards,"BattleResult"), "plain defeat auto-closes entire frame");
 
-var ranked = runHud();
-ranked.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",run_complete:1,replay_available:1,owner_player_id:0,settlement_generation:40});
-var summary = {winner:"radiant",run_complete:1,cleared:1,settlement_generation:40,status:"pending",score:1456000,
-    core_score:420000,time_bonus_score:36000,clear_bonus_score:1000000,remaining_hearts:5,stage_count:30,total_stages:30,remaining_time_ms:3600000};
-ranked.subscriptions.rpg_settlement(summary);
-assert(visible(ranked,"RunLeaderboard") && panel(ranked,"RunScoreValue").text === "1456000", "terminal summary displays authoritative score");
+var summary = {winner:"radiant",run_complete:1,cleared:1,settlement_generation:40,status:"disabled",score:1456000,
+    core_score:420000,time_bonus_score:36000,clear_bonus_score:1000000,remaining_hearts:5,stage_count:30,total_stages:30,remaining_time_ms:61002};
+var offline = runHud();
+assert(!offline.subscriptions.rpg_leaderboard_result && offline.subscriptions.rpg_run_result, "only the offline result event is subscribed");
+assert(!/RunLeaderboard|LeaderboardOpen|RunRank|RankTable|ui_sync_|rank_position/.test(hudSource + layoutSource + cssSource), "obsolete online result rendering and controls are removed");
+assert(layoutSource.includes("#dota2_rpg_offline_results"), "offline result hint is localized");
+offline.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",run_complete:1,replay_available:1,owner_player_id:0,settlement_generation:40});
+offline.subscriptions.rpg_settlement(Object.assign({},summary,{gold:50,xp_pool:10,loot_text:"item_blink"}));
+assert(visible(offline,"RunSummary") && panel(offline,"RunScoreValue").text === "1456000", "terminal shows authoritative local score");
+assert(panel(offline,"RunTimeValue").text === "01:01.002" && panel(offline,"RunProgressValue").text === "30 / 30", "local time preserves milliseconds and stage progress");
+assert(offline.timers.length === 0, "offline terminal persists without a network reply or auto-close timer");
+assert(!visible(offline,"RunSummaryDetails"), "scoring details begin collapsed");
+var beforeToggles = offline.sentEvents.length;
+click(offline,"RunSummaryDetailsToggle"); click(offline,"RunLootToggle");
+assert(visible(offline,"RunSummaryDetails") && panel(offline,"BattleResult").BHasClass("ShowRunLoot"), "local details and earned rewards expand");
+offline.subscriptions.rpg_run_result(summary);
+assert(visible(offline,"RunSummaryDetails") && panel(offline,"BattleResult").BHasClass("ShowRunLoot"), "same-generation cache preserves local choices");
+click(offline,"RunLootToggle"); click(offline,"RunSummaryDetailsToggle");
+assert(!panel(offline,"BattleResult").BHasClass("ShowRunLoot") && offline.sentEvents.length === beforeToggles, "details and rewards toggles send no server events");
+click(offline,"LootPopupConfirm");
+assert(visible(offline,"RunSummary") && visible(offline,"ReplayRunButton"), "confirming loot preserves summary and replay");
+click(offline,"ReplayRunButton"); click(offline,"ReplayRunButton");
+assert(offline.sentEvents.filter(e=>e.name === "rpg_replay_run").length === 1, "replay sends once per generation");
+assert(offline.sentEvents.filter(e=>e.name === "rpg_replay_run")[0].payload.settlement_generation === 40, "replay uses current generation");
+offline.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:41});
+offline.subscriptions.rpg_run_result(summary);
+assert(!visible(offline,"RunSummary") && !visible(offline,"BattleResult") && !panel(offline,"BattleResult").BHasClass("RunSummaryOpen"), "fresh setup rejects old result and restores ordinary settlement dimensions");
+var reconnected = runHud();
+reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"radiant",settlement_generation:40,replay_available:1,owner_player_id:0});
+reconnected.subscriptions.rpg_run_result(summary);
+assert(visible(reconnected,"RunSummary") && visible(reconnected,"ReplayRunButton"), "cached offline result restores summary and replay on reconnect");
+assert(!panel(reconnected,"RunLootToggle").enabled && !visible(reconnected,"SettlementPanel"), "cached summary cannot invent rewards");
+click(reconnected,"RunLootToggle");
+assert(!panel(reconnected,"BattleResult").BHasClass("ShowRunLoot"), "disabled rewards toggle cannot reveal stale loot");
+click(reconnected,"RunSummaryDetailsToggle");
+reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"dire",settlement_generation:42});
+reconnected.subscriptions.rpg_run_result(Object.assign({},summary,{settlement_generation:42,cleared:0,score:0,stage_count:12,remaining_time_ms:0}));
+assert(panel(reconnected,"RunScoreTitle").text === "#dota2_rpg_run_score_failed" && panel(reconnected,"RunScoreValue").text === "0", "failed local campaign has its own title and valid zero score");
+assert(panel(reconnected,"RunTimeValue").text === "00:00.000" && !visible(reconnected,"RunSummaryDetails"), "new terminal resets details and preserves zero time");
+reconnected.subscriptions.rpg_run_result(summary);
+reconnected.subscriptions.rpg_run_result(Object.assign({},summary,{settlement_generation:"invalid"}));
+assert(panel(reconnected,"RunScoreValue").text === "0", "stale and invalid generations cannot overwrite current summary");
 for (const multiplier of [0.7, 1, 2]) {
     const scaledHud=runHud();
     scaledHud.subscriptions.rpg_battle_state({phase:"result",winner:"radiant",run_complete:1,settlement_generation:40});
@@ -847,117 +883,16 @@ for (const multiplier of [0.7, 1, 2]) {
     assert(panel(scaledHud,"RunScoreValue").text===String(Math.floor(1456000*multiplier)), "server scaled score displays unchanged");
     assert(panel(scaledHud,"RunScoreBreakdown").text==="(420000 + 36000 + 1000000) x "+multiplier, "breakdown includes difficulty multiplier");
 }
-assert(ranked.timers.length === 0 && panel(ranked,"RunRankStatus").text === "#dota2_rpg_rank_pending", "terminal does not auto-hide while awaiting network");
-var accepted = Object.assign({}, summary, {status:"success",score_rank:1,score_total:10,score_global_record:1,speedrun_rank:3,speedrun_total:8,speedrun_personal_record:1});
-ranked.subscriptions.rpg_leaderboard_result(accepted);
-assert(visible(ranked,"RunRecordMessage") && panel(ranked,"RunRecordMessage").text.includes("rank_global_record") && panel(ranked,"RunRecordMessage").text.includes("rank_personal_record"), "global and personal records congratulate only after accepted reply");
-ranked.subscriptions.rpg_leaderboard_result(summary);
-assert(panel(ranked,"RunRankStatus").text === "#dota2_rpg_rank_success", "late pending event does not downgrade successful result");
-click(ranked,"LootPopupConfirm");
-assert(visible(ranked,"RunLeaderboard") && visible(ranked,"ReplayRunButton"), "closing loot preserves terminal ranks and replay");
-ranked.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:41});
-ranked.subscriptions.rpg_leaderboard_result(accepted);
-assert(!visible(ranked,"RunLeaderboard") && !visible(ranked,"BattleResult"), "fresh run rejects previous HTTP result");
-var reconnected = runHud();
-reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"radiant",settlement_generation:40});
-reconnected.subscriptions.rpg_leaderboard_result(accepted);
-assert(visible(reconnected,"RunLeaderboard"), "owner reconnect restores summary from cached result without replaying rewards");
-reconnected.subscriptions.rpg_battle_state({phase:"result",run_complete:1,winner:"dire",settlement_generation:42});
-reconnected.subscriptions.rpg_leaderboard_result(Object.assign({}, summary, {settlement_generation:42,cleared:0,status:"error"}));
-assert(panel(reconnected,"RunSpeedrunRank").text.includes("rank_clear_only") && !visible(reconnected,"RunRecordMessage"), "failed runs stay off speedrun and network errors cannot invent records");
-console.log("PASS terminal leaderboard UI: persistence, authoritative response, records, late events, reconnect and failure");
+console.log("PASS UI99 offline terminal: local score, time, details, persistence, loot, replay, reconnect and stale generations");
 
 var localHost = runHud();
-assert(!localHost.subscriptions.rpg_server_pairing, "automatic uploads have no pairing or authorization interaction");
+assert(!localHost.subscriptions.rpg_server_pairing, "offline HUD has no pairing interaction");
 var initialRequests = localHost.sentEvents.filter(function(e) { return e.name === "rpg_request_battle_state"; }).length;
 localHost.subscriptions.rpg_battle_state({phase:"setup",ready:0,owner_player_id:-1});
 localHost.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:0});
 localHost.subscriptions.rpg_battle_state({phase:"setup",ready:1,owner_player_id:0});
 assert(localHost.sentEvents.filter(function(e) { return e.name === "rpg_request_battle_state"; }).length === initialRequests + 1, "late owner assignment requests cached state once without a broadcast loop");
-console.log("PASS automatic local-host uploads: no pairing prompt and owner state recovery");
-
-// Exercise the actual HUD script and XML with the flat accepted-snapshot contract.
-function boardSnapshot(data, board, ranks, ownRank, values) {
-    data[board + "_list_available"] = 1;
-    data[board + "_list_total"] = ranks.length ? 40 : 0;
-    data[board + "_list_player_rank"] = ownRank;
-    data[board + "_list_count"] = ranks.length;
-    ranks.forEach(function (rank, i) {
-        var prefix = board + "_row_" + (i + 1) + "_";
-        data[prefix + "rank"] = rank;
-        data[prefix + "name"] = rank === ownRank ? '<b>你 & "player"</b>' : "玩家 " + rank;
-        data[prefix + "value"] = values ? values[i] : 100000 - rank;
-        data[prefix + "is_self"] = rank === ownRank ? 1 : 0;
-    });
-    return data;
-}
-function tableRows(hud, board) {
-    return panel(hud, board === "speedrun" ? "RunSpeedRankRows" : "RunRankRows").children.filter(function (row) { return row.BHasClass("RankTableRow"); });
-}
-var tables = runHud();
-tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
-var details = boardSnapshot(Object.assign({}, accepted, {settlement_generation:60}), "score", [1,2,3,4,5,18,19,20,21,22], 20);
-boardSnapshot(details, "speedrun", [1,2,3,4,5,6,7], 5, [61002,61001,60000,59999,0,0,0]);
-tables.subscriptions.rpg_leaderboard_result(details);
-assert(tableRows(tables).map(function(row) { return row.children[0].text; }).join(",") === "1,2,3,4,5,18,19,20,21,22", "top5 and distant self neighbors retain real server ranks");
-assert(panel(tables,"RunRankRows").children.filter(function(row) { return row.BHasClass("RankGap") && row.text === "…"; }).length === 1, "one ellipsis marks skipped ranks");
-[1,2,3].forEach(function(rank) { assert(tableRows(tables)[rank-1].BHasClass("RankPodium" + rank), "podium rank styled " + rank); });
-var selfRow = tableRows(tables)[7];
-assert(selfRow.BHasClass("RankSelf") && selfRow.children[2].text === "#dota2_rpg_rank_you", "self best has highlight and localized badge");
-assert(selfRow.children[1].text === '<b>你 & "player"</b>' && selfRow.children[1].html === false, "UTF8 player markup remains literal");
-assert(cssSource.includes("text-overflow: ellipsis") && layoutSource.includes("#dota2_rpg_rank_snapshot"), "compact names and acceptance-snapshot explanation exist");
-selfRow.children[1].events.onmouseover();
-assert(visible(tables,"RunRankNameTooltip") && panel(tables,"RunRankNameTooltip").text === selfRow.children[1].text && panel(tables,"RunRankNameTooltip").html === false, "full name tooltip is literal without HTML dispatch");
-selfRow.children[1].events.onmouseout();
-assert(!visible(tables,"RunRankNameTooltip"), "full name tooltip hides on mouseout");
-var eventsBeforeDetails = tables.sentEvents.length;
-assert(tableRows(tables).length === 10 && tableRows(tables,"speedrun").length === 7, "both boards render in the same frame without tabs");
-assert(!panel(tables,"RunSpeedrunTab") && !panel(tables,"RunScoreTab"), "obsolete tab controls are removed");
-assert(tableRows(tables,"speedrun")[0].children[3].text === "01:01.002" && tableRows(tables,"speedrun")[1].children[3].text === "01:01.001", "milliseconds distinguish close times");
-assert(tableRows(tables,"speedrun")[4].children[3].text === "00:00.000", "zero remaining time is a valid displayed value");
-assert(panel(tables,"RunScorePosition").text === "#20" && panel(tables,"RunSpeedPosition").text === "#5", "both prominent personal ranks use authoritative best-record snapshot positions");
-assert(!visible(tables,"RunRankDetails"), "long explanation is closed by default");
-click(tables,"RunRankDetailsToggle");
-assert(visible(tables,"RunRankDetails"), "details expand on demand");
-tables.subscriptions.rpg_leaderboard_result(details);
-assert(visible(tables,"RunRankDetails") && tableRows(tables).length === 10 && tableRows(tables,"speedrun").length === 7, "same-generation update preserves details choice and both boards");
-click(tables,"RunRankDetailsToggle");
-assert(!visible(tables,"RunRankDetails") && tables.sentEvents.length === eventsBeforeDetails, "details toggle is local-only");
-var restoredTables = runHud();
-restoredTables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
-restoredTables.subscriptions.rpg_leaderboard_result(details);
-assert(tableRows(restoredTables).length === 10 && tableRows(restoredTables,"speedrun").length === 7, "reconnected snapshot restores both boards");
-tables.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:61});
-assert(!visible(tables,"RunLeaderboard") && tableRows(tables).length === 0 && tableRows(tables,"speedrun").length === 0, "setup hides and clears both tables");
-assert(!panel(tables,"BattleResult").BHasClass("LeaderboardOpen"), "ordinary stage loot retains original dimensions");
-tables.subscriptions.rpg_leaderboard_result(details);
-assert(tableRows(tables).length === 0 && tableRows(tables,"speedrun").length === 0, "old accepted snapshot cannot restore either table after reset");
-tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:62});
-var failedHistory = Object.assign({}, details, {settlement_generation:62,cleared:0,score_global_record:0,score_first_entry:0,score_personal_record:0});
-tables.subscriptions.rpg_leaderboard_result(failedHistory);
-assert(!visible(tables,"RunRankDetails"), "new terminal resets explanation to collapsed");
-assert(panel(tables,"RunSpeedrunRank").text.includes("rank_position") && panel(tables,"RunSpeedrunRank").text.includes("rank_current_not_qualified"), "failed run preserves accepted historical speed rank");
-assert(!visible(tables,"RunRecordMessage"), "failed speedrun does not congratulate even with record flag");
-assert(tableRows(tables,"speedrun").length === 7 && panel(tables,"RunSpeedRankTableStatus").text.includes("rank_current_not_qualified"), "historical speed table labels current failed run");
-assert(panel(tables,"RunSpeedPosition").text === "#5" && panel(tables,"RunSpeedPositionHint").text.includes("ui_historical_rank"), "historical rank is not misrepresented as this run's new rank");
-var noHistory = boardSnapshot(Object.assign({}, failedHistory), "speedrun", [1,2,3], 0);
-tables.subscriptions.rpg_leaderboard_result(noHistory);
-assert(panel(tables,"RunSpeedRankTableStatus").text.includes("rank_not_ranked") && panel(tables,"RunSpeedrunRank").text.includes("rank_clear_only"), "failed player without previous clear stays unranked");
-var empty = boardSnapshot(Object.assign({}, noHistory), "speedrun", [], 0);
-tables.subscriptions.rpg_leaderboard_result(empty);
-assert(!tableRows(tables,"speedrun").length && panel(tables,"RunSpeedRankTableStatus").text.includes("rank_empty"), "empty speed board clears prior rows without clearing score board");
-assert(tableRows(tables).length === 10, "score board remains independent of unavailable speed data");
-tables.subscriptions.rpg_leaderboard_result(Object.assign({}, failedHistory, {speedrun_list_available:0}));
-assert(!tableRows(tables,"speedrun").length && panel(tables,"RunSpeedRankTableStatus").text === "#dota2_rpg_rank_detail_unavailable", "unavailable details cannot expose stale payload rows");
-["pending","error","disabled","ineligible","difficulty_unranked"].forEach(function(status, i) {
-    var generation = 63 + i;
-    tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:generation});
-    tables.subscriptions.rpg_leaderboard_result(Object.assign({}, details, {settlement_generation:generation,status:status}));
-    assert(!tableRows(tables).length && !tableRows(tables,"speedrun").length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_ui_sync_" + status, "no stale rows in either board for " + status);
-    assert(panel(tables,"RunScorePosition").text === "\u2014" && panel(tables,"RunSpeedPosition").text === "\u2014", "unaccepted response cannot invent either personal rank");
-    assert(!visible(tables,"RunRecordMessage"), "no invented records for " + status);
-});
-console.log("PASS UI98 simultaneous leaderboards: two real lists, two personal ranks, details toggle, gaps, names, milliseconds, historical rank, reconnect and reset");
+console.log("PASS offline local-host state: no pairing prompt and owner state recovery");
 
 // UI77: execute the actual HUD branches; no extracted selection implementation.
 {

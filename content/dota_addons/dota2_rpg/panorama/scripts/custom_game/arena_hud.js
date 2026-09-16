@@ -5,14 +5,7 @@
     var hudRoot = root.GetParent() || $.GetContextPanel();
     var state = { mode: "select", phase: "preparing", generation: -1, catalog: [], results: [] };
     var owner = false, selected = [], catalog = [], pending = "", pickerOpen = false, confirmingExit = false, selectorOpen = false;
-    var strength = "similar", exportUrl = "", exportFilename = "", exportStatus = "";
-    // Match the configured public Worker exactly; reject alternate origins and URL syntax.
-    var exportPrefix = "https://dota2-rpg-leaderboard-api.dota2-rpg-leaderboard-worker.workers.dev/api/v1/arena/exports/";
-    function validExportUrl(url) {
-        if (typeof url !== "string" || url.indexOf(exportPrefix) !== 0) { return false; }
-        var token = url.slice(exportPrefix.length);
-        return token.length >= 16 && token.length <= 256 && !/[^A-Za-z0-9_-]/.test(token);
-    }
+    var strength = "similar";
     function local(key) { return $.Localize("#arena_" + key); }
     function text(panel, value) { panel.html = false; panel.text = String(value === undefined || value === null ? "—" : value); }
     function create(type, parent, id, css) {
@@ -35,7 +28,7 @@
     }
     function send(action, data) { GameEvents.SendCustomGameEventToServer("rpg_arena_" + action, data || {}); }
     function mutate(action, data) {
-        if (pending || !owner) { return; }
+        if (pending || !owner || action === "start" || action === "export") { return; }
         pending = action;
         data = data || {};
         data.generation = state.generation;
@@ -48,26 +41,16 @@
     var heading = label(hud, "ArenaHeading", "", "ArenaTitle");
     var opponent = label(hud, "ArenaOpponent", "", "ArenaText");
     var phase = label(hud, "ArenaPhase", "", "ArenaText");
-    var chips = create("Panel", hud, "ArenaResultsChips");
     var instructions = label(hud, "ArenaInstructions", "", "ArenaHint");
     label(hud, "ArenaPositionNote", local("positions"), "ArenaHint");
     var error = label(hud, "ArenaError", "", "ArenaError");
     var actions = create("Panel", hud, "ArenaActions", "ArenaActions");
-    var start = button(actions, "ArenaStart", "start", function () { mutate("start"); });
     var retry = button(actions, "ArenaRetry", "retry", function () { mutate("retry"); });
     var replay = button(actions, "ArenaReplay", "replay", openPicker);
     var exit = button(actions, "ArenaExit", "exit", function () {
         if (state.phase === "finished") { mutate("exit"); }
         else { confirmingExit = true; render(); }
     });
-    var featureActions = create("Panel", hud, "ArenaFeatureActions", "ArenaActions");
-    var exportButton = button(featureActions, "ArenaExport", "export", function () {
-        exportUrl = ""; exportFilename = ""; exportStatus = "exporting"; mutate("export");
-    });
-    var download = button(featureActions, "ArenaDownload", "download", function () {
-        if (validExportUrl(exportUrl)) { $.DispatchEvent("ExternalBrowserGoToURL", exportUrl); }
-    });
-    var exportNote = label(hud, "ArenaExportStatus", "", "ArenaHint");
     var testActions = create("Panel", hud, "ArenaTestActions", "ArenaActions");
     var strengthButtons = {};
     ["lower", "similar", "higher"].forEach(function (value) {
@@ -76,13 +59,6 @@
     var test = button(testActions, "ArenaTest", "test", function () { mutate("test", { generation: state.generation, strength: strength }); });
     label(hud, "ArenaTestHint", local("test_hint"), "ArenaHint");
     var testResult = label(hud, "ArenaTestResult", "", "ArenaText");
-    var summary = create("Panel", hud, "ArenaSummary");
-    label(summary, "ArenaSummaryTitle", local("summary"), "ArenaTitle");
-    var scores = label(summary, "ArenaScores", "", "ArenaText");
-    var bonus = label(summary, "ArenaPerfectBonus", "", "ArenaText");
-    label(summary, "ArenaResultsHeading", local("results_heading"), "ArenaHint");
-    var rows = create("Panel", summary, "ArenaSummaryRows");
-    var saveStatus = label(summary, "ArenaSaveStatus", "", "ArenaText");
 
     var selector = create("Panel", root, "ArenaModeSelector", "ArenaModal");
     create("Button", selector, "ArenaSelectorBackdrop", "ArenaBackdrop");
@@ -91,8 +67,8 @@
     label(selectorCard, "ArenaSelectorHint", local("select_mode_hint"), "ArenaHint");
     var campaignChoice = button(selectorCard, "ArenaChooseCampaign", "campaign", function () { selectorOpen = false; mutate("campaign"); });
     label(selectorCard, "ArenaCampaignDescription", local("campaign_description"), "ArenaText");
-    var ladderChoice = button(selectorCard, "ArenaChooseLadder", "ladder", function () { selectorOpen = false; openPicker(); });
-    label(selectorCard, "ArenaLadderDescription", local("ladder_description"), "ArenaText");
+    var ladderChoice = button(selectorCard, "ArenaChooseLadder", "offline_mode", function () { selectorOpen = false; openPicker(); });
+    label(selectorCard, "ArenaLadderDescription", local("offline_hint"), "ArenaText");
     var selectorClose = button(selectorCard, "ArenaSelectorClose", "close", function () { selectorOpen = false; render(); });
     var picker = create("Panel", root, "ArenaPicker", "ArenaModal");
     picker.hittest = true; picker.hittestchildren = true;
@@ -120,7 +96,7 @@
     confirm.hittest = true;
     create("Button", confirm, "ArenaExitBackdrop", "ArenaBackdrop");
     var confirmCard = create("Panel", confirm, "ArenaExitCard", "ArenaCard");
-    label(confirmCard, "ArenaAbandonHint", local("abandon_hint"), "ArenaText");
+    label(confirmCard, "ArenaAbandonHint", local("offline_exit_hint"), "ArenaText");
     var abandon = button(confirmCard, "ArenaAbandon", "abandon", function () { confirmingExit = false; mutate("exit"); });
     button(confirmCard, "ArenaKeepPlaying", "cancel", function () { confirmingExit = false; render(); });
 
@@ -165,9 +141,8 @@
         var value = $.Localize("#" + key);
         return !value || value === "#" + key || value === key ? local("error_generic") : value;
     }
-    function signed(value) { return value === undefined || value === null ? "—" : (Number(value) > 0 ? "+" : "") + String(value); }
     function render() {
-        var active = state.mode === "arena", completed = array(state.results).slice(0, 7);
+        var active = state.mode === "arena";
         var selecting = !pickerOpen && !active && (state.mode === "select" || selectorOpen);
         hudRoot.SetHasClass("ArenaActive", active || state.mode === "select");
         root.SetHasClass("ArenaModalOpen", selecting || pickerOpen || confirmingExit && active);
@@ -175,23 +150,18 @@
         show(selector, selecting); show(selectorClose, state.mode !== "select");
         campaignChoice.enabled = ladderChoice.enabled = owner && !pending && state.generation >= 0;
         show(entry, owner && !active && state.mode !== "select"); show(hud, active); show(picker, pickerOpen); show(confirm, confirmingExit && active);
-        text(heading, local("mode") + "  ·  R " + (state.round || 1) + " / 7  ·  " + local("rating") + " " + (state.rating === undefined ? 1500 : state.rating) + "  ·  " + local("wins") + " " + (state.wins || 0));
+        text(heading, local("offline_mode"));
         text(opponent, local("opponent") + " " + (state.opponent_name || "—") + "  ·  " + (state.opponent_rating === undefined ? "—" : state.opponent_rating));
         var practice = flag(state.practice);
         text(phase, practice ? local("practice") : pending ? local("waiting") : local("phase_" + state.phase));
-        text(instructions, local(practice ? "test_hint" : state.phase === "preparing" && flag(state.can_buy) ? "prepare_hint" : state.phase === "adjusting" ? "adjust_hint" : "series_hint"));
+        text(instructions, local(practice ? "test_hint" : "offline_hint"));
         if (practice) { text(heading, local("practice")); }
         var featureReady = active && owner && !pending && !practice && (state.phase === "preparing" || state.phase === "adjusting" || state.phase === "finished");
-        exportButton.enabled = featureReady && flag(state.can_export);
         test.enabled = featureReady && flag(state.can_test);
         Object.keys(strengthButtons).forEach(function (value) {
             strengthButtons[value].enabled = test.enabled;
             strengthButtons[value].SetHasClass("ArenaSelected", strength === value);
         });
-        download.enabled = featureReady && flag(state.can_export) && validExportUrl(exportUrl);
-        show(download, !!exportUrl);
-        text(exportNote, exportStatus ? local(exportStatus) + (exportUrl && exportFilename ? "  ·  " + exportFilename : "") : "");
-        exportNote.SetHasClass("ArenaError", exportStatus === "export_failed" || exportStatus === "export_invalid_url");
         var lastTest = state.test_result;
         show(testResult, !!lastTest);
         if (lastTest) {
@@ -199,28 +169,9 @@
             text(testResult, local("last_test") + " · " + local(flag(lastTest.won) ? "won" : "lost") + " · " + (lastTest.opponent_name || "—") + resultStrength + " · " + local("survivors") + " " + (lastTest.survivors === undefined ? "—" : lastTest.survivors) + " / " + local("deaths") + " " + (lastTest.deaths === undefined ? "—" : lastTest.deaths));
         }
         text(error, errorText());
-        var canStart = owner && !pending && !practice && flag(state.can_start) && flag(state.can_edit) && (state.phase === "preparing" || state.phase === "adjusting");
-        start.enabled = canStart;
-        text(start.caption, local(state.phase === "adjusting" ? "continue" : "start"));
-        show(start, state.phase === "preparing" || state.phase === "adjusting" || state.phase === "matching" || state.phase === "fighting" || state.phase === "transition");
         show(retry, state.phase === "error"); retry.enabled = owner && !pending && state.phase === "error";
         show(replay, state.phase === "finished"); replay.enabled = owner && !pending && state.phase === "finished";
         exit.enabled = owner && !pending; abandon.enabled = owner && !pending;
-        chips.RemoveAndDeleteChildren();
-        completed.forEach(function (result, index) { label(chips, "", (index + 1) + " " + local(flag(result.won) ? "won" : "lost"), flag(result.won) ? "ArenaChip ArenaWon" : "ArenaChip ArenaLost"); });
-        show(chips, !practice);
-        var finalView = !practice && (state.phase === "finished" || state.phase === "saving" || (state.phase === "error" && completed.length === 7));
-        show(summary, finalView); hud.SetHasClass("ArenaFinal", finalView);
-        if (finalView) {
-            text(scores, local("rating") + " " + (state.rating_before === undefined ? "—" : state.rating_before) + " → " + (state.rating_after === undefined ? "—" : state.rating_after) + " (" + signed(state.rating_change) + ")");
-            text(bonus, local("perfect_bonus") + " " + signed(state.perfect_bonus));
-            text(saveStatus, local(state.phase === "finished" ? "saved" : state.phase === "saving" ? "saving" : "save_error"));
-            rows.RemoveAndDeleteChildren();
-            for (var i = 0; i < 7; i++) {
-                var result = completed[i];
-                label(rows, "ArenaResult" + (i + 1), result ? (i + 1) + "  ·  " + (result.opponent_name || "—") + " (" + (result.opponent_rating === undefined ? "—" : result.opponent_rating) + ")  ·  " + local(flag(result.won) ? "won" : "lost") + "  ·  " + local("survivors") + " " + (result.survivors === undefined ? "—" : result.survivors) + "  /  " + local("deaths") + " " + (result.deaths === undefined ? "—" : result.deaths) + "  ·  " + signed(result.delta) : (i + 1) + "  —", "ArenaResultRow");
-            }
-        }
         renderHeroes();
     }
     GameEvents.Subscribe("rpg_battle_state", function (data) {
@@ -232,27 +183,14 @@
             render();
         }
     });
-    GameEvents.Subscribe("rpg_arena_export_result", function (event) {
-        if (!event || event.generation !== state.generation || pending !== "export") { return; }
-        pending = "";
-        exportUrl = ""; exportFilename = "";
-        if (event.error) { exportStatus = "export_failed"; }
-        else if (!validExportUrl(event.url)) { exportStatus = "export_invalid_url"; }
-        else { exportUrl = event.url; exportFilename = typeof event.filename === "string" ? event.filename : ""; exportStatus = "export_ready"; }
-        render();
-    });
     GameEvents.Subscribe("rpg_arena_state", function (event) {
         var next;
         try { next = JSON.parse(event.state_json); } catch (e) { return; }
         if (!next || ["select", "campaign", "arena"].indexOf(next.mode) < 0 || typeof next.generation !== "number" || !isFinite(next.generation) || Math.floor(next.generation) !== next.generation || next.generation < state.generation) { return; }
         var wasPending = pending;
-        var newGeneration = next.generation !== state.generation;
-        if (newGeneration) { exportUrl = ""; exportFilename = ""; exportStatus = ""; }
         state = next;
         if (wasPending === "campaign" && state.mode === "campaign") { selectorOpen = false; pickerOpen = false; }
-        // Same-generation broadcasts must not unlock an export still awaiting its result.
-        pending = wasPending === "export" && !newGeneration && !state.error ? "export" : "";
-        if (wasPending === "export" && !newGeneration && state.error) { exportStatus = "export_failed"; }
+        pending = "";
         catalog = array(state.catalog).filter(function (hero, index, list) { return typeof hero === "string" && /^npc_dota_hero_[a-z0-9_]+$/.test(hero) && list.indexOf(hero) === index; });
         selected = selected.filter(function (hero) { return catalog.indexOf(hero) >= 0; });
         if ((wasPending === "enter" && state.mode === "arena" && state.phase !== "error") || state.mode === "arena" && state.phase !== "finished" && state.phase !== "error") { pickerOpen = false; }

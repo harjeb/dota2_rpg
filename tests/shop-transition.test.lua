@@ -16,7 +16,7 @@ require = function(name)
             OnThink = function() end, Precache = function() end }
     end
     if name == "battle.campaign_difficulty" then return dofile(moduleRoot .. "battle/campaign_difficulty.lua") end
-    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end, FlushPublish=function() end} end
+    if name == "battle.run_results" then return {StartBattle=function() end, RecordBattle=function() end, Finish=function() end, SendTerminal=function() end, Resend=function() end, Invalidate=function() end, Reset=function() end} end
     if name == "issue_fixes.bootstrap" or name == "battle.skill_debug" then return { Install = function() end } end
     local modules = {
         ["issue_fixes.hero_lifecycle_log"] = true,

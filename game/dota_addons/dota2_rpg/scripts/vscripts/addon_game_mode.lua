@@ -4588,7 +4588,6 @@ function CDota2RpgDemo:OnThink()
 	self:RunLifecycleStep("gris_gris_think", function() GrisGris.OnThink(self) end)
 	self:RunLifecycleStep("tiny_tree_think", function() TinyTree.OnThink(self) end)
 	self:RunLifecycleStep("enemy_diagnostics", function() EnemyDiagnostics.OnThink(self) end)
-	self:RunLifecycleStep("leaderboard_publish", function() RunResults.FlushPublish(self) end)
 	self:RunLifecycleStep("roster_upkeep", function()
 		self.nativePurchaseTick = (self.nativePurchaseTick or 0) + 1
 		local lives = RunLives.Ensure(self)
@@ -4808,7 +4807,7 @@ function CDota2RpgDemo:EndBattle(winner, winnerTeam)
 	-- Terminal replay is explicit; ordinary stage transitions stay automatic.
 	if isFinalWin or self.runFailed then
 		self.runComplete = true
-		self:RunLifecycleStep("leaderboard_submit", function() RunResults.SendTerminal(self) end)
+		self:RunLifecycleStep("run_results_send", function() RunResults.SendTerminal(self) end)
 		self:BroadcastShopState()
 		print(self.runFailed and "[Dota2Rpg] Run ended: all five lives lost."
 			or "[Dota2Rpg] Run complete: final level cleared.")

@@ -2246,104 +2246,24 @@
     }
 
     var terminalResultVisible = false;
-    var rankGeneration = -1;
-    var rankStatus = "";
-    var rankSnapshot = null;
-    function rankMilliseconds(ms) {
+    var summaryGeneration = -1;
+    function summaryMilliseconds(ms) {
         var value = Math.max(0, Math.floor(Number(ms) || 0));
         var minutes = Math.floor(value / 60000);
         return (minutes < 10 ? "0" : "") + minutes + ":" +
             ("0" + Math.floor(value / 1000) % 60).slice(-2) + "." + ("00" + value % 1000).slice(-3);
     }
-    function resetRankDetails() {
-        $("#RunRankDetails").SetHasClass("Hidden", true);
-        $("#RunRankDetailsToggleLabel").text = rankText("ui_details_show");
+    function resetSummaryDetails() {
+        $("#RunSummaryDetails").SetHasClass("Hidden", true);
+        $("#RunSummaryDetailsToggleLabel").text = summaryText("ui_details_show");
         $("#BattleResult").SetHasClass("ShowRunLoot", false);
         $("#RunLootToggle").SetHasClass("Selected", false);
     }
-    function bestRank(data, board) {
-        var fromList = Number(data[board + "_list_available"]) === 1;
-        var value = Number(data[board + (fromList ? "_list_player_rank" : "_rank")]);
-        return isFinite(value) && value > 0 ? Math.floor(value) : 0;
-    }
-    function renderRankTable() {
-        var data = rankSnapshot;
-        var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
-        $("#RunRankNameTooltip").SetHasClass("Hidden", true);
-        $("#RunRankNameTooltip").text = "";
-        function cell(parent, text, className) {
-            var label = $.CreatePanel("Label", parent, "");
-            label.AddClass(className); label.html = false; label.text = String(text);
-            return label;
-        }
-        // Both boards consume the same accepted snapshot, independently. There is
-        // no active tab, client-side ranking, invented avatar, or extra request.
-        ["score", "speedrun"].forEach(function (board) {
-            var stem = board === "score" ? "Score" : "Speed";
-            var rows = $(board === "score" ? "#RunRankRows" : "#RunSpeedRankRows");
-            var note = $(board === "score" ? "#RunRankTableStatus" : "#RunSpeedRankTableStatus");
-            var position = $("#Run" + stem + "Position");
-            var hint = $("#Run" + stem + "PositionHint");
-            rows.RemoveAndDeleteChildren(); note.text = "";
-            position.text = "\u2014"; hint.text = "";
-            function notice(message) { note.text = message; note.SetHasClass("Hidden", !message); }
-            notice("");
-            if (!data) { return; }
-            if (status !== "success") {
-                hint.text = rankText("ui_sync_" + status);
-                notice(hint.text); return;
-            }
-            var prefix = board + "_";
-            var rank = bestRank(data, board);
-            var historical = board === "speedrun" && Number(data.cleared) !== 1;
-            // A failed run may display a historical clear, but must never borrow
-            // a current-run speed rank from an invalid/stale summary field.
-            if (historical && Number(data.speedrun_list_available) !== 1) { rank = 0; }
-            var total = Number(data[prefix + (Number(data[prefix + "list_available"]) === 1 ? "list_total" : "total")]) || 0;
-            position.text = rank > 0 ? "#" + rank : "\u2014";
-            hint.text = rank > 0 ? rankText("ui_rank_total", [total])
-                : rankText(historical ? "rank_clear_only" : "rank_not_ranked");
-            if (historical && rank > 0) { hint.text = rankText("ui_historical_rank") + " \u00b7 " + hint.text; }
-            if (Number(data[prefix + "list_available"]) !== 1) {
-                notice(rankText("rank_detail_unavailable")); return;
-            }
-            var count = Math.min(10, Math.max(0, Math.floor(Number(data[prefix + "list_count"]) || 0)));
-            if (!count) { notice(rankText("rank_empty")); }
-            else if (!rank) { notice(rankText("rank_not_ranked")); }
-            if (historical) { notice(note.text + (note.text ? " \u00b7 " : "") + rankText("rank_current_not_qualified")); }
-            var previousRank = 0;
-            for (var i = 1; i <= count; i++) {
-                var rowPrefix = prefix + "row_" + i + "_";
-                var rowRank = Number(data[rowPrefix + "rank"]);
-                // The server validates the union, but guard malformed local data
-                // as well; never renumber gaps into plausible-looking positions.
-                if (!isFinite(rowRank) || rowRank !== Math.floor(rowRank) || rowRank <= previousRank) { continue; }
-                if (rowRank > previousRank + 1) { cell(rows, "\u2026", "RankGap"); }
-                previousRank = rowRank;
-                var row = $.CreatePanel("Panel", rows, ""); row.AddClass("RankTableRow");
-                if (rowRank <= 3) { row.AddClass("RankPodium" + rowRank); }
-                row.SetHasClass("RankSelf", Number(data[rowPrefix + "is_self"]) === 1);
-                cell(row, rowRank, "RankNumber");
-                var name = cell(row, data[rowPrefix + "name"] || "", "RankPlayer");
-                (function (nameLabel) {
-                    nameLabel.SetPanelEvent("onmouseover", function () {
-                        var tip = $("#RunRankNameTooltip");
-                        tip.html = false; tip.text = nameLabel.text; tip.SetHasClass("Hidden", false);
-                    });
-                    nameLabel.SetPanelEvent("onmouseout", function () { $("#RunRankNameTooltip").SetHasClass("Hidden", true); });
-                })(name);
-                cell(row, Number(data[rowPrefix + "is_self"]) === 1 ? rankText("rank_you") : "", "RankYou");
-                var value = Number(data[rowPrefix + "value"]);
-                cell(row, board === "speedrun" ? rankMilliseconds(value)
-                    : (isFinite(value) ? Math.max(0, Math.floor(value)) : 0), "RankValue");
-            }
-        });
-    }
-    $("#RunRankDetailsToggle").SetPanelEvent("onactivate", function () {
-        var details = $("#RunRankDetails");
+    $("#RunSummaryDetailsToggle").SetPanelEvent("onactivate", function () {
+        var details = $("#RunSummaryDetails");
         var showing = details.BHasClass("Hidden");
         details.SetHasClass("Hidden", !showing);
-        $("#RunRankDetailsToggleLabel").text = rankText(showing ? "ui_details_hide" : "ui_details_show");
+        $("#RunSummaryDetailsToggleLabel").text = summaryText(showing ? "ui_details_hide" : "ui_details_show");
     });
     $("#RunLootToggle").SetPanelEvent("onactivate", function () {
         if (!$("#RunLootToggle").enabled) { return; }
@@ -2351,7 +2271,7 @@
         $("#BattleResult").SetHasClass("ShowRunLoot", showing);
         $("#RunLootToggle").SetHasClass("Selected", showing);
     });
-    function rankText(token, values) {
+    function summaryText(token, values) {
         var text = $.Localize("#dota2_rpg_" + token);
         (values || []).forEach(function (value, i) { text = text.replace("%s" + (i + 1), String(value)); });
         return text;
@@ -2362,52 +2282,21 @@
     }
     function showRunResult(data) {
         var generation = Number(data.settlement_generation);
-        if (!isFinite(generation) || generation < Math.max(replayGeneration, lastSettlementGeneration, rankGeneration)
+        if (!isFinite(generation) || generation < Math.max(replayGeneration, lastSettlementGeneration, summaryGeneration)
             || phase !== "result" || data.score === undefined) { return; }
-        if (generation === rankGeneration && rankStatus === "success" && data.status !== "success") { return; }
-        if (generation !== rankGeneration) { resetRankDetails(); }
-        rankGeneration = generation;
-        rankSnapshot = data;
-        rankStatus = String(data.status || "pending");
+        if (generation !== summaryGeneration) { resetSummaryDetails(); }
+        summaryGeneration = generation;
         terminalResultVisible = true;
         var cleared = Number(data.cleared) === 1;
-        $("#RunScoreTitle").text = rankText(cleared ? "run_score_clear" : "run_score_failed");
+        $("#RunScoreTitle").text = summaryText(cleared ? "run_score_clear" : "run_score_failed");
         $("#RunScoreValue").text = String(Math.max(0, Math.floor(Number(data.score) || 0)));
-        $("#RunTimeValue").text = rankMilliseconds(data.remaining_time_ms);
+        $("#RunTimeValue").text = summaryMilliseconds(data.remaining_time_ms);
         $("#RunProgressValue").text = Math.max(0, Math.floor(Number(data.stage_count) || 0)) + " / " + (Number(data.total_stages) || 30);
         $("#RunLootToggle").enabled = lastSettlementGeneration === generation && !!$("#RewardLabel").text;
-        $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0, data.score_multiplier || 1]);
-        $("#RunMetrics").text = rankText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
-        var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
-        $("#RunRankStatus").text = rankText("rank_" + status);
-        $("#RunRankSync").text = rankText("ui_sync_" + status);
-        $("#RunRankSync").SetHasClass("RankError", status === "error" || status === "disabled");
-        $("#RunRankStatus").SetHasClass("RankError", status === "error" || status === "disabled");
-        var congratulations = [];
-        ["score", "speedrun"].forEach(function (board) {
-            var label = $(board === "score" ? "#RunScoreRank" : "#RunSpeedrunRank");
-            var title = rankText("rank_" + board);
-            if (board === "speedrun" && !cleared) {
-                var historicalRank = Number(data.speedrun_list_player_rank || 0);
-                label.text = title + " · " + (status === "success" && Number(data.speedrun_list_available) === 1 && historicalRank > 0
-                    ? rankText("rank_position", [historicalRank, data.speedrun_list_total || 0]) + " · " + rankText("rank_current_not_qualified")
-                    : rankText("rank_clear_only"));
-                return;
-            }
-            var rank = bestRank(data, board);
-            label.text = title + " · " + (status === "success" && rank > 0
-                ? rankText("rank_position", [rank, data[board + "_total"] || 0]) : rankText("rank_unavailable"));
-            if (status === "success") {
-                if (Number(data[board + "_global_record"]) === 1) { congratulations.push(rankText("rank_global_record", [title])); }
-                else if (Number(data[board + "_personal_record"]) === 1) { congratulations.push(rankText("rank_personal_record", [title])); }
-                else if (Number(data[board + "_first_entry"]) === 1) { congratulations.push(rankText("rank_first_entry", [title])); }
-            }
-        });
-        $("#RunRecordMessage").text = congratulations.join(" \u00b7 ");
-        $("#RunRecordMessage").SetHasClass("Hidden", !congratulations.length);
-        renderRankTable();
-        $("#BattleResult").SetHasClass("LeaderboardOpen", true);
-        $("#RunLeaderboard").SetHasClass("Hidden", false);
+        $("#RunScoreBreakdown").text = summaryText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0, data.score_multiplier || 1]);
+        $("#RunMetrics").text = summaryText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
+        $("#BattleResult").SetHasClass("RunSummaryOpen", true);
+        $("#RunSummary").SetHasClass("Hidden", false);
         $("#BattleResult").SetHasClass("Hidden", false);
     }
 
@@ -2477,12 +2366,9 @@
         var startButton = $("#StartBattleButton");
         if (phase === "setup") {
             terminalResultVisible = false;
-            rankStatus = "";
-            rankSnapshot = null;
-            resetRankDetails();
-            $("#BattleResult").SetHasClass("LeaderboardOpen", false);
-            renderRankTable();
-            $("#RunLeaderboard").SetHasClass("Hidden", true);
+            resetSummaryDetails();
+            $("#BattleResult").SetHasClass("RunSummaryOpen", false);
+            $("#RunSummary").SetHasClass("Hidden", true);
             setStatus(stageRetryReady ? "#dota2_rpg_stage_failed" : (stageLoading ? "#dota2_rpg_stage_loading" :
                 (serverReady ? "#dota2_rpg_status_ready" : "#dota2_rpg_status_preparing")));
             $("#StartBattleLabel").text = $.Localize(stageRetryReady ? "#dota2_rpg_stage_retry" :
@@ -2668,7 +2554,7 @@
     GameEvents.Subscribe("rpg_damage_stats", onDamageStats);
     GameEvents.Subscribe("rpg_battle_state", onBattleState);
     GameEvents.Subscribe("rpg_settlement", onSettlement);
-    GameEvents.Subscribe("rpg_leaderboard_result", showRunResult);
+    GameEvents.Subscribe("rpg_run_result", showRunResult);
     GameEvents.Subscribe("dota_player_update_selected_unit", function () {
         syncNativePurchaseTarget(true);
     });

@@ -111,18 +111,17 @@ listeners.rpg_campaign_difficulty_select(nil,{PlayerID=1,difficulty="easy"});ass
 listeners.rpg_campaign_difficulty_select(nil,{PlayerID=0,difficulty="easy"});eq(g:OnStartBattle(),"started");eq(g:OnShopBuy(),"bought")
 eq(events[#events].payload.reward_multiplier,1.5)
 g:RequestStateRecovery(0);eq(events[#events].payload.campaign_difficulty,"easy");eq(events[#events].payload.difficulty_locked,1)
--- All campaign difficulties produce eligible v2 payloads with scaled final scores.
+-- All campaign difficulties retain scaled local scores without upload payloads.
 PlayerResource.GetSteamAccountID=function() return 1 end
 local Score=require("battle.run_score")
 for _, name in ipairs({"easy","default","hard"}) do
     local game={playerId=0,campaignDifficulty=name,campaignDifficultyLocked=true,settlementGeneration=1,
         runLives={remaining=0},phase="result",runComplete=true}
     Results.Reset(game);local settlement={};local summary=Results.Finish(game,false,settlement)
-    eq(summary.status,"pending");eq(summary.campaign_difficulty,name)
+    eq(summary.status,"disabled");eq(summary.campaign_difficulty,name)
     eq(settlement.reward_multiplier,D.Multiplier(game))
     eq(summary.score,Score.Calculate(0,0,0,false,name).score)
-    local payload=game.leaderboardRun.payload
-    assert(payload);eq(payload.campaign_difficulty,name);eq(payload.score_version,"hearts-stages-difficulty-v2")
-    eq(payload.score,summary.score);eq(settlement.score_multiplier,D.ScoreNumerator(name)/10)
+    assert(game.runResults.payload == nil)
+    eq(settlement.score_multiplier,D.ScoreNumerator(name)/10)
 end
-print("PASS campaign difficulty: validation/lock/recovery, rewards, arena isolation, budgets, thresholds and all-difficulty ranked scores")
+print("PASS campaign difficulty: validation/lock/recovery, rewards, arena isolation, budgets, thresholds and all-difficulty local scores")

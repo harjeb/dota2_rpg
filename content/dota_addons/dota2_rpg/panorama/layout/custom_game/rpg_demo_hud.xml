@@ -167,11 +167,10 @@
                 <Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
                 <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
             </Panel>
-            <Panel id="RunLeaderboard" class="RunLeaderboard Hidden">
-                <Panel class="FantasyRankHeader">
+            <Panel id="RunSummary" class="RunSummary Hidden">
+                <Panel class="FantasySummaryHeader">
                     <Label class="FantasyEyebrow" text="#dota2_rpg_ui_hall" />
-                    <Label class="FantasyRankTitle" text="#dota2_rpg_ui_leaderboards" />
-                    <Label id="RunRankSync" class="RankSyncBadge" />
+                    <Label class="FantasySummaryTitle" text="#dota2_rpg_ui_points" />
                 </Panel>
                 <Panel class="RunSummaryStrip">
                     <Panel class="RunSummaryTile">
@@ -187,71 +186,14 @@
                         <Label id="RunProgressValue" class="RunSummaryNumber" />
                     </Panel>
                 </Panel>
-                <Panel class="DualRankColumns">
-                    <Panel id="RunScoreBoard" class="DualRankBoard ScoreBoard">
-                        <Panel class="DualRankBoardHeader">
-                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/trophy.png" hittest="false" />
-                            <Panel class="RankBoardIdentity">
-                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_score" />
-                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_score_subtitle" />
-                            </Panel>
-                        </Panel>
-                        <Panel class="RankPersonalBanner">
-                            <Panel class="RankPersonalIdentity">
-                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
-                                <Label id="RunScorePositionHint" class="RankPersonalHint" />
-                            </Panel>
-                            <Label id="RunScorePosition" class="RankPersonalNumber" text="--" />
-                        </Panel>
-                        <Panel class="RankTableRow RankTableHeading">
-                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
-                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
-                            <Label class="RankYou" />
-                            <Label class="RankValue" text="#dota2_rpg_ui_points" />
-                        </Panel>
-                        <Label id="RunRankTableStatus" class="RankBoardStatus Hidden" />
-                        <Panel id="RunRankRows" class="RunRankRows" />
-                    </Panel>
-                    <Panel id="RunSpeedBoard" class="DualRankBoard SpeedBoard">
-                        <Panel class="DualRankBoardHeader">
-                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/hourglass.png" hittest="false" />
-                            <Panel class="RankBoardIdentity">
-                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_speedrun" />
-                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_speedrun_subtitle" />
-                            </Panel>
-                        </Panel>
-                        <Panel class="RankPersonalBanner">
-                            <Panel class="RankPersonalIdentity">
-                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
-                                <Label id="RunSpeedPositionHint" class="RankPersonalHint" />
-                            </Panel>
-                            <Label id="RunSpeedPosition" class="RankPersonalNumber" text="--" />
-                        </Panel>
-                        <Panel class="RankTableRow RankTableHeading">
-                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
-                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
-                            <Label class="RankYou" />
-                            <Label class="RankValue" text="#dota2_rpg_ui_time_short" />
-                        </Panel>
-                        <Label id="RunSpeedRankTableStatus" class="RankBoardStatus Hidden" />
-                        <Panel id="RunSpeedRankRows" class="RunRankRows" />
-                    </Panel>
-                </Panel>
-                <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
-                <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
-                <Panel class="RankUtilityRow">
-                    <Label class="RankSnapshotCaption" text="#dota2_rpg_ui_snapshot_short" />
+                <Panel class="SummaryUtilityRow">
+                    <Label class="OfflineResultsHint" text="#dota2_rpg_offline_results" />
                     <Button id="RunLootToggle" class="FantasyQuietButton"><Label text="#dota2_rpg_ui_rewards" /></Button>
-                    <Button id="RunRankDetailsToggle" class="FantasyQuietButton"><Label id="RunRankDetailsToggleLabel" text="#dota2_rpg_ui_details_show" /></Button>
+                    <Button id="RunSummaryDetailsToggle" class="FantasyQuietButton"><Label id="RunSummaryDetailsToggleLabel" text="#dota2_rpg_ui_details_show" /></Button>
                 </Panel>
-                <Panel id="RunRankDetails" class="RankDetails Hidden">
-                    <Label id="RunRankStatus" class="RunRankStatus" />
+                <Panel id="RunSummaryDetails" class="SummaryDetails Hidden">
                     <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
                     <Label id="RunMetrics" class="RunMetrics" />
-                    <Label id="RunScoreRank" class="RunRankRow" />
-                    <Label id="RunSpeedrunRank" class="RunRankRow" />
-                    <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
-                    <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
                 </Panel>
             </Panel>
             <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
