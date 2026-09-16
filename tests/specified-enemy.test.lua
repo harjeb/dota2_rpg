@@ -103,6 +103,8 @@ chapter="ch05"; second.team=2; tick(first.id)
 -- Run the actual addon broadcast method with only its engine dependencies stubbed.
 local file=assert(io.open("game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua","r"))
 local source=file:read("*a"); file:close()
+-- Source matching must be portable when a Windows ZIP is tested on Linux.
+source=source:gsub("\r\n", "\n")
 local body=assert(source:match("function CDota2RpgDemo:BroadcastHeroInfo%(player%)\n.-\nend"))
 local events={}
 local addon={battleManager=manager,currentLevelId="ch05",

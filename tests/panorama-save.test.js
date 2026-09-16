@@ -50,6 +50,7 @@ function createPanel(id) {
         BHasClass: function (name) { return Boolean(classes[name]); },
         events: {},
         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
+        SetImage: function (src) { this.src = src; },
         BLoadLayoutSnippet: function () {
             throw new Error("Legacy outer editor snippets must not be instantiated");
         },

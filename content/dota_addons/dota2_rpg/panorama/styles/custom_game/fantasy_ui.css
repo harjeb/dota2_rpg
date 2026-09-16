@@ -1,0 +1,234 @@
+/* UI98. Native Panorama only: no web flex/grid, CSS variables, or external fonts.
+   Every override is scoped to the condition dialog or terminal leaderboards. */
+#RuleSettings { background-color: #080604e8; }
+#RuleSettings .RuleSettingsCard {
+    width: 1480px; max-width: 96%; height: 900px; max-height: 94%;
+    padding: 18px; background-color: #2a1c12;
+    background-image: url("file://{images}/custom_game/fantasy_ui/wood.png");
+    background-size: 512px 256px; background-repeat: repeat;
+    border: 2px solid #ac824b; border-top: 3px solid #d5b074;
+    box-shadow: #000c 0px 10px 40px 0px;
+}
+#RuleSettings .RuleSettingsHeader {
+    height: 94px; min-height: 94px; width: 100%; margin-bottom: 16px;
+    border-bottom: 1px solid #997447; padding: 9px 18px;
+    background-color: #100c0988;
+    background-image: url("file://{images}/custom_game/fantasy_ui/corner_tl.png"), url("file://{images}/custom_game/fantasy_ui/corner_tr.png");
+    background-position: 0% 0%, 100% 0%; background-size: 62px 62px; background-repeat: no-repeat;
+}
+.FantasyHeaderIcon { width: 64px; height: 64px; vertical-align: center; }
+.FantasyHeaderCopy { margin-left: 78px; flow-children: down; vertical-align: center; }
+.FantasyEyebrow { color: #ba9864; font-size: 12px; letter-spacing: 3px; }
+#RuleSettings .V2Title { font-family: titleFont; font-size: 34px; color: #f0d29a; margin: 2px 0px 0px 0px; text-shadow: 0px 2px 3px 2 #000a; }
+#RuleSettings .RuleSettingsHeader .RuleSettingsReset {
+    height: 40px; min-width: 140px; padding: 7px 14px; margin: 0px 6px 0px 0px;
+    vertical-align: center; background-color: #5c3025; border: 1px solid #ba7757;
+}
+#RuleSettings .RuleSettingsReset Label { color: #f4c9a5; font-size: 15px; }
+.RuleSettingsWorkspace { width: 100%; height: fill-parent-flow(1); flow-children: right; }
+.FantasyNavigation { width: 194px; height: 100%; flow-children: down; margin-right: 14px; }
+.FantasyNavButton {
+    width: 100%; height: 92px; margin-bottom: 10px; padding: 12px 8px;
+    background-color: gradient(linear, 0% 0%, 0% 100%, from(#30261d), to(#161310));
+    border: 1px solid #71583b; border-left: 3px solid #71583b;
+    transition-property: background-color, border; transition-duration: 0.12s;
+}
+.FantasyNavButton:hover { background-color: #4b3822; border-color: #d9b577; }
+.FantasyNavButton.Selected {
+    background-color: gradient(linear, 0% 0%, 100% 100%, from(#775023), to(#392616));
+    border: 1px solid #ddb976; border-left: 3px solid #f2c779;
+    box-shadow: #ce87351c 0px 0px 12px 0px;
+}
+.FantasyNavIcon { width: 40px; height: 40px; vertical-align: center; }
+.FantasyNavCopy { flow-children: down; margin-left: 46px; vertical-align: center; width: 114px; }
+.FantasyNavTitle { color: #e1c18e; font-family: titleFont; font-size: 21px; }
+.FantasyNavHint { color: #a28d70; font-size: 12px; margin-top: 5px; white-space: normal; }
+.Selected .FantasyNavTitle { color: #ffe3a9; }
+.Selected .FantasyNavHint { color: #d6bd92; }
+.FantasyNavCount { horizontal-align: right; vertical-align: top; color: #d6b16f; font-size: 12px; }
+.FantasyNavNote { width: 100%; flow-children: down; margin-top: 16px; padding: 12px 8px; border-top: 1px solid #695032; }
+.FantasyNoteIcon { width: 40px; height: 40px; horizontal-align: center; margin-bottom: 8px; opacity: 0.75; }
+.FantasyNavNote Label { width: 100%; color: #a99475; font-size: 13px; white-space: normal; text-align: center; line-height: 20px; }
+.FantasyEditorMain { width: fill-parent-flow(1); height: 100%; flow-children: down; padding: 12px; background-color: #0c090766; border: 1px solid #715437; }
+.FantasySectionHeader { width: 100%; height: 55px; flow-children: down; border-bottom: 1px solid #624b32; margin-bottom: 8px; }
+#RuleSettingsSectionTitle { color: #ebce95; font-family: titleFont; font-size: 24px; }
+#RuleSettingsSectionHint { color: #b49a75; font-size: 13px; margin-top: 2px; }
+#RuleSettings .RuleSettingsBody { padding-right: 5px; width: 100%; height: fill-parent-flow(1); overflow: squish scroll; }
+/* Own class leaves internal Hidden state (menus, chase timeout, etc.) untouched. */
+.FantasyPageHidden { visibility: collapse; }
+#RuleSettings .V2SectionTitle { font-size: 17px; color: #d8b67c; margin: 6px 0px 8px 0px; }
+#RuleSettings .V2Hint { color: #beaa88; font-size: 14px; line-height: 19px; white-space: normal; width: 100%; }
+#RuleSettings .V2Condition {
+    width: 100%; height: fit-children; min-height: 86px; flow-children: right-wrap;
+    margin-bottom: 10px; padding: 12px 10px;
+    background-color: #cbb388;
+    background-image: url("file://{images}/custom_game/fantasy_ui/parchment.png");
+    background-size: 512px 512px; border: 1px solid #b19360; border-left: 3px solid #8f693d;
+    box-shadow: #0008 0px 3px 6px 0px;
+}
+#RuleSettings .V2ConditionActive { border-left: 3px solid #dcb371; }
+#RuleSettings .V2ConditionEmpty { background-color: #33281d; background-image: none; border: 1px solid #705737; box-shadow: none; }
+#RuleSettings .V2SlotNumber {
+    width: 27px; height: 27px; color: #f1d299; background-color: #624b2d;
+    border: 1px solid #98764a; border-radius: 50%; font-size: 17px;
+    text-align: center; margin-top: 9px; margin-right: 5px;
+}
+.FantasyConditionIcon { width: 34px; height: 34px; margin-top: 5px; margin-right: 6px; }
+#RuleSettings .V2Condition .V2Selector { width: 84%; height: fit-children; }
+#RuleSettings .V2Condition .V2Parameters { width: 100%; height: fit-children; flow-children: right-wrap; padding-left: 30px; margin-top: 6px; }
+#RuleSettings .V2Condition .V2Parameters .V2Hint { color: #483723; font-size: 13px; }
+#RuleSettings .V2Condition .V2Field > Label { color: #57432a; font-size: 13px; margin-bottom: 4px; }
+#RuleSettings .V2Parameters > .V2Field { margin-left: 8px; margin-right: 0px; margin-bottom: 8px; }
+.FantasyEmptySlot { color: #9d8768; font-size: 12px; padding-left: 7px; }
+#RuleSettings .V2Button {
+    background-color: gradient(linear, 0% 0%, 0% 100%, from(#403327), to(#231c16));
+    border: 1px solid #967349; border-radius: 3px; padding: 6px 10px;
+}
+#RuleSettings .V2Button Label { color: #f2dcb7; font-size: 16px; }
+#RuleSettings .V2Button:hover { background-color: #59452b; border-color: #e6bf78; }
+#RuleSettings .V2Button:active { brightness: 0.86; }
+#RuleSettings .V2Button:disabled { opacity: 0.4; saturation: 0.2; }
+#RuleSettings .V2Selector > .V2Button { height: 46px; min-height: 46px; }
+#RuleSettings .V2Selector > .V2Button Label { max-height: 40px; }
+#RuleSettings .V2Choices, #RuleSettings .V2AbilityChoices {
+    width: 100%; background-color: #201a14; border: 1px solid #a48150; padding: 7px;
+    box-shadow: #000b 0px 4px 12px 0px;
+}
+#RuleSettings .V2Category { color: #e1b877; font-size: 14px; padding: 4px; border-bottom: 1px solid #57412a; }
+#RuleSettings .V2Choices .V2Button { border-color: #5c4933; }
+#RuleSettings .V2Field .V2Input {
+    background-color: #241d16; border: 1px solid #8b704d; border-bottom: 2px solid #bb9156;
+    border-radius: 2px; color: #fff0cc; height: 38px; font-size: 19px;
+}
+#RuleSettings .V2Field .V2Input:focus { border-color: #f3ce88; }
+#RuleSettings .V2Field .V2Input Label { color: #fff0cc; }
+#RuleSettings .V2Field > Label, #RuleSettings .V2Selector > Label { color: #c4ac85; }
+#RuleSettings .V2ModeSwitch { background-color: #1d1913; border: 1px solid #816540; border-radius: 3px; margin-bottom: 12px; }
+#RuleSettings .V2ModeOption { border-color: transparent; background-color: transparent; }
+#RuleSettings .V2ModeOption Label { color: #ab9573; }
+#RuleSettings .V2ModeOption.Selected { background-color: #456158; border: 1px solid #84a395; border-bottom: 2px solid #b7ceaa; }
+#RuleSettings .V2ModeOption.Selected Label { color: #eef0cf; }
+#RuleSettings .V2ActionField { max-width: 100%; }
+#RuleSettings .V2MotionField { width: 440px; max-width: 100%; min-width: 0px; }
+#RuleSettings .V2ActionChoice, #RuleSettings .V2TargetChoice { flow-children: right; }
+#RuleSettings .V2ActionChoice Label, #RuleSettings .V2TargetChoice Label { width: fill-parent-flow(1); }
+.FantasyPreviewPanel {
+    width: 250px; height: 100%; margin-left: 14px; padding: 16px;
+    flow-children: down; background-color: #15110ddd; border: 1px solid #81613d;
+}
+.FantasyPreviewSeal { width: 66px; height: 66px; horizontal-align: center; margin-bottom: 7px; }
+.FantasyPreviewEyebrow { color: #9c835f; font-size: 12px; horizontal-align: center; letter-spacing: 2px; }
+.FantasyContext { color: #efcd94; font-family: titleFont; font-size: 21px; width: 100%; margin-top: 7px; text-align: center; white-space: normal; max-height: 60px; text-overflow: ellipsis; }
+.FantasyDivider { width: 100%; height: 1px; background-color: #795c37; margin: 15px 0px; }
+.FantasyPreviewTitle { color: #e5c38a; font-family: titleFont; font-size: 19px; margin-bottom: 8px; }
+.FantasyPreviewMode { color: #aac1ac; font-size: 13px; margin-bottom: 9px; white-space: normal; }
+.FantasyPreviewText { width: 100%; color: #bfac8d; font-size: 14px; line-height: 20px; white-space: normal; }
+#RuleSettingsPreview { height: fill-parent-flow(1); overflow: squish scroll; padding-right: 3px; }
+.FantasyPreviewTip { width: 100%; flow-children: down; margin-top: 14px; padding-top: 12px; border-top: 1px solid #634d32; }
+.FantasyPreviewTip .FantasyPreviewText { font-size: 13px; }
+.FantasyQuietButton { background-color: #2a2319; border: 1px solid #6f5939; padding: 6px 12px; min-height: 30px; }
+.FantasyQuietButton Label { color: #c9b18a; font-size: 14px; horizontal-align: center; }
+.FantasyQuietButton:hover, .FantasyQuietButton.Selected { background-color: #4d3b22; border-color: #d0ac6e; }
+.FantasyQuietButton:disabled { opacity: 0.35; }
+#RuleSettingsPreviewRefresh { width: 100%; margin-top: 10px; }
+#RuleSettings .V2Footer { height: 58px; min-height: 58px; padding-top: 12px; margin-top: 14px; border-top: 1px solid #83623b; }
+.FantasySaveHint { width: fill-parent-flow(1); vertical-align: center; color: #aa9471; font-size: 14px; }
+#RuleSettings .V2Footer .V2Button { width: 120px; height: 43px; min-height: 43px; margin-left: 10px; margin-right: 0px; }
+#RuleSettings .V2Footer .V2Button Label { horizontal-align: center; }
+#RuleSettings .V2Footer .RpgConditionRefresh { width: 245px; min-width: 150px; max-width: 280px; }
+#RuleSettings .V2Footer #RuleSettingsApply {
+    width: 185px; background-color: gradient(linear, 0% 0%, 0% 100%, from(#af772e), to(#6e441d));
+    border: 1px solid #f1c37b; border-top: 2px solid #ffe0a5; box-shadow: #d18b3122 0px 0px 14px 0px;
+}
+#RuleSettings #RuleSettingsApply Label { color: #fff2cc; font-size: 20px; font-weight: bold; }
+#RuleSettings #RuleSettingsError { color: #ffc69d; font-size: 14px; max-height: 76px; margin-top: 5px; }
+#RuleSettings.FantasyBuyback #RuleSettingsNavigation, #RuleSettings.FantasyBuyback #RuleSettingsPreviewPanel { visibility: collapse; }
+#RuleSettings.FantasyBuyback .FantasyEditorMain { padding: 30px; }
+
+/* Two true, independent boards. Normal stage loot panels are untouched. */
+.BattleResult.LeaderboardOpen {
+    width: 1420px; max-width: 96%; height: 940px; max-height: 94%; padding: 18px;
+    background-color: #281b12;
+    background-image: url("file://{images}/custom_game/fantasy_ui/wood.png");
+    background-repeat: repeat; background-size: 512px 256px;
+    border: 2px solid #b58b50; border-top: 3px solid #ddb779;
+    overflow: squish squish;
+}
+.BattleResult.LeaderboardOpen #SettlementPanel { visibility: collapse; }
+.BattleResult.LeaderboardOpen.ShowRunLoot #SettlementPanel {
+    visibility: visible; width: 100%; height: fit-children; max-height: 180px;
+    overflow: squish scroll; padding: 10px; margin-bottom: 10px;
+    background-color: #17110ddb; border: 1px solid #9d7948;
+}
+.BattleResult.LeaderboardOpen #SettlementPanel #BattleResultLabel { font-size: 20px; margin-bottom: 4px; }
+.BattleResult.LeaderboardOpen #SettlementPanel .LootPopupHint { visibility: collapse; }
+.BattleResult.LeaderboardOpen .RunLeaderboard {
+    width: 100%; height: fill-parent-flow(1); margin: 0px; padding: 0px; border: 0px solid transparent;
+}
+.FantasyRankHeader { width: 100%; height: 88px; min-height: 88px; flow-children: down; padding-top: 5px;
+    background-image: url("file://{images}/custom_game/fantasy_ui/corner_tl.png"), url("file://{images}/custom_game/fantasy_ui/corner_tr.png");
+    background-position: 0% 0%, 100% 0%; background-size: 70px 70px; background-repeat: no-repeat;
+}
+.FantasyRankHeader .FantasyEyebrow { text-align: center; }
+.FantasyRankHeader .FantasyRankTitle { color: #f3d496; font-family: titleFont; font-size: 34px; text-align: center; text-shadow: 0px 2px 3px 2 #000b; }
+.RunLeaderboard .RankSyncBadge { width: fit-children; horizontal-align: right; color: #b1c7a3; font-size: 12px; margin-right: 18px; }
+.RunLeaderboard .RankSyncBadge.RankError { color: #e6a582; }
+.RunSummaryStrip { width: 100%; height: 92px; min-height: 92px; flow-children: right; margin-bottom: 14px; padding: 12px 0px;
+    background-color: #cbb388; background-image: url("file://{images}/custom_game/fantasy_ui/parchment.png"); background-size: 512px 512px; border: 1px solid #b99863;
+}
+.RunSummaryTile { width: fill-parent-flow(1); height: 100%; flow-children: down; border-right: 1px solid #9d8056; padding: 0px 20px; }
+.BattleResult.LeaderboardOpen .RunScoreTitle, .RunSummaryTile .RunSummaryCaption { color: #655033; font-size: 15px; text-align: center; white-space: nowrap; text-overflow: shrink; }
+.BattleResult.LeaderboardOpen .RunScoreValue, .RunSummaryTile .RunSummaryNumber { color: #372519; font-family: titleFont; font-size: 35px; font-weight: bold; text-align: center; white-space: nowrap; text-overflow: shrink; margin-top: 3px; }
+.DualRankColumns { width: 100%; height: fill-parent-flow(1); flow-children: right; }
+.DualRankBoard { width: fill-parent-flow(1); height: 100%; flow-children: down; padding: 12px; background-color: #120f0cef; border: 1px solid #917044; }
+.ScoreBoard { margin-right: 7px; border-top: 3px solid #d1a257; }
+.SpeedBoard { margin-left: 7px; border-top: 3px solid #8aa896; }
+.DualRankBoardHeader { width: 100%; height: 68px; min-height: 68px; flow-children: right; }
+.RankBoardIcon { width: 56px; height: 56px; margin-right: 10px; }
+.RankBoardIdentity { width: fill-parent-flow(1); flow-children: down; vertical-align: center; }
+.RunLeaderboard .RankBoardTitle { color: #efcc89; font-family: titleFont; font-size: 28px; }
+.RunLeaderboard .RankBoardSubtitle { color: #aa9270; font-size: 13px; white-space: normal; }
+.RunLeaderboard .SpeedBoard .RankBoardTitle { color: #c9d9c5; }
+.RankPersonalBanner { width: 100%; height: 84px; min-height: 84px; flow-children: right; padding: 10px 14px; margin-bottom: 10px; background-color: #63462045; border: 1px solid #927141; }
+.SpeedBoard .RankPersonalBanner { background-color: #35544945; border-color: #627d6b; }
+.RankPersonalIdentity { width: fill-parent-flow(1); flow-children: down; vertical-align: center; }
+.RunLeaderboard .RankPersonalCaption { color: #dfc393; font-size: 16px; }
+.RunLeaderboard .RankPersonalHint { color: #a9997f; font-size: 13px; margin-top: 6px; white-space: normal; }
+.RunLeaderboard .RankPersonalNumber { width: 190px; color: #ffda85; font-family: titleFont; font-size: 50px; font-weight: bold; text-align: right; text-overflow: shrink; vertical-align: center; white-space: nowrap; }
+.RunLeaderboard .SpeedBoard .RankPersonalNumber { color: #b9d8c0; }
+.BattleResult.LeaderboardOpen .RunRankRows { width: 100%; height: fill-parent-flow(1); min-height: 90px; flow-children: down; overflow: squish scroll; }
+.BattleResult.LeaderboardOpen .RankTableRow { width: 100%; height: 32px; min-height: 32px; flow-children: right; padding: 3px 8px; border-bottom: 1px solid #413321; }
+.BattleResult.LeaderboardOpen .RankTableRow Label { vertical-align: center; color: #d9cbb2; font-size: 17px; white-space: nowrap; text-overflow: ellipsis; }
+.BattleResult.LeaderboardOpen .RankTableRow .RankNumber { width: 54px; color: #ad9673; font-size: 19px; text-align: center; text-overflow: shrink; }
+.BattleResult.LeaderboardOpen .RankTableRow .RankPlayer { width: fill-parent-flow(1); margin-left: 8px; }
+.BattleResult.LeaderboardOpen .RankTableRow .RankYou { width: 34px; color: #ffd998; font-size: 14px; text-align: center; }
+.BattleResult.LeaderboardOpen .RankTableRow .RankValue { width: 126px; color: #f0d29b; text-align: right; font-size: 19px; text-overflow: shrink; }
+.BattleResult.LeaderboardOpen .RankTableHeading { height: 28px; min-height: 28px; padding: 0px 8px; border-bottom: 1px solid #8a673c; margin-bottom: 4px; }
+.BattleResult.LeaderboardOpen .RankTableHeading Label { color: #96815f; font-size: 13px; }
+.BattleResult.LeaderboardOpen .RankPodium1, .BattleResult.LeaderboardOpen .RankPodium2, .BattleResult.LeaderboardOpen .RankPodium3 { height: 50px; min-height: 50px; background-color: #3b302244; border-bottom: 1px solid #645031; }
+.BattleResult.LeaderboardOpen .RankPodium1 .RankNumber { color: #f7ce76; font-family: titleFont; font-size: 31px; }
+.BattleResult.LeaderboardOpen .RankPodium2 .RankNumber { color: #bacecd; font-family: titleFont; font-size: 29px; }
+.BattleResult.LeaderboardOpen .RankPodium3 .RankNumber { color: #cfa070; font-family: titleFont; font-size: 29px; }
+.BattleResult.LeaderboardOpen .RankPodium1 .RankPlayer, .BattleResult.LeaderboardOpen .RankPodium1 .RankValue { color: #f1d395; font-size: 21px; }
+.BattleResult.LeaderboardOpen .RankSelf { background-color: #79532388; border: 1px solid #e5b467; border-left: 3px solid #ffcf82; }
+.BattleResult.LeaderboardOpen .RankSelf .RankPlayer, .BattleResult.LeaderboardOpen .RankSelf .RankValue { color: #ffe4b0; }
+.BattleResult.LeaderboardOpen .RankGap { height: 20px; min-height: 20px; color: #aa8d60; font-size: 15px; }
+.RunLeaderboard .RankBoardStatus { width: 100%; color: #c9b28f; font-size: 14px; white-space: normal; padding: 8px; margin-bottom: 5px; background-color: #31261b; }
+.BattleResult.LeaderboardOpen .RankNameTooltip { color: #efe0c4; background-color: #231b12; font-size: 14px; max-height: 54px; white-space: normal; padding: 4px 8px; border: 1px solid #a48450; }
+.BattleResult.LeaderboardOpen .RunRecordMessage { color: #ebc581; background-color: #59432455; font-size: 15px; max-height: 28px; padding: 4px 8px; margin-top: 6px; white-space: nowrap; text-overflow: ellipsis; }
+.RankUtilityRow { width: 100%; height: 40px; min-height: 40px; flow-children: right; padding-top: 8px; }
+.RunLeaderboard .RankSnapshotCaption { width: fill-parent-flow(1); color: #a78d66; font-size: 13px; vertical-align: center; }
+.RankUtilityRow .FantasyQuietButton { margin-left: 10px; }
+.RunLeaderboard .RankUtilityRow .FantasyQuietButton Label { width: fit-children; }
+.RankDetails { width: 100%; height: 140px; max-height: 140px; flow-children: down; overflow: squish scroll; padding: 10px; margin-top: 8px; border: 1px solid #775a37; background-color: #15100cdd; }
+.BattleResult.LeaderboardOpen .RankDetails Label { color: #bca788; font-size: 14px; text-align: left; margin: 2px 0px; white-space: normal; }
+.BattleResult.LeaderboardOpen .ReplayRunButton { height: 44px; min-height: 44px; padding: 8px; margin-top: 10px; border: 1px solid #d2ac6d; background-color: gradient(linear, 0% 0%, 0% 100%, from(#775124), to(#47301a)); }
+.BattleResult.LeaderboardOpen .ReplayRunButton Label { color: #fbe2b5; font-size: 20px; }
+.BattleResult.LeaderboardOpen .ReplayRunHint { visibility: collapse; }
+/* Panorama reports aspect-ratio classes on the root; allow long fields to wrap. */
+.AspectRatio4x3 #RuleSettings .RuleSettingsCard { width: 1380px; }
+.AspectRatio4x3 .FantasyNavigation { width: 172px; }
+.AspectRatio4x3 .FantasyNavCopy { width: 99px; }
+.AspectRatio4x3 .FantasyPreviewPanel { width: 220px; padding: 12px; }
+.AspectRatio4x3 .FantasyNavHint { font-size: 11px; }
+.AspectRatio4x3 .RankPersonalNumber { width: 160px; }

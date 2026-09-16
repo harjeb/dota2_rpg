@@ -1,0 +1,982 @@
+--- before/content/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.xml
++++ after/content/dota_addons/dota2_rpg/panorama/layout/custom_game/rpg_demo_hud.xml
+@@ -6,6 +6,7 @@
+ 		<include src="file://{resources}/styles/custom_game/skill_debug.css" />
+ 		<include src="file://{resources}/styles/custom_game/arena_hud.css" />
+ 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
++			<include src="file://{resources}/styles/custom_game/fantasy_ui.css" />
+ 	</styles>
+ 	<scripts>
+ 		<include src="file://{resources}/scripts/custom_game/campaign_difficulty.js" />
+@@ -167,50 +168,176 @@
+                 <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
+             </Panel>
+             <Panel id="RunLeaderboard" class="RunLeaderboard Hidden">
+-                <Label id="RunScoreTitle" class="RunScoreTitle" />
+-                <Label id="RunScoreValue" class="RunScoreValue" />
+-                <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
+-                <Label id="RunMetrics" class="RunMetrics" />
+-                <Label class="RankHeading" text="#dota2_rpg_rank_heading" />
+-                <Label id="RunRankStatus" class="RunRankStatus" />
+-                <Label id="RunScoreRank" class="RunRankRow" />
+-                <Label id="RunSpeedrunRank" class="RunRankRow" />
++                <Panel class="FantasyRankHeader">
++                    <Label class="FantasyEyebrow" text="#dota2_rpg_ui_hall" />
++                    <Label class="FantasyRankTitle" text="#dota2_rpg_ui_leaderboards" />
++                    <Label id="RunRankSync" class="RankSyncBadge" />
++                </Panel>
++                <Panel class="RunSummaryStrip">
++                    <Panel class="RunSummaryTile">
++                        <Label id="RunScoreTitle" class="RunScoreTitle" />
++                        <Label id="RunScoreValue" class="RunScoreValue" />
++                    </Panel>
++                    <Panel class="RunSummaryTile">
++                        <Label class="RunSummaryCaption" text="#dota2_rpg_ui_time_total" />
++                        <Label id="RunTimeValue" class="RunSummaryNumber" />
++                    </Panel>
++                    <Panel class="RunSummaryTile">
++                        <Label class="RunSummaryCaption" text="#dota2_rpg_ui_progress" />
++                        <Label id="RunProgressValue" class="RunSummaryNumber" />
++                    </Panel>
++                </Panel>
++                <Panel class="DualRankColumns">
++                    <Panel id="RunScoreBoard" class="DualRankBoard ScoreBoard">
++                        <Panel class="DualRankBoardHeader">
++                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/trophy.png" hittest="false" />
++                            <Panel class="RankBoardIdentity">
++                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_score" />
++                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_score_subtitle" />
++                            </Panel>
++                        </Panel>
++                        <Panel class="RankPersonalBanner">
++                            <Panel class="RankPersonalIdentity">
++                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
++                                <Label id="RunScorePositionHint" class="RankPersonalHint" />
++                            </Panel>
++                            <Label id="RunScorePosition" class="RankPersonalNumber" text="--" />
++                        </Panel>
++                        <Panel class="RankTableRow RankTableHeading">
++                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
++                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
++                            <Label class="RankYou" />
++                            <Label class="RankValue" text="#dota2_rpg_ui_points" />
++                        </Panel>
++                        <Label id="RunRankTableStatus" class="RankBoardStatus Hidden" />
++                        <Panel id="RunRankRows" class="RunRankRows" />
++                    </Panel>
++                    <Panel id="RunSpeedBoard" class="DualRankBoard SpeedBoard">
++                        <Panel class="DualRankBoardHeader">
++                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/hourglass.png" hittest="false" />
++                            <Panel class="RankBoardIdentity">
++                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_speedrun" />
++                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_speedrun_subtitle" />
++                            </Panel>
++                        </Panel>
++                        <Panel class="RankPersonalBanner">
++                            <Panel class="RankPersonalIdentity">
++                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
++                                <Label id="RunSpeedPositionHint" class="RankPersonalHint" />
++                            </Panel>
++                            <Label id="RunSpeedPosition" class="RankPersonalNumber" text="--" />
++                        </Panel>
++                        <Panel class="RankTableRow RankTableHeading">
++                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
++                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
++                            <Label class="RankYou" />
++                            <Label class="RankValue" text="#dota2_rpg_ui_time_short" />
++                        </Panel>
++                        <Label id="RunSpeedRankTableStatus" class="RankBoardStatus Hidden" />
++                        <Panel id="RunSpeedRankRows" class="RunRankRows" />
++                    </Panel>
++                </Panel>
++                <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
+                 <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
+-                <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
+-                <Panel class="RankTabs">
+-                    <Button id="RunScoreTab" class="RankTab RankTabSelected"><Label text="#dota2_rpg_rank_score" /></Button>
+-                    <Button id="RunSpeedrunTab" class="RankTab"><Label text="#dota2_rpg_rank_speedrun" /></Button>
+-                </Panel>
+-                <Panel class="RankTableRow RankTableHeading">
+-                    <Label class="RankNumber" text="#dota2_rpg_rank_column" />
+-                    <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
+-                    <Label class="RankYou" />
+-                    <Label id="RunRankValueHeading" class="RankValue" text="#dota2_rpg_rank_score" />
+-                </Panel>
+-                <Label id="RunRankTableStatus" class="RunRankHint" />
+-                <Panel id="RunRankRows" class="RunRankRows" />
+-                <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
+-                <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
++                <Panel class="RankUtilityRow">
++                    <Label class="RankSnapshotCaption" text="#dota2_rpg_ui_snapshot_short" />
++                    <Button id="RunLootToggle" class="FantasyQuietButton"><Label text="#dota2_rpg_ui_rewards" /></Button>
++                    <Button id="RunRankDetailsToggle" class="FantasyQuietButton"><Label id="RunRankDetailsToggleLabel" text="#dota2_rpg_ui_details_show" /></Button>
++                </Panel>
++                <Panel id="RunRankDetails" class="RankDetails Hidden">
++                    <Label id="RunRankStatus" class="RunRankStatus" />
++                    <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
++                    <Label id="RunMetrics" class="RunMetrics" />
++                    <Label id="RunScoreRank" class="RunRankRow" />
++                    <Label id="RunSpeedrunRank" class="RunRankRow" />
++                    <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
++                    <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
++                </Panel>
+             </Panel>
+             <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
+             <Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
+ 		</Panel>
+ 		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
+-		<Panel id="RuleSettings" class="RuleSettings Hidden">
+-			<Panel class="RuleSettingsCard">
+-				<Panel class="RuleSettingsHeader">
+-					<Label class="V2Title" text="#dota2_rpg_v2_settings" />
+-					<Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
+-				</Panel>
+-				<Label class="V2Hint" text="#dota2_rpg_v2_intro" />
+-				<Panel id="RuleSettingsBody" class="RuleSettingsBody" />
+-				<Label id="RuleSettingsError" class="V2Error" />
+-				<Panel class="V2Footer">
+-					<Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
+-					<Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
+-				</Panel>
+-			</Panel>
+-		</Panel>
++        <Panel id="RuleSettings" class="RuleSettings Hidden" hittest="true">
++            <Panel class="RuleSettingsCard FantasyFrame">
++                <Panel class="RuleSettingsHeader">
++                    <Image class="FantasyHeaderIcon" src="file://{images}/custom_game/fantasy_ui/scroll.png" hittest="false" />
++                    <Panel class="FantasyHeaderCopy">
++                        <Label class="FantasyEyebrow" text="#dota2_rpg_ui_workbench" />
++                        <Label class="V2Title" text="#dota2_rpg_v2_settings" />
++                    </Panel>
++                    <Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
++                </Panel>
++                <Panel class="RuleSettingsWorkspace">
++                    <Panel id="RuleSettingsNavigation" class="FantasyNavigation">
++                            <Button id="RuleSettingsNav_use" class="FantasyNavButton">
++                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/trigger.png" hittest="false" />
++                                <Panel class="FantasyNavCopy" hittest="false">
++                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_use" />
++                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_use_hint" />
++                                </Panel>
++                                <Label id="RuleSettingsCount_use" class="FantasyNavCount" hittest="false" />
++                            </Button>
++                            <Button id="RuleSettingsNav_target" class="FantasyNavButton">
++                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/target.png" hittest="false" />
++                                <Panel class="FantasyNavCopy" hittest="false">
++                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_target" />
++                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_target_hint" />
++                                </Panel>
++                                <Label id="RuleSettingsCount_target" class="FantasyNavCount" hittest="false" />
++                            </Button>
++                            <Button id="RuleSettingsNav_priority" class="FantasyNavButton">
++                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/priority.png" hittest="false" />
++                                <Panel class="FantasyNavCopy" hittest="false">
++                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_priority" />
++                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_priority_hint" />
++                                </Panel>
++                                <Label id="RuleSettingsCount_priority" class="FantasyNavCount" hittest="false" />
++                            </Button>
++                            <Button id="RuleSettingsNav_action" class="FantasyNavButton">
++                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/action.png" hittest="false" />
++                                <Panel class="FantasyNavCopy" hittest="false">
++                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_action" />
++                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_action_hint" />
++                                </Panel>
++                                <Label id="RuleSettingsCount_action" class="FantasyNavCount" hittest="false" />
++                            </Button>
++                        <Panel class="FantasyNavNote">
++                            <Image class="FantasyNoteIcon" src="file://{images}/custom_game/fantasy_ui/rune.png" hittest="false" />
++                            <Label text="#dota2_rpg_ui_nav_note" />
++                        </Panel>
++                    </Panel>
++                    <Panel class="FantasyEditorMain">
++                        <Panel class="FantasySectionHeader">
++                            <Label id="RuleSettingsSectionTitle" />
++                            <Label id="RuleSettingsSectionHint" />
++                        </Panel>
++                        <Panel id="RuleSettingsBody" class="RuleSettingsBody" />
++                    </Panel>
++                    <Panel id="RuleSettingsPreviewPanel" class="FantasyPreviewPanel">
++                        <Image class="FantasyPreviewSeal" src="file://{images}/custom_game/fantasy_ui/rune.png" hittest="false" />
++                        <Label class="FantasyPreviewEyebrow" text="#dota2_rpg_ui_editing" />
++                        <Label id="RuleSettingsContext" class="FantasyContext" />
++                        <Panel class="FantasyDivider" />
++                        <Label class="FantasyPreviewTitle" text="#dota2_rpg_ui_preview" />
++                        <Label id="RuleSettingsPreviewMode" class="FantasyPreviewMode" />
++                        <Label id="RuleSettingsPreview" class="FantasyPreviewText" html="false" />
++                        <Button id="RuleSettingsPreviewRefresh" class="FantasyQuietButton"><Label text="#dota2_rpg_ui_preview_refresh" /></Button>
++                        <Panel class="FantasyPreviewTip">
++                            <Label class="FantasyPreviewTitle" text="#dota2_rpg_ui_tip" />
++                            <Label id="RuleSettingsPreviewHint" class="FantasyPreviewText" />
++                        </Panel>
++                    </Panel>
++                </Panel>
++                <Label id="RuleSettingsError" class="V2Error" />
++                <Panel class="V2Footer">
++                    <Label class="FantasySaveHint" text="#dota2_rpg_ui_save_hint" />
++                    <Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
++                    <Button id="V2RefreshCapability" class="V2Button RpgConditionRefresh"><Label text="#dota2_rpg_v2_refresh_capability" /></Button>
++                    <Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
++                </Panel>
++            </Panel>
++        </Panel>
+ 		<Panel id="ConditionHelp" class="Hidden" hittest="true" hittestchildren="true">
+ 			<Button id="ConditionHelpBackdrop" />
+ 			<Panel id="ConditionHelpCard" hittest="true">
+--- before/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.js
++++ after/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/condition_catalog.js
+@@ -197,13 +197,73 @@
+     var editorGeneration=0;
+     // 相对敌人锚点的落点偏移；这些模式需要额外的落点距离。
+     var OFFSET_DESTINATIONS=["away_from_target","target_front","target_behind","around_target"];
+-    function open(rule, initial, onApply, options) {
++    function open(rule, initial, onApply, options, retainedPage) {
+         var generation=++editorGeneration;
+         options = options || {};
+         var root = $("#RuleSettings");
+         var body = $("#RuleSettingsBody");
+         body.RemoveAndDeleteChildren();
+         var draft = clone(initial || {}), readers = [];
++        // Page selection is presentation-only. It never enters the rule payload.
++        var selectedPage = retainedPage || "use";
++        var pagePanels = {use: [], target: [], priority: [], action: []};
++        var previewReady = false, previewReaders = {};
++        function uiText(id) { return $.Localize("#dota2_rpg_ui_" + id); }
++        function setText(id, value) {
++            var node = $("#" + id);
++            if (node) { node.html = false; node.text = String(value); }
++        }
++        function capturePage(page, start) {
++            for (var i = start; i < body.GetChildCount(); i++) { pagePanels[page].push(body.GetChild(i)); }
++        }
++        function syncPreview() {
++            if (!previewReady || generation !== editorGeneration) { return; }
++            // Preview is read-only. Calling the save readers here would detach
++            // action/actor picker references when normalize() returns a new object.
++            var preview = clone(draft);
++            Object.keys(previewReaders).forEach(function (key) { previewReaders[key](preview); });
++            preview.target_team = targetTeam;
++            var keys = {use:"use_conditions", target:"target_filters", priority:"target_priorities"};
++            var counts = {};
++            Object.keys(keys).forEach(function (page) {
++                counts[page] = (preview[keys[page]] || []).filter(function (entry) { return entry && !!entry.type; }).length;
++                if (page === "priority" && preview.destination && preview.destination !== "target") { counts[page] = 1; }
++                setText("RuleSettingsCount_" + page, counts[page]);
++            });
++            setText("RuleSettingsCount_action", "");
++            var lines = summary(preview).split("\n");
++            var line = selectedPage === "action" ? lines.slice(3).join("\n\n")
++                : lines[{use:0,target:1,priority:2}[selectedPage]] || "";
++            setText("RuleSettingsPreview", line.replace(/; /g, "\n\n"));
++            setText("RuleSettingsPreviewMode", selectedPage === "use" || selectedPage === "target"
++                ? text(preview[keys[selectedPage] + "_mode"] === "priority" ? "mode_priority" : "mode_all")
++                : uiText("nav_" + selectedPage + "_hint"));
++            setText("RuleSettingsSectionHint", selectedPage === "action" ? uiText("nav_action_hint")
++                : uiText("section_limit").replace("%s1", counts[selectedPage]).replace("%s2", selectedPage === "priority" ? 2 : 4));
++        }
++        function activatePage(page) {
++            selectedPage = pagePanels[page] ? page : "use";
++            if (activeMenu) { activeMenu.SetHasClass("Hidden", true); activeMenu = null; }
++            // Separate class: do not override native visibility such as chase timeout.
++            Object.keys(pagePanels).forEach(function (key) {
++                var nav = $("#RuleSettingsNav_" + key);
++                if (nav) {
++                    nav.SetHasClass("Selected", key === selectedPage);
++                    pagePanels[key].forEach(function (node) { node.SetHasClass("FantasyPageHidden", key !== selectedPage); });
++                }
++            });
++            setText("RuleSettingsSectionTitle", uiText("nav_" + selectedPage));
++            setText("RuleSettingsPreviewHint", uiText("tip_" + selectedPage));
++            if (typeof body.ScrollToTop === "function") { body.ScrollToTop(); }
++            syncPreview();
++        }
++        root.SetHasClass("FantasyBuyback", rule.action === "buyback");
++        setText("RuleSettingsContext", options.abilityName ? abilityLabel(options.abilityName)
++            : $.Localize("#dota2_rpg_action_" + (rule.action || "attack")));
++        setText("RuleSettingsPreview", "");
++        setText("RuleSettingsPreviewMode", "");
++        setText("RuleSettingsSectionHint", "");
++        setText("RuleSettingsSectionTitle", uiText("nav_use"));
+         delete draft.min_aoe_hits;
+         ["use_conditions", "target_filters", "target_priorities"].forEach(function (key) { draft[key] = draft[key] || []; });
+         $("#RuleSettingsError").text = "";
+@@ -278,7 +338,7 @@
+         function reopen(changes) {
+             readers.forEach(function(read) { read(); });
+             Object.keys(changes || {}).forEach(function(key) { draft[key]=changes[key]; });
+-            open(rule,draft,onApply,options);
++            open(rule,draft,onApply,options,selectedPage);
+         }
+         function restrict(entries, reasonFn) {
+             return entries.map(function(entry) {
+@@ -319,7 +379,7 @@
+                 if (option.category && category !== option.category) { category = option.category; label(menu, "", text("category_" + category)).AddClass("V2Category"); }
+                 var item=button(menu, id + "Option_" + (option.id || "none"), "", function () {
+                     if (option.disabled) { return; }
+-                    draw(trigger, option); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id);
++                    draw(trigger, option); menu.SetHasClass("Hidden", true); activeMenu = null; changed(option.id); syncPreview();
+                 });
+                 item.enabled=!option.disabled; draw(item, option);
+             });
+@@ -372,7 +432,7 @@
+                 draw(trigger, name || (selfOnly ? "" : options.abilityName), name ? actorName + abilityLabel(name) : text(selfOnly ? "none" : "current_action"));
+             }
+             button(menu, id + "Current", text(selfOnly ? "none" : "current_action"), function () {
+-                delete current.action_id; delete current.action_actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
++                delete current.action_id; delete current.action_actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null; syncPreview();
+             });
+             (options.actionHeroes || []).forEach(function (hero, heroIndex) {
+                 if (selfOnly && hero.actor !== "") { return; }
+@@ -382,7 +442,7 @@
+                     var option = button(menu, id + "Option_" + heroIndex + "_" + abilityIndex, "", function () {
+                         current.action_id = name;
+                         if (hero.actor) { current.action_actor = hero.actor; } else { delete current.action_actor; }
+-                        refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
++                        refresh(); menu.SetHasClass("Hidden", true); activeMenu = null; syncPreview();
+                     });
+                     option.AddClass("V2ActionChoice"); draw(option, name, abilityLabel(name));
+                 });
+@@ -423,13 +483,13 @@
+                 menu.RemoveAndDeleteChildren();
+                 button(menu, id + "Clear", text("clear_target"), function () {
+                     if (options.readOnly) { return; }
+-                    menu.SetHasClass("Hidden", true); activeMenu = null; clear();
++                    menu.SetHasClass("Hidden", true); activeMenu = null; clear(); syncPreview();
+                 });
+                 actors().forEach(function (actor, index) {
+                     var option = button(menu, id + "Option_" + index, "", function () {
+                         // Roster may have changed while this menu was open. Never substitute another unit.
+                         if (!actors().some(function (live) { return live.actor === actor.actor; })) { populate(); refresh(); return; }
+-                        current.target_actor = actor.actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null;
++                        current.target_actor = actor.actor; refresh(); menu.SetHasClass("Hidden", true); activeMenu = null; syncPreview();
+                     });
+                     option.AddClass("V2TargetChoice"); draw(option, actor, actor.label);
+                 });
+@@ -466,6 +526,7 @@
+                     draft[key][index] = current;
+                     var row = $.CreatePanel("Panel", body, "V2_" + group + index); row.AddClass("V2Condition");
+                     label(row, "", String(index + 1)).AddClass("V2SlotNumber");
++                    var glyph = $.CreatePanel("Image", row, ""); glyph.AddClass("FantasyConditionIcon"); glyph.hittest = false;
+                     var selector = $.CreatePanel("Panel", row, ""); selector.AddClass("V2Selector");
+                     var params = $.CreatePanel("Panel", row, ""); params.AddClass("V2Parameters");
+                     var readFields = function () {};
+@@ -473,6 +534,13 @@
+                         params.RemoveAndDeleteChildren();
+                         var def = definitions[group + ":" + current.type] || { fields: [] };
+                         var fields = def.fields;
++                        var active = !!current.type || group === "priority" && destinationActive && index === 0;
++                        row.SetHasClass("V2ConditionActive", active);
++                        row.SetHasClass("V2ConditionEmpty", !active);
++                        var icons = {resources:current.type.indexOf("mana") >= 0 ? "mana" : "health", battle:"battle",
++                            proximity:"target", time:"clock", action:"action", advanced:"rune", status:"rune", identity:"target", priority:"priority"};
++                        glyph.SetImage("file://{images}/custom_game/fantasy_ui/" + (icons[def.category] || {use:"trigger",target:"target",priority:"priority"}[group]) + ".png");
++                        if (!active) { label(params, "", uiText("empty_slot")).AddClass("FantasyEmptySlot"); }
+                         if (current.type === "facing_enemy") {
+                             label(params, "V2_" + group + index + "FacingHint", text("facing_enemy_hint")).AddClass("V2Hint");
+                         }
+@@ -523,8 +591,14 @@
+                             entry.AddClass("V2Input");
+                             entry.text = String(current[keyName] === undefined ? "" : current[keyName]); entry.maxchars = 128;
+                             if (field === "value_text") { entry.AddClass("V2TextInput"); }
++                            entry.SetPanelEvent("ontextentrychange", syncPreview);
+                             entries.push({ panel: entry, key: keyName });
+                         });
++                        previewReaders[group + index] = function (preview) {
++                            var value = clone(current);
++                            entries.forEach(function (entry) { value[entry.key] = entry.panel.text; });
++                            preview[key][index] = normalize(group, value);
++                        };
+                         readFields = function () { entries.forEach(function (entry) { current[entry.key] = entry.panel.text; }); current = normalize(group, current); draft[key][index] = current; };
+                     }
+                     var choices = [{ id: "" }].concat(groups[group]);
+@@ -581,15 +655,23 @@
+             Object.keys(draft).forEach(function(key) {
+                 if (key.indexOf("movement_")===0 || key.indexOf("positioning_")===0 || key.indexOf("prediction_")===0 || key.indexOf("charge_")===0 || key==="destination_distance") { delete draft[key]; }
+             });
+-            open(rule,draft,onApply,options);
+-        });
++            open(rule,draft,onApply,options,selectedPage);
++        });
++        capturePage("target", 0);
++        var pageStart = body.GetChildCount();
+         slots("use", "use_conditions", 4, "use_title");
++        capturePage("use", pageStart);
++        pageStart = body.GetChildCount();
+         slots("target", "target_filters", 4, "target_title");
++        capturePage("target", pageStart);
++        pageStart = body.GetChildCount();
+         slots("priority", "target_priorities", 2, "priority_title");
+         if (!ownRetreat && OFFSET_DESTINATIONS.indexOf(draft.destination) >= 0) {
+             draft.destination_distance = number(draft.destination_distance, 400, 0, 3000);
+             settingInput("destination_distance");
+         }
++        capturePage("priority", pageStart);
++        pageStart = body.GetChildCount();
+         if (baseCap && RpgRuleSync.predictionAllowed(draft, baseCap, options.abilityName || rule.action)) {
+             label(body, "V2PredictionTitle", text("prediction_title")).AddClass("V2SectionTitle");
+             label(body, "V2PredictionHint", text("prediction_hint")).AddClass("V2Hint");
+@@ -632,6 +714,8 @@
+             label(row, "", text(key));
+             var entry = $.CreatePanel("TextEntry", row, "V2_" + key); entry.AddClass("V2Input");
+             entry.maxchars = 128; entry.text = String(draft[key]);
++            entry.SetPanelEvent("ontextentrychange", syncPreview);
++            previewReaders["setting_" + key] = function (preview) { preview[key] = entry.text; };
+             readers.push(function () { draft[key] = entry.text; });
+         }
+         if (action === "sustained_move") {
+@@ -641,7 +725,7 @@
+                     readers.forEach(function (read) { read(); });
+                     var preset = movementPreset(name);
+                     Object.keys(preset).forEach(function (key) { draft[key] = preset[key]; });
+-                    open(rule, draft, onApply, options);
++                    open(rule, draft, onApply, options, selectedPage);
+                 });
+             });
+             settingChoice("movement_mode", ["follow", "pass", "orbit", "cycle"]);
+@@ -664,6 +748,7 @@
+             var triggerRow = $.CreatePanel("Panel", body, ""); triggerRow.AddClass("V2Selector");
+             var trigger = {action_id:draft.movement_trigger_ability};
+             actionPicker(triggerRow, "V2MovementTrigger", trigger, true);
++            previewReaders.movementTrigger = function (preview) { preview.movement_trigger_ability = trigger.action_id || ""; };
+             readers.push(function () { draft.movement_trigger_ability = trigger.action_id || ""; });
+             settingInput("movement_duration"); settingInput("movement_distance");
+             ["movement_retarget", "movement_loop", "movement_interruptible"].forEach(function (key) { settingChoice(key, [false, true]); });
+@@ -686,6 +771,11 @@
+         label(timeoutRow, "", text("chase_timeout"));
+         var timeoutEntry = $.CreatePanel("TextEntry", timeoutRow, "V2_chase_timeout"); timeoutEntry.AddClass("V2Input");
+         timeoutEntry.maxchars = 16; timeoutEntry.text = String(draft.chase_timeout);
++        previewReaders.approach = function (preview) {
++            preview.forced = approach === "approach_chase";
++            preview.chase_timeout = number(timeoutEntry.text, 3, 0.1, 120);
++        };
++        timeoutEntry.SetPanelEvent("ontextentrychange", syncPreview);
+         timeoutRow.SetHasClass("Hidden", approach !== "approach_chase");
+         choose(approachRow,"V2ApproachSelect",[{id:"approach_wait"},{id:"approach_chase"}],approach,function(value) {
+             approach=value; timeoutRow.SetHasClass("Hidden", approach !== "approach_chase");
+@@ -701,6 +791,17 @@
+                 draft[stateKey]=id==="toggle_on";
+             });
+         }
++        capturePage("action", pageStart);
++        Object.keys(pagePanels).forEach(function (page) {
++            var nav = $("#RuleSettingsNav_" + page);
++            if (nav) { nav.SetPanelEvent("onactivate", function () {
++                if (generation === editorGeneration) { activatePage(page); }
++            }); }
++        });
++        var refreshPreview = $("#RuleSettingsPreviewRefresh");
++        if (refreshPreview) { refreshPreview.SetPanelEvent("onactivate", syncPreview); }
++        previewReady = true;
++        activatePage(selectedPage);
+         body.enabled = !options.readOnly;
+         $("#RuleSettingsApply").enabled = !options.readOnly && (!strict || !!cap);
+         $("#RuleSettingsApply").SetPanelEvent("onactivate", function () {
+@@ -729,7 +830,7 @@
+                 var latestStateKey=normalizeNativeSettings(latestCapability,stateKey);
+                 var checked=capAPI.validate(draft,latestCapability,{requireCapability:strict});
+                 if (!checked.ok) {
+-                    if (latestStateKey!==stateKey) { open(rule,draft,onApply,options); }
++                    if (latestStateKey!==stateKey) { open(rule,draft,onApply,options,selectedPage); }
+                     $("#RuleSettingsError").text=capAPI.describe(checked); return;
+                 }
+             }
+--- before/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js
++++ after/content/dota_addons/dota2_rpg/panorama/scripts/custom_game/rpg_demo_hud.js
+@@ -2249,76 +2249,108 @@
+     var rankGeneration = -1;
+     var rankStatus = "";
+     var rankSnapshot = null;
+-    var rankBoard = "score";
+     function rankMilliseconds(ms) {
+         var value = Math.max(0, Math.floor(Number(ms) || 0));
+         var minutes = Math.floor(value / 60000);
+         return (minutes < 10 ? "0" : "") + minutes + ":" +
+             ("0" + Math.floor(value / 1000) % 60).slice(-2) + "." + ("00" + value % 1000).slice(-3);
+     }
++    function resetRankDetails() {
++        $("#RunRankDetails").SetHasClass("Hidden", true);
++        $("#RunRankDetailsToggleLabel").text = rankText("ui_details_show");
++        $("#BattleResult").SetHasClass("ShowRunLoot", false);
++        $("#RunLootToggle").SetHasClass("Selected", false);
++    }
++    function bestRank(data, board) {
++        var fromList = Number(data[board + "_list_available"]) === 1;
++        var value = Number(data[board + (fromList ? "_list_player_rank" : "_rank")]);
++        return isFinite(value) && value > 0 ? Math.floor(value) : 0;
++    }
+     function renderRankTable() {
+-        var rows = $("#RunRankRows");
+-        rows.RemoveAndDeleteChildren();
++        var data = rankSnapshot;
++        var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
+         $("#RunRankNameTooltip").SetHasClass("Hidden", true);
+         $("#RunRankNameTooltip").text = "";
+-        ["score", "speedrun"].forEach(function (board) {
+-            $(board === "score" ? "#RunScoreTab" : "#RunSpeedrunTab").SetHasClass("RankTabSelected", board === rankBoard);
+-        });
+-        $("#RunRankValueHeading").text = rankText(rankBoard === "score" ? "rank_score" : "rank_remaining_time");
+-        var data = rankSnapshot;
+-        var note = $("#RunRankTableStatus");
+-        note.text = "";
+-        if (!data) { return; }
+-        if (rankStatus !== "success") {
+-            note.text = rankText("rank_" + (["pending", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error"));
+-            return;
+-        }
+-        var prefix = rankBoard + "_";
+-        if (Number(data[prefix + "list_available"]) !== 1) {
+-            note.text = rankText("rank_detail_unavailable");
+-            return;
+-        }
+-        var count = Math.min(10, Math.max(0, Math.floor(Number(data[prefix + "list_count"]) || 0)));
+-        if (!count) { note.text = rankText("rank_empty"); }
+-        else if (!(Number(data[prefix + "list_player_rank"]) > 0)) { note.text = rankText("rank_not_ranked"); }
+-        if (rankBoard === "speedrun" && Number(data.cleared) !== 1) {
+-            note.text += (note.text ? " · " : "") + rankText("rank_current_not_qualified");
+-        }
+-        var previousRank = 0;
+         function cell(parent, text, className) {
+             var label = $.CreatePanel("Label", parent, "");
+-            label.AddClass(className);
+-            label.html = false;
+-            label.text = String(text);
++            label.AddClass(className); label.html = false; label.text = String(text);
+             return label;
+         }
+-        for (var i = 1; i <= count; i++) {
+-            var rowPrefix = prefix + "row_" + i + "_";
+-            var rank = Number(data[rowPrefix + "rank"]);
+-            if (!(rank > 0)) { continue; }
+-            if (rank > previousRank + 1) { cell(rows, "…", "RankGap"); }
+-            previousRank = rank;
+-            var row = $.CreatePanel("Panel", rows, "");
+-            row.AddClass("RankTableRow");
+-            row.SetHasClass("RankPodium" + rank, rank <= 3);
+-            row.SetHasClass("RankSelf", Number(data[rowPrefix + "is_self"]) === 1);
+-            cell(row, rank, "RankNumber");
+-            var playerName = cell(row, data[rowPrefix + "name"] || "", "RankPlayer");
+-            (function (nameLabel) {
+-                nameLabel.SetPanelEvent("onmouseover", function () {
+-                    var tooltip = $("#RunRankNameTooltip");
+-                    tooltip.html = false;
+-                    tooltip.text = nameLabel.text;
+-                    tooltip.SetHasClass("Hidden", false);
+-                });
+-                nameLabel.SetPanelEvent("onmouseout", function () { $("#RunRankNameTooltip").SetHasClass("Hidden", true); });
+-            })(playerName);
+-            cell(row, Number(data[rowPrefix + "is_self"]) === 1 ? rankText("rank_you") : "", "RankYou");
+-            cell(row, rankBoard === "speedrun" ? rankMilliseconds(data[rowPrefix + "value"]) : Math.max(0, Number(data[rowPrefix + "value"]) || 0), "RankValue");
+-        }
+-    }
+-    $("#RunScoreTab").SetPanelEvent("onactivate", function () { rankBoard = "score"; renderRankTable(); });
+-    $("#RunSpeedrunTab").SetPanelEvent("onactivate", function () { rankBoard = "speedrun"; renderRankTable(); });
++        // Both boards consume the same accepted snapshot, independently. There is
++        // no active tab, client-side ranking, invented avatar, or extra request.
++        ["score", "speedrun"].forEach(function (board) {
++            var stem = board === "score" ? "Score" : "Speed";
++            var rows = $(board === "score" ? "#RunRankRows" : "#RunSpeedRankRows");
++            var note = $(board === "score" ? "#RunRankTableStatus" : "#RunSpeedRankTableStatus");
++            var position = $("#Run" + stem + "Position");
++            var hint = $("#Run" + stem + "PositionHint");
++            rows.RemoveAndDeleteChildren(); note.text = "";
++            position.text = "\u2014"; hint.text = "";
++            function notice(message) { note.text = message; note.SetHasClass("Hidden", !message); }
++            notice("");
++            if (!data) { return; }
++            if (status !== "success") {
++                hint.text = rankText("ui_sync_" + status);
++                notice(hint.text); return;
++            }
++            var prefix = board + "_";
++            var rank = bestRank(data, board);
++            var historical = board === "speedrun" && Number(data.cleared) !== 1;
++            // A failed run may display a historical clear, but must never borrow
++            // a current-run speed rank from an invalid/stale summary field.
++            if (historical && Number(data.speedrun_list_available) !== 1) { rank = 0; }
++            var total = Number(data[prefix + (Number(data[prefix + "list_available"]) === 1 ? "list_total" : "total")]) || 0;
++            position.text = rank > 0 ? "#" + rank : "\u2014";
++            hint.text = rank > 0 ? rankText("ui_rank_total", [total])
++                : rankText(historical ? "rank_clear_only" : "rank_not_ranked");
++            if (historical && rank > 0) { hint.text = rankText("ui_historical_rank") + " \u00b7 " + hint.text; }
++            if (Number(data[prefix + "list_available"]) !== 1) {
++                notice(rankText("rank_detail_unavailable")); return;
++            }
++            var count = Math.min(10, Math.max(0, Math.floor(Number(data[prefix + "list_count"]) || 0)));
++            if (!count) { notice(rankText("rank_empty")); }
++            else if (!rank) { notice(rankText("rank_not_ranked")); }
++            if (historical) { notice(note.text + (note.text ? " \u00b7 " : "") + rankText("rank_current_not_qualified")); }
++            var previousRank = 0;
++            for (var i = 1; i <= count; i++) {
++                var rowPrefix = prefix + "row_" + i + "_";
++                var rowRank = Number(data[rowPrefix + "rank"]);
++                // The server validates the union, but guard malformed local data
++                // as well; never renumber gaps into plausible-looking positions.
++                if (!isFinite(rowRank) || rowRank !== Math.floor(rowRank) || rowRank <= previousRank) { continue; }
++                if (rowRank > previousRank + 1) { cell(rows, "\u2026", "RankGap"); }
++                previousRank = rowRank;
++                var row = $.CreatePanel("Panel", rows, ""); row.AddClass("RankTableRow");
++                if (rowRank <= 3) { row.AddClass("RankPodium" + rowRank); }
++                row.SetHasClass("RankSelf", Number(data[rowPrefix + "is_self"]) === 1);
++                cell(row, rowRank, "RankNumber");
++                var name = cell(row, data[rowPrefix + "name"] || "", "RankPlayer");
++                (function (nameLabel) {
++                    nameLabel.SetPanelEvent("onmouseover", function () {
++                        var tip = $("#RunRankNameTooltip");
++                        tip.html = false; tip.text = nameLabel.text; tip.SetHasClass("Hidden", false);
++                    });
++                    nameLabel.SetPanelEvent("onmouseout", function () { $("#RunRankNameTooltip").SetHasClass("Hidden", true); });
++                })(name);
++                cell(row, Number(data[rowPrefix + "is_self"]) === 1 ? rankText("rank_you") : "", "RankYou");
++                var value = Number(data[rowPrefix + "value"]);
++                cell(row, board === "speedrun" ? rankMilliseconds(value)
++                    : (isFinite(value) ? Math.max(0, Math.floor(value)) : 0), "RankValue");
++            }
++        });
++    }
++    $("#RunRankDetailsToggle").SetPanelEvent("onactivate", function () {
++        var details = $("#RunRankDetails");
++        var showing = details.BHasClass("Hidden");
++        details.SetHasClass("Hidden", !showing);
++        $("#RunRankDetailsToggleLabel").text = rankText(showing ? "ui_details_hide" : "ui_details_show");
++    });
++    $("#RunLootToggle").SetPanelEvent("onactivate", function () {
++        if (!$("#RunLootToggle").enabled) { return; }
++        var showing = !$("#BattleResult").BHasClass("ShowRunLoot");
++        $("#BattleResult").SetHasClass("ShowRunLoot", showing);
++        $("#RunLootToggle").SetHasClass("Selected", showing);
++    });
+     function rankText(token, values) {
+         var text = $.Localize("#dota2_rpg_" + token);
+         (values || []).forEach(function (value, i) { text = text.replace("%s" + (i + 1), String(value)); });
+@@ -2333,7 +2365,7 @@
+         if (!isFinite(generation) || generation < Math.max(replayGeneration, lastSettlementGeneration, rankGeneration)
+             || phase !== "result" || data.score === undefined) { return; }
+         if (generation === rankGeneration && rankStatus === "success" && data.status !== "success") { return; }
+-        if (generation !== rankGeneration) { rankBoard = "score"; }
++        if (generation !== rankGeneration) { resetRankDetails(); }
+         rankGeneration = generation;
+         rankSnapshot = data;
+         rankStatus = String(data.status || "pending");
+@@ -2341,10 +2373,15 @@
+         var cleared = Number(data.cleared) === 1;
+         $("#RunScoreTitle").text = rankText(cleared ? "run_score_clear" : "run_score_failed");
+         $("#RunScoreValue").text = String(Math.max(0, Math.floor(Number(data.score) || 0)));
++        $("#RunTimeValue").text = rankMilliseconds(data.remaining_time_ms);
++        $("#RunProgressValue").text = Math.max(0, Math.floor(Number(data.stage_count) || 0)) + " / " + (Number(data.total_stages) || 30);
++        $("#RunLootToggle").enabled = lastSettlementGeneration === generation && !!$("#RewardLabel").text;
+         $("#RunScoreBreakdown").text = rankText("run_score_breakdown", [data.core_score || 0, data.time_bonus_score || 0, data.clear_bonus_score || 0, data.score_multiplier || 1]);
+         $("#RunMetrics").text = rankText("run_score_metrics", [data.remaining_hearts || 0, data.stage_count || 0, data.total_stages || 30, resultTime(data.remaining_time_ms)]);
+         var status = ["pending", "success", "error", "disabled", "ineligible", "difficulty_unranked"].indexOf(rankStatus) >= 0 ? rankStatus : "error";
+         $("#RunRankStatus").text = rankText("rank_" + status);
++        $("#RunRankSync").text = rankText("ui_sync_" + status);
++        $("#RunRankSync").SetHasClass("RankError", status === "error" || status === "disabled");
+         $("#RunRankStatus").SetHasClass("RankError", status === "error" || status === "disabled");
+         var congratulations = [];
+         ["score", "speedrun"].forEach(function (board) {
+@@ -2357,7 +2394,7 @@
+                     : rankText("rank_clear_only"));
+                 return;
+             }
+-            var rank = Number(data[board + "_rank"] || 0);
++            var rank = bestRank(data, board);
+             label.text = title + " · " + (status === "success" && rank > 0
+                 ? rankText("rank_position", [rank, data[board + "_total"] || 0]) : rankText("rank_unavailable"));
+             if (status === "success") {
+@@ -2366,9 +2403,10 @@
+                 else if (Number(data[board + "_first_entry"]) === 1) { congratulations.push(rankText("rank_first_entry", [title])); }
+             }
+         });
+-        $("#RunRecordMessage").text = congratulations.join("\n");
++        $("#RunRecordMessage").text = congratulations.join(" \u00b7 ");
+         $("#RunRecordMessage").SetHasClass("Hidden", !congratulations.length);
+         renderRankTable();
++        $("#BattleResult").SetHasClass("LeaderboardOpen", true);
+         $("#RunLeaderboard").SetHasClass("Hidden", false);
+         $("#BattleResult").SetHasClass("Hidden", false);
+     }
+@@ -2441,7 +2479,8 @@
+             terminalResultVisible = false;
+             rankStatus = "";
+             rankSnapshot = null;
+-            rankBoard = "score";
++            resetRankDetails();
++            $("#BattleResult").SetHasClass("LeaderboardOpen", false);
+             renderRankTable();
+             $("#RunLeaderboard").SetHasClass("Hidden", true);
+             setStatus(stageRetryReady ? "#dota2_rpg_stage_failed" : (stageLoading ? "#dota2_rpg_stage_loading" :
+@@ -2525,6 +2564,8 @@
+ 
+     function closeLootPopup() {
+         lootPopupGeneration++;
++        $("#BattleResult").SetHasClass("ShowRunLoot", false);
++        $("#RunLootToggle").SetHasClass("Selected", false);
+         $("#LootPopup").SetHasClass("Hidden", true);
+         $("#SettlementPanel").SetHasClass("Hidden", !terminalResultVisible);
+         $("#BattleResult").SetHasClass("Hidden", !terminalResultVisible && $("#ReplayRunButton").BHasClass("Hidden"));
+--- before/game/dota_addons/dota2_rpg/resource/addon_english.txt
++++ after/game/dota_addons/dota2_rpg/resource/addon_english.txt
+@@ -218,7 +218,7 @@
+ 		"dota2_rpg_cap_incoming_aoe_duplicate"			"Use at most one incoming area condition per rule."
+ 		"dota2_rpg_cap_incoming_aoe_cast_destination"			"Response casts cannot combine with destination or prediction offsets."
+ 		"dota2_rpg_v2_incoming_aoe_scope_hint"			"Supports adapted delayed and persistent area abilities, including escape-path checks. Hidden releases are not exposed; unknown area data is not guessed. Responses do not automatically cancel your own cast, charge or channel."
+-		"dota2_rpg_build_tag"			"UI version 97"
++		"dota2_rpg_build_tag"			"UI version 98"
+         "dota2_rpg_neutral_title" "Neutral recruitment"
+         "dota2_rpg_neutral_hint" "Choose during preparation; recruit in order during battle with native mana and cooldowns. Chen supports multiple choices, including repeats. Recruited neutrals attack and cast automatically."
+         "dota2_rpg_neutral_slot" "Slot"
+@@ -683,5 +683,50 @@
+ 	    "dota2_rpg_cap_channel_requires_release_or_other_actor" "This caster cannot cast an unrelated action during its own channel. Select the matching release or observe another actor."
+     "dota2_rpg_cap_channel_reference_not_parent" "The referenced channel must be the parent of this release action."
+     "dota2_rpg_cap_casting_phase_cannot_be_interrupted" "A new action cannot run during this caster's protected cast phase. Observe another actor instead."
++
++        // UI98 - fantasy condition editor and simultaneous leaderboards
++        "dota2_rpg_ui_hall" "HALL OF HONOR"
++        "dota2_rpg_ui_leaderboards" "Leaderboards"
++        "dota2_rpg_ui_my_rank" "MY BEST RANK"
++        "dota2_rpg_ui_rank_total" "of %s1 players"
++        "dota2_rpg_ui_historical_rank" "Previous clear"
++        "dota2_rpg_ui_points" "Score"
++        "dota2_rpg_ui_time_short" "Time left"
++        "dota2_rpg_ui_time_total" "VICTORY TIME LEFT - TOTAL"
++        "dota2_rpg_ui_progress" "STAGES CLEARED"
++        "dota2_rpg_ui_score_subtitle" "Highest scores first"
++        "dota2_rpg_ui_speedrun_subtitle" "Full clears - time left, lowest first"
++        "dota2_rpg_ui_snapshot_short" "Top 5 + your nearby ranks"
++        "dota2_rpg_ui_details_show" "Rules & score details +"
++        "dota2_rpg_ui_details_hide" "Hide details -"
++        "dota2_rpg_ui_rewards" "Rewards"
++        "dota2_rpg_ui_sync_pending" "Syncing..."
++        "dota2_rpg_ui_sync_success" "Recorded"
++        "dota2_rpg_ui_sync_error" "Sync failed"
++        "dota2_rpg_ui_sync_disabled" "Offline"
++        "dota2_rpg_ui_sync_ineligible" "Unranked run"
++        "dota2_rpg_ui_sync_difficulty_unranked" "Unranked difficulty"
++        "dota2_rpg_ui_workbench" "TACTICAL WORKBENCH"
++        "dota2_rpg_ui_nav_use" "Triggers"
++        "dota2_rpg_ui_nav_target" "Targets"
++        "dota2_rpg_ui_nav_priority" "Priority"
++        "dota2_rpg_ui_nav_action" "Casting"
++        "dota2_rpg_ui_nav_use_hint" "When to act"
++        "dota2_rpg_ui_nav_target_hint" "Who to affect"
++        "dota2_rpg_ui_nav_priority_hint" "Who comes first"
++        "dota2_rpg_ui_nav_action_hint" "How to cast"
++        "dota2_rpg_ui_nav_note" "Changes stay in this draft until Apply."
++        "dota2_rpg_ui_editing" "EDITING ACTION"
++        "dota2_rpg_ui_preview" "Rule preview"
++        "dota2_rpg_ui_preview_refresh" "Refresh preview"
++        "dota2_rpg_ui_preview_empty" "No conditions in this section."
++        "dota2_rpg_ui_tip" "Tactical note"
++        "dota2_rpg_ui_tip_use" "All: every condition must pass. Priority: try conditions in order."
++        "dota2_rpg_ui_tip_target" "Choose a team, then narrow down valid targets. Incompatible choices stay disabled."
++        "dota2_rpg_ui_tip_priority" "Rank valid targets. The second priority breaks ties; it is not another trigger."
++        "dota2_rpg_ui_tip_action" "Only controls supported by this action are shown. Native targeting and cast rules still apply."
++        "dota2_rpg_ui_save_hint" "Draft - Apply to save"
++        "dota2_rpg_ui_empty_slot" "Unused slot"
++        "dota2_rpg_ui_section_limit" "%s1 / %s2 conditions enabled"
+ }
+ }
+--- before/game/dota_addons/dota2_rpg/resource/addon_schinese.txt
++++ after/game/dota_addons/dota2_rpg/resource/addon_schinese.txt
+@@ -218,7 +218,7 @@
+ 		"dota2_rpg_cap_incoming_aoe_duplicate"			"每条规则最多添加一个即将被范围技能命中条件。"
+ 		"dota2_rpg_cap_incoming_aoe_cast_destination"			"应对施放不能同时设置额外落点或预测偏移。"
+ 		"dota2_rpg_v2_incoming_aoe_scope_hint"			"支持已适配的延迟生效及持续范围技能，并检查逃离路径。隐藏释放不触发；未知区域数据不猜测。不会自动取消自己正在进行的原生施法、蓄力或持续施法。"
+-		"dota2_rpg_build_tag"			"界面版本 97"
++		"dota2_rpg_build_tag"			"界面版本 98"
+         "dota2_rpg_neutral_title" "野怪召唤"
+         "dota2_rpg_neutral_hint" "准备时选择，开战后依次生成并收服，保留原生蓝耗和冷却。陈可多选或重复选同种；收服野怪会自动攻击、施法。"
+         "dota2_rpg_neutral_slot" "名额"
+@@ -683,5 +683,50 @@
+ 	    "dota2_rpg_cap_channel_requires_release_or_other_actor" "自身持续施法时不能施放无关动作。请配置对应的结束技能，或观察其他施法者。"
+     "dota2_rpg_cap_channel_reference_not_parent" "自身的持续施法引用必须是该结束技能对应的起始技能。"
+     "dota2_rpg_cap_casting_phase_cannot_be_interrupted" "施法前摇保护期不允许插入新动作，请改为观察其他施法者。"
++
++        // UI98 - fantasy condition editor and simultaneous leaderboards
++        "dota2_rpg_ui_hall" "荣耀大厅"
++        "dota2_rpg_ui_leaderboards" "双榜排行"
++        "dota2_rpg_ui_my_rank" "我的最佳排名"
++        "dota2_rpg_ui_rank_total" "共 %s1 人上榜"
++        "dota2_rpg_ui_historical_rank" "历史通关排名"
++        "dota2_rpg_ui_points" "积分"
++        "dota2_rpg_ui_time_short" "剩余时间"
++        "dota2_rpg_ui_time_total" "各关胜利剩余时间合计"
++        "dota2_rpg_ui_progress" "已通过关卡"
++        "dota2_rpg_ui_score_subtitle" "积分越高，名次越靠前"
++        "dota2_rpg_ui_speedrun_subtitle" "仅限全通 · 剩余时间合计升序"
++        "dota2_rpg_ui_snapshot_short" "前 5 名 + 你附近的名次"
++        "dota2_rpg_ui_details_show" "规则与计分 +"
++        "dota2_rpg_ui_details_hide" "收起详情 -"
++        "dota2_rpg_ui_rewards" "本局奖励"
++        "dota2_rpg_ui_sync_pending" "同步中…"
++        "dota2_rpg_ui_sync_success" "已收录"
++        "dota2_rpg_ui_sync_error" "同步失败"
++        "dota2_rpg_ui_sync_disabled" "未开启同步"
++        "dota2_rpg_ui_sync_ineligible" "本局不计排名"
++        "dota2_rpg_ui_sync_difficulty_unranked" "当前难度不计排名"
++        "dota2_rpg_ui_workbench" "战术工坊"
++        "dota2_rpg_ui_nav_use" "触发条件"
++        "dota2_rpg_ui_nav_target" "目标筛选"
++        "dota2_rpg_ui_nav_priority" "优先级"
++        "dota2_rpg_ui_nav_action" "施法行为"
++        "dota2_rpg_ui_nav_use_hint" "何时释放技能"
++        "dota2_rpg_ui_nav_target_hint" "选择作用目标"
++        "dota2_rpg_ui_nav_priority_hint" "多个目标的次序"
++        "dota2_rpg_ui_nav_action_hint" "追击、移动与施法"
++        "dota2_rpg_ui_nav_note" "切换分类保留草稿。\n点击应用后才会生效。"
++        "dota2_rpg_ui_editing" "正在编辑"
++        "dota2_rpg_ui_preview" "规则预览"
++        "dota2_rpg_ui_preview_refresh" "刷新预览"
++        "dota2_rpg_ui_preview_empty" "此分类尚未设置条件。"
++        "dota2_rpg_ui_tip" "战术小贴士"
++        "dota2_rpg_ui_tip_use" "“全部满足”要求所有条件成立；“优先级”按顺序尝试条件。"
++        "dota2_rpg_ui_tip_target" "先选择阵营，再筛选目标。与技能不兼容的选项会保持禁用。"
++        "dota2_rpg_ui_tip_priority" "对合格目标排序。第二优先级用于区分并列目标，不是额外触发条件。"
++        "dota2_rpg_ui_tip_action" "只显示当前行为支持的设置，原生技能目标与施法规则仍然有效。"
++        "dota2_rpg_ui_save_hint" "当前为草稿 · 应用后保存"
++        "dota2_rpg_ui_empty_slot" "未使用的条件槽位"
++        "dota2_rpg_ui_section_limit" "已启用 %s1 / %s2 条"
+ }
+ }
+--- before/scripts/install-addon.ps1
++++ after/scripts/install-addon.ps1
+@@ -63,6 +63,13 @@
+         (Join-Path $targetContent "panorama\scripts\custom_game\skill_condition_presets.js")
+     )
+ 
++    # UI98 uses local textures and hand-inked icons. Compile their explicit
++    # descriptors before the HUD so a source-only install cannot show missing art.
++    $uiArt = Join-Path $targetContent "panorama\images\custom_game\fantasy_ui"
++    $resources = @((Get-ChildItem -LiteralPath $uiArt -Filter "*_png.vtex" | Sort-Object Name | ForEach-Object { $_.FullName })) + @(
++        (Join-Path $targetContent "panorama\styles\custom_game\fantasy_ui.css")
++    ) + $resources
++
+     foreach ($resource in $resources) {
+         Write-Host "Compiling $resource"
+         $compilerOutput = (& $compiler -game $gameInfoDirectory -f -i $resource 2>&1 | Out-String)
+@@ -90,6 +97,14 @@
+     }
+ }
+ 
++# Verify both locale files, not only the visible language of this machine.
++foreach ($locale in @("addon_english.txt", "addon_schinese.txt")) {
++    $from = Join-Path $sourceGame ("resource\" + $locale)
++    $to = Join-Path $targetGame ("resource\" + $locale)
++    if ((Get-FileHash -LiteralPath $from).Hash -ne (Get-FileHash -LiteralPath $to).Hash) {
++        throw "Installed locale differs from this package: $locale"
++    }
++}
+ Write-Host "Installed content addon: $targetContent"
+ Write-Host "Installed game addon:    $targetGame"
+ Write-Host "In VConsole run: dota_launch_custom_game dota2_rpg dota2_rpg_demo"
+--- before/tests/hud-sidebar.test.js
++++ after/tests/hud-sidebar.test.js
+@@ -891,8 +891,8 @@
+     });
+     return data;
+ }
+-function tableRows(hud) {
+-    return panel(hud, "RunRankRows").children.filter(function (row) { return row.BHasClass("RankTableRow"); });
++function tableRows(hud, board) {
++    return panel(hud, board === "speedrun" ? "RunSpeedRankRows" : "RunRankRows").children.filter(function (row) { return row.BHasClass("RankTableRow"); });
+ }
+ var tables = runHud();
+ tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
+@@ -910,50 +910,54 @@
+ assert(visible(tables,"RunRankNameTooltip") && panel(tables,"RunRankNameTooltip").text === selfRow.children[1].text && panel(tables,"RunRankNameTooltip").html === false, "full name tooltip is literal without HTML dispatch");
+ selfRow.children[1].events.onmouseout();
+ assert(!visible(tables,"RunRankNameTooltip"), "full name tooltip hides on mouseout");
+-var eventsBeforeTabs = tables.sentEvents.length;
+-click(tables,"RunSpeedrunTab");
+-assert(tableRows(tables).length === 7 && panel(tables,"RunRankRows").children.length === 7, "overlapping server union renders once per row without gap");
+-assert(tableRows(tables)[0].children[3].text === "01:01.002" && tableRows(tables)[1].children[3].text === "01:01.001", "milliseconds distinguish close times");
+-assert(tableRows(tables)[4].children[3].text === "00:00.000", "zero remaining time is a valid displayed value");
+-assert(panel(tables,"RunSpeedrunTab").BHasClass("RankTabSelected") && !panel(tables,"RunScoreTab").BHasClass("RankTabSelected"), "only one selected board");
++var eventsBeforeDetails = tables.sentEvents.length;
++assert(tableRows(tables).length === 10 && tableRows(tables,"speedrun").length === 7, "both boards render in the same frame without tabs");
++assert(!panel(tables,"RunSpeedrunTab") && !panel(tables,"RunScoreTab"), "obsolete tab controls are removed");
++assert(tableRows(tables,"speedrun")[0].children[3].text === "01:01.002" && tableRows(tables,"speedrun")[1].children[3].text === "01:01.001", "milliseconds distinguish close times");
++assert(tableRows(tables,"speedrun")[4].children[3].text === "00:00.000", "zero remaining time is a valid displayed value");
++assert(panel(tables,"RunScorePosition").text === "#20" && panel(tables,"RunSpeedPosition").text === "#5", "both prominent personal ranks use authoritative best-record snapshot positions");
++assert(!visible(tables,"RunRankDetails"), "long explanation is closed by default");
++click(tables,"RunRankDetailsToggle");
++assert(visible(tables,"RunRankDetails"), "details expand on demand");
+ tables.subscriptions.rpg_leaderboard_result(details);
+-assert(tableRows(tables)[0].children[3].text === "01:01.002", "accepted refresh preserves selected tab");
+-click(tables,"RunScoreTab");
+-assert(tableRows(tables).length === 10 && tables.sentEvents.length === eventsBeforeTabs, "tabs reuse snapshot without server requests");
++assert(visible(tables,"RunRankDetails") && tableRows(tables).length === 10 && tableRows(tables,"speedrun").length === 7, "same-generation update preserves details choice and both boards");
++click(tables,"RunRankDetailsToggle");
++assert(!visible(tables,"RunRankDetails") && tables.sentEvents.length === eventsBeforeDetails, "details toggle is local-only");
+ var restoredTables = runHud();
+ restoredTables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:60});
+ restoredTables.subscriptions.rpg_leaderboard_result(details);
+-click(restoredTables,"RunSpeedrunTab");
+-assert(tableRows(restoredTables).length === 7, "reconnected snapshot supports both tabs");
+-click(tables,"RunSpeedrunTab");
++assert(tableRows(restoredTables).length === 10 && tableRows(restoredTables,"speedrun").length === 7, "reconnected snapshot restores both boards");
+ tables.subscriptions.rpg_battle_state({phase:"setup",settlement_generation:61});
+-assert(!visible(tables,"RunLeaderboard") && tableRows(tables).length === 0, "setup hides and clears table");
++assert(!visible(tables,"RunLeaderboard") && tableRows(tables).length === 0 && tableRows(tables,"speedrun").length === 0, "setup hides and clears both tables");
++assert(!panel(tables,"BattleResult").BHasClass("LeaderboardOpen"), "ordinary stage loot retains original dimensions");
+ tables.subscriptions.rpg_leaderboard_result(details);
+-assert(tableRows(tables).length === 0, "old accepted snapshot cannot restore rows after reset");
++assert(tableRows(tables).length === 0 && tableRows(tables,"speedrun").length === 0, "old accepted snapshot cannot restore either table after reset");
+ tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:62});
+ var failedHistory = Object.assign({}, details, {settlement_generation:62,cleared:0,score_global_record:0,score_first_entry:0,score_personal_record:0});
+ tables.subscriptions.rpg_leaderboard_result(failedHistory);
+-assert(panel(tables,"RunScoreTab").BHasClass("RankTabSelected"), "new terminal defaults to score");
++assert(!visible(tables,"RunRankDetails"), "new terminal resets explanation to collapsed");
+ assert(panel(tables,"RunSpeedrunRank").text.includes("rank_position") && panel(tables,"RunSpeedrunRank").text.includes("rank_current_not_qualified"), "failed run preserves accepted historical speed rank");
+ assert(!visible(tables,"RunRecordMessage"), "failed speedrun does not congratulate even with record flag");
+-click(tables,"RunSpeedrunTab");
+-assert(tableRows(tables).length === 7 && panel(tables,"RunRankTableStatus").text.includes("rank_current_not_qualified"), "historical table labels current failed run");
++assert(tableRows(tables,"speedrun").length === 7 && panel(tables,"RunSpeedRankTableStatus").text.includes("rank_current_not_qualified"), "historical speed table labels current failed run");
++assert(panel(tables,"RunSpeedPosition").text === "#5" && panel(tables,"RunSpeedPositionHint").text.includes("ui_historical_rank"), "historical rank is not misrepresented as this run's new rank");
+ var noHistory = boardSnapshot(Object.assign({}, failedHistory), "speedrun", [1,2,3], 0);
+ tables.subscriptions.rpg_leaderboard_result(noHistory);
+-assert(panel(tables,"RunRankTableStatus").text.includes("rank_not_ranked") && panel(tables,"RunSpeedrunRank").text.includes("rank_clear_only"), "failed player without previous clear stays unranked");
++assert(panel(tables,"RunSpeedRankTableStatus").text.includes("rank_not_ranked") && panel(tables,"RunSpeedrunRank").text.includes("rank_clear_only"), "failed player without previous clear stays unranked");
+ var empty = boardSnapshot(Object.assign({}, noHistory), "speedrun", [], 0);
+ tables.subscriptions.rpg_leaderboard_result(empty);
+-assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text.includes("rank_empty"), "empty board clears prior rows");
++assert(!tableRows(tables,"speedrun").length && panel(tables,"RunSpeedRankTableStatus").text.includes("rank_empty"), "empty speed board clears prior rows without clearing score board");
++assert(tableRows(tables).length === 10, "score board remains independent of unavailable speed data");
+ tables.subscriptions.rpg_leaderboard_result(Object.assign({}, failedHistory, {speedrun_list_available:0}));
+-assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_rank_detail_unavailable", "unavailable details cannot expose stale payload rows");
+-["pending","error","disabled","ineligible"].forEach(function(status, i) {
++assert(!tableRows(tables,"speedrun").length && panel(tables,"RunSpeedRankTableStatus").text === "#dota2_rpg_rank_detail_unavailable", "unavailable details cannot expose stale payload rows");
++["pending","error","disabled","ineligible","difficulty_unranked"].forEach(function(status, i) {
+     var generation = 63 + i;
+     tables.subscriptions.rpg_battle_state({phase:"result",settlement_generation:generation});
+     tables.subscriptions.rpg_leaderboard_result(Object.assign({}, details, {settlement_generation:generation,status:status}));
+-    assert(!tableRows(tables).length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_rank_" + status, "no stale rows for " + status);
++    assert(!tableRows(tables).length && !tableRows(tables,"speedrun").length && panel(tables,"RunRankTableStatus").text === "#dota2_rpg_ui_sync_" + status, "no stale rows in either board for " + status);
++    assert(panel(tables,"RunScorePosition").text === "\u2014" && panel(tables,"RunSpeedPosition").text === "\u2014", "unaccepted response cannot invent either personal rank");
+     assert(!visible(tables,"RunRecordMessage"), "no invented records for " + status);
+ });
+-console.log("PASS leaderboard snapshot tables: gaps, union, tabs, literal names, milliseconds, historical rank, reconnect and reset");
++console.log("PASS UI98 simultaneous leaderboards: two real lists, two personal ranks, details toggle, gaps, names, milliseconds, historical rank, reconnect and reset");
+ 
+ // UI77: execute the actual HUD branches; no extracted selection implementation.
+ {
+--- before/tests/panorama-save.test.js
++++ after/tests/panorama-save.test.js
+@@ -50,6 +50,7 @@
+         BHasClass: function (name) { return Boolean(classes[name]); },
+         events: {},
+         SetPanelEvent: function (eventName, callback) { this.events[eventName] = callback; },
++        SetImage: function (src) { this.src = src; },
+         BLoadLayoutSnippet: function () {
+             throw new Error("Legacy outer editor snippets must not be instantiated");
+         },
+--- before/tests/specified-enemy.test.lua
++++ after/tests/specified-enemy.test.lua
+@@ -103,6 +103,8 @@
+ -- Run the actual addon broadcast method with only its engine dependencies stubbed.
+ local file=assert(io.open("game/dota_addons/dota2_rpg/scripts/vscripts/addon_game_mode.lua","r"))
+ local source=file:read("*a"); file:close()
++-- Source matching must be portable when a Windows ZIP is tested on Linux.
++source=source:gsub("\r\n", "\n")
+ local body=assert(source:match("function CDota2RpgDemo:BroadcastHeroInfo%(player%)\n.-\nend"))
+ local events={}
+ local addon={battleManager=manager,currentLevelId="ch05",

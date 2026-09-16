@@ -6,6 +6,7 @@
 		<include src="file://{resources}/styles/custom_game/skill_debug.css" />
 		<include src="file://{resources}/styles/custom_game/arena_hud.css" />
 		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
+			<include src="file://{resources}/styles/custom_game/fantasy_ui.css" />
 	</styles>
 	<scripts>
 		<include src="file://{resources}/scripts/custom_game/campaign_difficulty.js" />
@@ -167,50 +168,176 @@
                 <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
             </Panel>
             <Panel id="RunLeaderboard" class="RunLeaderboard Hidden">
-                <Label id="RunScoreTitle" class="RunScoreTitle" />
-                <Label id="RunScoreValue" class="RunScoreValue" />
-                <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
-                <Label id="RunMetrics" class="RunMetrics" />
-                <Label class="RankHeading" text="#dota2_rpg_rank_heading" />
-                <Label id="RunRankStatus" class="RunRankStatus" />
-                <Label id="RunScoreRank" class="RunRankRow" />
-                <Label id="RunSpeedrunRank" class="RunRankRow" />
-                <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
-                <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
-                <Panel class="RankTabs">
-                    <Button id="RunScoreTab" class="RankTab RankTabSelected"><Label text="#dota2_rpg_rank_score" /></Button>
-                    <Button id="RunSpeedrunTab" class="RankTab"><Label text="#dota2_rpg_rank_speedrun" /></Button>
+                <Panel class="FantasyRankHeader">
+                    <Label class="FantasyEyebrow" text="#dota2_rpg_ui_hall" />
+                    <Label class="FantasyRankTitle" text="#dota2_rpg_ui_leaderboards" />
+                    <Label id="RunRankSync" class="RankSyncBadge" />
                 </Panel>
-                <Panel class="RankTableRow RankTableHeading">
-                    <Label class="RankNumber" text="#dota2_rpg_rank_column" />
-                    <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
-                    <Label class="RankYou" />
-                    <Label id="RunRankValueHeading" class="RankValue" text="#dota2_rpg_rank_score" />
+                <Panel class="RunSummaryStrip">
+                    <Panel class="RunSummaryTile">
+                        <Label id="RunScoreTitle" class="RunScoreTitle" />
+                        <Label id="RunScoreValue" class="RunScoreValue" />
+                    </Panel>
+                    <Panel class="RunSummaryTile">
+                        <Label class="RunSummaryCaption" text="#dota2_rpg_ui_time_total" />
+                        <Label id="RunTimeValue" class="RunSummaryNumber" />
+                    </Panel>
+                    <Panel class="RunSummaryTile">
+                        <Label class="RunSummaryCaption" text="#dota2_rpg_ui_progress" />
+                        <Label id="RunProgressValue" class="RunSummaryNumber" />
+                    </Panel>
                 </Panel>
-                <Label id="RunRankTableStatus" class="RunRankHint" />
-                <Panel id="RunRankRows" class="RunRankRows" />
+                <Panel class="DualRankColumns">
+                    <Panel id="RunScoreBoard" class="DualRankBoard ScoreBoard">
+                        <Panel class="DualRankBoardHeader">
+                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/trophy.png" hittest="false" />
+                            <Panel class="RankBoardIdentity">
+                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_score" />
+                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_score_subtitle" />
+                            </Panel>
+                        </Panel>
+                        <Panel class="RankPersonalBanner">
+                            <Panel class="RankPersonalIdentity">
+                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
+                                <Label id="RunScorePositionHint" class="RankPersonalHint" />
+                            </Panel>
+                            <Label id="RunScorePosition" class="RankPersonalNumber" text="--" />
+                        </Panel>
+                        <Panel class="RankTableRow RankTableHeading">
+                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
+                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
+                            <Label class="RankYou" />
+                            <Label class="RankValue" text="#dota2_rpg_ui_points" />
+                        </Panel>
+                        <Label id="RunRankTableStatus" class="RankBoardStatus Hidden" />
+                        <Panel id="RunRankRows" class="RunRankRows" />
+                    </Panel>
+                    <Panel id="RunSpeedBoard" class="DualRankBoard SpeedBoard">
+                        <Panel class="DualRankBoardHeader">
+                            <Image class="FantasyIcon RankBoardIcon" src="file://{images}/custom_game/fantasy_ui/hourglass.png" hittest="false" />
+                            <Panel class="RankBoardIdentity">
+                                <Label class="RankBoardTitle" text="#dota2_rpg_rank_speedrun" />
+                                <Label class="RankBoardSubtitle" text="#dota2_rpg_ui_speedrun_subtitle" />
+                            </Panel>
+                        </Panel>
+                        <Panel class="RankPersonalBanner">
+                            <Panel class="RankPersonalIdentity">
+                                <Label class="RankPersonalCaption" text="#dota2_rpg_ui_my_rank" />
+                                <Label id="RunSpeedPositionHint" class="RankPersonalHint" />
+                            </Panel>
+                            <Label id="RunSpeedPosition" class="RankPersonalNumber" text="--" />
+                        </Panel>
+                        <Panel class="RankTableRow RankTableHeading">
+                            <Label class="RankNumber" text="#dota2_rpg_rank_column" />
+                            <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
+                            <Label class="RankYou" />
+                            <Label class="RankValue" text="#dota2_rpg_ui_time_short" />
+                        </Panel>
+                        <Label id="RunSpeedRankTableStatus" class="RankBoardStatus Hidden" />
+                        <Panel id="RunSpeedRankRows" class="RunRankRows" />
+                    </Panel>
+                </Panel>
                 <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
-                <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
+                <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
+                <Panel class="RankUtilityRow">
+                    <Label class="RankSnapshotCaption" text="#dota2_rpg_ui_snapshot_short" />
+                    <Button id="RunLootToggle" class="FantasyQuietButton"><Label text="#dota2_rpg_ui_rewards" /></Button>
+                    <Button id="RunRankDetailsToggle" class="FantasyQuietButton"><Label id="RunRankDetailsToggleLabel" text="#dota2_rpg_ui_details_show" /></Button>
+                </Panel>
+                <Panel id="RunRankDetails" class="RankDetails Hidden">
+                    <Label id="RunRankStatus" class="RunRankStatus" />
+                    <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
+                    <Label id="RunMetrics" class="RunMetrics" />
+                    <Label id="RunScoreRank" class="RunRankRow" />
+                    <Label id="RunSpeedrunRank" class="RunRankRow" />
+                    <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
+                    <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
+                </Panel>
             </Panel>
             <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
             <Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
 		</Panel>
 		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
-		<Panel id="RuleSettings" class="RuleSettings Hidden">
-			<Panel class="RuleSettingsCard">
-				<Panel class="RuleSettingsHeader">
-					<Label class="V2Title" text="#dota2_rpg_v2_settings" />
-					<Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
-				</Panel>
-				<Label class="V2Hint" text="#dota2_rpg_v2_intro" />
-				<Panel id="RuleSettingsBody" class="RuleSettingsBody" />
-				<Label id="RuleSettingsError" class="V2Error" />
-				<Panel class="V2Footer">
-					<Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
-					<Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
-				</Panel>
-			</Panel>
-		</Panel>
+        <Panel id="RuleSettings" class="RuleSettings Hidden" hittest="true">
+            <Panel class="RuleSettingsCard FantasyFrame">
+                <Panel class="RuleSettingsHeader">
+                    <Image class="FantasyHeaderIcon" src="file://{images}/custom_game/fantasy_ui/scroll.png" hittest="false" />
+                    <Panel class="FantasyHeaderCopy">
+                        <Label class="FantasyEyebrow" text="#dota2_rpg_ui_workbench" />
+                        <Label class="V2Title" text="#dota2_rpg_v2_settings" />
+                    </Panel>
+                    <Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
+                </Panel>
+                <Panel class="RuleSettingsWorkspace">
+                    <Panel id="RuleSettingsNavigation" class="FantasyNavigation">
+                            <Button id="RuleSettingsNav_use" class="FantasyNavButton">
+                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/trigger.png" hittest="false" />
+                                <Panel class="FantasyNavCopy" hittest="false">
+                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_use" />
+                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_use_hint" />
+                                </Panel>
+                                <Label id="RuleSettingsCount_use" class="FantasyNavCount" hittest="false" />
+                            </Button>
+                            <Button id="RuleSettingsNav_target" class="FantasyNavButton">
+                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/target.png" hittest="false" />
+                                <Panel class="FantasyNavCopy" hittest="false">
+                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_target" />
+                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_target_hint" />
+                                </Panel>
+                                <Label id="RuleSettingsCount_target" class="FantasyNavCount" hittest="false" />
+                            </Button>
+                            <Button id="RuleSettingsNav_priority" class="FantasyNavButton">
+                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/priority.png" hittest="false" />
+                                <Panel class="FantasyNavCopy" hittest="false">
+                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_priority" />
+                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_priority_hint" />
+                                </Panel>
+                                <Label id="RuleSettingsCount_priority" class="FantasyNavCount" hittest="false" />
+                            </Button>
+                            <Button id="RuleSettingsNav_action" class="FantasyNavButton">
+                                <Image class="FantasyNavIcon" src="file://{images}/custom_game/fantasy_ui/action.png" hittest="false" />
+                                <Panel class="FantasyNavCopy" hittest="false">
+                                    <Label class="FantasyNavTitle" text="#dota2_rpg_ui_nav_action" />
+                                    <Label class="FantasyNavHint" text="#dota2_rpg_ui_nav_action_hint" />
+                                </Panel>
+                                <Label id="RuleSettingsCount_action" class="FantasyNavCount" hittest="false" />
+                            </Button>
+                        <Panel class="FantasyNavNote">
+                            <Image class="FantasyNoteIcon" src="file://{images}/custom_game/fantasy_ui/rune.png" hittest="false" />
+                            <Label text="#dota2_rpg_ui_nav_note" />
+                        </Panel>
+                    </Panel>
+                    <Panel class="FantasyEditorMain">
+                        <Panel class="FantasySectionHeader">
+                            <Label id="RuleSettingsSectionTitle" />
+                            <Label id="RuleSettingsSectionHint" />
+                        </Panel>
+                        <Panel id="RuleSettingsBody" class="RuleSettingsBody" />
+                    </Panel>
+                    <Panel id="RuleSettingsPreviewPanel" class="FantasyPreviewPanel">
+                        <Image class="FantasyPreviewSeal" src="file://{images}/custom_game/fantasy_ui/rune.png" hittest="false" />
+                        <Label class="FantasyPreviewEyebrow" text="#dota2_rpg_ui_editing" />
+                        <Label id="RuleSettingsContext" class="FantasyContext" />
+                        <Panel class="FantasyDivider" />
+                        <Label class="FantasyPreviewTitle" text="#dota2_rpg_ui_preview" />
+                        <Label id="RuleSettingsPreviewMode" class="FantasyPreviewMode" />
+                        <Label id="RuleSettingsPreview" class="FantasyPreviewText" html="false" />
+                        <Button id="RuleSettingsPreviewRefresh" class="FantasyQuietButton"><Label text="#dota2_rpg_ui_preview_refresh" /></Button>
+                        <Panel class="FantasyPreviewTip">
+                            <Label class="FantasyPreviewTitle" text="#dota2_rpg_ui_tip" />
+                            <Label id="RuleSettingsPreviewHint" class="FantasyPreviewText" />
+                        </Panel>
+                    </Panel>
+                </Panel>
+                <Label id="RuleSettingsError" class="V2Error" />
+                <Panel class="V2Footer">
+                    <Label class="FantasySaveHint" text="#dota2_rpg_ui_save_hint" />
+                    <Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
+                    <Button id="V2RefreshCapability" class="V2Button RpgConditionRefresh"><Label text="#dota2_rpg_v2_refresh_capability" /></Button>
+                    <Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
+                </Panel>
+            </Panel>
+        </Panel>
 		<Panel id="ConditionHelp" class="Hidden" hittest="true" hittestchildren="true">
 			<Button id="ConditionHelpBackdrop" />
 			<Panel id="ConditionHelpCard" hittest="true">

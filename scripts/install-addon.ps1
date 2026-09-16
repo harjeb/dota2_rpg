@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$DotaPath = "C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta",
     [switch]$Compile
 )
@@ -63,6 +63,13 @@ if ($Compile) {
         (Join-Path $targetContent "panorama\scripts\custom_game\skill_condition_presets.js")
     )
 
+    # UI98 uses local textures and hand-inked icons. Compile their explicit
+    # descriptors before the HUD so a source-only install cannot show missing art.
+    $uiArt = Join-Path $targetContent "panorama\images\custom_game\fantasy_ui"
+    $resources = @((Get-ChildItem -LiteralPath $uiArt -Filter "*_png.vtex" | Sort-Object Name | ForEach-Object { $_.FullName })) + @(
+        (Join-Path $targetContent "panorama\styles\custom_game\fantasy_ui.css")
+    ) + $resources
+
     foreach ($resource in $resources) {
         Write-Host "Compiling $resource"
         $compilerOutput = (& $compiler -game $gameInfoDirectory -f -i $resource 2>&1 | Out-String)
@@ -90,6 +97,14 @@ if ($Compile) {
     }
 }
 
+# Verify both locale files, not only the visible language of this machine.
+foreach ($locale in @("addon_english.txt", "addon_schinese.txt")) {
+    $from = Join-Path $sourceGame ("resource\" + $locale)
+    $to = Join-Path $targetGame ("resource\" + $locale)
+    if ((Get-FileHash -LiteralPath $from).Hash -ne (Get-FileHash -LiteralPath $to).Hash) {
+        throw "Installed locale differs from this package: $locale"
+    }
+}
 Write-Host "Installed content addon: $targetContent"
 Write-Host "Installed game addon:    $targetGame"
 Write-Host "In VConsole run: dota_launch_custom_game dota2_rpg dota2_rpg_demo"
