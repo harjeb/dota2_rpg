@@ -1,0 +1,128 @@
+#CardForgeRoot { width:100%; height:100%; }
+#CardForgeRoot .CfHidden { visibility:collapse; }
+#CardForgeRoot Label { font-family:defaultFont; color:#e4dcc6; font-size:16px; }
+#CardForgeEntry { horizontal-align:right; vertical-align:top; margin:74px 20px 0px 0px; width:180px; height:38px; }
+#CardForgeOverlay { width:100%; height:100%; z-index:2500; }
+.CfBackdrop { width:100%; height:100%; background-color:#050c0ef5; }
+#CfWindow { width:96%; height:96%; horizontal-align:center; vertical-align:center; background-image:url("file://{images}/custom_game/card_forge/stone_png.vtex"); background-size:100% 100%; background-color:#101a1bf5; padding:18px 22px; flow-children:down; }
+#CfTopbar { width:100%; height:78px; flow-children:right; }
+.CfBrand { width:300px; flow-children:down; }
+#CardForgeRoot .CfEyebrow { color:#bca675; font-size:12px; letter-spacing:3px; margin-bottom:8px; }
+#CardForgeRoot .CfHeading { font-family:titleFont; font-size:32px; color:#efdfb8; letter-spacing:5px; }
+#CfPhase { width:fill-parent-flow(1); vertical-align:center; text-align:center; color:#a3bdab; }
+#CfWallet { vertical-align:center; color:#e0c185; margin-right:24px; font-size:22px; }
+.CfIconButton { width:36px; height:36px; margin-left:8px; vertical-align:center; background-color:#27332a; border-radius:50%; }
+.CfIconButton Label { horizontal-align:center; vertical-align:center; font-size:22px; }
+#CfWorkspace { width:100%; height:fill-parent-flow(1); flow-children:right; margin:8px 0px 16px 0px; }
+#CfSidebar { width:156px; height:100%; flow-children:down; margin-right:16px; padding-top:20px; }
+.CfNav { width:100%; height:57px; margin-bottom:8px; padding:15px; }
+.CfNav Label { color:#a9b3a5; letter-spacing:2px; }
+.CfNav.CfActive { background-color:gradient(linear,0% 0%,100% 0%,from(#94764055),to(#94764000)); }
+.CfNav.CfActive Label { color:#e5c78c; }
+#CardForgeRoot .CfOrnament { color:#a18a56; font-size:23px; horizontal-align:center; margin:15px 0px 24px 0px; }
+#CfLedger { width:100%; flow-children:down; }
+.CfLedgerRow { width:100%; flow-children:right; padding:10px; }
+.CfLedgerRow Label { width:fill-parent-flow(1); color:#b1baaa; }
+#CardForgeRoot .CfLedgerCount { width:24px; color:#d8c58b; text-align:right; }
+#CardForgeRoot .CfSidebarNote { font-size:13px; color:#809584; white-space:normal; margin-top:26px; line-height:22px; }
+.CfStone { background-color:gradient(linear,0% 0%,100% 100%,from(#233031f5),color-stop(.35,#121e1efc),to(#101919fc)); box-shadow:fill #00000088 0px 5px 18px 0px; border-radius:5px; }
+#CfInventory { width:fill-parent-flow(1); height:100%; padding:24px 20px 10px 20px; flow-children:down; margin-right:18px; }
+.CfHeadingRow { width:100%; height:70px; flow-children:right; }
+.CfTitleGroup { width:fill-parent-flow(1); flow-children:down; }
+.CfCapacityGroup { flow-children:down; vertical-align:center; }
+#CfCapacity { font-size:25px; color:#dfc98a; horizontal-align:right; }
+#CardForgeRoot .CfSmall { color:#92a18d; font-size:12px; }
+#CfFactions { width:100%; height:44px; flow-children:right; margin-bottom:10px; }
+.CfFactionTab { width:fill-parent-flow(1); height:38px; margin-right:4px; }
+.CfFactionTab Label { horizontal-align:center; vertical-align:center; font-size:15px; color:#a1af9f; }
+.CfFactionTab.CfActive { background-color:gradient(linear,0% 0%,0% 100%,from(#58695033),to(#8f97624c)); }
+.CfFactionTab.CfActive Label { color:#ead59d; }
+#CfTools { width:100%; height:38px; flow-children:right; margin-bottom:13px; }
+#CfSearch { width:fill-parent-flow(1); height:36px; font-size:16px; color:#e4dcc6; background-color:#0b1416; border:0px; padding:6px 10px; margin-right:10px; }
+#CfType { width:112px; height:36px; margin-right:8px; }
+#CfSort { width:88px; height:36px; }
+#CfGrid { width:100%; height:fill-parent-flow(1); flow-children:right-wrap; overflow:squish scroll; padding:8px 4px 12px 4px; }
+#CfDropHint { height:34px; vertical-align:bottom; margin-top:6px; }
+#CfInventory.CfDropHover { box-shadow:inset #8dbb8566 0px 0px 28px 0px; }
+.CfCard { width:154px; height:218px; margin:0px 13px 19px 0px; background-size:100% 100%; border-radius:7px; box-shadow:fill #000000bb 0px 6px 10px 0px; transition-property:brightness,transform,box-shadow; transition-duration:0.15s; }
+.CfCard:hover { brightness:1.16; transform:translateY(-4px); }
+.CfCard.CfSelected { box-shadow:fill #d9c27c66 0px 0px 14px 1px; transform:translateY(-4px); }
+.CfArtWell { width:80%; height:70%; horizontal-align:center; margin-top:22px; border-radius:44px 44px 20px 20px; overflow:clip; background-color:#14222c; }
+.CfCardArt { width:100%; height:100%; }
+.CfCardShade { width:100%; height:100%; background-color:gradient(linear,0% 0%,0% 100%,from(#06131800),color-stop(.40,#06131800),to(#0b171bff)); }
+.CfCardCopy { width:88%; height:76px; horizontal-align:center; vertical-align:bottom; margin-bottom:19px; padding-top:10px; flow-children:down; background-color:gradient(linear,0% 0%,0% 100%,from(#101a1d00),color-stop(.2,#101a1df0),to(#101a1df5)); }
+#CardForgeRoot .CfCardName { width:100%; text-align:center; font-family:titleFont; font-size:17px; color:#f0dca9; text-shadow:0px 2px 3px 2 #000; text-overflow:shrink; }
+#CardForgeRoot .CfCardType { width:100%; text-align:center; font-size:11px; color:#bbc4af; margin-top:5px; }
+#CardForgeRoot .CfCardLevel { width:100%; text-align:center; font-size:13px; color:#e2c982; letter-spacing:3px; margin-top:4px; }
+#CardForgeRoot .CfCardCost { width:30px; height:30px; margin:12px 0px 0px 10px; background-color:gradient(radial,50% 40%,0% 0%,65% 65%,from(#31484e),to(#101a1d)); border-radius:50%; box-shadow:fill #cdb57966 0px 0px 2px 1px; text-align:center; padding-top:3px; color:#f0dea4; font-size:21px; }
+#CfInspector { width:280px; height:100%; padding:22px; flow-children:down; overflow:squish scroll; }
+.CfShowcase { horizontal-align:center; margin:12px 0px 15px 0px; }
+#CardForgeRoot .CfDetailTitle { width:100%; font-family:titleFont; font-size:23px; text-align:center; color:#e7d09a; margin-bottom:9px; }
+#CardForgeRoot .CfDetailRule { width:100%; height:1px; margin:13px 0px; background-color:gradient(linear,0% 0%,100% 0%,from(#b59c5900),color-stop(.5,#b59c5977),to(#b59c5900)); }
+#CardForgeRoot .CfDetailText { width:100%; font-size:14px; color:#adbba7; white-space:normal; line-height:23px; }
+.CfLevelRow { width:100%; flow-children:right; margin-top:14px; }
+.CfLevel { width:fill-parent-flow(1); height:49px; margin-right:6px; background-color:gradient(linear,0% 0%,0% 100%,from(#3d4939),to(#243026)); padding-top:5px; flow-children:down; }
+.CfLevel Label { horizontal-align:center; font-size:15px; color:#b5c1a7; }
+#CardForgeRoot .CfLevel .CfSmall { font-size:11px; margin-top:3px; }
+.CfLevel.CfActive { background-color:gradient(linear,0% 0%,0% 100%,from(#7a7048),to(#433e2b)); }
+.CfLevel.CfActive Label { color:#f1dba1; }
+.CfDetailActions { width:100%; flow-children:right; margin-top:15px; margin-bottom:12px; }
+.CfDetailActions .CfMetal { width:fill-parent-flow(1); margin-right:5px; }
+.CfMetal { height:38px; padding:0px 9px; background-color:gradient(linear,0% 0%,0% 100%,from(#505742),to(#27352a)); box-shadow:inset #d3d4a233 0px 1px 1px 0px; border-radius:2px; }
+.CfMetal Label { horizontal-align:center; vertical-align:center; font-size:14px; color:#dedab9; text-overflow:shrink; }
+.CfMetal:hover,.CfPrimary:hover,.CfNav:hover,.CfLevel:hover,.CfIconButton:hover { brightness:1.3; }
+.CfMetal:disabled,.CfPrimary:disabled,.CfLevel:disabled { opacity:0.35; }
+#CfLineup { width:100%; height:204px; padding:16px 20px; flow-children:down; }
+.CfLineupHeading { width:100%; height:34px; flow-children:right; }
+#CardForgeRoot .CfSectionTitle { font-family:titleFont; font-size:24px; color:#e5d6b0; margin-right:20px; }
+#CardForgeRoot .CfHint { font-size:13px; color:#8eaa92; white-space:normal; vertical-align:center; }
+.CfLineupHeading .CfHint { width:fill-parent-flow(1); }
+#CfCost { font-size:21px; color:#e1ca8f; margin-right:15px; }
+#CfCost.CfOver { color:#ed9f83; }
+#CfBudgetBar { width:130px; height:6px; vertical-align:center; background-color:#08100a; border:0px; }
+#CfBudgetBar .ProgressBarLeft { background-color:gradient(linear,0% 0%,100% 0%,from(#789b74),to(#d2c387)); }
+#CfBudgetBar.CfOver .ProgressBarLeft { background-color:#d68465; }
+#CfRoster { width:100%; height:124px; flow-children:right; margin-top:11px; }
+.CfHeroUnit { width:fill-parent-flow(1); height:124px; margin-right:12px; }
+.CfHeroPortrait { width:100%; height:62px; background-color:#162822; border-radius:3px; overflow:clip; }
+.CfHeroArt { width:100%; height:100%; }
+#CardForgeRoot .CfHeroName { vertical-align:bottom; margin:0px 0px 5px 7px; font-size:14px; text-shadow:0px 2px 3px 2 #000; }
+#CardForgeRoot .CfHeroLevel { horizontal-align:right; vertical-align:bottom; margin:0px 6px 6px 0px; font-size:12px; color:#d6c28a; }
+.CfSlots { width:100%; height:55px; margin-top:7px; flow-children:right; }
+.CfSlot { width:fill-parent-flow(1); height:55px; margin-right:5px; background-color:gradient(radial,50% 50%,0% 0%,65% 65%,from(#253a2a),to(#081510)); border-radius:7px 2px 7px 2px; box-shadow:inset #000000bb 0px 2px 8px 0px; }
+.CfSlotArt { width:100%; height:100%; opacity:.36; }
+.CfSlotCopy { width:100%; height:100%; flow-children:down; padding:9px 2px 0px 2px; }
+#CardForgeRoot .CfSlotCopy Label { width:100%; text-align:center; font-size:12px; color:#a4b49c; text-overflow:shrink; }
+#CardForgeRoot .CfSlotCopy .CfSmall { font-size:10px; margin-top:6px; color:#d4c183; }
+.CfSlot.CfEligible { box-shadow:inset #abc18d55 0px 0px 12px 0px; background-color:#354d32; }
+.CfSlot.CfIneligible { opacity:.35; }
+.CfSlot.CfDropHover { box-shadow:inset #d6edaa 0px 0px 14px 0px; brightness:1.4; }
+.CfSlot.CfDropInvalid { box-shadow:inset #ce7059 0px 0px 14px 0px; }
+#CfCommands { width:100%; height:60px; flow-children:right; padding-top:13px; }
+#CfControlsHint { width:fill-parent-flow(1); }
+#CfUndo { width:150px; margin-right:16px; }
+.CfPrimary { height:44px; width:230px; background-color:gradient(linear,0% 0%,100% 100%,from(#ad7540),color-stop(.5,#996337),to(#60331f)); border-radius:5px 0px 5px 0px; box-shadow:inset #efc98266 0px 1px 1px 0px; }
+.CfPrimary Label { font-family:titleFont; font-size:21px; color:#f1dbab; horizontal-align:center; vertical-align:center; }
+.CfNotice { ignore-parent-flow:true; vertical-align:bottom; horizontal-align:center; margin-bottom:260px; padding:14px 25px; background-color:#283d2bf5; box-shadow:fill #000000aa 0px 5px 18px 0px; border-radius:4px; max-width:85%; }
+.CfNotice.CfError { background-color:#573428f5; color:#f5c9a4; }
+#CfModal { ignore-parent-flow:true; width:100%; height:100%; }
+#CfModalBox { width:1120px; max-width:94%; height:760px; max-height:94%; horizontal-align:center; vertical-align:center; padding:35px; }
+#CfModalClose { horizontal-align:right; vertical-align:top; z-index:5; }
+#CfModalContent { width:100%; height:100%; flow-children:down; }
+#CfModalContent .CfHeading { width:100%; text-align:center; margin-bottom:16px; }
+#CfModalContent .CfHint { width:100%; text-align:center; margin-bottom:22px; }
+.CfOfferRow { width:100%; flow-children:right; horizontal-align:center; margin-top:35px; }
+.CfOffer { width:fill-parent-flow(1); flow-children:down; margin:0px 10px; }
+.CfOffer .CfCard { margin-right:0px; horizontal-align:center; }
+.CfOffer .CfMetal { width:100%; margin-top:16px; }
+.CfBackType { width:88%; horizontal-align:center; vertical-align:bottom; margin-bottom:20px; background-color:#101b19ee; padding:6px 3px; text-align:center; font-size:12px; color:#e7d09b; }
+.CfForgeRows { width:100%; height:fill-parent-flow(1); flow-children:right; }
+.CfForgeColumn { width:fill-parent-flow(1); height:100%; flow-children:down; margin-right:20px; }
+.CfForgeScroll { width:100%; height:fill-parent-flow(1); flow-children:down; overflow:squish scroll; }
+.CfForgeRow { width:100%; flow-children:right; background-color:#23392888; padding:10px; margin-top:8px; }
+.CfForgeRow .CfDetailText { width:fill-parent-flow(1); }
+.CfForgeRow .CfMetal { width:85px; vertical-align:center; }
+.CfModalActions { flow-children:right; horizontal-align:center; margin-top:30px; }
+.CfModalActions Button { margin-right:16px; }
+.CfHelpText { width:100%; font-size:18px; color:#bbc8b1; line-height:32px; white-space:normal; margin-bottom:28px; }
+.CfDragGhost { width:154px; height:218px; opacity:.93; }

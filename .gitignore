@@ -49,6 +49,8 @@ dota2_rpg_revised_package/
 
 # Transient launch/debug artifacts
 .launch_out.txt
+/.playwright-mcp/
+/exports/card-ui-install-check/
 tests/results/proc-state.txt
 tests/results/relaunch-attempt*.txt
 tests/results/restart-step*.txt

@@ -1,0 +1,11 @@
+"AddonInfo"
+{
+    "maps" "dota"
+    "IsPlayable" "1"
+    "MinimalPrecache" "0"
+    "HeroGuidesSupported" "0"
+    "dota"
+    {
+        "MaxPlayers" "1"
+    }
+}

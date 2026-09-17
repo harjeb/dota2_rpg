@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>遗物秘库 · 无尽之境</title>
+  <link rel="stylesheet" href="forge.css">
+  <script defer src="../../../content/dota_addons/dota2_rpg_endless/panorama/scripts/custom_game/card_forge_model.js"></script>
+  <script defer src="forge.js"></script>
+</head>
+<body>
+  <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <filter id="stone"><feTurbulence type="fractalNoise" baseFrequency=".65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".16"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
+    <symbol id="crest" viewBox="0 0 80 100"><path d="M40 3 51 23 69 14 61 39 76 49 60 63 58 83 40 97 22 83 20 63 4 49 19 39 11 14 29 23Z" fill="#302b24" stroke="#a18a60" stroke-width="2"/><path d="M40 16 48 40 61 48 47 58 40 84 33 58 19 48 32 40Z" fill="#ba7d3b"/><path d="M40 29 46 48 40 69 34 48Z" fill="#f6d38b"/></symbol>
+  </defs></svg>
+  <main class="forge-shell">
+    <header class="topbar">
+      <div class="brand"><svg><use href="#crest"/></svg><div><span class="eyebrow">THE ENDLESS REALM</span><h1>无尽之境</h1></div></div>
+      <div class="chapter"><span class="phase-dot"></span><span>战前准备</span><i></i><span>第 <b>12</b> 波</span><small>下一战 · 遗迹守卫</small></div>
+      <div class="resources"><span title="剩余生命">♥ <b>5</b><small> / 5</small></span><span class="gold">◈ <b id="gold">1,200</b></span><button id="help" class="round-button" aria-label="操作帮助">?</button></div>
+    </header>
+    <section class="workspace">
+      <nav class="sidebar" aria-label="秘库导航">
+        <div class="side-heading">远古契约</div>
+        <button class="nav-item active" id="library-nav"><span>▧</span>遗物秘库<small>CARDS</small></button>
+        <button class="nav-item" id="offer-nav"><span>✧</span>命运召唤<small id="offer-count">剩余购买 3 / 3</small></button>
+        <button class="nav-item" id="forge-nav"><span>♜</span>阵营熔炉<small>熔炼 · 兑换</small></button>
+        <div class="side-ornament">✦</div>
+        <p class="side-heading">阵营印记</p><div id="faction-ledger"></div>
+        <div class="sidebar-note"><span>❖</span><p>英雄承载遗物<br>力量属于全队</p></div>
+      </nav>
+      <section class="inventory stone-panel" id="inventory" aria-labelledby="library-title">
+        <div class="section-heading"><div><span class="eyebrow">THE RELIQUARY</span><h2 id="library-title">遗物秘库</h2></div><div class="capacity"><b id="capacity">16</b><span> / 24</span><small>未装备 · 装备中不占容量</small></div></div>
+        <div class="faction-tabs" id="faction-tabs" role="group" aria-label="阵营筛选"></div>
+        <div class="inventory-tools"><label class="search"><span>⌕</span><input id="search" placeholder="搜索卡牌 / 英雄" aria-label="搜索卡牌或英雄"><kbd>/</kbd></label><select id="type-filter" aria-label="卡牌类型"><option value="all">全部类型</option><option value="hero">英雄专属</option><option value="buff">增益卡</option><option value="charge">消耗卡</option><option value="field">场地卡</option></select><button id="sort" class="quiet-button">等级 ↓</button></div>
+        <div class="card-scroll" id="card-scroll"><div id="card-grid" class="card-grid"></div><div id="empty" class="empty-state" hidden><span>✧</span><h3>此处暂无遗物</h3><p>试试其他阵营，或清除筛选条件。</p><button id="clear-filter" class="metal-button">清除筛选</button></div></div>
+        <div class="inventory-footer"><span class="drag-rune">✥</span><span id="inventory-hint">拖拽卡牌至英雄槽位 · 拖回此处卸下</span><span id="visible-count"></span></div>
+      </section>
+      <aside class="inspector stone-panel" id="inspector" aria-label="卡牌详情"></aside>
+    </section>
+    <section class="lineup stone-panel" aria-labelledby="lineup-title">
+      <div class="lineup-heading"><div><h2 id="lineup-title">出征阵容</h2><span>8 位英雄 · 每人 1 专属槽 + 1 通用槽</span></div><div class="budget"><span>全队 COST</span><strong id="cost">0 <small>/ 64</small></strong><div class="budget-track"><i id="budget-fill"></i></div><span id="cost-hint">由上阵英雄等级之和提供</span></div></div>
+      <div id="hero-roster" class="hero-roster"></div>
+    </section>
+    <footer class="commandbar"><div class="footer-hint"><kbd>Esc</kbd> 取消选择 <i>·</i> 点击卡牌，再点击槽位，也能装备<span>UI 98 · 交互原型 · 效果未定稿</span></div><div class="command-actions"><button id="undo" class="quiet-button" disabled>↶ 撤销上一步</button><button id="confirm" class="primary-button">确认构筑 <span>⟶</span></button></div></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="modal"><div class="modal-shell stone-panel"><button id="modal-close" class="close-button" aria-label="关闭">×</button><div id="modal-content"></div></div></dialog>
+</body>
+</html>

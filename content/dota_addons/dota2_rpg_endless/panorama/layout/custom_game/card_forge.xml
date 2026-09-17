@@ -1,0 +1,48 @@
+<root>
+    <styles><include src="file://{resources}/styles/custom_game/card_forge.css" /></styles>
+    <scripts>
+        <include src="file://{resources}/scripts/custom_game/card_forge_model.js" />
+        <include src="file://{resources}/scripts/custom_game/card_forge.js" />
+    </scripts>
+    <Panel id="CardForgeRoot" hittest="false">
+        <Button id="CardForgeEntry" class="CfMetal CfHidden"><Label text="#cf_entry" /></Button>
+        <Panel id="CardForgeOverlay" class="CfHidden" hittest="true">
+            <Panel class="CfBackdrop" hittest="true" />
+            <Panel id="CfWindow" hittest="true" acceptsfocus="true">
+                <Panel id="CfTopbar">
+                    <Panel class="CfBrand"><Label class="CfEyebrow" text="THE ENDLESS REALM" /><Label class="CfHeading" text="#cf_realm" /></Panel>
+                    <Label id="CfPhase" text="#cf_preview" />
+                    <Label id="CfWallet" /><Button id="CfHelp" class="CfIconButton"><Label text="?" /></Button>
+                    <Button id="CfClose" class="CfIconButton"><Label text="×" /></Button>
+                </Panel>
+                <Panel id="CfWorkspace">
+                    <Panel id="CfSidebar">
+                        <Label class="CfEyebrow" text="#cf_contracts" />
+                        <Button id="CfLibraryTab" class="CfNav CfActive"><Label text="#cf_library" /></Button>
+                        <Button id="CfOffersTab" class="CfNav"><Label text="#cf_offers" /></Button>
+                        <Button id="CfForgeTab" class="CfNav"><Label text="#cf_forge" /></Button>
+                        <Label class="CfOrnament" text="◆" /><Label class="CfEyebrow" text="#cf_marks" />
+                        <Panel id="CfLedger" />
+                        <Label class="CfSidebarNote" text="#cf_shared" />
+                    </Panel>
+                    <Panel id="CfInventory" class="CfStone">
+                        <Panel class="CfHeadingRow"><Panel class="CfTitleGroup"><Label class="CfEyebrow" text="THE RELIQUARY" /><Label class="CfHeading" text="#cf_library" /></Panel><Panel class="CfCapacityGroup"><Label id="CfCapacity" /><Label class="CfSmall" text="#cf_capacity_hint" /></Panel></Panel>
+                        <Panel id="CfFactions" />
+                        <Panel id="CfTools"><TextEntry id="CfSearch" placeholder="#cf_search" /><Button id="CfType" class="CfMetal" /><Button id="CfSort" class="CfMetal" /></Panel>
+                        <Panel id="CfGrid" hittest="true" />
+                        <Label id="CfEmpty" class="CfHint CfHidden" text="#cf_empty" />
+                        <Label id="CfDropHint" class="CfHint" text="#cf_drag_hint" />
+                    </Panel>
+                    <Panel id="CfInspector" class="CfStone" />
+                </Panel>
+                <Panel id="CfLineup" class="CfStone">
+                    <Panel class="CfLineupHeading"><Label class="CfSectionTitle" text="#cf_lineup" /><Label class="CfHint" text="#cf_lineup_hint" /><Label id="CfCost" /><ProgressBar id="CfBudgetBar" min="0" max="64" value="19" /></Panel>
+                    <Panel id="CfRoster" />
+                </Panel>
+                <Panel id="CfCommands"><Label id="CfControlsHint" class="CfHint" text="#cf_controls" /><Button id="CfUndo" class="CfMetal"><Label text="#cf_undo" /></Button><Button id="CfConfirm" class="CfPrimary"><Label text="#cf_confirm" /></Button></Panel>
+                <Label id="CfNotice" class="CfNotice CfHidden" />
+                <Panel id="CfModal" class="CfHidden" hittest="true"><Panel class="CfBackdrop" /><Panel id="CfModalBox" class="CfStone"><Button id="CfModalClose" class="CfIconButton"><Label text="×" /></Button><Panel id="CfModalContent" /></Panel></Panel>
+            </Panel>
+        </Panel>
+    </Panel>
+</root>
