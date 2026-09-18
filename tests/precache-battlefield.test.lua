@@ -44,7 +44,7 @@ require = function(moduleName)
 	if moduleName == "battle.damage_stats" then
 		return dofile(repoRoot .. "/game/dota_addons/dota2_rpg/scripts/vscripts/battle/damage_stats.lua")
 	end
-	if moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
+	if moduleName == "battle.enemy_progression" or moduleName == "battle.enemy_scaling" or moduleName == "battle.boss_scaling" or moduleName == "battle.run_lives"
         or moduleName == "battle/summon_behavior" or moduleName == "issue_fixes/tiny_tree"
         or moduleName == "issue_fixes/shard_purchase" or moduleName == "issue_fixes/gris_gris" or moduleName == "issue_fixes/jinada_income"
         or moduleName == "issue_fixes/item_sales" or moduleName == "issue_fixes/eldwurms_edda"

@@ -105,8 +105,53 @@ function Summons.ClearUndyingSummons(game)
     end
     game.undyingSummons={}
 end
+-- Shipped npc_units.txt uses npc_dota_zeus_cloud for both name and class,
+-- mapped to zuus_cloud, with NO_ATTACK and MOVE_NONE. Keep native lightning
+-- behavior; ownership authorizes lifecycle removal only.
+local function is_nimbus(unit)
+    return valid(unit) and call(unit,"GetUnitName")=="npc_dota_zeus_cloud"
+        and call(unit,"IsRealHero")~=true
+end
+function Summons.TrackNimbus(game,unit)
+    if not is_nimbus(unit) then return false end
+    game.nimbusSummons=game.nimbusSummons or {}
+    if not game.nimbusSummons[unit] then
+        local owner=Summons.ResolveOwner(game,unit)
+        if not owner then
+            local bench={}
+            for _,hero in pairs(game.benchUnits or {}) do
+                if valid(hero) then bench[hero]=true end
+            end
+            owner=ownership(unit,bench)
+        end
+        if owner and call(owner,"GetTeamNumber")==call(unit,"GetTeamNumber") then
+            game.nimbusSummons[unit]=true
+        end
+    end
+    -- Recognize ownerless clouds too, so enemy cleanup cannot claim them.
+    return true
+end
+function Summons.ScanNimbus(game)
+    -- Global lookup catches missed spawns and late owners beyond the AI radius.
+    for _,unit in ipairs(call(Entities,"FindAllByClassname","npc_dota_zeus_cloud") or {}) do
+        Summons.TrackNimbus(game,unit)
+    end
+    for unit in pairs(game.nimbusSummons or {}) do
+        if not valid(unit) then game.nimbusSummons[unit]=nil end
+    end
+end
+function Summons.ClearNimbus(game)
+    if game.phase=="fight" then return end
+    Summons.ScanNimbus(game)
+    local removing=game.nimbusSummons or {}
+    game.nimbusSummons={}
+    for unit in pairs(removing) do
+        if is_nimbus(unit) then call(unit,"RemoveSelf") end
+    end
+end
 local excluded={npc_dota_ember_spirit_remnant=true,npc_dota_elder_titan_ancestral_spirit=true}
 function Summons.OnSpawn(game,unit)
+    if Summons.TrackNimbus(game,unit) then return true end
     if Techies.Track(game,unit,Summons.ResolveOwner) then return true end
     if Summons.TrackUndyingSummon(game,unit) then return false end
     if not valid(unit) or require("battle/neutral_recruitment").IsReserved(unit)
@@ -150,7 +195,8 @@ end
 -- （enemyRuleIndex），否则本关野怪会在准备阶段被当成召唤物清掉。
 function Summons.TrackEnemySummon(game,unit)
     if not valid(unit) then return false end
-    -- Mines use ownership-scoped lifecycle tracking, never the broad enemy bucket.
+    -- Stationary spell units use ownership-scoped lifecycle tracking.
+    if Summons.TrackNimbus(game,unit) then return false end
     if Techies.Track(game,unit,Summons.ResolveOwner) then return false end
     if call(unit,"GetTeamNumber")~=(DOTA_TEAM_BADGUYS or 3) then return false end
     if call(unit,"IsRealHero")==true then return false end
@@ -172,6 +218,7 @@ local function issue(game,order)
     return gate~=nil and gate:Execute(order)==true
 end
 function Summons.Clear(game)
+    Summons.ClearNimbus(game)
     Techies.Clear(game,Summons.ResolveOwner)
     Summons.ClearUndyingSummons(game)
     Summons.ClearEnemySummons(game)
@@ -195,14 +242,15 @@ function Summons.OnThink(game)
     local now=GameRules:GetGameTime()
     -- Some native abilities assign ownership just after npc_spawned. Revisit
     -- owned units periodically so those summons are not permanently missed.
-    if now >= (game.nextSummonScan or 0) and type(FindUnitsInRadius)=="function" then
+    if now >= (game.nextSummonScan or 0) then
         game.nextSummonScan=now+.5
+        Summons.ScanNimbus(game)
         Techies.Scan(game,Summons.ResolveOwner)
         local origin
         for _,team in pairs(game.battleManager.teamHeroes or {}) do
             if team[1] and valid(team[1]) then origin=team[1]:GetAbsOrigin(); break end
         end
-        if origin then
+        if origin and type(FindUnitsInRadius)=="function" then
             local ok,units=pcall(FindUnitsInRadius,DOTA_TEAM_GOODGUYS or 2,origin,nil,4000,
                 DOTA_UNIT_TARGET_TEAM_BOTH or 3,DOTA_UNIT_TARGET_ALL or 55,
                 DOTA_UNIT_TARGET_FLAG_INVULNERABLE or 0,FIND_ANY_ORDER or 0,false)

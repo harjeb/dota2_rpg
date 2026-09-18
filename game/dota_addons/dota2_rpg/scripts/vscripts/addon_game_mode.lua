@@ -12,6 +12,7 @@ local DamageStats = require("battle.damage_stats")
 local AbilityCatalog = require("tactics/ability_catalog")
 local RuleSnapshot = require("tactics/rule_snapshot")
 local EnemyScaling = require("battle.enemy_scaling")
+local EnemyProgression = require("battle.enemy_progression")
 local BossScaling = require("battle.boss_scaling")
 local StagePrecache = require("battle.stage_precache")
 local HeroModelPrecache = require("battle.hero_model_precache")
@@ -3834,14 +3835,7 @@ function CDota2RpgDemo:AssembleLevelEnemies(levelId, created)
 						unit:SetStatusResistance(statusResistance)
 					end
 				end
-				-- 敌方品质/内置升级：魔晶/神杖
-				for _, upgrade in pairs(entry.quality_upgrades or {}) do
-					if upgrade == "shard" then
-						unit:AddNewModifier(unit, nil, "modifier_item_aghanims_shard", {})
-					elseif upgrade == "scepter" then
-						unit:AddNewModifier(unit, nil, "modifier_item_ultimate_scepter_consumed", {})
-					end
-				end
+				EnemyProgression.ApplyUpgrades(unit, entry)
 				if okEnemyItems and EnemyItems ~= nil and EnemyItems.EquipConfiguredItems ~= nil then
 					local equipped = EnemyItems.EquipConfiguredItems(unit, entry)
 					if equipped > 0 then
@@ -4017,7 +4011,7 @@ function CDota2RpgDemo:PrepareBattleHero(hero, targetLevel)
 				end
 			end
 		end
-		hero:SetAbilityPoints(0)
+		EnemyProgression.TrainTalents(hero)
 	else
 		local heroName = hero.lineupHeroName or hero.benchHeroName
 		local data = heroName ~= nil and self.heroData[heroName] or nil

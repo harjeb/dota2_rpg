@@ -47,6 +47,7 @@ require = function(name)
         ["issue_fixes.shop_transport"] = moduleRoot .. "issue_fixes/shop_transport.lua",
 		["tactics/ability_catalog"] = moduleRoot .. "tactics/ability_catalog.lua",
 		["tactics/rule_snapshot"] = moduleRoot .. "tactics/rule_snapshot.lua",
+		["battle.enemy_progression"] = moduleRoot .. "battle/enemy_progression.lua",
 		["battle.enemy_scaling"] = moduleRoot .. "battle/enemy_scaling.lua",
 		["battle.stage_precache"] = moduleRoot .. "battle/stage_precache.lua",
         ["battle.campaign_loot"] = moduleRoot .. "battle/campaign_loot.lua",

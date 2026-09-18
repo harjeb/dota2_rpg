@@ -24,6 +24,7 @@ require = function(name)
         ["tactics/rule_snapshot"] = true,
         ["battle.damage_stats"] = true,
         ["battle.enemy_diagnostics"] = true,
+        ["battle.enemy_progression"] = true,
         ["battle.enemy_scaling"] = true,
         ["battle.stage_precache"] = true,
         ["battle.hero_model_precache"] = true,
