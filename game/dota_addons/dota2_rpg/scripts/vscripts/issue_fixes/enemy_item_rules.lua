@@ -2,11 +2,23 @@
 -- the ordinary action adapter owns cooldown, mana, mute, range and native orders.
 local Defaults = require("issue_fixes.default_rules")
 local Behavior = require("tactics/ability_behavior")
+local Conditions = require("tactics/condition_registry")
 local Items = {}
 local function call(object, method, ...)
     if object and object[method] then return object[method](object, ...) end
     return nil
 end
+-- Enemy-only condition registered with the real evaluator. Possession means an
+-- equipped live handle, not a backpack/stash entry or a remembered loadout.
+Conditions:RegisterUseCondition("enemy_has_equipped_item", function(ctx, condition)
+    if type(condition.item_name)~="string" or condition.item_name=="" then return false end
+    for slot=0,5 do
+        local item=call(ctx.caster,"GetItemInSlot",slot)
+        if item and call(item,"IsNull")~=true
+            and call(item,"GetAbilityName")==condition.item_name then return true end
+    end
+    return false
+end)
 local function hp(value) return {type="self_hp_pct_lte",value=value} end
 local function mana(value) return {type="self_mana_pct_lte",value=value} end
 local function nearby(radius) return {type="nearby_enemies_gte",radius=radius or 700,value=1} end
@@ -132,7 +144,10 @@ function Items.CreateForUnit(unit, opponents)
         rule.id="enemy_"..name..(suffix or "")
         rule.action={kind="item",name=name,logical_id=name}
         rule.target.team=team or "self"
-        rule.use_conditions=conditions or {}
+        rule.use_conditions={{type="enemy_has_equipped_item",item_name=name}}
+        for _,condition in ipairs(conditions or {}) do
+            rule.use_conditions[#rule.use_conditions+1]=condition
+        end
         rule.target_filters=filters or {}
         buckets[priority][#buckets[priority]+1]=rule
         return rule
@@ -147,7 +162,13 @@ function Items.CreateForUnit(unit, opponents)
             and call(item,"IsActivated")~=false
             and not Behavior.HasFlag(Behavior.Read(item),DOTA_ABILITY_BEHAVIOR_PASSIVE) then
             seen[name]=true
-            if name=="item_magic_wand" or name=="item_magic_stick" then
+            if name=="item_cheese" then
+                -- Native immediate/no-target consumable. The engine owns healing
+                -- and charge consumption; never submit an empty stack.
+                if (tonumber(call(item,"GetCurrentCharges")) or 0)>0 then
+                    add(item,name,1,"self",{hp(0.30)})
+                end
+            elseif name=="item_magic_wand" or name=="item_magic_stick" then
                 if (tonumber(call(item,"GetCurrentCharges")) or 0)>0 then
                     add(item,name,1,"self",{hp(0.50)},nil,"_hp")
                     add(item,name,1,"self",{mana(0.25)},nil,"_mana")

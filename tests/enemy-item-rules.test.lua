@@ -17,6 +17,8 @@ GameRules={GetGameTime=function() return clock end}
 local Engine=require("tactics/tactic_engine")
 local Context=require("tactics/condition_context")
 local EnemyRules=require("issue_fixes.enemy_rules")
+local ItemRules=require("issue_fixes.enemy_item_rules")
+local Conditions=require("tactics/condition_registry")
 local function unit(id,x,team)
  local u={id=id,x=x,team=team,hp=100,mana=100,items={},spells={}}
  function u:entindex() return self.id end
@@ -77,11 +79,60 @@ local function attempt()
  engine:Reset();orders={}
  local rules=EnemyRules.CreateForUnit(caster,{},opponents)
  for i,r in ipairs(rules) do
+  if r.action.kind=="item" then
+   local possession=r.use_conditions[1]
+   assert(possession and possession.type=="enemy_has_equipped_item" and possession.item_name==r.action.name,
+    "every generated item rule declares its exact equipped item")
+   assert(r.use_conditions_mode~="priority","possession and contextual conditions must all pass")
+  end
+ end
+ for i,r in ipairs(rules) do
   if engine:TryRule(caster,engine:GetState(caster),engine:BuildContext(caster,10),r,i) then return orders[1],rules end
  end
  return nil,rules
 end
 local function equip(a) caster.items={[0]=a};caster.spells={};caster.hp=100;caster.mana=100;enemy.x=400;return a end
+-- Cheese is native immediate + no-target (items.txt), not a targeted heal.
+local cheese=equip(item("item_cheese",4+2048));cheese.charges=1
+caster.hp=31;assert(not attempt(),"Cheese is saved above 30% HP")
+caster.hp=30;enemy.x=1500
+assert(attempt() and orders[1].AbilityIndex==cheese.id and orders[1].OrderType==DOTA_UNIT_ORDER_CAST_NO_TARGET,
+ "Cheese uses a native no-target order at exactly 30%, without needing an enemy nearby")
+assert(cheese.charges==1 and caster.hp==30,"policy does not fabricate native consumption or healing")
+caster.hp=1;assert(attempt(),"Cheese remains available below 30%")
+caster.hp=100;caster.mana=0;assert(not attempt(),"low mana alone does not consume Cheese")
+caster.hp=30
+for _,state in ipairs({"muted","channeling","stunned"}) do
+ caster[state]=true;assert(not attempt(),state.." blocks Cheese");caster[state]=false
+end
+cheese.cooldown=true;assert(not attempt(),"Cheese respects its native cooldown");cheese.cooldown=false
+cheese.castable=false;assert(not attempt(),"Cheese respects native castability");cheese.castable=true
+local cheeseRule=ItemRules.CreateForUnit(caster,opponents)[1]
+local context={caster=caster}
+assert(Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"registered possession and HP conditions evaluate")
+caster.hp=31;assert(not Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"possession does not bypass HP")
+caster.hp=30
+for slot=6,16 do
+ caster.items={[slot]=cheese}
+ assert(not Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"retained rule rejects unequipped slot "..slot)
+ assert(not attempt(),"Cheese cannot cast from slot "..slot)
+end
+caster.items={[0]=item("item_magic_wand")}
+assert(not Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"different equipped item cannot satisfy possession")
+caster.items={[0]=cheese};cheese.IsNull=function() return true end
+assert(not Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"removed native handle cannot satisfy possession")
+assert(not attempt(),"removed Cheese cannot generate a cast");cheese.IsNull=nil
+for _,field in ipairs({"passive","hidden"}) do
+ cheese[field]=true;assert(not attempt(),field.." Cheese cannot cast");cheese[field]=false
+end
+cheese.behavior=2;assert(not attempt(),"passive behavior flag blocks Cheese");cheese.behavior=4+2048
+cheese.activated=false;assert(not attempt(),"disabled Cheese cannot cast");cheese.activated=true
+cheese.charges=0;assert(not attempt(),"consumed empty Cheese cannot cast")
+caster.items={};assert(not attempt(),"consumed removed Cheese cannot cast")
+assert(not Conditions:EvaluateUseConditions(cheeseRule.use_conditions,context),"retained conditions reject consumed item")
+cheese.charges=1;caster.items={[0]=item("item_sheepstick",8,800),[5]=cheese};enemy.x=400
+caster.spells={item("cheese_followup",8,800)}
+assert(attempt() and orders[1].AbilityIndex==cheese.id,"critical Cheese in slot five precedes control and spells")
 local wand=equip(item("item_magic_wand"));caster.hp=50
 assert(attempt() and orders[1].AbilityIndex==wand.id,"equipped charged wand must actually issue native item order at half HP")
 caster.hp=51;assert(not attempt(),"wand above both thresholds must not cast")
@@ -243,4 +294,4 @@ engine:Reset();orders={};clock=30;edge.cooldown=false
 state=engine:GetState(caster);engine:EvaluateUnit(caster,state,clock);edge.cooldown=true
 clock=30.31;engine:EvaluateUnit(caster,state,clock)
 assert(#orders==2 and orders[2].AbilityIndex==waitingSpell.id,"unconfirmed windwalk cannot lock the hero for its full duration")
-print("enemy-item-rules.test.lua: passed native Engine/adapter item conditions, orders, exclusions, dynamic inventory, WK omission, Silver Edge opener and Mask silence window")
+print("enemy-item-rules.test.lua: passed registered possession conditions, Cheese consumption guards, native Engine/adapter item conditions, orders, exclusions, dynamic inventory, WK omission, Silver Edge opener and Mask silence window")

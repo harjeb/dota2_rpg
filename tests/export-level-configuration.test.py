@@ -39,9 +39,9 @@ class LevelConfigurationExportTests(unittest.TestCase):
             self.assertEqual(manifest["runtime_source"], "game/dota_addons/dota2_rpg/scripts/data/levels.kv")
             self.assertEqual(manifest["stage_count"], 30)
             self.assertEqual(manifest["unit_configuration_rows"], 130)
-            self.assertEqual(manifest["equipment_rows"], 529)
+            self.assertEqual(manifest["equipment_rows"], 531)
             self.assertEqual(manifest["unique_units"], 78)
-            self.assertEqual(manifest["item_name_count"], 84)
+            self.assertEqual(manifest["item_name_count"], 86)
             self.assertEqual(manifest["untranslated_item_ids"], [])
             # Equipment authoring synchronizes actual hero levels from KV.
             self.assertEqual(manifest["maintenance_source_difference_rows"], 0)

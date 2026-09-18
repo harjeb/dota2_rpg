@@ -70,6 +70,37 @@ def loadout(hero, level, boss=False):
     return ['item_' + item for item in result]
 
 
+# Encounter-specific survival pressure; final public-match builds stay exact.
+SURVIVAL_ITEMS = {
+    'ch14': ('luna', None, 'item_cheese'),
+    'ch17': ('ursa', None, 'item_aegis'),
+    'ch22': ('sniper', 'item_swift_blink', 'item_aegis'),
+    'ch24': ('lina', 'item_ultimate_scepter', 'item_cheese'),
+    'ch25': ('gyrocopter', 'item_ultimate_scepter', 'item_cheese'),
+    'ch27': ('ursa', 'item_swift_blink', 'item_aegis'),
+    'ch28': ('templar_assassin', 'item_swift_blink', 'item_aegis'),
+    'ch29': ('nevermore', 'item_swift_blink', 'item_cheese'),
+}
+
+
+def encounter_loadout(stage_id, hero, level, boss=False):
+    if stage_id == 'ch30' and not boss:
+        return list(FINAL_EQUIPMENT[hero]['items'])
+    items = loadout(hero, level, boss)
+    selection = SURVIVAL_ITEMS.get(stage_id)
+    if selection and hero == selection[0] and not boss and int(level) >= 18:
+        _, replaced, survival = selection
+        if replaced is None:
+            if len(items) >= 6:
+                raise ValueError(f'No active slot for {survival}: {stage_id}/{hero}')
+            items.append(survival)
+        else:
+            if replaced not in items:
+                raise ValueError(f'Missing replacement {replaced}: {stage_id}/{hero}')
+            items[items.index(replaced)] = survival
+    return items
+
+
 def update_equipment(source_text, runtime_text):
     """Validate both files before touching disk; preserve all non-equipment KV."""
     read_kv = runpy.run_path(str(Path(__file__).with_name('export-level-configuration.py')))['read_kv']
@@ -87,7 +118,7 @@ def update_equipment(source_text, runtime_text):
                 hero = entry['unit'].removeprefix('npc_dota_hero_')
                 tags = live.get('tags', {})
                 boss = 'boss' in (tags.values() if isinstance(tags, dict) else tags)
-                items = FINAL_EQUIPMENT[hero]['items'] if stage_id == 'ch30' and not boss else loadout(hero, live['level'], boss)
+                items = encounter_loadout(stage_id, hero, live['level'], boss)
                 builds.append((entry['unit'], int(live['level']), items))
     patterns = [
         r'("unit": "(npc_dota_hero_[^"]+)"[^{}]*?"items": \[)([^\]]*)(\])',

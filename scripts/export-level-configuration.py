@@ -76,6 +76,7 @@ AI_NAMES = {
 # Snapshot of the current native abilities_schinese localization for every item
 # actually referenced by levels.kv. Keep IDs too: the KV accepts IDs, not labels.
 ITEM_NAMES = {
+    "item_aegis": "不朽之守护", "item_cheese": "奶酪",
     "item_dust": "显影之尘", "item_essence_distiller": "精之灵器",
     "item_gem": "真视宝石", "item_monkey_king_bar": "金箍棒",
     "item_quelling_blade": "压制之刃", "item_tranquil_boots": "静谧之鞋",

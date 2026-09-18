@@ -756,7 +756,8 @@
           "item_yasha",
           "item_black_king_bar",
           "item_butterfly",
-          "item_satanic"
+          "item_satanic",
+          "item_cheese"
         ],
 				"tags": [
 					"hero"
@@ -972,7 +973,8 @@
           "item_bfury",
           "item_blink",
           "item_black_king_bar",
-          "item_basher"
+          "item_basher",
+          "item_aegis"
         ],
 				"tags": [
 					"hero"
@@ -1350,7 +1352,7 @@
 				"unit": "npc_dota_hero_sniper",
 				"level": 26,
 				"items": [
-          "item_swift_blink",
+          "item_aegis",
           "item_mjollnir",
           "item_hurricane_pike",
           "item_black_king_bar",
@@ -1574,7 +1576,7 @@
 				"items": [
           "item_arcane_blink",
           "item_yasha_and_kaya",
-          "item_ultimate_scepter",
+          "item_cheese",
           "item_black_king_bar",
           "item_sheepstick",
           "item_shivas_guard"
@@ -1700,7 +1702,7 @@
 				"level": 28,
 				"items": [
           "item_swift_blink",
-          "item_ultimate_scepter",
+          "item_cheese",
           "item_mjollnir",
           "item_black_king_bar",
           "item_greater_crit",
@@ -1917,7 +1919,7 @@
 				"unit": "npc_dota_hero_ursa",
 				"level": 29,
 				"items": [
-          "item_swift_blink",
+          "item_aegis",
           "item_abyssal_blade",
           "item_black_king_bar",
           "item_satanic",
@@ -2046,7 +2048,7 @@
 				"items": [
           "item_butterfly",
           "item_desolator",
-          "item_swift_blink",
+          "item_aegis",
           "item_black_king_bar",
           "item_greater_crit",
           "item_hurricane_pike"
@@ -2139,7 +2141,7 @@
 				"unit": "npc_dota_hero_nevermore",
 				"level": 30,
 				"items": [
-          "item_swift_blink",
+          "item_cheese",
           "item_hurricane_pike",
           "item_manta",
           "item_black_king_bar",

@@ -220,10 +220,16 @@ test("same native buff name on other heroes cannot opt into Undying return",func
     assert(a.disabled and bm:GetAliveCount(2,true)==0)
 end)
 test("consumed Aegis uses native flag; later ordinary death disables automatic respawn",function()
-    local g,bm,a=fixture(); a.name="npc_dota_hero_axe"; g:OnStartBattle()
-    killed(g,a,true); assert(not a.disabled and next(a.items)==nil)
-    spawned(g,a); killed(g,a,false); assert(a.disabled and a.rpgDeathBeforeRespawn)
-    assert(#callbacks==0 and g.phase=="fight")
+    for _,team in ipairs({2,3}) do
+        local g,bm,a,b=fixture(); local u=team==2 and a or b
+        u.name="npc_dota_hero_ursa"; u.team=team; g:OnStartBattle()
+        killed(g,u,true); assert(not u.disabled and next(u.items)==nil)
+        assert(bm:GetAliveCount(team)==0 and bm:GetAliveCount(team,true)==1)
+        assert(not bm:CheckBattleEnd() and g.phase=="fight", "Aegis delay cannot settle the fight")
+        spawned(g,u); killed(g,u,false); assert(u.disabled and u.rpgDeathBeforeRespawn)
+        assert(bm:GetAliveCount(team,true)==0, "consumed Aegis must not grant a second return")
+        assert(#callbacks==0 and g.phase=="fight")
+    end
 end)
 test("ordinary death on either team disables permission before event broadcast",function()
     local g,bm,a,b=fixture(); g:OnStartBattle()
