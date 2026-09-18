@@ -39,11 +39,14 @@ for _, name in ipairs({"easy","default","hard"}) do
     end
     for _, reason in ipairs({0,2}) do
         local event={player_id_const=0,reason_const=reason,experience=101}
-        D.XpFilter(g,event);eq(event.experience,D.Scale(g,101))
+        D.XpFilter(g,event);eq(event.experience,0)
     end
-    local event={player_id_const=0,reason_const=4,experience=101};D.XpFilter(g,event);eq(event.experience,101)
+    local event={player_id_const=0,reason_const=4,experience=101};D.XpFilter(g,event);eq(event.experience,0)
     local native={player_id_const=0,reason_const=17,gold=100}
     g.arena={mode="arena"};D.GoldFilter(g,native);eq(native.gold,100)
+    local xp={player_id_const=0,reason_const=2,experience=101};D.XpFilter(g,xp);eq(xp.experience,101)
+    g.arena=nil
+    local foreign={player_id_const=1,reason_const=2,experience=101};D.XpFilter(g,foreign);eq(foreign.experience,101)
 end
 for _,case in ipairs({{"easy",15},{"hard",7}}) do
     local game={playerId=0,campaignDifficulty=case[1]};local total=0

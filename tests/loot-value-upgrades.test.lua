@@ -10,15 +10,15 @@ Loot.UpgradeEquipment(axe,function(a,b)
  for i=a,b do choices[Loot.UpgradeEquipment(axe,function() return i end).name]=true end
  return a
 end)
-assert(choices.item_dragon_lance and choices.item_sange,'1000-gold axe can upgrade to Dragon Lance or Sange')
+assert(choices.item_dragon_lance and choices.item_lesser_crit,'1000-gold axe draws affordable assembled equipment')
 assert(not choices.item_hyperstone and not choices.item_demon_edge,'no replacement with raw stat pieces')
-for name in pairs(choices) do assert(byName[name].cost>=1800 and byName[name].cost<=2200) end
+for name in pairs(choices) do assert(byName[name].cost<=2000 and assembled[name]) end
 for _,row in ipairs(Loot.Catalog) do
  local result=Loot.UpgradeEquipment(row,function(a) return a end)
- if row.category=='standard' and result~=row then assert(result.cost>row.cost and assembled[result.name])
+ if row.category=='standard' and result~=row then assert(result.cost<=row.cost*2 and assembled[result.name])
  else assert(result==row,'neutral/special rewards unchanged') end
 end
-assert(Loot.UpgradeEquipment(byName.item_dagon_5)==byName.item_dagon_5,'top priced native item never downgrades')
+assert(#Loot.EquipmentPool(14800,true)>=16,'native price ceiling retains a broad top band')
 local game={currentLevelId='ch04',GetStashUnit=function() return nil end}
 local config={pool='all_items',items={{chance=1},{chance=1},{chance=1}}}
 local original=Loot.Roll
@@ -29,9 +29,9 @@ for _,name in ipairs(earned) do assert(choices[name],'Award actually enqueues up
 for _,difficulty in ipairs({'easy','hard'}) do
  local g={campaignDifficulty=difficulty,currentLevelId='ch04',GetStashUnit=function() return nil end}
  local names=Loot.Award(g,config,function(a) return a end)
- local expected=Loot.ScaleEquipment(g,Loot.UpgradeEquipment(axe,function(a) return a end),function(a) return a end)
+ local expected=Loot.FinalEquipment(g,axe,function(a) return a end)
  assert(#names==3 and #Lives.Ensure(g).pendingCampaignLoot==3)
- for _,name in ipairs(names) do assert(name==expected.delivery,'scale post-upgrade value exactly once') end
+ for _,name in ipairs(names) do assert(name==expected.delivery,'apply difficulty to the x2 budget once before the final draw') end
  Loot.Flush(g);Loot.Flush(g)
  assert(#Lives.Ensure(g).pendingCampaignLoot==3,'delivery retries neither reroll nor multiply')
  for _,pending in ipairs(Lives.Ensure(g).pendingCampaignLoot) do assert(pending.delivery==expected.delivery) end
@@ -43,4 +43,4 @@ local base=Loot.Roll(config,first,4,{})
 local actual=Loot.Award(fresh,config,first)
 assert(#actual==#base and #actual==3,'real roll-to-award pipeline retains gate count')
 for i,name in ipairs(actual) do assert(byName[name].cost>base[i].cost,'real rewards increase in per-item value') end
-print('PASS 200% assembled value upgrades, 1000 axe examples, native cap, neutral exclusions and actual Award quantity')
+print('PASS broad assembled value bands, native cap diversity, neutral exclusions and actual Award quantity')

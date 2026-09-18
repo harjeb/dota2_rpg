@@ -218,47 +218,58 @@ function Loot.Flush(game)
     return #remaining
 end
 
--- Keep one reward per gate. Upgrade ordinary equipment into an assembled
--- component/major item near twice its price, not two copies of a stat piece.
-function Loot.UpgradeEquipment(row, random)
-    local price = tonumber(row and row.cost) or 0
-    if not row or row.category ~= "standard" or price <= 0 then return row end
+-- Select a price band with at least sixteen distinct equipment families when
+-- the budget permits it. Include ties at the boundary; Dagon levels occupy one
+-- family so several upgrades of the same item cannot crowd out other gear.
+function Loot.EquipmentPool(budget, assembledOnly)
     local assembled = require("data.assembled_loot_items")
-    local target, choices, nearest, distance = price * 2, {}, {}, math.huge
-    for _, candidate in ipairs(Catalog) do
-        local cost = tonumber(candidate.cost) or 0
-        if candidate.category == "standard" and assembled[candidate.name] and cost > price then
-            if cost >= target * 0.9 and cost <= target * 1.1 then choices[#choices + 1] = candidate end
-            local delta = math.abs(cost - target)
-            if delta < distance then nearest, distance = {candidate}, delta
-            elseif delta == distance then nearest[#nearest + 1] = candidate end
+    local families = {}
+    for _, row in ipairs(Catalog) do
+        local cost = tonumber(row.cost) or 0
+        if row.category == "standard" and cost > 0 and cost <= budget
+            and (not assembledOnly or assembled[row.name]) then
+            local family = row.name:gsub("^item_dagon_%d+$", "item_dagon")
+            if not families[family] or cost > families[family].cost then families[family] = row end
         end
     end
-    if #choices == 0 then choices = nearest end
-    if #choices == 0 then return row end -- already at the native catalog ceiling
+    local choices = {}
+    for _, row in pairs(families) do choices[#choices + 1] = row end
+    table.sort(choices, function(a, b)
+        if a.cost == b.cost then return a.name < b.name end
+        return a.cost > b.cost
+    end)
+    local cutoff = choices[16] and choices[16].cost or 0
+    while #choices > 16 and choices[#choices].cost < cutoff do table.remove(choices) end
+    return choices
+end
+
+local function PickEquipment(budget, random, assembledOnly)
+    local choices = Loot.EquipmentPool(budget, assembledOnly)
+    if #choices == 0 then return nil end
     return choices[(random or NativeRandom)(1, #choices)]
 end
 
--- Native item stats and the three drop gates stay unchanged. Difficulty adjusts
--- the already-upgraded reward value budget, not the pre-upgrade price (which
--- would compound the existing x2 assembled-item upgrade). Pick the highest
--- catalog value within budget; native catalog ceilings/discrete tiers apply.
+-- The x2 budget selects a broad band, including at the native price ceiling.
+function Loot.UpgradeEquipment(row, random)
+    local price = tonumber(row and row.cost) or 0
+    if not row or row.category ~= "standard" or price <= 0 then return row end
+    return PickEquipment(price * 2, random, true) or row
+end
+
+-- Scale the value budget, retaining a whole price band instead of its maximum.
 function Loot.ScaleEquipment(game, row, random)
     if not row or Difficulty.Multiplier(game) == 1 then return row end
-    local standard = row.category == "standard" and (tonumber(row.cost) or 0) > 0
-    if not standard then return row end -- neutral tier is preserved; its bundle scales once below
-    local target = Difficulty.Scale(game, row.cost)
-    local choices, best = {}, -1
-    for _, candidate in ipairs(Catalog) do
-        local value = tonumber(candidate.cost) or 0
-        local matches = candidate.category == "standard" and value > 0
-        if matches and value <= target then
-            if value > best then choices, best = {}, value end
-            if value == best then choices[#choices + 1] = candidate end
-        end
-    end
-    if #choices == 0 then return nil end -- below cheapest native equipment: no free over-budget item
-    return choices[(random or NativeRandom)(1, #choices)]
+    if row.category ~= "standard" or (tonumber(row.cost) or 0) <= 0 then return row end
+    return PickEquipment(Difficulty.Scale(game, row.cost), random, true)
+        or PickEquipment(Difficulty.Scale(game, row.cost), random, false)
+end
+
+-- Apply x2 and difficulty BEFORE drawing. Re-selecting after an initial draw
+-- would bias the distribution and shrink the effective high-price pool.
+function Loot.FinalEquipment(game, row, random)
+    if not row or row.category ~= "standard" or (tonumber(row.cost) or 0) <= 0 then return row end
+    local budget = Difficulty.Scale(game, row.cost * 2)
+    return PickEquipment(budget, random, true) or PickEquipment(budget, random, false)
 end
 
 -- Authored purchase-equivalent credit, NOT native ItemCost or a sale payout.
@@ -288,21 +299,12 @@ function Loot.NeutralBundle(game, row, random, stage, history)
     local equivalent = Loot.UpgradeEquipment(ProgressionPick(ordinary, random, shadow), random)
     local target = Difficulty.Scale(game, equivalent.cost)
     local remaining, spent = math.max(0, target - credit), 0
-    local assembled = require("data.assembled_loot_items")
-    -- Greedy highest affordable assembled equipment. Every iteration spends a
-    -- positive price, so no recursion, overspend, free items or unbounded retry.
+    -- Spend supplements from the same diverse affordable equipment band.
     while remaining > 0 do
-        local choices, best = {}, 0
-        for _, candidate in ipairs(Catalog) do
-            local cost = tonumber(candidate.cost) or 0
-            if candidate.category == "standard" and assembled[candidate.name] and cost > 0 and cost <= remaining then
-                if cost > best then choices, best = {}, cost end
-                if cost == best then choices[#choices + 1] = candidate end
-            end
-        end
-        if #choices == 0 then break end
-        bundle[#bundle + 1] = choices[random(1, #choices)]
-        remaining, spent = remaining - best, spent + best
+        local selected = PickEquipment(remaining, random, true)
+        if not selected then break end
+        bundle[#bundle + 1] = selected
+        remaining, spent = remaining - selected.cost, spent + selected.cost
     end
     return bundle, {target=target, credit=credit, equipment=spent, residual=remaining,
         ordinary=equivalent.name, ordinaryCost=equivalent.cost}
@@ -320,7 +322,7 @@ function Loot.Award(game, config, random)
             print(string.format("[RPG][Loot] neutral_budget level=%s item=%s target=%d credit=%d equipment=%d residual=%d",
                 tostring(game.currentLevelId), base.name, budget.target, budget.credit, budget.equipment, budget.residual))
         else
-            rows = {Loot.ScaleEquipment(game, Loot.UpgradeEquipment(base, random), random)}
+            rows = {Loot.FinalEquipment(game, base, random)}
         end
         for _, row in ipairs(rows) do
         if row ~= base and not budget then

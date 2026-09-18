@@ -96,6 +96,36 @@ assert(hero.abilities[23].level == 1 and hero.nativeTalents.special_bonus_unique
 game:OnScrollUse(nil, { hero = "axe", kind = "high" })
 assert(hero.points == 2 + data.level - 10, "empty stock cannot add points")
 
+-- Native XP must never create a second live level/point ledger beside campaign
+-- state. Exercise filtering, capture, stage XP and repeat level synchronization.
+do
+    local Difficulty = require("battle.campaign_difficulty")
+    local Progression = require("data.progression_data")
+    for _, difficulty in ipairs({"easy", "default", "hard"}) do
+        local live = makeHero(20)
+        local campaign = setmetatable({playerId=0, campaignDifficulty=difficulty,
+            heroData={axe={level=20,current_xp=0,skill_points=2}}}, CDota2RpgDemo)
+        for _, reason in ipairs({0, 1, 2, 4, 999}) do
+            local event={player_id_const=0,reason_const=reason,experience=100000}
+            Difficulty.XpFilter(campaign,event)
+            -- Emulate an engine level-up if the native award survives its filter.
+            if event.experience > 0 then live:HeroLevelUp(false) end
+            campaign:CaptureHeroAbilities(live)
+            assert(live.level==20 and campaign.heroData.axe.level==20,
+                "native XP cannot outlevel the roster's campaign level")
+            assert(live.points==2 and campaign.heroData.axe.skill_points==2,
+                "capture cannot import skill points from a second XP source")
+        end
+        campaign:AddXpToHero("axe",Progression.XpNeededForNextLevel(20))
+        campaign:UpdateHeroLevel(live,21)
+        campaign:CaptureHeroAbilities(live)
+        campaign:UpdateHeroLevel(live,21)
+        assert(live.level==21 and campaign.heroData.axe.level==21)
+        assert(live.points==3 and campaign.heroData.axe.skill_points==3,
+            "one campaign level grants exactly one point even after repeated synchronization")
+    end
+end
+
 -- Learn between think ticks and rebuild immediately: capture must retain talents.
 hero.abilities[23].level = 1
 hero.points = hero.points - 1

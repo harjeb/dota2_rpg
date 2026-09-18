@@ -1699,7 +1699,14 @@ local broadcastGame = newGame({
 -- Native mutation after a snapshot/queue must be mirrored by the real serializer.
 local lateBkb = fieldedHero:AddItemByName("item_black_king_bar")
 broadcastGame.heroData.npc_dota_hero_axe.inventory = { "item_branches" }
+broadcastGame.runLives = { remaining = 3, pendingItems = {}, pendingCampaignLoot = {
+    {delivery = "item_occult_bracelet"}, {delivery = "item_occult_bracelet", uncertain = true},
+} }
 broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.pending_loot_text, "item_occult_bracelet;item_occult_bracelet", "pending awards remain visible without inventing item entities")
+broadcastGame.runLives.pendingCampaignLoot = {}
+broadcastGame:BroadcastShopState()
+assertEqual(shopPayload.pending_loot_text, "", "delivered rewards leave the pending display")
 assert(shopPayload.inventories_text:find("item_black_king_bar", 1, true), "serializer reads late native inventory")
 assert(shopPayload.equipped_text:find("item_black_king_bar|" .. broadcastGame:GetItemEntityId(lateBkb), 1, true), "serializer publishes matching native entity")
 assertEqual(shopPayload.rule_generation, 0, "shop generation defaults to zero")

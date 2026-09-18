@@ -5053,6 +5053,12 @@ function CDota2RpgDemo:BroadcastShopState(player)
 			end
 		end
 	end
+	local pendingLootParts = {}
+	for _, reward in ipairs(RunLives.Ensure(self).pendingCampaignLoot or {}) do
+		if type(reward.delivery) == "string" then
+			table.insert(pendingLootParts, reward.delivery)
+		end
+	end
 	local inventoryParts = {}
 	local equippedParts = {}
 	local shardHeroes = {}
@@ -5096,6 +5102,7 @@ function CDota2RpgDemo:BroadcastShopState(player)
 		scroll_low_stock = self.scrollStock.low or 0,
 		scroll_high_stock = self.scrollStock.high or 0,
 		stock_text = table.concat(stockParts, ";"),
+		pending_loot_text = table.concat(pendingLootParts, ";"),
 		stock_neutral_text = table.concat(neutralStockParts, ";"),
 		stash_free_slots = freeStashSlots,
 		neutral_slot_free = neutralSlotTaken and 0 or 1,

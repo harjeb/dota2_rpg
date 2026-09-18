@@ -75,4 +75,17 @@ hud = runHud();
 shop(hud, { equipped_text: hero + ':' + SIX_ACTIVE + ',item_tpscroll|801|15' });
 assert(!panel(hud, 'Equipped_' + hero + '_6'), 'the TP scroll slot renders no row');
 
-console.log('PASS: neutral items use the dedicated slot 16 for delivery, display and unequip');
+// Pending awards have names but no native entity until carrier capacity is free.
+hud = runHud();
+shop(hud, { stock_text: '', pending_loot_text: 'item_occult_bracelet;item_occult_bracelet' });
+for (var pendingIndex = 0; pendingIndex < 2; pendingIndex++) {
+    var pendingRow = panel(hud, 'PendingLoot' + pendingIndex);
+    assert(pendingRow && labelOf(pendingRow).includes('occult bracelet'), 'each earned pending copy is visible');
+    assert(!pendingRow.children.some(child => child.type === 'Button'), 'pending rewards cannot be equipped or sold without an entity');
+}
+shop(hud, { stock_text: 'item_occult_bracelet|502', pending_loot_text: '' });
+assert(!panel(hud, 'ItemStockList').children.some(pair => pair.children.some(cell =>
+    cell.children.some(row => String(row.id).indexOf('PendingLoot') === 0))), 'pending rows leave the rendered list after delivery');
+assert(panel(hud, 'Equip0').enabled, 'delivered reward becomes transferable');
+
+console.log('PASS: neutral items use the dedicated slot 16 for delivery, display and unequip; queued rewards stay visible');

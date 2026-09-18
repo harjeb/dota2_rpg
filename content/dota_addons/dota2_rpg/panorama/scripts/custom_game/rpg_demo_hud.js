@@ -1453,6 +1453,7 @@
         shopState.scroll_low_remaining = Number(data.scroll_low_remaining || 0);
         shopState.scroll_high_remaining = Number(data.scroll_high_remaining || 0);
         shopState.stock = splitList(data.stock_text);
+        shopState.pendingLoot = splitList(data.pending_loot_text);
         // 中立装备按实体 ID 单独标记：面板要靠它决定用哪种容量去判断能否交付。
         shopState.neutralStock = {};
         var neutralStockEntries = splitList(data.stock_neutral_text);
@@ -1831,7 +1832,8 @@
         // Ordinary equipment comes from the native shop; transfer or sell its real instances here.
         var stockList = $("#ItemStockList");
         stockList.RemoveAndDeleteChildren();
-        if (!stock.length) {
+        var pendingLoot = shopState.pendingLoot || [];
+        if (!stock.length && !pendingLoot.length) {
             createLabel(stockList, "ItemRowName", $.Localize("#dota2_rpg_item_stash_empty"));
         }
         for (var stockIndex = 0; stockIndex < stock.length; stockIndex++) {
@@ -1863,6 +1865,16 @@
                     && (isNeutralItem ? targetHasNeutralSlot(target) : targetHasSpace);
                 createItemSellButton(row, "__stash", itemName, itemId);
             }(stock[stockIndex], stockIndex));
+        }
+
+        // Earned rewards waiting for carrier capacity have no transferable entity yet.
+        for (var pendingIndex = 0; pendingIndex < pendingLoot.length; pendingIndex++) {
+            var pendingRow = $.CreatePanel("Panel", inventoryCell(stockList, stock.length + pendingIndex), "PendingLoot" + pendingIndex);
+            pendingRow.AddClass("ItemRow");
+            pendingRow.AddClass("ItemInventoryCard");
+            createItemIcon(pendingRow, pendingLoot[pendingIndex]);
+            createLabel(pendingRow, "ItemRowName", itemDisplayName(pendingLoot[pendingIndex]));
+            createLabel(pendingRow, "ItemRowName", $.Localize("#dota2_rpg_loot_pending"));
         }
 
         // Scrolls and Shard use explicit purchases, independent of native Wisp selection.

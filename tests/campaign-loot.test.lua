@@ -193,7 +193,7 @@ end}
 local function choose(name) return function(a,b) return a and index[name] or 0 end end
 -- Delivery/queue tests below isolate transport from value selection; the real
 -- upgrade + Award pipeline is exercised in loot-value-upgrades.test.lua.
-Loot.UpgradeEquipment = function(row) return row end
+Loot.FinalEquipment = function(_, row) return row end
 full=true
 -- Award remembers earned prices even when the warehouse is full, and replay
 -- clears the history through the same runLives reset used by ResetSessionState.

@@ -44,8 +44,6 @@ local goldReasons = { "DOTA_ModifyGold_GameTick", "DOTA_ModifyGold_Building", "D
     "DOTA_ModifyGold_CreepKill", "DOTA_ModifyGold_RoshanKill", "DOTA_ModifyGold_CourierKill",
     "DOTA_ModifyGold_SharedGold", "DOTA_ModifyGold_AbilityGold", "DOTA_ModifyGold_WardKill",
     "DOTA_ModifyGold_Rune", "DOTA_ModifyGold_BountyRune" }
-local xpReasons = { "DOTA_ModifyXP_Unspecified", "DOTA_ModifyXP_HeroKill", "DOTA_ModifyXP_CreepKill",
-    "DOTA_ModifyXP_RoshanKill", "DOTA_ModifyXP_Outpost", "DOTA_ModifyXP_WisdomRune" }
 local function waiting(game)
     return game.campaignDifficultyInstalled and not game.campaignDifficultyLocked
         and not (game.arena and game.arena.mode == "arena")
@@ -71,9 +69,16 @@ function Difficulty.GoldFilter(game, event)
     return true
 end
 function Difficulty.XpFilter(game, event)
-    if tonumber(event.player_id_const) == game.playerId and (tonumber(event.experience) or 0) > 0
-        and reasonIn(event.reason_const, xpReasons) then
-        event.experience = waiting(game) and 0 or nativeAmount(game, "difficultyXpRemainders", event.reason_const, tonumber(event.experience))
+    -- Campaign levels and points belong to heroData: settlement shares and
+    -- purchased scrolls call AddXpToHero, then UpdateHeroLevel. Native XP would
+    -- independently level live units on Valve's curve; CaptureHeroAbilities
+    -- would save their extra points/build while the roster still shows its old
+    -- campaign level. Do not allow a second progression ledger (including XP
+    -- reasons outside the old kill/unspecified whitelist). Arena stays native.
+    if game.playerId ~= nil and tonumber(event.player_id_const) == game.playerId
+        and (tonumber(event.experience) or 0) > 0
+        and not (game.arena and game.arena.mode == "arena") then
+        event.experience = 0
     end
     return true
 end
