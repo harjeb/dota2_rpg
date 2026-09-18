@@ -225,7 +225,7 @@
 		"dota2_rpg_cap_incoming_aoe_cast_destination"			"应对施放不能同时设置额外落点或预测偏移。"
 		"dota2_rpg_v2_incoming_aoe_scope_hint"			"支持已适配的延迟生效及持续范围技能，并检查逃离路径。隐藏释放不触发；未知区域数据不猜测。不会自动取消自己正在进行的原生施法、蓄力或持续施法。"
 		"dota2_rpg_loot_pending" "待领取：腾出公共库存或中立装备槽后自动发放"
-		"dota2_rpg_build_tag"			"界面版本 105"
+		"dota2_rpg_build_tag"			"界面版本 106"
         "dota2_rpg_neutral_title" "野怪召唤"
         "dota2_rpg_neutral_hint" "准备时选择，开战后依次生成并收服，保留原生蓝耗和冷却。陈可多选或重复选同种；收服野怪会自动攻击、施法。"
         "dota2_rpg_neutral_slot" "名额"

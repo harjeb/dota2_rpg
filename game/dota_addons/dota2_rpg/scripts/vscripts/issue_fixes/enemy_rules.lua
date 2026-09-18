@@ -2,6 +2,8 @@
 -- profile slots (ability_1 can be a heal on one hero and a nuke on another).
 local Defaults = require("issue_fixes.default_rules")
 local Items = require("issue_fixes.enemy_item_rules")
+local TargetPolicy = require("issue_fixes.enemy_target_policy")
+local SpellPolicy = require("issue_fixes.enemy_spell_policy")
 local NeutralSpells = require("tactics/neutral_spells")
 local EnemyRules = {}
 
@@ -13,8 +15,8 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
     for i = #rules, 1, -1 do
         if rules[i].action.logical_id == "skeleton_king_reincarnation" then table.remove(rules, i) end
     end
-    -- Profiles continue to choose basic-attack priorities/chase policy. Their
-    -- positional spell rules cannot safely describe an arbitrary enemy hero.
+    -- Profiles supply approach behavior; generated hero targeting also considers
+    -- effective remaining health so a wounded tank cannot monopolize fire.
     for _, rule in ipairs(profileRules or {}) do
         if type(rule.action) == "table" and rule.action.kind == "attack" then
             attack = rule
@@ -24,6 +26,7 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
     -- 关卡 AI 自带的普攻行会顶掉生成的那条，所以策略在这里再落一次，
     -- 否则远程敌方英雄拿不到默认的最大攻击距离站位。
     Defaults.ApplyRangedAttackPosture(attack, unit)
+    TargetPolicy.Apply(unit, attack)
     local opening = Items.OpeningRules(unit, attack)
     if opening then return require("tactics/enemy_attack_objectives").Prepend(unit, opening) end
     local ultimates, basics = {}, {}
@@ -47,8 +50,19 @@ function EnemyRules.CreateForUnit(unit, profileRules, opponents)
                 rule.use_conditions = { { type = "alive_enemy_count_gte", value = 1 } }
             end
         end
+        SpellPolicy.Apply(unit, rule, ability)
+        TargetPolicy.Apply(unit, rule, ability)
     end
     local result = Items.CreateForUnit(unit, opponents)
+    for _, rule in ipairs(result) do
+        local item
+        for slot = 0, 5 do
+            local candidate = unit.GetItemInSlot and unit:GetItemInSlot(slot)
+            if candidate and not (candidate.IsNull and candidate:IsNull())
+                and candidate:GetAbilityName() == rule.action.logical_id then item = candidate; break end
+        end
+        TargetPolicy.Apply(unit, rule, item)
+    end
     -- Stable native-type priority: preserve relative order within each group.
     -- An unavailable ultimate still yields through normal native validation.
     for _, group in ipairs({ultimates, basics}) do

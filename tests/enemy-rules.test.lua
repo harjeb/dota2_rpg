@@ -38,7 +38,7 @@ assert(rules[2].action.logical_id == "crystal_maiden_crystal_nova" and rules[2].
 assert(rules[3].action.logical_id == "crystal_maiden_frostbite" and rules[3].target.team == "enemy")
 local playerRules = require("issue_fixes.default_rules").CreateForHero(unit)
 assert(playerRules[1].action.logical_id == "crystal_maiden_crystal_nova", "enemy priority never reorders player defaults")
-assert(rules[4] == attack, "preserve profile attack priorities and chase policy")
+assert(rules[4] == attack, "retain profile attack object and chase policy")
 list = { ability("omniknight_purification", 8, 1) }
 rules = EnemyRules.CreateForUnit(unit, {})
 assert(rules[1].target.team == "ally", "native friendly spell must select allies")
@@ -61,6 +61,24 @@ assert(rangedEnemyRules[#rangedEnemyRules] == rangedProfileAttack,
     "profile attack identity must survive the posture default")
 assert(rangedProfileAttack.action.positioning_mode == "attack_range",
     "a ranged enemy hero must hold at max attack range")
+assert(rangedProfileAttack.target_priorities[1].type == "enemy_combat_value",
+    "real enemy hero attack must use combat scoring even with nearest profile")
+list = { nova, frostbite }
+unit.IsRealHero = function() return true end
+local heroRules = EnemyRules.CreateForUnit(unit, {})
+local sawOffensiveSpell = false
+for _, rule in ipairs(heroRules) do
+    if rule.action.logical_id == "crystal_maiden_crystal_nova" then
+        sawOffensiveSpell = true
+        assert(rule.target_priorities[1].type == "enemy_combat_value",
+            "generated enemy offensive spell must use combat scoring")
+    elseif rule.action.logical_id == "crystal_maiden_frostbite" then
+        assert(rule.target_priorities[1].type == "prefer_channeling",
+            "generated control should prioritize native channels")
+    end
+end
+assert(sawOffensiveSpell)
+unit.IsRealHero = nil
 local meleeProfileAttack = {action={kind="attack"}, target={team="enemy"}, approach="range_only"}
 EnemyRules.CreateForUnit(bareUnit(true, false), {meleeProfileAttack})
 assert(meleeProfileAttack.action.positioning_mode == nil, "a melee enemy hero must keep the previous default")

@@ -40,7 +40,9 @@ end
 
 local function rank_value(priority, ctx, target)
     local kind = priority.type
-    if kind == "lowest_hp_pct" then
+    if kind == "enemy_combat_value" then
+        return require("issue_fixes.enemy_target_policy").Score(priority, ctx, target)
+    elseif kind == "lowest_hp_pct" then
         return Conditions.HealthPct(target)
     elseif kind == "highest_hp_pct" then
         return -Conditions.HealthPct(target)
