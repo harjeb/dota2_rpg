@@ -6,12 +6,14 @@
 {"created_at":"2026-09-15T17:32:59Z","created_by":"harjeb","depends_on_id":"dota2_rpg-vcc","issue_id":"dota2_rpg-761","type":"discovered-from"}
 {"created_at":"2026-09-15T18:34:54Z","created_by":"harjeb","depends_on_id":"dota2_rpg-5xt","issue_id":"dota2_rpg-9hu","type":"discovered-from"}
 {"created_at":"2026-09-16T10:38:32Z","created_by":"harjeb","depends_on_id":"dota2_rpg-gaj","issue_id":"dota2_rpg-9xk","type":"discovered-from"}
+{"created_at":"2026-09-18T16:53:29Z","created_by":"harjeb","depends_on_id":"dota2_rpg-kwl","issue_id":"dota2_rpg-a10","type":"blocks"}
 {"created_at":"2026-09-18T16:09:32Z","created_by":"harjeb","depends_on_id":"dota2_rpg-nbc","issue_id":"dota2_rpg-a10","type":"discovered-from"}
 {"created_at":"2026-09-15T17:26:47Z","created_by":"harjeb","depends_on_id":"dota2_rpg-vcc","issue_id":"dota2_rpg-ajh","type":"discovered-from"}
 {"created_at":"2026-09-15T17:33:00Z","created_by":"harjeb","depends_on_id":"dota2_rpg-vcc","issue_id":"dota2_rpg-auv","type":"discovered-from"}
 {"created_at":"2026-09-15T13:45:56Z","created_by":"harjeb","depends_on_id":"dota2_rpg-cz6","issue_id":"dota2_rpg-bca","type":"discovered-from"}
 {"created_at":"2026-09-16T11:40:59Z","created_by":"harjeb","depends_on_id":"dota2_rpg-wps","issue_id":"dota2_rpg-czk","type":"discovered-from"}
 {"created_at":"2026-09-15T17:04:42Z","created_by":"harjeb","depends_on_id":"dota2_rpg-a4w","issue_id":"dota2_rpg-d04","type":"discovered-from"}
+{"created_at":"2026-09-18T16:53:24Z","created_by":"harjeb","depends_on_id":"dota2_rpg-a10","issue_id":"dota2_rpg-kwl","type":"discovered-from"}
 {"created_at":"2026-09-17T16:03:41Z","created_by":"harjeb","depends_on_id":"dota2_rpg-bz2","issue_id":"dota2_rpg-nbc","type":"discovered-from"}
 {"created_at":"2026-09-11T10:08:08Z","created_by":"harjeb","depends_on_id":"dota2_rpg-dv1","issue_id":"dota2_rpg-nbl","type":"discovered-from"}
 {"created_at":"2026-09-15T13:45:52Z","created_by":"harjeb","depends_on_id":"dota2_rpg-cz6","issue_id":"dota2_rpg-o2g","type":"discovered-from"}
