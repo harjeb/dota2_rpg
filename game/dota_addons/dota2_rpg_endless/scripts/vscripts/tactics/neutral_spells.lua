@@ -8,7 +8,8 @@ function M.CanonicalName(unit)
     return (name:gsub('^npc_rpg_recruit_', 'npc_dota_neutral_'))
 end
 function M.IsCompanion(game, unit)
-    if game.phase ~= 'fight' or not (game.neutralRecruitUnits or {})[unit]
+    local den = require('endless.card_integration').IsDenCompanion(game, unit)
+    if game.phase ~= 'fight' or not (den or (game.neutralRecruitUnits or {})[unit])
         or Context.Call(unit, 'IsNull') == true or Context.Call(unit, 'IsAlive') ~= true
         or Context.Call(unit, 'IsRealHero') == true
         or require('battle/neutral_recruitment').IsReserved(unit) then return false end

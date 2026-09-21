@@ -8,6 +8,8 @@ function Modifier:IsPurgable() return false end
 function Modifier:IsPurgeException() return false end
 function Modifier:RemoveOnDeath() return false end
 function Modifier:AllowIllusionDuplicate() return false end
+-- Bonus capacity is consumed before the native barrier at the same damage stage.
+function Modifier:GetPriority() return MODIFIER_PRIORITY_SUPER_ULTRA or 4 end
 function Modifier:OnCreated()
     self.stats={}
     if server() and self.SetHasCustomTransmitterData then self:SetHasCustomTransmitterData(true) end
@@ -72,6 +74,7 @@ local properties={
 for _,p in ipairs(properties) do local key=p[3];Modifier[p[2]]=function(self) return (self.stats or {})[key] or 0 end end
 local events={
     'MODIFIER_PROPERTY_HEALTH_REGEN_CONSTANT','MODIFIER_PROPERTY_INCOMING_DAMAGE_CONSTANT',
+    'MODIFIER_PROPERTY_INCOMING_PHYSICAL_DAMAGE_CONSTANT','MODIFIER_PROPERTY_INCOMING_SPELL_DAMAGE_CONSTANT',
     'MODIFIER_PROPERTY_PREATTACK_CRITICALSTRIKE','MODIFIER_PROPERTY_TOTALDAMAGEOUTGOING_PERCENTAGE',
     'MODIFIER_EVENT_ON_ABILITY_EXECUTED','MODIFIER_EVENT_ON_TAKEDAMAGE','MODIFIER_EVENT_ON_DEATH',
     'MODIFIER_EVENT_ON_ATTACK','MODIFIER_EVENT_ON_ATTACK_LANDED','MODIFIER_EVENT_ON_ATTACK_RECORD_DESTROY',
@@ -121,6 +124,14 @@ end
 function Modifier:GetModifierIncomingDamageConstant(params)
     if not server() or not self.game then return 0 end
     return runtime().Absorb(self.game,self:GetParent(),params)
+end
+function Modifier:GetModifierIncomingPhysicalDamageConstant(params)
+    if server() and self.game then return runtime().AbsorbNative(self.game,self:GetParent(),params,'physical') end
+    return 0
+end
+function Modifier:GetModifierIncomingSpellDamageConstant(params)
+    if server() and self.game then return runtime().AbsorbNative(self.game,self:GetParent(),params,'magic') end
+    return 0
 end
 function Modifier:GetModifierPreAttack_CriticalStrike(params)
     if server() and self.game then return runtime().Critical(self.game,self:GetParent(),params) end

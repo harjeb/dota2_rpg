@@ -16,6 +16,26 @@ function Integration.IsForm(game, unit)
     return alive(unit) and unit.endlessRebirthForm
         and ((game.endlessCardCombat or {}).forms or {})[unit] ~= nil
 end
+-- Den actors retain their card lifecycle; they are never recruited or heroes.
+function Integration.IsDenCompanion(game, unit)
+    local state = game.endlessCardCombat or {}
+    local entry = (state.spawned or {})[unit]
+    local neutral = entry and (entry.kind == 'den' or entry.kind == 'descendant' and entry.native_ai)
+    if game.phase ~= 'fight' or not neutral or not alive(unit)
+        or (unit.IsRealHero and unit:IsRealHero()) then return false end
+    if entry.expires and state.time and entry.expires <= state.time then return false end
+    local name = unit.GetUnitName and unit:GetUnitName() or ''
+    local team = unit.GetTeamNumber and unit:GetTeamNumber()
+    return name:match('^npc_dota_neutral_') ~= nil
+        and (team == (DOTA_TEAM_GOODGUYS or 2) or team == (DOTA_TEAM_BADGUYS or 3))
+end
+function Integration.DenCompanions(game)
+    local out = {}
+    for unit in pairs((game.endlessCardCombat or {}).spawned or {}) do
+        if Integration.IsDenCompanion(game, unit) then out[#out + 1] = unit end
+    end
+    return out
+end
 function Integration.HeroFormCount(game, team)
     local n = 0
     for _, unit in ipairs(Integration.Forms(game, team)) do

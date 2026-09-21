@@ -1,22 +1,16 @@
 local Effects = {definitions=require('endless/card_definitions')}
 local MODIFIER='modifier_endless_card_stats'
 local PREP='modifier_endless_card_prepare'
-Effects.unsupported={
-    ['D-g5']='待接入原生技能与物品护盾增幅；仅增幅卡牌护盾还不符合完整效果。',
-    ['D-c2']='待接入原生护盾增幅；仅生成起始护盾还不符合完整效果。',
-    ['D-g3']='待解决强幻象施法兼容；普通英雄克隆不能代替强幻象。',
-    ['E-g7']='待确定伤害周期和范围中心，见卡表 §9-9。',
-    ['E-c2']='待确定魔法抗性加成的持续时间。',
-    ['E-c4']='待确定灼烧伤害基数、结算频率与叠加方式。',
-    ['E-c7']='待确定 500 范围的中心，见卡表 §9-9。',
-    ['D-f1']='待确定电魂技能等级、伤害与随机位置规则。',
-    ['D-f3']='待确定墙体持续时间、几何与幻象承伤参数。',
-    ['W-f2']='待确定大野/远古候选池、持续时间与数量上限。',
-}
+local World=require('endless/card_world_effects')
+local Barriers=require('endless/card_native_barriers')
+local worldContext
+Effects.unsupported={}
+Effects.RegisterBarrier=Barriers.Register
 if LinkLuaModifier then
     LinkLuaModifier(MODIFIER,'modifiers/'..MODIFIER,LUA_MODIFIER_MOTION_NONE)
     LinkLuaModifier(PREP,'modifiers/'..MODIFIER,LUA_MODIFIER_MOTION_NONE)
     LinkLuaModifier('modifier_endless_card_control','modifiers/modifier_endless_card_control',LUA_MODIFIER_MOTION_NONE)
+    LinkLuaModifier('modifier_endless_card_echo','modifiers/modifier_endless_card_control',LUA_MODIFIER_MOTION_NONE)
     LinkLuaModifier('modifier_endless_card_source','modifiers/modifier_endless_card_control',LUA_MODIFIER_MOTION_NONE)
 end
 local function valid(u) return u~=nil and (not u.IsNull or not u:IsNull()) end
@@ -47,6 +41,46 @@ local function units(game,s)
     for _,roster in pairs((game.battleManager or {}).teamHeroes or {}) do for _,u in pairs(roster) do add(u) end end
     for _,u in pairs(game.spawnedSummons or {}) do add(u) end
     for u in pairs(s.spawned or {}) do add(u) end
+    return result
+end
+-- Native spells on temporary card units can create their own summons. Only
+-- ancestry reaching a tracked card parent grants this temporary lifetime.
+local function discoverDescendants(game,s)
+    local candidates,thinkers=units(game,s),{}
+    -- Native Fireball and similar hazards are OTHER units, outside combat queries.
+    if Entities and Entities.FindAllByClassname then
+        for _,u in pairs(Entities:FindAllByClassname('npc_dota_thinker') or {}) do
+            if valid(u) and not u.endlessCardSource then candidates[#candidates+1]=u;thinkers[u]=true end
+        end
+    end
+    for _,u in ipairs(candidates) do
+        if not s.spawned[u] and call(u,'GetTeamNumber',nil)==s.team and not body(game,s,u) then
+            local seen={[u]=true};local queue={{unit=u,depth=0}};local index=1;local parent
+            while index<=#queue and index<=32 and not parent do
+                local node=queue[index];index=index+1
+                if node.depth<8 then
+                    for _,method in ipairs({'GetOwnerEntity','GetOwner'}) do
+                        local owner=call(node.unit,method,nil)
+                        if owner and not seen[owner] then
+                            seen[owner]=true
+                            if s.spawned[owner] then parent=s.spawned[owner];break end
+                            if valid(owner) and #queue<32 then queue[#queue+1]={unit=owner,depth=node.depth+1} end
+                        end
+                    end
+                end
+            end
+            if parent then
+                u.endlessCardSummon=true
+                s.spawned[u]={kind='descendant',expires=parent.expires,
+                    passive=thinkers[u] or call(u,'IsOther',false) or call(u,'GetAttackCapability',1)==0,
+                    native_ai=call(u,'GetUnitName',''):find('npc_dota_neutral_',1,true)==1}
+            end
+        end
+    end
+end
+local function spawnedSnapshot(s)
+    local result={}
+    for u,entry in pairs(s.spawned) do result[#result+1]={unit=u,entry=entry} end
     return result
 end
 local function each(game,s,friendly,fn,living)
@@ -164,9 +198,22 @@ local function mana(u,pct)
 end
 local function teamheal(game,s,pct) each(game,s,true,function(u) heal(u,u:GetMaxHealth()*pct/100) end) end
 local function statsOf(u) local m=call(u,'FindModifierByName',nil,MODIFIER);return m and m.stats or {} end
+-- Shield grants use live lifetimes even for events between combat ticks.
+-- Only the receiving team's cards amplify a grant, exactly once.
+local function shieldAmp(game,s,u)
+    if u:GetTeamNumber()~=s.team then return 0 end
+    local amount,t=0,clock(game)
+    for _,id in ipairs({'D-g5','D-c2'}) do
+        local c=active(s,id,t)
+        if c then for _,effect in ipairs(Effects.definitions[id].effects) do
+            if effect.stat=='shield_amp' then amount=amount+effect.values[c.load] end
+        end end
+    end
+    return amount
+end
 local function shield(game,s,u,id,amount,expires,stack,cap)
     local r=record(s,u)
-    amount=amount*(1+(statsOf(u).shield_amp or 0)/100)
+    amount=amount*(1+shieldAmp(game,s,u)/100)
     local old=r.shields[id]
     if stack and old and old.expires>s.time then amount=amount+old.amount end
     r.shields[id]={amount=math.min(cap or math.huge,amount),expires=expires}
@@ -214,7 +261,9 @@ local function summonDogs(game,s,c)
         end
     end
 end
+worldContext={each=each,body=body,units=units,record=record,damage=damage,heal=heal,timed=timed,valid=valid,alive=alive,call=call,source=source}
 local function fire(game,s,c,event)
+    World.Fire(worldContext,game,s,c)
     local id,l=c.id,c.load
     local function v(a) return a[l] end
     if id=='E-c5' then each(game,s,true,function(u) mana(u,v({20,30,45})) end)
@@ -275,6 +324,15 @@ local function dispatch(game,s,name,event)
     end
 end
 local function stateTrigger(game,s,tr)
+    if tr.type=='team_health_below' then
+        local current,maximum=0,0
+        each(game,s,true,function(u)
+            if body(game,s,u) then
+                current=current+call(u,'GetHealth',0);maximum=maximum+call(u,'GetMaxHealth',0)
+            end
+        end)
+        return maximum>0 and current/maximum<tr.threshold
+    end
     if tr.type=='team_mana_below' then
         local current,maximum=0,0
         each(game,s,true,function(u) if body(game,s,u) then current=current+call(u,'GetMana',0);maximum=maximum+call(u,'GetMaxMana',0) end end)
@@ -351,6 +409,7 @@ function Effects.Refresh(game)
         present[u]=true
         -- Every legal unit observes events even when it currently has no numeric stats.
         setstats(game,s,u,totals(game,s,u),MODIFIER)
+        Barriers.Refresh(s,u,shieldAmp(game,s,u))
         local r=record(s,u)
         if alive(u) then r.dead=false end
         r.start_health=r.start_health or call(u,'GetMaxHealth',0)
@@ -381,6 +440,7 @@ local function attrDrain(game,s,u,str,agi,int,hp)
     if remaining>0 then damage(game,s,u,remaining,DAMAGE_TYPE_PURE,'card_field',nil,DOTA_DAMAGE_FLAG_HPLOSS or 0) end
 end
 local function periodic(game,s,c)
+    World.Periodic(worldContext,game,s,c)
     local id=c.id
     local n=function(a) return pick(c,a)*s.field_scale end
     if id=='W-f1' then burst(game,s,n({10,16,26}),DAMAGE_TYPE_MAGICAL,false,'card_field')
@@ -393,7 +453,7 @@ local function periodic(game,s,c)
     elseif id=='E-c3' then burst(game,s,pick(c,{1.5,2.5,4.5}),DAMAGE_TYPE_MAGICAL,true)
     elseif id=='A-c7' then burst(game,s,pick(c,{25,45,70}),DAMAGE_TYPE_MAGICAL) end
 end
-local periods={['W-f1']=1,['D-f2']=1,['D-f4']=5,['A-f2']=5,['A-f3']=3,['W-f3']=1,['W-f4']=6}
+local periods={['E-g7']=1,['D-f3']=3,['W-f2']=2,['W-f1']=1,['D-f2']=1,['D-f4']=5,['A-f2']=5,['A-f3']=3,['W-f3']=1,['W-f4']=6}
 function Effects.Start(game,snapshot)
     Effects.Stop(game)
     local p=Effects.Prepare(game,snapshot)
@@ -421,6 +481,7 @@ function Effects.Start(game,snapshot)
             end
             local c={id=entry.id,load=l,hero=resolve(game,s,entry.hero),remaining=d.type=='consumable' and l or nil,trigger=tr,
                 next_trigger=tr and t+(tr.first or 0) or nil,pulse_at=periods[entry.id] and t+periods[entry.id] or nil}
+            if entry.id=='D-f1' then c.period=({3,2,1})[l];c.pulse_at=t+c.period end
             s.cards[#s.cards+1]=c;s.by_id[c.id]=c
         end
     end
@@ -433,9 +494,14 @@ function Effects.Stop(game)
     local s=game.endlessCardCombat
     game.endlessCardCombat=nil
     if s then
+        discoverDescendants(game,s)
+        World.Stop(s)
         for u in pairs(s.units) do if valid(u) and u.RemoveModifierByName then u:RemoveModifierByName(MODIFIER);u:RemoveModifierByName('modifier_endless_card_control') end end
-        for u in pairs(s.spawned) do
-            if valid(u) then u.endlessCardCleanup=true;if UTIL_Remove then UTIL_Remove(u) elseif u.ForceKill then u:ForceKill(false) end end
+        local cleanup=spawnedSnapshot(s)
+        for _,item in ipairs(cleanup) do if valid(item.unit) then item.unit.endlessCardCleanup=true end end
+        for _,item in ipairs(cleanup) do
+            local u=item.unit
+            if valid(u) then if UTIL_Remove then UTIL_Remove(u) elseif u.ForceKill then u:ForceKill(false) end end
         end
         if valid(s.source) and UTIL_Remove then UTIL_Remove(s.source) end
     end
@@ -444,12 +510,13 @@ end
 function Effects.Tick(game)
     local s=game.endlessCardCombat;if not s then return end
     s.time=clock(game)
+    for _,u in ipairs(units(game,s)) do Barriers.Refresh(s,u,shieldAmp(game,s,u)) end
     for _,c in ipairs(s.cards) do
         local d=Effects.definitions[c.id]
         if c.trigger and c.remaining>0 and s.time>=c.next_trigger then
             if c.trigger.type=='time' or stateTrigger(game,s,c.trigger) then trigger(game,s,c) end
         end
-        local period=periods[c.id]
+        local period=c.period or periods[c.id]
         if period and s.time>=c.pulse_at then
             -- A stalled server never fires a damaging backlog in one frame.
             periodic(game,s,c);c.pulse_at=c.pulse_at+(math.floor((s.time-c.pulse_at)/period)+1)*period
@@ -457,16 +524,24 @@ function Effects.Tick(game)
             periodic(game,s,c);c.pulse_at=c.pulse_at+math.floor(s.time-c.pulse_at)+1
         end
     end
+    World.Tick(worldContext,game,s)
     local pending=s.jobs;s.jobs={}
     for _,job in ipairs(pending) do if s.time>=job.at then job.run() else s.jobs[#s.jobs+1]=job end end
-    for u,entry in pairs(s.spawned) do
+    discoverDescendants(game,s)
+    local spawned=spawnedSnapshot(s)
+    -- Mark the entire expiry batch before removal can dispatch nested deaths.
+    for _,item in ipairs(spawned) do
+        if valid(item.unit) and (not alive(item.unit) or s.time>=item.entry.expires) then item.unit.endlessCardCleanup=true end
+    end
+    for _,item in ipairs(spawned) do
+        local u,entry=item.unit,item.entry
         if not valid(u) or not alive(u) then
             s.spawned[u]=nil;s.forms[u]=nil
             if valid(u) then u.endlessCardCleanup=true;if UTIL_Remove then UTIL_Remove(u) end end
         elseif s.time>=entry.expires then
             u.endlessCardCleanup=true;s.spawned[u]=nil;s.forms[u]=nil
             if UTIL_Remove then UTIL_Remove(u) elseif u.ForceKill then u:ForceKill(false) end
-        elseif entry.kind~='soul' and entry.kind~='echo' and u.MoveToTargetToAttack then
+        elseif entry.kind~='soul' and entry.kind~='echo' and entry.kind~='den' and not entry.native_ai and not entry.passive and u.MoveToTargetToAttack then
             local nearest,distance=nil,math.huge
             local origin=call(u,'GetAbsOrigin',nil)
             each(game,s,false,function(enemy)
@@ -496,6 +571,14 @@ function Effects.DamageFilter(game,keys)
     end
     return true
 end
+function Effects.AbsorbNative(game,u,params,scope)
+    local s=game.endlessCardCombat
+    if not s or not params or not params.damage or params.damage<=0 then return 0 end
+    local flag=DOTA_DAMAGE_FLAG_HPLOSS or 0
+    if flag>0 and math.floor((params.damage_flags or 0)/flag)%2==1 then return 0 end
+    s.time=clock(game);Barriers.Refresh(s,u,shieldAmp(game,s,u))
+    return Barriers.Absorb(s,u,params.damage,params.damage_type,scope)-params.damage
+end
 function Effects.Absorb(game,u,params)
     local s=game.endlessCardCombat
     if not s or not params or not params.damage or params.damage<=0 then return 0 end
@@ -510,6 +593,9 @@ function Effects.Absorb(game,u,params)
         amount=math.max(0,amount-(stats.attack_block or 0))
     end
     local r=record(s,u)
+    s.time=clock(game)
+    Barriers.Refresh(s,u,shieldAmp(game,s,u))
+    amount=Barriers.Absorb(s,u,amount,params.damage_type,'all')
     local ids={};for id in pairs(r.shields) do ids[#ids+1]=id end;table.sort(ids)
     for _,id in ipairs(ids) do local sh=r.shields[id]
         if sh.expires<=clock(game) or sh.amount<=0 then r.shields[id]=nil
@@ -607,6 +693,7 @@ function Effects.TakeDamage(game,params)
     if attacker:GetTeamNumber()==s.team and u:GetTeamNumber()~=s.team and legal(game,attacker) then
         local stats=statsOf(attacker)
         if attack then
+            World.Attack(worldContext,game,s,attacker,u,params.damage)
             heal(attacker,params.damage*(stats.attack_lifesteal or 0)/100)
             local magic=value(s,'A-g5',{15,25,40})
             local physical=value(s,'W-c1',{30,50,80})+(s.mark==u and value(s,'C-g3',{30,50,80}) or 0)
@@ -644,7 +731,8 @@ local function copyForm(game,s,dead,c,kind)
     if u.SetMinimumGoldBounty then u:SetMinimumGoldBounty(0);u:SetMaximumGoldBounty(0) end
     if u.SetRespawnsDisabled then u:SetRespawnsDisabled(true) end
     if kind=='soul' and u.SetRenderColor then u:SetRenderColor(80,255,120) end
-    -- A real controllable clone is required: engine illusions cannot cast copied spells.
+    -- Copy spells and items before native illusion identity is applied. Echo exposes
+    -- strong/super illusion properties so native orders may use copied abilities.
     local level=call(dead,'GetLevel',1)
     if u.HeroLevelUp then for i=2,level do u:HeroLevelUp(false) end end
     for _,name in ipairs({'Strength','Agility','Intellect'}) do
@@ -680,11 +768,17 @@ local function copyForm(game,s,dead,c,kind)
             end
         end
     end end
-    if kind=='beast' then
-        if u.SetBaseMaxHealth then u:SetBaseMaxHealth(call(dead,'GetBaseMaxHealth',dead:GetMaxHealth())) end
-        if u.SetBaseDamageMin then u:SetBaseDamageMin(call(dead,'GetBaseDamageMin',0));u:SetBaseDamageMax(call(dead,'GetBaseDamageMax',0)) end
-        if u.SetPhysicalArmorBaseValue then u:SetPhysicalArmorBaseValue(call(dead,'GetPhysicalArmorBaseValue',0)) end
-        if u.SetBaseAttackTime then u:SetBaseAttackTime(call(dead,'GetBaseAttackTime',1.7)) end
+    -- Native base edits apply to every form. Total health/damage include
+    -- attributes, items and cards, whose contributions are inherited separately.
+    for _,name in ipairs({'BaseMaxHealth','BaseMaxMana','BaseDamageMin','BaseDamageMax',
+        'PhysicalArmorBaseValue','BaseAttackTime','BaseMoveSpeed','BaseMagicalResistanceValue'}) do
+        if u['Set'..name] and dead['Get'..name] then
+            u['Set'..name](u,dead['Get'..name](dead))
+        end
+    end
+    if kind=='echo' and u.AddNewModifier then
+        u:AddNewModifier(dead,nil,'modifier_illusion',{duration=pick(c,{5,8,12}),outgoing_damage=0,incoming_damage=0})
+        u:AddNewModifier(dead,nil,'modifier_endless_card_echo',{duration=pick(c,{5,8,12})})
     end
     -- The preparation contribution is inherited once. Combat stats are freshly aggregated once.
     local p=game.endlessCardPrepared

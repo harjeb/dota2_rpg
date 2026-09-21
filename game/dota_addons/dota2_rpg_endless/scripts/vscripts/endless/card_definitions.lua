@@ -13,7 +13,7 @@ local function low(n) return {type='hero_health_below',threshold=n,cooldown=12} 
 local function consume(id,stats,trigger,duration,target) add(id,'consumable',target or 'friendly',stats,trigger,duration or 0) end
 buff('E-g1',{}); buff('E-g2',{}); buff('E-g3',{health={200,300,500}})
 buff('E-g4',{}); buff('E-g5',{}); buff('E-g6',{missing_health_amp={12,20,35}})
-buff('E-g8',{spell_amp={4,7,10}}); buff('E-g9',{})
+buff('E-g7',{}); buff('E-g8',{spell_amp={4,7,10}}); buff('E-g9',{})
 buff('C-g1',{attack_speed={20,35,55}}); buff('C-g2',{attack_block={15,25,40}})
 buff('C-g3',{}); buff('C-g4',{}); buff('C-g5',{cooldown={10,16,24}})
 buff('C-g6',{incoming_damage={-5,-8,-12}}); buff('C-g7',{spell_amp={12,20,30},mana_cost={20,20,20}})
@@ -33,7 +33,10 @@ buff('W-g5',{base_damage_pct={12,20,30}}); buff('W-g6',{attack_speed={18,30,45},
 buff('W-g7',{crit_chance={15,20,25},crit_multiplier={160,180,200}})
 buff('W-g8',{health={250,450,700}}); buff('W-g9',{health_pct={8,14,22}})
 consume('E-c1',{spell_amp={20,30,45}},time(5),10)
+consume('E-c2',{magic_resistance={10,20,30}},time(0),10)
 consume('E-c3',{},time(0),5,'enemy')
+consume('E-c4',{},low(.5),5)
+consume('E-c7',{}, {type='team_health_below',threshold=.6,cooldown=12})
 consume('E-c5',{}, {type='team_mana_below',threshold=.3,cooldown=12})
 consume('E-c6',{},time(12))
 consume('C-c1',{base_damage_pct={40,60,80}},time(5),8)
@@ -64,13 +67,12 @@ field('E-f3','friendly',{}); field('E-f4','enemy',{})
 field('C-f1','friendly',{move_speed={15,24,35}}); field('C-f2','enemy',{attack_speed={-16,-32,-50}})
 field('C-f3','friendly',{incoming_damage={-4,-7,-12}})
 field('C-f4','friendly',{health_regen={50,80,130},field_heal_amp={0,0,15}})
+field('D-f1','enemy',{}); field('D-f3','enemy',{})
+field('W-f2','friendly',{})
 field('D-f2','friendly',{health_regen_pct={1,1.6,2.4}}); field('D-f4','enemy',{})
 field('A-f1','enemy',{heal_amp={-30,-45,-60}}); field('A-f2','enemy',{}); field('A-f3','enemy',{})
 field('A-f4','enemy',{armor={-7,-13,-20}})
 field('W-f1','enemy',{miss={20,35,50}}); field('W-f3','enemy',{}); field('W-f4','enemy',{})
 -- Elemental original designs promise a first activation, not an invented repeat interval.
-for _,id in ipairs({'E-c1','E-c3','E-c5','E-c6'}) do D[id].trigger.once=true end
--- Native shields and casting strong illusions require engine integration not provided
--- by recipient card stats. Keep these out of the executable/equip allowlist.
-D['D-g5']=nil;D['D-c2']=nil;D['D-g3']=nil
+for _,id in ipairs({'E-c1','E-c2','E-c3','E-c5','E-c6','E-c7'}) do D[id].trigger.once=true end
 return D

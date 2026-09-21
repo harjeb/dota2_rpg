@@ -42,7 +42,7 @@ assert(g.endlessCards.slots['lina:general']==nil and Cards.Used(g)==1)
 assert(action(g,{type='equip',id='C-g1',slot='ursa:general'})==nil)
 assert(Cards.Used(g)==1)
 assert(action(g,{type='equip',id='E-g8',slot='lina:hero'}))
-assert(action(g,{type='equip',id='E-f3',slot='lina:general'}),'unimplemented cannot equip')
+assert(action(g,{type='equip',id='E-f3',slot='lina:general'}),'unowned card cannot equip')
 assert(action(g,{type='level',id='C-g1',level=2}),'cannot forge owned level')
 assert(action(g,{type='level',id='C-g1',level=1.5}))
 local s=g.endlessCards
@@ -76,7 +76,7 @@ Cards.Request(g,10,{PlayerID=0,type='buy',index=2});assert(s.revision==before)
 EntIndexToHScript=resolve
 -- Recovery state is serializable and contains no engine handles.
 Cards.Publish(g);local Json=require('lib.json');local wire=Json.decode(events[#events].data.state_json)
-assert(wire.run_id=='1' and wire.gold==g.gold and #wire.supported>=17)
+assert(wire.run_id=='1' and wire.gold==g.gold and #wire.supported==100 and not next(wire.unsupported))
 -- First-only elemental cards use an infinite internal deadline, never JSON infinity.
 g.endlessCardCombat={cards={{id='E-c1',remaining=2,next_trigger=math.huge,active_until=10}}}
 Cards.Publish(g);wire=Json.decode(events[#events].data.state_json)
@@ -132,4 +132,21 @@ local oldOffers=table.concat(a.endlessCards.offers,',');Cards.Ensure(a);assert(o
 local maxed=a.endlessCards.offers[1];a.endlessCards.cards[maxed]={level=3,copies=3,load=1}
 a.endlessWave=2;Cards.Ensure(a)
 for _,id in ipairs(a.endlessCards.offers)do assert(id~=maxed and Catalog[id].faction=='civilization')end
-print('endless-cards: authority, revisions, capacity preflight, random faction pools, shared purchases, budget, combat lifecycle and recovery passed')
+-- Newly completed cards must be reachable through real quotes, purchases and equipment.
+for _,id in ipairs({'E-g7','E-c2','E-c4','E-c7','D-f1','D-f3','W-f2','D-g3','D-g5','D-c2'}) do
+ local fresh=game();local faction=Catalog[id].faction
+ for other,card in pairs(Catalog) do
+  if other~=id and card.faction==faction then
+   local c={};for k,v in pairs(card)do c[k]=v end;c.level=3;c.copies=3;c.load=1
+   fresh.endlessCards.cards[other]=c
+  end
+ end
+ assert(action(fresh,{type='factions',factions={faction}})==nil)
+ assert(#fresh.endlessCards.offers==5,'new card must remain available in its faction pool: '..id)
+ for _,offer in ipairs(fresh.endlessCards.offers)do assert(offer==id,'only unsaturated card offered')end
+ assert(action(fresh,{type='buy',index=0})==nil,'new card purchase: '..id)
+ assert(fresh.gold==400 and fresh.endlessPurchases==1)
+ assert(action(fresh,{type='equip',id=id,slot='lina:general'})==nil,'new card equip: '..id)
+ assert(Cards.Validate(fresh)==nil)
+end
+print('endless-cards: all 100 supported, remaining 10 quote/buy/equip, authority, capacity, pools, shared purchases, budget and combat lifecycle passed')

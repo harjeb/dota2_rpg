@@ -31,6 +31,25 @@ end
 function M:OnDestroy()
     if IsServer() and self.kind=='fear' and self:GetParent().Stop then self:GetParent():Stop() end
 end
+-- Keep native illusion identity (and illusion-targeted rules), while requesting
+-- the engine's strong, spell-capable and item-capable illusion exceptions.
+modifier_endless_card_echo=class({})
+function modifier_endless_card_echo:IsHidden() return false end
+function modifier_endless_card_echo:IsPurgable() return false end
+function modifier_endless_card_echo:DeclareFunctions()
+    local result={}
+    for _,name in ipairs({'MODIFIER_PROPERTY_IS_ILLUSION','MODIFIER_PROPERTY_ILLUSION_LABEL','MODIFIER_PROPERTY_STRONG_ILLUSION',
+        'MODIFIER_PROPERTY_SUPER_ILLUSION','MODIFIER_PROPERTY_SUPER_ILLUSION_WITH_ULTIMATE','MODIFIER_PROPERTY_SUPER_ILLUSION_WITH_ITEMS'}) do
+        if _G[name] then result[#result+1]=_G[name] end
+    end
+    return result
+end
+function modifier_endless_card_echo:GetIsIllusion() return 1 end
+function modifier_endless_card_echo:GetModifierIllusionLabel() return 1 end
+function modifier_endless_card_echo:GetModifierStrongIllusion() return 1 end
+function modifier_endless_card_echo:GetModifierSuperIllusion() return 1 end
+function modifier_endless_card_echo:GetModifierSuperIllusionWithUltimate() return 1 end
+function modifier_endless_card_echo:GetModifierSuperIllusionWithItems() return 1 end
 modifier_endless_card_source=class({})
 function modifier_endless_card_source:IsHidden() return true end
 function modifier_endless_card_source:IsPurgable() return false end

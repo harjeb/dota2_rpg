@@ -279,6 +279,7 @@ local function BuildHeroActionSlots(hero, includeBuyback)
 end
 
 function Precache(context)
+	require('endless.card_visuals').Precache(context)
 	PRECACHE_CONTEXT = context
     NeutralRecruitment.Precache(context)
 	local started = type(RealTime) == "function" and RealTime() or nil

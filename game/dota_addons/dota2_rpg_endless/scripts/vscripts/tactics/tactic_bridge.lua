@@ -245,6 +245,12 @@ function TacticBridge:Install()
                 seen[unit] = true
             end
         end
+        for _, unit in ipairs(require("endless.card_integration").DenCompanions(gameMode)) do
+            if not seen[unit] and NeutralSpells.IsCompanion(gameMode, unit) then
+                units[#units + 1] = unit
+                seen[unit] = true
+            end
+        end
         for _, form in ipairs(require("endless.card_integration").Forms(gameMode)) do
             if not seen[form] then units[#units + 1] = form; seen[form] = true end
         end
