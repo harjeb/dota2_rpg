@@ -157,7 +157,9 @@ function BattleManager:GetAliveCount(team, includeReincarnating)
 			count = count + 1
 		end
 	end
-	return count
+	-- Card hero forms continue the battle after their original hero dies.
+	-- Ordinary summons do not prevent a wipe.
+	return count + require("endless.card_integration").HeroFormCount(self.gameMode, team)
 end
 
 function BattleManager:OnThink()

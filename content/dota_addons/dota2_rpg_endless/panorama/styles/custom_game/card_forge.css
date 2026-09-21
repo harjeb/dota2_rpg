@@ -38,6 +38,7 @@
 .CfFactionTab.CfActive { background-color:gradient(linear,0% 0%,0% 100%,from(#58695033),to(#8f97624c)); }
 .CfFactionTab.CfActive Label { color:#ead59d; }
 #CfTools { width:100%; height:38px; flow-children:right; margin-bottom:13px; }
+.CfTriggerValue { width:100%; height:36px; font-size:18px; color:#e4dcc6; background-color:#0b1416; padding:6px 10px; }
 #CfSearch { width:fill-parent-flow(1); height:36px; font-size:16px; color:#e4dcc6; background-color:#0b1416; border:0px; padding:6px 10px; margin-right:10px; }
 #CfType { width:112px; height:36px; margin-right:8px; }
 #CfSort { width:88px; height:36px; }

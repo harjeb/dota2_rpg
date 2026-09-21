@@ -42,7 +42,10 @@ local function fixture(config)
     function g:EnsureCommanderProtected() end
     function g:SpawnBattleBarrier() self.barrier = true end
     function g:SpawnLevelEnemies(id) self.spawned = id; self.preparedEnemyLevel = id end
-    function g:RespawnPlayerRoster() self.respawned = (self.respawned or 0) + 1 end
+    function g:RespawnPlayerRoster()
+        self.respawned = (self.respawned or 0) + 1
+        if self.rebuildRoster then self:rebuildRoster() end
+    end
     function g:RollShop() self.rolls = self.rolls + 1 end
     function g:SyncRosterAbilities() end
     function g:SyncLiveEquipmentState() end
@@ -124,6 +127,90 @@ start(s); original.charges = 0
 s:EndBattle("dire"); advance()
 assert(original.removed); eq(stash.items[4].name, "item_magic_wand"); eq(stash.items[4].charges, 8)
 assert(stash.items[4] ~= original)
+-- Physical boundary: a preparation drop is picked up and combined/consumed;
+-- a failed-fight drop must disappear, with exactly one original restored.
+local physical = {}
+Entities = {FindAllByClassname = function(_, name) eq(name, "dota_item_physical"); return physical end}
+Vector = function(x,y,z) return {x=x,y=y,z=z} end
+local function drop(value, position)
+    local entity = {item=value, position=position}
+    function entity:IsNull() return self.removed == true end
+    function entity:GetContainedItem() return self.item end
+    function entity:GetAbsOrigin() return self.position end
+    function entity:RemoveSelf() self.removed = true end
+    physical[#physical+1] = entity
+    return entity
+end
+CreateItemOnPositionSync = function(position, value) return drop(value, position) end
+local floorItem = item("item_cheese", 2)
+local floorDrop = drop(floorItem, Vector(100,200,128))
+start(s)
+floorDrop:RemoveSelf() -- picked up during combat
+stash.items[1] = floorItem; floorItem.slot = 1
+local battleItem = item("item_rapier", 0)
+local battleDrop = drop(battleItem, Vector(9,9,9))
+s:EndBattle("dire"); local retry = advance()
+assert(floorItem.removed and battleItem.removed and battleDrop.removed)
+local restoredDrop = physical[#physical]
+eq(restoredDrop.item.name, "item_cheese"); eq(restoredDrop.item.charges, 2)
+eq(restoredDrop.position.x, 100); eq(restoredDrop.position.y, 200)
+local count = #physical; retry(); eq(#physical, count, "duplicate callback must not duplicate drops")
+-- Known consumed upgrades and permanent base stats survive recreation, while
+-- failed-fight changes on the commander are rolled back in place.
+local function hero(name)
+    local unit = {lineupHeroName=name, strength=23, modifiers={}}
+    function unit:GetBaseStrength() return self.strength end
+    function unit:SetBaseStrength(value) self.strength=value end
+    function unit:GetItemInSlot() return nil end
+    function unit:FindModifierByName(key) return self.modifiers[key] end
+    function unit:RemoveModifierByName(key) self.modifiers[key]=nil end
+    function unit:AddNewModifier(_, _, key)
+        local modifier = {stacks=0, GetStackCount=function(self) return self.stacks end,
+            SetStackCount=function(self,value) self.stacks=value end}
+        self.modifiers[key]=modifier; return modifier
+    end
+    return unit
+end
+physical = {}
+local before = hero("a")
+before:AddNewModifier(nil,nil,"modifier_item_moon_shard_consumed"):SetStackCount(1)
+s.battleManager.teamHeroes[2] = {before}
+local rebuilt = hero("a")
+s.rebuildRoster = function(self) self.battleManager.teamHeroes[2] = {rebuilt} end
+start(s); before.strength=99
+s:EndBattle("dire"); advance()
+assert(before.removed); eq(rebuilt.strength,23)
+eq(rebuilt:FindModifierByName("modifier_item_moon_shard_consumed"):GetStackCount(),1)
+s.rebuildRoster = nil
+-- Edda's supported consumed flag replays native consumption on a fresh
+-- Wyvern, then restores base stats so native consumption cannot double them.
+local wyvernName = "npc_dota_hero_winter_wyvern"
+local eddaGame = fixture()
+eddaGame.heroData[wyvernName] = {edda_consumed=true, edda_seen=true}
+local oldWyvern, newWyvern = hero(wyvernName), hero(wyvernName)
+oldWyvern.strength = 40
+eddaGame.battleManager.teamHeroes[2] = {oldWyvern}
+local consumptions = 0
+function newWyvern:ConsumeItem(value)
+    eq(value.name,"item_eldwurms_edda")
+    assert(eddaGame.itemSaleInProgress, "retry replay must not credit native item sale events")
+    consumptions = consumptions + 1; self.strength = self.strength + 20
+    value:RemoveSelf()
+end
+eddaGame.rebuildRoster = function(self) self.battleManager.teamHeroes[2] = {newWyvern} end
+start(eddaGame); eddaGame:EndBattle("dire"); local eddaRetry = advance()
+eq(consumptions,1); eq(newWyvern.strength,40); assert(oldWyvern.removed)
+eddaRetry(); eq(consumptions,1); eq(eddaGame.itemSaleInProgress,nil)
+-- Creation failures stay in result and cannot spend another life/start using
+-- a partially restored inventory. The one-shot callback cannot retry writes.
+start(s); s:EndBattle("dire")
+local create = CreateItem
+CreateItem = function() return nil end
+local failedCallback = callbacks.Dota2RpgBackToSetup
+assert(not pcall(failedCallback)); eq(s.phase,"result"); assert(s.endlessRestoreError)
+eq(s:OnStartBattle(10,{PlayerID=0}),false)
+failedCallback(); CreateItem = create
+Entities = nil
 local fractional = fixture({xp_per_wave = 0.1}); eq(fractional.dataLoader:GetLevel(fractional.currentLevelId).reward.xp_pool, 1)
 h:BroadcastBattleState(); eq(h.published.wave, 36); eq(h.published.time_limit, 120); eq(h.published.phase, "setup")
 print("endless-mode: lifecycle, ownership, retry snapshot, replay and 35-wave progression passed")

@@ -35,4 +35,4 @@ with tempfile.TemporaryDirectory(prefix='endless_install_') as temp:
     assert (target / 'content/dota_addons/dota2_rpg_endless/maps/dota2_rpg_demo.vmap').exists()
     assert not (target / 'game/dota_addons/dota2_rpg').exists()
 assert hashes(normal) == before, 'installer must not modify normal addon'
-print('PASS self-contained Lua/XML dependencies, local results, battlefield, mock install and UI101 installed locale hashes; no engine compilation')
+print('PASS self-contained Lua/XML dependencies, local results, battlefield, mock install and UI102 installed locale hashes; no engine compilation')

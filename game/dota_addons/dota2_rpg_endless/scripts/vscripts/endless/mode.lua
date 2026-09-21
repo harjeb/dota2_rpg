@@ -61,11 +61,75 @@ function Mode.Wave(game, wave)
 end
 local fields = {"heroData", "heroInventories", "ownedHeroes", "lineup", "placedPositions", "heroRulesByName",
     "shopOffers", "shopOfferText", "refreshCount", "scrollPurchases", "scrollStock", "scrollBought", "heroOrder", "benchSlots"}
+local function live(entity) return entity and (not entity.IsNull or not entity:IsNull()) end
+local permanentModifiers = {"modifier_item_moon_shard_consumed", "modifier_item_ultimate_scepter_consumed",
+    "modifier_item_aghanims_shard"}
+local function roster(game)
+    local units, seen = {}, {}
+    local function add(unit)
+        if live(unit) and not seen[unit] then seen[unit] = true; units[#units + 1] = unit end
+    end
+    for _, list in ipairs({game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}, game.benchUnits or {}}) do
+        for _, unit in pairs(list) do add(unit) end
+    end
+    for _, data in pairs(game.heroData or {}) do add(data.edda_retained_unit) end
+    return units
+end
+local function drops()
+    return Entities and Entities.FindAllByClassname and Entities:FindAllByClassname("dota_item_physical") or {}
+end
+local function capturePermanent(unit)
+    local state = {modifiers = {}}
+    for _, name in ipairs(permanentModifiers) do
+        local modifier = unit.FindModifierByName and unit:FindModifierByName(name)
+        if modifier then state.modifiers[name] = modifier:GetStackCount() end
+    end
+    for _, stat in ipairs({"Strength", "Agility", "Intellect"}) do
+        if unit["GetBase" .. stat] then state[stat] = unit["GetBase" .. stat](unit) end
+    end
+    return state
+end
+local function restorePermanent(unit, state)
+    for _, name in ipairs(permanentModifiers) do
+        if unit.RemoveModifierByName then unit:RemoveModifierByName(name) end
+        if state.modifiers[name] ~= nil then
+            local modifier = assert(unit:AddNewModifier(unit, nil, name, {}), "endless retry: permanent modifier failed")
+            modifier:SetStackCount(state.modifiers[name])
+        end
+    end
+    for _, stat in ipairs({"Strength", "Agility", "Intellect"}) do
+        if state[stat] ~= nil then unit["SetBase" .. stat](unit, state[stat]) end
+    end
+    if unit.CalculateStatBonus then unit:CalculateStatBonus(true) end
+end
 local function snapshot(game)
     game:SyncRosterAbilities()
     game:SyncLiveEquipmentState(true)
-    local saved = {gold = game:GetGoldBalance(), stash = {}}
+    local saved = {gold = game:GetGoldBalance(), stash = {}, drops = {}, permanent = {}}
+    for _, unit in ipairs(roster(game)) do
+        local name = unit.lineupHeroName or unit.benchHeroName
+        if name then
+            if name == "npc_dota_hero_witch_doctor" then require("issue_fixes.gris_gris").Capture(game, unit) end
+            saved.permanent[name] = capturePermanent(unit)
+        end
+    end
+    local commander = game:GetStashUnit()
+    if live(commander) then saved.commanderPermanent = capturePermanent(commander) end
+    for _, drop in pairs(drops()) do
+        if live(drop) and game:IsLiveItem(drop:GetContainedItem()) then
+            local item, pos = drop:GetContainedItem(), drop:GetAbsOrigin()
+            saved.drops[#saved.drops + 1] = {name = item:GetAbilityName(), state = copy(game:GetItemPersistentState(item)),
+                position = {x = pos.x, y = pos.y, z = pos.z}}
+        end
+    end
     for _, field in ipairs(fields) do saved[field] = copy(game[field]) end
+    -- Gris-Gris clocks and native handles must be rebound to the restored hero.
+    for _, data in pairs(saved.heroData or {}) do
+        if data.grisGris then
+            data.grisGris.item, data.grisGris.hero = nil, nil
+            data.grisGris.restoring = true
+        end
+    end
     local stash = game:GetStashUnit()
     if stash and stash.GetItemInSlot then
         for slot = 0, 16 do
@@ -88,15 +152,30 @@ local function restore(game, saved)
     -- Remove failed live units BEFORE assigning data, otherwise Respawn's capture
     -- would overwrite it. Recreate items from serialized charges/permanent state.
     local lifecycle = require("issue_fixes.hero_lifecycle_log")
-    local removed = {}
-    for _, units in ipairs({game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] or {}, game.benchUnits or {}}) do
-        for _, unit in pairs(units) do
-            if not removed[unit] then
-                removed[unit] = true; clearItems(unit)
-                lifecycle.Remove(game, unit, "endless_retry")
-            end
+    for _, unit in ipairs(roster(game)) do
+        clearItems(unit)
+        lifecycle.Remove(game, unit, "endless_retry")
+    end
+    -- A failed fight can move an item from any carrier to the floor or vice
+    -- versa. Wipe the complete physical-item set before restoring the boundary.
+    for _, drop in pairs(drops()) do
+        if live(drop) then
+            local item = drop:GetContainedItem()
+            if live(item) then item:RemoveSelf() end
+            if live(drop) then drop:RemoveSelf() end
         end
     end
+    -- Inventory capture can detach items before a roster rebuild fails. Such
+    -- entities have neither a slot nor a floor container, but still need disposal.
+    for _, data in pairs(game.heroData or {}) do
+        for _, item in pairs(data.inventory_entities or {}) do
+            if live(item) then item:RemoveSelf() end
+        end
+        local grisItem = data.grisGris and data.grisGris.item
+        if live(grisItem) then grisItem:RemoveSelf() end
+    end
+    game.ruleGeneration = (game.ruleGeneration or 0) + 1
+    if game.tacticBridge and game.tacticBridge.ResetState then game.tacticBridge:ResetState() end
     game.battleManager.teamHeroes[DOTA_TEAM_GOODGUYS] = {}
     game.battleManager.teamRules[DOTA_TEAM_GOODGUYS] = {}
     game.benchUnits, game.autoAbilityHeroes = {}, {}
@@ -110,6 +189,13 @@ local function restore(game, saved)
         stash:AddItem(item)
         if stash.SwapItems and item.GetItemSlot and item:GetItemSlot() ~= entry.slot then stash:SwapItems(item:GetItemSlot(), entry.slot) end
     end
+    for _, entry in ipairs(saved.drops or {}) do
+        local item = assert(CreateItem(entry.name, nil, nil), "endless retry: world item creation failed")
+        game:RestoreItemPersistentState(item, entry.state)
+        local p = entry.position
+        assert(CreateItemOnPositionSync(Vector(p.x, p.y, p.z), item), "endless retry: world drop creation failed")
+    end
+    game.endlessRestorePermanent = saved
     game.rosterAbilitySnapshot, game.equipmentSnapshot = nil, nil
     game.pendingNativePurchases, game.nativePurchaseOrderContexts = {}, {}
     game.nativePurchaseBaseline, game.nativePurchaseObservedStates = {}, {}
@@ -145,6 +231,60 @@ function Mode.Install(game)
     local broadcast = game.BroadcastBattleState
     game.BroadcastBattleState = function(self, player)
         broadcast(self, player); Mode.Publish(self, player)
+    end
+    -- Extend the shared serializer locally, so roster, stash and floor items
+    -- use the same public native state. Cooldowns follow the preparation reset.
+    local itemProperties = {SecondaryCharges = "SecondaryCharges",
+        PurchaseTime = "PurchaseTime", ItemSlot = false}
+    local captureItem, restoreItem = game.GetItemPersistentState, game.RestoreItemPersistentState
+    if captureItem and restoreItem then
+        game.GetItemPersistentState = function(self, item)
+            local state = captureItem(self, item)
+            for getter in pairs(itemProperties) do
+                if item["Get" .. getter] then state[getter] = item["Get" .. getter](item) end
+            end
+            return state
+        end
+        game.RestoreItemPersistentState = function(self, item, state)
+            restoreItem(self, item, state)
+            for getter, setter in pairs(itemProperties) do
+                if setter and state[getter] ~= nil and item["Set" .. setter] then
+                    item["Set" .. setter](item, state[getter])
+                end
+            end
+            -- Stash and world items are not yet attached at this point.
+            local owner = item.GetCaster and item:GetCaster()
+            if state.ItemSlot ~= nil and live(owner) and owner.SwapItems and item.GetItemSlot
+                and item:GetItemSlot() >= 0 and item:GetItemSlot() ~= state.ItemSlot then
+                owner:SwapItems(item:GetItemSlot(), state.ItemSlot)
+            end
+        end
+    end
+    local respawn = game.RespawnPlayerRoster
+    game.RespawnPlayerRoster = function(self, ...)
+        respawn(self, ...)
+        local saved = self.endlessRestorePermanent
+        if not saved then return end
+        for _, unit in ipairs(roster(self)) do
+            local name = unit.lineupHeroName or unit.benchHeroName
+            local state = saved.permanent[name]
+            if state then
+                -- The project supports one Edda consumption, via ConsumeItem.
+                -- Replay on the fresh hero before restoring the captured base stats.
+                if saved.heroData[name].edda_consumed then
+                    local edda = assert(CreateItem("item_eldwurms_edda", unit, unit))
+                    assert(unit.ConsumeItem, "endless retry: native Edda consumption unavailable")
+                    local wasSelling = self.itemSaleInProgress
+                    self.itemSaleInProgress = true
+                    local ok, err = pcall(unit.ConsumeItem, unit, edda)
+                    self.itemSaleInProgress = wasSelling
+                    assert(ok and not live(edda), "endless retry: native Edda replay failed: " .. tostring(err))
+                end
+                restorePermanent(unit, state)
+            end
+        end
+        if saved.commanderPermanent then restorePermanent(self:GetStashUnit(), saved.commanderPermanent) end
+        self.endlessRestorePermanent = nil
     end
     local start = game.OnStartBattle
     game.OnStartBattle = function(self, source, payload)
@@ -228,21 +368,30 @@ function Mode.Install(game)
         GameRules:GetGameModeEntity():SetContextThink("Dota2RpgBackToSetup", function()
             if not pending or self.phase ~= "result" or self.runComplete or self.settlementGeneration ~= generation then return nil end
             pending = false
-            if won then
-                self.endlessWave = self.endlessWave + 1
-                self.currentLevelId = Mode.Wave(self, self.endlessWave)
-                self.orderedLevels = {self.currentLevelId}
-                self.refreshCount, self.scrollPurchases = 0, {low = 0, high = 0}
-                self.endlessSnapshot = nil
-            else
-                assert(self.endlessSnapshot, "endless retry missing successful-start snapshot")
-                restore(self, self.endlessSnapshot)
+            local ok, err = pcall(function()
+                if won then
+                    self.endlessWave = self.endlessWave + 1
+                    self.currentLevelId = Mode.Wave(self, self.endlessWave)
+                    self.orderedLevels = {self.currentLevelId}
+                    self.refreshCount, self.scrollPurchases = 0, {low = 0, high = 0}
+                    self.endlessSnapshot = nil
+                else
+                    assert(self.endlessSnapshot, "endless retry missing successful-start snapshot")
+                    restore(self, self.endlessSnapshot)
+                end
+                self.phase, self.winner = "setup", ""
+                self:EnsureCommanderProtected(); self:SpawnLevelEnemies(self.currentLevelId)
+                self:RespawnPlayerRoster(); self:SpawnBattleBarrier()
+                if won then self:RollShop() end
+                self:BroadcastLevelInfo(); self:BroadcastBattleState(); self:BroadcastHeroInfo(); self:BroadcastShopState()
+            end)
+            if not ok then
+                -- Never allow a partially restored roster to start another fight.
+                self.phase = "result"
+                self.endlessRestoreError = tostring(err)
+                self:BroadcastBattleState()
+                error(err)
             end
-            self.phase, self.winner = "setup", ""
-            self:EnsureCommanderProtected(); self:SpawnLevelEnemies(self.currentLevelId)
-            self:RespawnPlayerRoster(); self:SpawnBattleBarrier()
-            if won then self:RollShop() end
-            self:BroadcastLevelInfo(); self:BroadcastBattleState(); self:BroadcastHeroInfo(); self:BroadcastShopState()
             return nil
         end, 3)
         return true

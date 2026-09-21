@@ -209,6 +209,7 @@ function TacticBridge:Install()
 		if not is_valid_entity(unit) then
 			return false
 		end
+        if require("endless.card_integration").IsForm(gameMode, unit) then return true end
         if NeutralSpells.IsCompanion(gameMode, unit) then return true end
 		if (gameMode.managedSummons or {})[unit] or (gameMode.tempestDoubles or {})[unit]
             or (gameMode.specialObjects or {})[unit] then return true end
@@ -243,6 +244,9 @@ function TacticBridge:Install()
                 units[#units + 1] = unit
                 seen[unit] = true
             end
+        end
+        for _, form in ipairs(require("endless.card_integration").Forms(gameMode)) do
+            if not seen[form] then units[#units + 1] = form; seen[form] = true end
         end
 		return units
 	end
@@ -279,6 +283,10 @@ function TacticBridge:Install()
 
 	-- 旧负载规则（heroRulesByName）-> 修订版结构，缓存于桥接层
 	function manager.getRules(unit)
+        if require("endless.card_integration").IsForm(gameMode, unit) then
+            local source = unit.endlessRebirthSource
+            if is_valid_entity(source) then return manager.getRules(source) end
+        end
         if NeutralSpells.IsCompanion(gameMode, unit) then
             return require("issue_fixes.enemy_rules").CreateForUnit(unit, {}, getBattleUnits())
         end

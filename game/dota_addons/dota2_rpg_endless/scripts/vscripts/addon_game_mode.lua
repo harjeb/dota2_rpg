@@ -517,6 +517,7 @@ function CDota2RpgDemo:InitGameMode()
 	SkillDebug.Install(self)
 	require("endless.mode").Install(self)
 	require("endless.cards").Install(self)
+	require("endless.card_integration").Install(self)
 	-- 天梯暂不开放：直接进入 PVE。重新开放时与 HUD 的 arena_hud.js include 一起恢复。
 	-- require("battle.arena_integration").Install(self)
 	RuntimeLog.Write("BUILD rpg-runtime-v44-20260912 neutral-skills-v2 gris-gris-v1 loaded; log=console.log (-condebug)")

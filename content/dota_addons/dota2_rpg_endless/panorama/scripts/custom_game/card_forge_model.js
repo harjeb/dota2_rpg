@@ -11,7 +11,7 @@
   const definitions = typeof module !== "undefined" ? require("./card_forge_data.js") : GameUI.CustomUIConfig().CardForgeData;
   const curves = { "普通": [1, 5, 10], "强力": [1, 6, 15], "顶级": [1, 8, 20] };
   function initial() {
-    return { cards: [], heroes: [], slots: {}, points: {}, gold: 0, purchases: 0, offers: [], bought: [], phase: "loading", run_id: "", revision: -1, wave: 0, supported: [], combat: { cards: [] } };
+    return { factions: [], cards: [], heroes: [], slots: {}, points: {}, gold: 0, purchases: 0, offers: [], bought: [], phase: "loading", run_id: "", revision: -1, wave: 0, supported: [], unsupported: {}, combat: { cards: [] } };
   }
   function snapshot(payload) {
     const s = JSON.parse(payload.state_json);
@@ -21,9 +21,13 @@
         ["prepare", "locked"].indexOf(s.phase) < 0) throw new Error("Invalid card snapshot");
     s.cards = s.cards.map(c => Object.assign({}, definitions.find(d => d.id === c.id) || {}, c));
     s.combat = s.combat || { cards: [] };
+    s.factions = s.factions || [];
+    s.unsupported = s.unsupported || {};
     return s;
   }
   const supported = (s, id) => s.supported.indexOf(id) >= 0;
+  const countdown = (s, deadline) => Number.isFinite(deadline) && Number.isFinite(s.combat.server_time) ? Math.max(0, Math.ceil(deadline - s.combat.server_time)) : null;
+  const canAcquire = (s, id) => get(s, id) ? get(s, id).level < 3 : inventory(s).length < 24;
   const get = (s, id) => s.cards.find(c => c.id === id);
   const location = (s, id) => Object.keys(s.slots).find(key => s.slots[key] === id);
   const inventory = s => s.cards.filter(c => !location(s, c.id));
@@ -37,23 +41,41 @@
     if (!s.heroes.some(h => h.id === hero) || !["hero", "general"].includes(kind)) return "槽位不存在";
     if (kind === "hero" && card.hero !== hero) return "专属槽只能装备该英雄的专属卡";
     if (kind === "general" && card.type === "hero") return "英雄专属卡需要对应英雄的专属槽";
+    const from = location(s, id);
+    if (from === key) return "卡牌已经在该槽位";
+    if (from && s.slots[key] && inventory(s).length >= 24) return "卡库已满，请先腾出位置";
     return null;
   }
   // Return intents only; never predict inventory or economy changes.
   function apply(s, action) {
     if (s.phase !== "prepare") return { error: "构筑已锁定，请先返回准备" };
-    if (!["equip", "unequip", "level", "smelt", "buy", "exchange", "confirm"].includes(action.type)) return { error: "未知操作" };
+    if (!["trigger", "factions", "equip", "unequip", "level", "smelt", "buy", "exchange", "confirm"].includes(action.type)) return { error: "未知操作" };
     const card = get(s, action.id);
-    if (["equip", "unequip", "level", "smelt"].includes(action.type) && !card) return { error: "卡牌不存在" };
+    if (["equip", "unequip", "level", "smelt", "trigger"].includes(action.type) && !card) return { error: "卡牌不存在" };
     if (action.type === "equip") {
       const error = eligibility(s, action.id, action.slot);
       if (error) return { error };
     }
+    if (action.type === "trigger") {
+      const trigger = card.trigger_default;
+      if (!trigger) return { error: "此卡触发条件不可调整" };
+      const time = trigger.type === "time";
+      if (action.value !== "default" && (!Number.isInteger(action.value) || action.value < (time ? 0 : 10) || action.value > (time ? 120 : 90))) return { error: "触发数值超出范围" };
+    }
+    if (action.type === "level" && (!Number.isInteger(action.level) || action.level < 1 || action.level > card.level)) return { error: "该装载等级尚未解锁" };
+    if (action.type === "unequip" && inventory(s).length >= 24) return { error: "卡库已满，请先腾出位置" };
     if (action.type === "exchange" && !supported(s, action.id)) return { error: "卡牌尚未实现" };
+    if (action.type === "buy" && s.purchases >= 3) return { error: "本波购买次数已用完" };
+    if (action.type === "buy" && s.gold < 100) return { error: "金币不足" };
+    if (["buy", "exchange"].includes(action.type)) {
+      const id = action.type === "buy" ? s.offers[action.index] : action.id;
+      if (get(s, id) && get(s, id).level >= 3) return { error: "该卡已满级" };
+      if (!canAcquire(s, id)) return { error: "卡库已满，请先腾出位置" };
+    }
     if (action.type === "buy" && (!Number.isInteger(action.index) || !supported(s, s.offers[action.index]) || s.bought.includes(action.index))) return { error: "报价不存在" };
     return { intent: Object.assign({}, action, { run_id: s.run_id, revision: s.revision, wave: s.wave }) };
   }
-  const api = { factions, definitions, curves, initial, get, location, inventory, cost, used, budget, eligibility, apply, snapshot, supported };
+  const api = { factions, definitions, curves, initial, get, location, inventory, cost, used, budget, eligibility, apply, snapshot, supported, countdown, canAcquire };
   if (typeof module !== "undefined") module.exports = api;
   else if (typeof GameUI !== "undefined") GameUI.CustomUIConfig().CardForgeModel = api;
   else root.CardForge = api;

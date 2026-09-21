@@ -17,7 +17,7 @@ const dictionaries={};
 for(const lang of ['schinese','english']){
  const text=fs.readFileSync(path.join(root,'game/dota_addons/dota2_rpg_endless/resource/addon_'+lang+'.txt'),'utf8');
  dictionaries[lang]=Object.fromEntries([...text.matchAll(/"((?:cf_|endless_)[^"]+)"\s+"([^"]*)"/g)].map(m=>[m[1],m[2]]));
- assert(text.includes(lang==='english'?'"UI version 101"':'"界面版本 101"'));
+ assert(text.includes(lang==='english'?'"UI version 102"':'"界面版本 102"'));
  for(const card of M.definitions)assert(dictionaries[lang]['cf_card_'+card.id.replace(/-/g,'_')]);
 }
 assert.deepEqual(Object.keys(dictionaries.english).sort(),Object.keys(dictionaries.schinese).sort());
@@ -27,4 +27,4 @@ const source=fs.readFileSync(path.join(base,'scripts/custom_game/card_forge.js')
 assert(!/document\.|window\.|localStorage|dataTransfer/.test(source));
 const manifest=fs.readFileSync(path.join(base,'layout/custom_game/custom_ui_manifest.xml'),'utf8');
 for(const f of ['card_forge.xml','rpg_demo_hud.xml','issue_fixes_ui.xml'])assert(manifest.includes(f));
-console.log('PASS current 100-card catalog, native source contracts, empty initial state, UI101 locale parity');
+console.log('PASS current 100-card catalog, native source contracts, empty initial state, UI102 locale parity');

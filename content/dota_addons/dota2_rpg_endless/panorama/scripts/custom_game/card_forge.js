@@ -3,7 +3,7 @@
     var root = $("#CardForgeRoot"), M = GameUI.CustomUIConfig().CardForgeModel;
     if (!root || !M) { return; }
     var state = M.initial(), selected = null, faction = "all", kind = "all", query = "", descending = true;
-    var catalog = false, inspectLevel = 1;
+    var catalog = false, inspectLevel = 1, chosenFactions = {};
     var requestSerial = 0, pending = false, combatActive = false, drag = null, noticeGeneration = 0, modalKind = "", open = false;
     var slots = {}, cards = {}, types = ["all", "hero", "buff", "charge", "field"];
     var validFactions = Object.keys(M.factions);
@@ -12,7 +12,7 @@
         "卡库已满，无法退回被替换卡；请先腾出位置":"full", "卡库已满，请先腾出位置":"full", "卡库已满，无法获得新卡":"full",
         "卡牌已经在该槽位":"already", "该装载等级尚未解锁":"level_locked", "构筑已锁定，请先返回准备":"locked",
         "只有专属卡可以熔炼":"smelt_only", "请先卸下这张专属卡":"unequip_first", "需要 3 点对应阵营印记":"marks_needed",
-        "本波购买次数已用完":"purchases_used", "金币不足":"gold_needed", "COST 超出预算，请降低装载等级或卸卡":"over_budget"
+        "触发数值超出范围":"trigger_invalid", "该卡已满级":"card_maxed", "本波购买次数已用完":"purchases_used", "金币不足":"gold_needed", "COST 超出预算，请降低装载等级或卸卡":"over_budget"
     };
     function local(key) { return $.Localize("#cf_" + key); }
     function heroName(id) { return $.Localize("#npc_dota_hero_" + id); }
@@ -166,17 +166,32 @@
             label(target, "", local("condition"), "CfDetailCaption");
             label(target, "", c.condition.replace(/\*\*/g, ""), "CfDetailText");
         }
+        if (!catalog && c.trigger_default) {
+            var trigger = c.trigger || c.trigger_default, timeTrigger = trigger.type === "time";
+            label(target, "", local("trigger_" + trigger.type), "CfSmall");
+            var entry = panel("TextEntry", target, "CfTriggerValue", "CfTriggerValue");
+            entry.text = String(timeTrigger ? trigger.first : Math.round(trigger.threshold * 100));entry.enabled = state.phase === "prepare";
+            var triggerActions = panel("Panel", target, "", "CfLevelRow");
+            var saveTrigger = button(triggerActions, "CfTriggerSave", local("trigger_save"), "CfMetal", function () {
+                execute({type:"trigger", id:c.id, value:entry.text.trim() === "" ? -1 : Number(entry.text)});
+            }); saveTrigger.enabled = state.phase === "prepare";
+            var resetTrigger = button(triggerActions, "CfTriggerReset", local("trigger_default"), "CfMetal", function () { execute({type:"trigger", id:c.id, value:"default"}); });
+            resetTrigger.enabled = state.phase === "prepare" && !!c.trigger;
+            label(target, "", local("trigger_cooldown"), "CfSmall");
+        }
         if (c.effect) {
             label(target, "", local("effect"), "CfDetailCaption");
             label(target, "", c.effect.replace(/\*\*/g, ""), "CfEffectText");
         }
         var combat = (state.combat.cards || []).find(function (item) { return item.id === c.id; });
         if (combat) {
-            ["remaining", "next_trigger", "active_until"].forEach(function (key) {
-                if (combat[key] !== undefined) { label(target, "", fmt("combat_" + key, {n:combat[key]}), "CfSmall"); }
-            });
+            if (combat.remaining !== undefined) { label(target, "", fmt("combat_remaining", {n:combat.remaining}), "CfSmall"); }
+            var active = M.countdown(state, combat.active_until), next = M.countdown(state, combat.next_trigger);
+            if (active > 0) { label(target, "", fmt("combat_active_remaining", {n:active}), "CfSmall"); }
+            if (combat.remaining > 0 && next !== null) { label(target, "", next > 0 ? fmt("combat_ready_in", {n:next}) : local("combat_waiting"), "CfSmall"); }
         }
         label(target, "", local(M.supported(state, c.id) ? "supported" : "unimplemented"), "CfSmall");
+        if (state.unsupported[c.id]) { label(target, "", String(state.unsupported[c.id]), "CfDetailText"); }
         label(target, "", catalog ? local("catalog_level") : fmt("owned_level", {n:c.level, copies:c.copies}), "CfSmall");
         var row = panel("Panel", target, "", "CfLevelRow");
         [1,2,3].forEach(function (n) {
@@ -206,12 +221,16 @@
             ["hero", "general"].forEach(function (type) {
                 var key = h.id + ":" + type, c = M.get(state, state.slots[key]);
                 var slot = panel("Panel", row, "CfSlot_" + h.id + "_" + type, "CfSlot"); slots[key] = slot;
-                if (c) { image(slot, c.art, "CfSlotArt"); if (!catalog) { attachDrag(slot, c.id); } }
+                if (c) { if (c.type === "hero") { image(slot, c.art, "CfSlotArt"); } else { background(slot, c.faction); } if (!catalog) { attachDrag(slot, c.id); } }
                 var copy = panel("Panel", slot, "", "CfSlotCopy"); copy.hittest = false; copy.hittestchildren = false;
                 label(copy, "", c ? cardName(c) : local("slot_" + type));
                 label(copy, "", c ? "Lv." + c.load + " · " + M.cost(c) + " COST" : "◇", "CfSmall");
                 slot.SetPanelEvent("onactivate", function () {
-                    if (state.phase !== "prepare") { notify(local("locked"), true); return; }
+                    if (state.phase !== "prepare") {
+                        if (c) { catalog = false; selected = c.id; render(); }
+                        else { notify(local("locked"), true); }
+                        return;
+                    }
                     if (!catalog && selected && M.get(state, selected) && selected !== state.slots[key]) { execute({type:"equip", id:selected, slot:key}, "equipped"); }
                     else if (c) { catalog = false; selected = c.id; render(); }
                 });
@@ -261,6 +280,20 @@
     function showOffers() {
         if (state.phase !== "prepare") { return; }
         var parent = openModal(local("offers"), fmt("offer_hint", {n:3-state.purchases, gold:state.gold}), "offers");
+        if (!state.factions.length) {
+            label(parent, "", local("choose_factions_hint"), "CfHelpText");
+            var choices = panel("Panel", parent, "", "CfOfferRow");
+            validFactions.forEach(function (f) {
+                var choose = button(choices, "CfPool_" + f, factionName(f), "CfMetal", function () {
+                    chosenFactions[f] = !chosenFactions[f]; showOffers();
+                }); choose.SetHasClass("CfActive", !!chosenFactions[f]);
+            });
+            var confirm = button(parent, "CfPoolConfirm", local("choose_factions"), "CfPrimary", function () {
+                execute({type:"factions", factions:validFactions.filter(function (f) { return chosenFactions[f]; })});
+            }); confirm.enabled = validFactions.some(function (f) { return chosenFactions[f]; });
+            return;
+        }
+        label(parent, "", state.factions.map(factionName).join(" · "), "CfHint");
         var row = panel("Panel", parent, "", "CfOfferRow");
         state.offers.forEach(function (id, index) {
             var c = M.definitions.find(function (item) { return item.id === id; }), bought = state.bought.indexOf(index) >= 0;
@@ -268,10 +301,11 @@
             var col = panel("Panel", row, "", "CfOffer");
             if (bought) { cardView(col, M.get(state, id) || c, true); }
             else { var back = panel("Panel", col, "", "CfCard"); background(back, c.faction); label(back, "", factionName(c.faction) + " · " + local("type_" + c.type), "CfBackType"); }
-            var buy = button(col, "CfBuy" + index, local(bought ? "revealed" : "buy"), "CfMetal", function () { execute({type:"buy", index:index}); });
-            buy.enabled = M.supported(state, id) && !bought && state.purchases < 3 && state.gold >= 100 && state.phase === "prepare";
+            var buy = button(col, "CfBuy" + index, local(bought ? "revealed" : M.get(state, id) && M.get(state, id).level >= 3 ? "card_maxed" : "buy"), "CfMetal", function () { execute({type:"buy", index:index}); });
+            buy.enabled = M.supported(state, id) && !bought && state.purchases < 3 && state.gold >= 100 && state.phase === "prepare" && M.canAcquire(state, id);
         });
         label(parent, "", local("offer_note"), "CfHint");
+        label(parent, "", local("progression_limit"), "CfHint");
     }
     function showForge() {
         if (state.phase !== "prepare") { return; }
@@ -285,7 +319,7 @@
                 label(row, "", cardName(c) + "\n" + factionName(c.faction) + "  " + (smelting ? c.copies + " " + local("copies") : state.points[c.faction] + " / 3"), "CfDetailText");
                 var action = button(row, (smelting ? "CfSmelt_" : "CfExchange_") + c.id, local(smelting ? "smelt" : "exchange"), "CfMetal", function () {
                     if (smelting) { showSmelt(c.id); } else { execute({type:"exchange", id:c.id}); }
-                }); action.enabled = state.phase === "prepare" && (smelting || state.points[c.faction] >= 3);
+                }); action.enabled = state.phase === "prepare" && (smelting || (state.points[c.faction] >= 3 && M.canAcquire(state, c.id)));
             });
         });
     }

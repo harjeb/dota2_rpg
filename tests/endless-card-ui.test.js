@@ -38,7 +38,7 @@ vm.runInNewContext(fs.readFileSync(path.join(base,'scripts/custom_game/endless_h
 assert(panels.CardForgeOverlay.classes.has('CfHidden'));
 assert(!panels.CardForgeEntry.classes.has('CfHidden'));
 assert.equal(sent[0].event,'rpg_card_request_state');
-const s = {...M.initial(),phase:'prepare',run_id:'run-1',revision:1,wave:1,gold:500,
+const s = {...M.initial(),factions:['civilization'],phase:'prepare',run_id:'run-1',revision:1,wave:1,gold:500,
     cards:[{...M.definitions.find(c=>c.id==='C-g1'),copies:1,level:1,load:1}],
     heroes:[{id:'lina',level:3,faction:'element'}], supported:['C-g1'],offers:['C-g1'],points:{civilization:3}};
 const before=JSON.stringify(s);
@@ -48,6 +48,10 @@ assert(M.apply(s,{type:'return'}).error);
 assert(M.apply(s,{type:'exchange',id:'E-g1'}).error);
 function receive(state){subscriptions.rpg_card_state({state_json:JSON.stringify(state)});}
 function click(id){panels[id].events.onactivate();}
+receive({...s,factions:[],offers:[]}); click('CardForgeEntry');click('CfOffersTab');
+assert(!panels.CfPoolConfirm.enabled);click('CfPool_civilization');click('CfPoolConfirm');
+assert.equal(sent.at(-1).payload.type,'factions');assert.deepEqual(Array.from(sent.at(-1).payload.factions),['civilization']);
+sent.pop();
 receive(s); click('CardForgeEntry');
 assert.equal(panels.CfWallet.text,'◈ 500');
 click('CfOffersTab'); click('CfBuy0');
@@ -71,6 +75,19 @@ subscriptions.rpg_card_error({message:'server rejected'});
 assert.equal(panels.CfNotice.text,'server rejected'); assert.equal(sent.at(-1).event,'rpg_card_request_state');
 subscriptions.rpg_endless_state({wave:8,lives:2,max_lives:3,phase:'fight',run_id:'run-1'});
 assert(panels.EndlessWave.text.endsWith(' 8')); assert(panels.EndlessLives.text.endsWith(' 2 / 3'));
+const triggerCard={...s.cards[0],id:'C-c1',type:'charge',trigger_default:{type:'time',first:5,interval:12}};
+const triggerState={...s,revision:20,cards:[triggerCard],supported:['C-c1']};
+receive(triggerState);click('CardForgeEntry');click('CfLibraryTab');
+const triggerPanel=Object.values(panels).filter(p=>p.classes.has('CfCard') && p.events.onactivate && !p.deleted).at(-1);
+triggerPanel.events.onactivate();panels.CfTriggerValue.text='17';click('CfTriggerSave');
+assert.equal(sent.at(-1).payload.type,'trigger');assert.equal(sent.at(-1).payload.value,17);
+assert(M.apply(triggerState,{type:'trigger',id:'C-c1',value:121}).error);
+assert(M.apply({...triggerState,phase:'locked'},{type:'trigger',id:'C-c1',value:10}).error);
+const timed={...s,combat:{server_time:101.25,cards:[]}};
+assert.equal(M.countdown(timed,105),4);assert.equal(M.countdown(timed,100),0);assert.equal(M.countdown(timed,undefined),null);
+assert(M.apply({...s,purchases:3},{type:'buy',index:0}).error);
+assert(M.apply({...s,cards:[{...s.cards[0],level:3}]},{type:'buy',index:0}).error);
+assert(M.apply(s,{type:'level',id:'C-g1',level:2}).error);
 // Exercise the actual Lua runtime suites, not a JS reimplementation of combat.
 for (const file of ['endless-mode.test.lua','endless-card-effects.test.lua']) {
     const result=spawnSync(process.env.LUA || 'lua',[path.join('tests',file)],{cwd:root,encoding:'utf8'});
@@ -85,6 +102,8 @@ local game={endlessRunId=42,endlessWave=1,phase='setup',playerId=0,lineup={'npc_
 function game:GetGoldBalance() return self.gold end
 function game:SpendGold(n) if self.gold<n then return false end self.gold=self.gold-n return true end
 function game:OnStartBattle() self.phase='fight' end
+local empty=Cards.Snapshot(game)
+assert(Cards.Apply(game,{run_id=empty.run_id,revision=empty.revision,wave=empty.wave,type='factions',factions={'civilization'}})==nil)
 local initial=Cards.Snapshot(game)
 local buy={run_id=initial.run_id,revision=initial.revision,wave=initial.wave,type='buy',index=0,request_id='native-test-1'}
 assert(Cards.Apply(game,buy)==nil)
