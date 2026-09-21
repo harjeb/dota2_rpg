@@ -2,10 +2,9 @@
     "use strict";
     var root = $("#CardForgeRoot"), M = GameUI.CustomUIConfig().CardForgeModel;
     if (!root || !M) { return; }
-    // This gallery deliberately has no server mutation transport. All assets are preview fixtures.
-    var state = M.initial(), selected = "H-lina", faction = "all", kind = "all", query = "", descending = true;
+    var state = M.initial(), selected = null, faction = "all", kind = "all", query = "", descending = true;
     var catalog = false, inspectLevel = 1;
-    var history = [], drag = null, noticeGeneration = 0, modalKind = "", open = false;
+    var requestSerial = 0, pending = false, combatActive = false, drag = null, noticeGeneration = 0, modalKind = "", open = false;
     var slots = {}, cards = {}, types = ["all", "hero", "buff", "charge", "field"];
     var validFactions = Object.keys(M.factions);
     var errorKeys = {
@@ -46,16 +45,30 @@
         $.Schedule(3.5, function () { if (generation === noticeGeneration) { show(notice, false); } });
     }
     function errorMessage(error) { return local(errorKeys[error] || "invalid"); }
-    function execute(action, message) {
+    function requestState() { GameEvents.SendCustomGameEventToServer("rpg_card_request_state", {}); }
+    function execute(action) {
+        if (combatActive || pending || (drag && (drag.revision !== state.revision || drag.run_id !== state.run_id))) {
+            requestState(); return false;
+        }
         var result = M.apply(state, action);
         if (result.error) { notify(errorMessage(result.error), true); return false; }
-        if (["buy", "exchange", "smelt", "confirm", "return"].indexOf(action.type) < 0) {
-            history.push(state); if (history.length > 30) { history.shift(); }
-        } else { history = []; }
-        state = result.state;
-        // Native DragEnd must run on the original source panel before it is destroyed.
+        result.intent.request_id = String(Game.GetLocalPlayerID()) + ":" + String(Date.now()) + ":" + (++requestSerial);
+        pending = true;
+        GameEvents.SendCustomGameEventToServer("rpg_card_action", result.intent);
+        closeModal();
+        // Recover if a response was dropped; the request itself never changes the view.
+        $.Schedule(2, function () { if (pending) { requestState(); } });
+        return true;
+    }
+    function receiveState(payload) {
+        var next;
+        try { next = M.snapshot(payload); } catch (e) { notify(local("loading"), true); return; }
+        if (next.run_id === state.run_id && next.revision < state.revision) { return; }
+        var wasLocked = state.phase === "locked";
+        state = next; pending = false; combatActive = state.phase === "locked"; closeModal();
+        if (state.phase === "locked" && !wasLocked) { closeGallery(); }
+        // Preserve the native drag source until DragEnd; revision checks cancel stale drops.
         if (!drag) { render(); }
-        if (message) { notify(local(message), false); } return true;
     }
     function cardView(parent, card, detail) {
         var p = panel("Panel", parent, "", "CfCard CfKind_" + card.type); background(p, card.faction);
@@ -63,11 +76,15 @@
         if (card.type === "hero") { image(well, card.art, "CfCardArt"); }
         else { label(well, "", {buff:"＋", charge:"◆", field:"◎"}[card.type], "CfKindGlyph"); }
         panel("Panel", well, "", "CfCardShade").hittest = false;
+        label(p, "", local(M.supported(state, card.id) ? "supported" : "unimplemented"), "CfSupportBadge");
         if (card.axis && card.axis !== "—") { label(p, "", card.axis, "CfAxisBadge"); }
         var copy = panel("Panel", p, "", "CfCardCopy"); copy.hittest = false; copy.hittestchildren = false;
         label(copy, "", cardName(card), "CfCardName"); label(copy, "", factionName(card.faction) + " · " + local("type_" + card.type), "CfCardType");
         label(copy, "", catalog ? "Lv.1 / 2 / 3" : "Lv." + card.load + " / " + card.level, "CfCardLevel");
-        if (card.type === "charge") { label(copy, "", catalog ? "1 / 2 / 3" : "× " + card.load, "CfChargeCount"); }
+        if (card.type === "charge") {
+            var live = (state.combat.cards || []).find(function (item) { return item.id === card.id; });
+            label(copy, "", live ? "× " + live.remaining : catalog ? "1 / 2 / 3" : "× " + card.load, "CfChargeCount");
+        }
         if (!catalog) { label(p, "", String(M.cost(card)), "CfCardCost"); }
         if (!detail) {
             cards[card.id] = p; p.SetHasClass("CfSelected", selected === card.id);
@@ -82,7 +99,7 @@
             if (!open || catalog || state.phase !== "prepare" || drag) { return false; }
             selected = id; var ghost = cardView(root, M.get(state, id), true);
             ghost.AddClass("CfDragGhost"); ghost.hittest = false; ghost.hittestchildren = false;
-            drag = { id: id, display: ghost, consumed: false };
+            drag = { id: id, display: ghost, consumed: false, revision: state.revision, run_id: state.run_id };
             callback.displayPanel = ghost; callback.offsetX = 65; callback.offsetY = 85;
             renderSelection(); return true;
         });
@@ -112,7 +129,7 @@
         var id = drag ? drag.id : selected;
         if (!id || !M.get(state, id)) { return; }
         var result = M.apply(state, {type:"equip", id:id, slot:key});
-        $("#CfDropHint").text = result.error ? errorMessage(result.error) : fmt("drop_preview", {hero:heroName(key.split(":")[0]), before:M.used(state), after:M.used(result.state)});
+        $("#CfDropHint").text = result.error ? errorMessage(result.error) : fmt("drop_preview", {hero:heroName(key.split(":")[0]), before:M.used(state), after:M.used(state) - M.cost(M.get(state, state.slots[key])) + (M.location(state, id) ? 0 : M.cost(M.get(state, id)))});
     }
     function renderSelection() {
         Object.keys(cards).forEach(function (id) { cards[id].SetHasClass("CfSelected", id === selected); });
@@ -153,16 +170,22 @@
             label(target, "", local("effect"), "CfDetailCaption");
             label(target, "", c.effect.replace(/\*\*/g, ""), "CfEffectText");
         }
-        if (c.type === "charge") { label(target, "", local("prepare_status"), "CfSmall"); }
+        var combat = (state.combat.cards || []).find(function (item) { return item.id === c.id; });
+        if (combat) {
+            ["remaining", "next_trigger", "active_until"].forEach(function (key) {
+                if (combat[key] !== undefined) { label(target, "", fmt("combat_" + key, {n:combat[key]}), "CfSmall"); }
+            });
+        }
+        label(target, "", local(M.supported(state, c.id) ? "supported" : "unimplemented"), "CfSmall");
         label(target, "", catalog ? local("catalog_level") : fmt("owned_level", {n:c.level, copies:c.copies}), "CfSmall");
         var row = panel("Panel", target, "", "CfLevelRow");
         [1,2,3].forEach(function (n) {
             var b = button(row, "CfLevel" + n, "Lv." + n, "CfLevel", function () { if (catalog) { inspectLevel = n; renderInspector(); } else { execute({type:"level", id:c.id, level:n}, "level_changed"); } });
-            label(b, "", M.curves[c.tier][n-1] + " COST", "CfSmall");
+            label(b, "", (M.curves[c.tier] || M.curves["普通"])[n-1] + " COST", "CfSmall");
             b.enabled = catalog || (n <= c.level && state.phase === "prepare"); b.SetHasClass("CfActive", n === (catalog ? inspectLevel : c.load));
         });
         label(target, "", local("cost_sample"), "CfSmall");
-        if (catalog) { label(target, "", local("catalog_readonly"), "CfDetailText"); label(target, "", local("effects_pending"), "CfSmall"); return; }
+        if (catalog) { label(target, "", local("catalog_readonly"), "CfDetailText"); return; }
         var actions = panel("Panel", target, "", "CfDetailActions"), location = M.location(state, c.id);
         var equip = button(actions, "CfDetailEquip", local(location ? "unequip" : "select_slot"), "CfMetal", function () {
             if (location) { execute({type:"unequip", id:c.id}, "unequipped"); } else { notify(local("select_slot_hint")); }
@@ -171,7 +194,7 @@
             var smelt = button(actions, "CfDetailSmelt", local("smelt"), "CfMetal", function () { showSmelt(c.id); }); smelt.enabled = !location && state.phase === "prepare";
         }
         label(target, "", location ? fmt("equipped_on", {hero:heroName(location.split(":")[0])}) : local("drag_hint"), "CfSmall");
-        label(target, "", local("effects_pending"), "CfSmall");
+
     }
     function renderRoster() {
         var roster = $("#CfRoster"); roster.RemoveAndDeleteChildren(); slots = {};
@@ -214,9 +237,11 @@
         $("#CfBudgetBar").max = M.budget(state); $("#CfBudgetBar").value = Math.min(M.used(state), M.budget(state));
         $("#CfBudgetBar").SetHasClass("CfOver", M.used(state) > M.budget(state));
         $("#CfConfirm").enabled = !catalog && state.phase === "prepare" && M.used(state) <= M.budget(state);
-        $("#CfUndo").enabled = !catalog && history.length > 0 && state.phase === "prepare";
+        $("#CfOffersTab").enabled = state.phase === "prepare";
+        $("#CfForgeTab").enabled = state.phase === "prepare";
+        $("#CfControlsHint").text = local(state.phase === "loading" ? "loading" : "controls");
         var ledger = $("#CfLedger"), tabs = $("#CfFactions"); ledger.RemoveAndDeleteChildren(); tabs.RemoveAndDeleteChildren();
-        validFactions.forEach(function (f) { var row = panel("Panel", ledger, "", "CfLedgerRow"); label(row, "", M.factions[f].glyph + "  " + factionName(f)); label(row, "", String(state.points[f]), "CfLedgerCount"); });
+        validFactions.forEach(function (f) { var row = panel("Panel", ledger, "", "CfLedgerRow"); label(row, "", M.factions[f].glyph + "  " + factionName(f)); label(row, "", String(state.points[f] || 0), "CfLedgerCount"); });
         ["all"].concat(validFactions).forEach(function (f) {
             var tab = button(tabs, "CfFaction_" + f, f === "all" ? local("all") : factionName(f), "CfFactionTab", function () { faction = f; render(); });
             tab.SetHasClass("CfActive", f === faction);
@@ -232,32 +257,34 @@
     }
     function closeModal() {
         show($("#CfModal"), false); modalKind = "";
-        if (state.phase === "locked") { execute({type:"return"}); }
     }
     function showOffers() {
+        if (state.phase !== "prepare") { return; }
         var parent = openModal(local("offers"), fmt("offer_hint", {n:3-state.purchases, gold:state.gold}), "offers");
         var row = panel("Panel", parent, "", "CfOfferRow");
         state.offers.forEach(function (id, index) {
             var c = M.definitions.find(function (item) { return item.id === id; }), bought = state.bought.indexOf(index) >= 0;
+            if (!c) { return; }
             var col = panel("Panel", row, "", "CfOffer");
-            if (bought) { cardView(col, M.get(state, id), true); }
+            if (bought) { cardView(col, M.get(state, id) || c, true); }
             else { var back = panel("Panel", col, "", "CfCard"); background(back, c.faction); label(back, "", factionName(c.faction) + " · " + local("type_" + c.type), "CfBackType"); }
-            var buy = button(col, "CfBuy" + index, local(bought ? "revealed" : "buy"), "CfMetal", function () { if (execute({type:"buy", index:index}, "acquired")) { showOffers(); } });
-            buy.enabled = !bought && state.purchases < 3 && state.gold >= 100 && state.phase === "prepare";
+            var buy = button(col, "CfBuy" + index, local(bought ? "revealed" : "buy"), "CfMetal", function () { execute({type:"buy", index:index}); });
+            buy.enabled = M.supported(state, id) && !bought && state.purchases < 3 && state.gold >= 100 && state.phase === "prepare";
         });
         label(parent, "", local("offer_note"), "CfHint");
     }
     function showForge() {
+        if (state.phase !== "prepare") { return; }
         var parent = openModal(local("forge"), local("forge_hint"), "forge"), columns = panel("Panel", parent, "", "CfForgeRows");
-        [true, false].forEach(function (smelting) {
+        (state.cards.some(function (c) { return c.type === "hero"; }) ? [true, false] : [false]).forEach(function (smelting) {
             var column = panel("Panel", columns, "", "CfForgeColumn"); label(column, "", local(smelting ? "smelt" : "exchange"), "CfSectionTitle");
             var scroll = panel("Panel", column, "", "CfForgeScroll");
-            var list = smelting ? M.inventory(state).filter(function (c) { return c.type === "hero"; }) : M.definitions.filter(function (c) { return c.type !== "hero"; });
+            var list = smelting ? M.inventory(state).filter(function (c) { return c.type === "hero"; }) : M.definitions.filter(function (c) { return c.type !== "hero" && M.supported(state, c.id); });
             list.forEach(function (c) {
                 var row = panel("Panel", scroll, "", "CfForgeRow");
                 label(row, "", cardName(c) + "\n" + factionName(c.faction) + "  " + (smelting ? c.copies + " " + local("copies") : state.points[c.faction] + " / 3"), "CfDetailText");
                 var action = button(row, (smelting ? "CfSmelt_" : "CfExchange_") + c.id, local(smelting ? "smelt" : "exchange"), "CfMetal", function () {
-                    if (smelting) { showSmelt(c.id); } else if (execute({type:"exchange", id:c.id}, "acquired")) { showForge(); }
+                    if (smelting) { showSmelt(c.id); } else { execute({type:"exchange", id:c.id}); }
                 }); action.enabled = state.phase === "prepare" && (smelting || state.points[c.faction] >= 3);
             });
         });
@@ -268,14 +295,14 @@
         label(parent, "", fmt("smelt_warning", {before:c.copies, after:c.copies-1, level:Math.min(3,c.copies-1), faction:factionName(c.faction)}), "CfHelpText");
         var actions = panel("Panel", parent, "", "CfModalActions");
         button(actions, "CfSmeltCancel", local("cancel"), "CfMetal", closeModal);
-        button(actions, "CfSmeltConfirm", local("smelt_one"), "CfPrimary", function () { if (execute({type:"smelt", id:id}, "smelted")) { showForge(); } });
+        button(actions, "CfSmeltConfirm", local("smelt_one"), "CfPrimary", function () { execute({type:"smelt", id:id}); });
     }
     function showHelp() {
         var parent = openModal(local("help_title"), local("shared"), "help");
         ["help_drag", "help_slots", "help_cost", "help_storage"].forEach(function (key) { label(parent, "", local(key), "CfHelpText"); });
-        label(parent, "", local("preview_notice"), "CfHint");
+        label(parent, "", local("live_help"), "CfHint");
     }
-    function openGallery() { open = true; show($("#CardForgeOverlay"), true); render(); $("#CfWindow").SetFocus(); }
+    function openGallery() { requestState(); if (combatActive || state.phase === "locked") { catalog = true; } open = true; show($("#CardForgeOverlay"), true); render(); $("#CfWindow").SetFocus(); }
     function closeGallery() {
         if (drag) { drag.consumed = true; }
         closeModal(); open = false; show($("#CardForgeOverlay"), false);
@@ -297,16 +324,21 @@
     $("#CfOffersTab").SetPanelEvent("onactivate", showOffers);
     $("#CfForgeTab").SetPanelEvent("onactivate", showForge);
     $("#CfModalClose").SetPanelEvent("onactivate", closeModal);
-    $("#CfUndo").SetPanelEvent("onactivate", function () { if (!catalog && !drag && history.length && state.phase === "prepare") { state = history.pop(); render(); notify(local("undone")); } });
     $("#CfConfirm").SetPanelEvent("onactivate", function () {
-        if (catalog || drag || !execute({type:"confirm"})) { return; }
-        var parent = openModal(local("sealed"), fmt("sealed_hint", {n:Object.keys(state.slots).length, used:M.used(state), max:M.budget(state)}), "confirm");
-        label(parent, "", local("preview_notice"), "CfHelpText");
-        button(parent, "CfReturn", local("return"), "CfPrimary", closeModal);
+        if (!catalog && !drag) { execute({type:"confirm"}); }
     });
     dropTarget($("#CfInventory"), null);
-    // Dedicated endless addon currently hosts only this gallery, with no campaign dependencies.
+    GameEvents.Subscribe("rpg_card_state", receiveState);
+    GameEvents.Subscribe("rpg_card_error", function (event) {
+        pending = true; closeModal();
+        if (!open) { openGallery(); }
+        notify(String(event.message || local("invalid")), true); requestState();
+    });
+    GameEvents.Subscribe("rpg_endless_state", function (event) {
+        var wasCombatActive = combatActive;
+        combatActive = ["fight", "locked", "result"].indexOf(event.phase) >= 0;
+        if (combatActive && !wasCombatActive) { closeGallery(); }
+    });
     show($("#CardForgeEntry"), true);
-    if (Game.AddCommand) { Game.AddCommand("rpg_card_ui_preview", openGallery, "Open the local card UI gallery", 0); }
-    openGallery();
+    render(); requestState();
 })();

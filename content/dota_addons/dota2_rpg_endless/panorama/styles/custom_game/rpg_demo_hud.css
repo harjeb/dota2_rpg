@@ -1,0 +1,1660 @@
+.RpgDemoHudRoot
+{
+	width: 100%;
+	height: 100%;
+}
+
+.NeutralRecruitment { width: 100%; height: fit-children; max-height: 220px; overflow: squish scroll; flow-children: down; padding: 6px 10px; background-color: #19262ee8; }
+.NeutralRecruitTitle { color: #d9e7bf; font-size: 17px; }
+.NeutralRecruitHint { width: 100%; font-size: 13px; color: #a6b5bf; margin-bottom: 4px; }
+.NeutralRecruitRow { width: 100%; flow-children: down; margin-top: 3px; }
+.NeutralRecruitSource { width: 100%; font-size: 14px; color: #d8dedf; }
+.NeutralRecruitSelect { width: 100%; height: 31px; margin-top: 2px; }
+.NeutralRecruitSelect Label { font-size: 14px; }
+
+/* Centered header half-width 280 + gap 12 + lives half-width 140. */
+#RunLivesPanel { width: 280px; height: fit-children; horizontal-align: center; vertical-align: top; transform: translateX(432px); margin-top: 14px; padding: 8px 12px; flow-children: down; background-color: #10161deb; border-top: 2px solid #d87378; }
+#RunLivesTitle { font-size: 16px; color: #e6d3d5; }
+#RunLivesRow, #RunHearts { width: fit-children; height: 34px; flow-children: right; }
+.RunHeart { width: 32px; height: 34px; font-family: Arial; font-size: 29px; color: #f46d82; text-align: center; }
+.RunHeartSpent { color: #48505a; }
+#RunLivesCount { width: 72px; vertical-align: center; margin-left: 12px; font-size: 18px; color: #e8dce0; }
+#RunLivesHint { width: 100%; height: fit-children; font-size: 14px; color: #d2bb98; white-space: normal; }
+
+#BattleHeader
+{
+	width: 560px;
+	height: 124px;
+	horizontal-align: center;
+	flow-children: down;
+	margin-top: 14px;
+	padding: 8px 18px;
+	background-color: #10161deb;
+	border-top: 3px solid #d7b85a;
+	border-bottom: 1px solid #66717a;
+	box-shadow: #000000aa 0px 4px 16px 0px;
+}
+
+#BuildTag
+{
+	horizontal-align: center;
+	margin-top: 2px;
+	font-size: 10px;
+	color: #8fc98f;
+}
+
+#BattleScore
+{
+	horizontal-align: center;
+	flow-children: right;
+	margin-top: 1px;
+}
+
+#BattleScore Label
+{
+	width: 46px;
+	font-family: titleFont;
+	font-size: 24px;
+	font-weight: bold;
+	text-align: center;
+}
+
+#BattleScore .ScoreDivider
+{
+	width: 22px;
+	color: #89939b;
+}
+
+.RadiantText
+{
+	color: #72d5bd;
+}
+
+.DireText
+{
+	color: #ee7b70;
+}
+
+#LevelProgress
+{
+	horizontal-align: center;
+	font-family: titleFont;
+	font-size: 22px;
+	font-weight: bold;
+	color: #d7b85a;
+}
+
+#BattleStatus
+{
+	width: 100%;
+	font-size: 14px;
+	color: #bac4ca;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.TeamEditor
+{
+	width: 310px;
+	height: 650px;
+	vertical-align: center;
+	flow-children: down;
+	margin-top: 18px;
+	padding: 12px;
+	background-color: #111820f2;
+	border: 1px solid #657078;
+	box-shadow: #000000bb 0px 5px 18px 0px;
+	transition-property: opacity, brightness;
+	transition-duration: 0.18s;
+}
+
+.RadiantEditor
+{
+	horizontal-align: left;
+	margin-left: 18px;
+	border-left: 4px solid #4bb99f;
+}
+
+/* Keep five selectable heroes below the title in the half-width editor. */
+#RadiantHeroStrip
+{
+	width: 100%;
+	height: 56px;
+}
+
+#RadiantHeroStrip .HeroPortrait
+{
+	width: 48px;
+	height: 48px;
+}
+
+.RadiantEditor .SelectedHeroName
+{
+	width: 100%;
+	text-overflow: ellipsis;
+}
+
+.RadiantEditor .RulesContainer
+{
+	padding-right: 4px;
+}
+
+.RadiantEditor .MoveButton
+{
+	width: 26px;
+}
+
+.RadiantEditor .DeleteRuleButton,
+.RadiantEditor .AddRuleButton
+{
+	margin-left: 2px;
+}
+
+.TeamEditor.Locked
+{
+	opacity: 0.34;
+}
+
+.TeamEditor.Locked:hover
+{
+	opacity: 0.9;
+}
+
+.TeamHeader
+{
+	width: 100%;
+	height: 84px;
+	flow-children: right;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #4d5860;
+}
+
+.TeamIdentity
+{
+	width: fill-parent-flow(1);
+	height: 100%;
+	flow-children: down;
+	vertical-align: center;
+}
+
+.TeamName
+{
+	width: 100%;
+	font-family: titleFont;
+	font-size: 24px;
+	font-weight: bold;
+	color: #f4eee2;
+	text-overflow: shrink;
+}
+
+.TeamLevel
+{
+	margin-top: 3px;
+	font-size: 14px;
+	color: #9facb4;
+}
+
+.SelectedHeroName
+{
+	margin-top: 2px;
+	font-size: 16px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.HeroStrip
+{
+	flow-children: right;
+	vertical-align: center;
+}
+
+.HeroPortrait
+{
+	width: 64px;
+	height: 64px;
+	margin-left: 6px;
+	border: 1px solid #909ba2;
+	brightness: 0.55;
+	saturation: 0.55;
+	transition-property: brightness, saturation, border, pre-transform-scale2d;
+	transition-duration: 0.12s;
+}
+
+.HeroPortrait:hover
+{
+	brightness: 0.9;
+	saturation: 0.85;
+}
+
+.CollapseButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 6px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+/* 最小化：只剩队伍标题条与展开箭头 */
+.EditorBody
+{
+	flow-children: down;
+	width: 100%;
+	height: fill-parent-flow(1.0);
+}
+
+/* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
+.TeamEditor.Collapsed
+{
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
+}
+
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
+{
+	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: 0px solid #00000000;
+	padding-bottom: 0px;
+}
+
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
+}
+
+.HeroPortrait.Selected
+{
+	brightness: 1.2;
+	saturation: 1;
+	pre-transform-scale2d: 1.06;
+	border: 2px solid #f2d982;
+}
+
+.RadiantEditor .CollapseButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 6px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+/* 最小化：只剩队伍标题条与展开箭头 */
+/* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
+.TeamEditor.Collapsed
+{
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
+}
+
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
+{
+	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: 0px solid #00000000;
+	padding-bottom: 0px;
+}
+
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
+}
+
+.HeroPortrait.Selected
+{
+	border-bottom: 3px solid #4bb99f;
+}
+
+.CollapseButton:hover
+{
+	brightness: 1.3;
+}
+
+.CollapseGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+/* 最小化：只剩队伍标题条与展开箭头 */
+/* 最小化：整个面板只剩一个最小化图标 */
+/* 收起后隐藏面板外框，只留折叠按钮 */
+.TeamEditor.Collapsed
+{
+	height: 48px !important;
+	width: 48px !important;
+	background-color: transparent;
+	border: 0px solid transparent;
+	box-shadow: 0px 0px 0px 0px #00000000;
+}
+
+.TeamEditor.Collapsed .EditorBody,
+.TeamEditor.Collapsed .TeamIdentity,
+.TeamEditor.Collapsed .HeroStrip
+{
+	visibility: collapse;
+}
+
+.TeamEditor.Collapsed .TeamHeader
+{
+	border-bottom: 0px solid #00000000;
+	padding-bottom: 0px;
+}
+
+/* 我方面板靠左边缘、敌方面板靠右边缘 */
+.RadiantEditor.Collapsed .CollapseButton
+{
+	horizontal-align: left;
+	vertical-align: center;
+	margin-left: 8px;
+}
+
+.TeamEditor.Collapsed .CollapseButton
+{
+	width: 34px;
+	height: 34px;
+	background-color: #4a3d22;
+	border: 2px solid #d7b85a;
+}
+
+.HeroPortrait.Selected
+{
+	border-bottom: 3px solid #d65e56;
+}
+
+.ColumnHeader
+{
+	width: 100%;
+	height: 32px;
+	flow-children: right;
+	margin-top: 8px;
+}
+
+.ColumnHeader Label
+{
+	font-size: 14px;
+	color: #829099;
+	text-transform: uppercase;
+	vertical-align: center;
+}
+
+.ActionColumn
+{
+	width: 112px;
+}
+
+.RulesContainer
+{
+	width: 100%;
+	height: fill-parent-flow(1.0);
+	padding-right: 0px;
+	overflow: squish scroll;
+	flow-children: down;
+}
+
+.RulesContainer VerticalScrollBar
+{
+	width: 0px;
+	opacity: 0;
+	visibility: collapse;
+}
+
+.RulesContainer VerticalScrollBar .ScrollThumb
+{
+	width: 7px;
+	min-height: 48px;
+	horizontal-align: center;
+	background-color: #d7b85a;
+	border: 1px solid #f0d487;
+}
+
+.RuleRow
+{
+	width: 100%;
+	height: 62px;
+	flow-children: right;
+	border-bottom: 1px solid #303b43;
+}
+
+.ActionIcon
+{
+	width: 44px;
+	height: 44px;
+	vertical-align: center;
+	background-color: #1c272e;
+	border: 1px solid #5a6871;
+}
+
+.ActionIcon:hover
+{
+	brightness: 1.3;
+	border-color: #d7b85a;
+}
+
+.ActionIcon:disabled
+{
+	brightness: 0.5;
+}
+
+.ActionAbilityImage
+{
+	width: 40px;
+	height: 40px;
+	horizontal-align: center;
+	vertical-align: center;
+	border: 1px solid #5a6871;
+	background-color: #141b21;
+}
+
+.ActionAbilityImage.Empty
+{
+	visibility: collapse;
+}
+
+.ActionName
+{
+	width: 60px;
+	vertical-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	color: #e8edf0;
+	text-overflow: shrink;
+}
+
+.RuleRow.MenuOpen
+{
+	z-index: 100;
+}
+
+/* 新增行动行：金色边框提示这一行是刚加出来、还没选动作/配条件的，配置后自动消失。 */
+.RuleRow.NewlyAdded
+{
+	border: 2px solid #f0d487;
+	background-color: #f0d4871f;
+	box-shadow: #f0d48759 0px 0px 8px 1px;
+}
+
+.ActionOption
+{
+	width: 100%;
+	height: 34px;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.ActionOption:hover
+{
+	brightness: 1.35;
+	background-color: #314049;
+}
+
+.ActionOption:active
+{
+	brightness: 0.8;
+}
+
+.ActionOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 10px;
+	font-size: 15px;
+	color: #e1e7e9;
+	text-overflow: shrink;
+}
+
+.MoveButton
+{
+	width: 30px;
+	height: 30px;
+	vertical-align: center;
+	margin-left: 2px;
+	background-color: #28343c;
+	border: 1px solid #5d6971;
+}
+
+.MoveButton:hover
+{
+	brightness: 1.4;
+	border-color: #d6dce0;
+}
+
+.MoveButton:active
+{
+	brightness: 0.8;
+}
+
+.MoveButton:disabled
+{
+	opacity: 0.22;
+}
+
+.MoveGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 15px;
+	font-weight: bold;
+	color: #d9e1e5;
+}
+
+#BattleControls
+{
+	width: 420px;
+	height: 850px;
+	horizontal-align: center;
+	vertical-align: center;
+	flow-children: down;
+	margin-top: 22px;
+}
+
+.ShopPanel
+{
+	width: 100%;
+	flow-children: down;
+	padding: 12px;
+	background-color: #10161deb;
+	border: 1px solid #d7b85a;
+}
+
+.ShopHeaderRow
+{
+	width: 100%;
+	height: 28px;
+	flow-children: right;
+}
+
+#ShopHeader
+{
+	width: 100%;
+	vertical-align: center;
+	font-size: 18px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.ShopOffer
+{
+	width: 100%;
+	height: 110px;
+	flow-children: right;
+	margin-top: 8px;
+}
+
+.ShopOfferSlot
+{
+	width: 72px;
+	height: 110px;
+	flow-children: down;
+	margin-right: 5px;
+	border: 1px solid #5a6871;
+	background-color: #1c272e;
+}
+
+.ShopPortrait
+{
+	width: 100%;
+	height: 70px;
+}
+
+.ShopName
+{
+	width: 100%;
+	height: 22px;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #e4ebee;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.ShopPrice
+{
+	width: 100%;
+	height: 18px;
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #f2d982;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.ShopOfferSlot.Owned
+{
+	border-color: #4bb99f;
+	brightness: 0.6;
+}
+
+.ShopOfferSlot.Selected
+{
+	border: 2px solid #f2d982;
+}
+
+.ShopOfferSlot:disabled
+{
+	opacity: 0.3;
+}
+
+.ShopOfferSlot.Owned:disabled
+{
+	opacity: 0.72;
+}
+
+.ShopButtons
+{
+	width: 100%;
+	height: 46px;
+	flow-children: right;
+	margin-top: 8px;
+}
+
+.ShopButton
+{
+	width: fill-parent-flow(1);
+	height: 100%;
+	margin-right: 4px;
+	background-color: #4a3d22;
+	border: 1px solid #d7b85a;
+}
+
+.ShopButton:disabled
+{
+	brightness: 0.45;
+}
+
+.ShopButton Label
+{
+	width: 100%;
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 15px;
+	color: #f5eddd;
+	text-overflow: shrink;
+}
+
+.LineupPanel
+{
+	width: 100%;
+	flow-children: down;
+	margin-top: 10px;
+}
+
+.LineupHeader
+{
+	font-size: 14px;
+	color: #9facb4;
+}
+
+.LineupPanel .HeroPortrait
+{
+	width: 48px;
+	height: 48px;
+}
+
+#LevelSection
+{
+	width: 100%;
+	flow-children: down;
+	padding: 6px 8px;
+	background-color: #10161deb;
+	border: 1px solid #66717a;
+}
+
+#LevelHeader
+{
+	width: 100%;
+	font-size: 13px;
+	font-weight: bold;
+	color: #d9bd6b;
+}
+
+.LevelList
+{
+	width: 100%;
+	flow-children: down;
+	margin-top: 4px;
+}
+
+.LevelOption
+{
+	width: 100%;
+	height: 26px;
+	margin-bottom: 2px;
+	background-color: #1c272e;
+	border: 1px solid #4d5a63;
+}
+
+.LevelOption:hover
+{
+	brightness: 1.3;
+}
+
+.LevelOption:disabled
+{
+	brightness: 0.55;
+}
+
+.LevelOption.Selected
+{
+	background-color: #4a3d22;
+	border-color: #d7b85a;
+}
+
+.LevelOption Label
+{
+	width: 100%;
+	vertical-align: center;
+	padding-left: 6px;
+	font-size: 12px;
+	color: #dfe6e9;
+	text-overflow: shrink;
+}
+
+@keyframes 'LootRewardAppear'
+{
+	0% { opacity: 0; pre-transform-scale2d: 0.8; transform: translateY(24px); }
+	70% { opacity: 1; pre-transform-scale2d: 1.04; transform: translateY(0px); }
+	100% { opacity: 1; pre-transform-scale2d: 1; transform: translateY(0px); }
+}
+
+.SettlementPanel
+{
+	width: 100%;
+	flow-children: down;
+}
+
+.LootPopup
+{
+	width: 100%;
+	flow-children: down;
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #d3bb7344;
+}
+
+.LootPopupTitle
+{
+	horizontal-align: center;
+	font-size: 26px;
+	font-weight: bold;
+	color: #f0d88e;
+}
+
+.LootPopupItems
+{
+	width: 100%;
+	max-height: 260px;
+	flow-children: right-wrap;
+	overflow: squish scroll;
+	margin-top: 16px;
+	margin-bottom: 16px;
+}
+
+.LootItemCard
+{
+	width: 148px;
+	flow-children: down;
+	margin: 4px;
+	padding: 8px;
+	background-color: #ffffff08;
+}
+
+.LootItemCard DOTAItemImage
+{
+	width: 88px;
+	height: 64px;
+	horizontal-align: center;
+}
+
+.LootItemCard Label
+{
+	width: 100%;
+	height: 36px;
+	margin-top: 6px;
+	font-size: 16px;
+	color: #e6e5d6;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.LootPopupConfirm
+{
+	width: 150px;
+	height: 40px;
+	horizontal-align: center;
+	background-color: #456444;
+	border: 1px solid #b2ba76;
+}
+
+.LootPopupConfirm:hover { brightness: 1.4; }
+.LootPopupConfirm Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 20px;
+	color: #fff4d8;
+}
+
+.LootPopupHint
+{
+	horizontal-align: center;
+	margin-top: 10px;
+	font-size: 14px;
+	color: #b5bcb3;
+}
+
+#RewardLabel
+{
+	width: 100%;
+	horizontal-align: center;
+	font-size: 15px;
+	color: #bfe3c0;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+#VersusLabel
+{
+	horizontal-align: center;
+	font-family: titleFont;
+	font-size: 48px;
+	font-weight: bold;
+	color: #e8d289;
+	text-shadow: 0px 2px 6px 3 #000000;
+}
+
+#StartBattleButton
+{
+	width: 198px;
+	height: 64px;
+	horizontal-align: center;
+	margin-top: 15px;
+	background-color: #9b342f;
+	border: 2px solid #f0c46b;
+	box-shadow: #000000cc 0px 4px 12px 0px;
+	transition-property: brightness, pre-transform-scale2d;
+	transition-duration: 0.12s;
+}
+
+#StartBattleButton:hover
+{
+	brightness: 1.35;
+}
+
+#StartBattleButton:active
+{
+	brightness: 0.85;
+	pre-transform-scale2d: 0.98;
+}
+
+#StartBattleButton:disabled
+{
+	brightness: 0.45;
+}
+
+#StartBattleButton Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-family: titleFont;
+	font-size: 22px;
+	font-weight: bold;
+	color: #fff4d8;
+}
+
+#ControlStatus
+{
+	width: 100%;
+	margin-top: 12px;
+	font-size: 14px;
+	color: #bac4ca;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.BattleResult
+{
+	width: 560px;
+	height: fit-children;
+	max-height: 920px;
+	overflow: squish scroll;
+	flow-children: down;
+	padding: 22px;
+	horizontal-align: center;
+	vertical-align: center;
+	background-color: #151b20f5;
+	border: 2px solid #d3bb73;
+	box-shadow: #000000dd 0px 5px 20px 0px;
+}
+
+.RunLeaderboard { width: 100%; flow-children: down; margin-top: 10px; padding-top: 10px; border-top: 1px solid #6e735e; }
+.RunLeaderboard Label { width: 100%; white-space: normal; }
+.RunScoreTitle { color: #d9ddda; font-size: 20px; text-align: center; }
+.RunScoreValue { color: #ffe5a2; font-size: 38px; font-weight: bold; text-align: center; }
+.RunScoreBreakdown { color: #bac4ca; font-size: 16px; text-align: center; }
+.RunMetrics { color: #d0d8db; font-size: 17px; margin-top: 8px; text-align: center; }
+.RankHeading { color: #e1d3a3; font-size: 20px; margin-top: 14px; }
+.RunRankStatus { color: #acb7c2; font-size: 16px; margin-top: 5px; }
+.RunRankStatus.RankError { color: #f0ac88; }
+.RunRankRow { color: #e3e9ec; font-size: 20px; margin-top: 7px; }
+.RunRecordMessage { color: #ffd970; font-size: 20px; font-weight: bold; margin-top: 12px; padding: 8px; background-color: #60542655; }
+.RunRankHint { color: #9ca8ae; font-size: 14px; margin-top: 10px; }
+.RankTabs { flow-children: right; width: 100%; margin-top: 8px; }
+.RankTab { width: 50%; padding: 5px; background-color: #202c36; }
+.RankTab Label { text-align: center; color: #acb7c2; font-size: 16px; }
+.RankTabSelected { background-color: #475347; }
+.RankTabSelected Label { color: #f3db91; }
+.RunRankRows { width: 100%; flow-children: down; }
+.RankTableRow { width: 100%; flow-children: right; padding: 2px 4px; }
+.RankTableRow Label { font-size: 15px; color: #d0d9de; white-space: nowrap; text-overflow: ellipsis; }
+.RankTableRow .RankNumber { width: 48px; }
+.RankTableRow .RankPlayer { width: fill-parent-flow(1); }
+.RankTableRow .RankYou { width: 32px; color: #a7e3ca; text-align: center; }
+.RankTableRow .RankValue { width: 110px; text-align: right; }
+.RankTableHeading Label { color: #98a6b0; font-size: 14px; }
+.RankPodium1 Label { color: #f4d477; }
+.RankPodium2 Label { color: #d2dce6; }
+.RankPodium3 Label { color: #dba67f; }
+.RankSelf { background-color: #315b4b88; border-left: 2px solid #a7e3ca; }
+.RankGap { font-size: 14px; text-align: center; color: #98a6b0; height: 18px; }
+.RankNameTooltip { color: #e3e9ec; font-size: 15px; padding: 5px; background-color: #111820; }
+
+.ReplayRunButton
+{
+	width: 100%;
+	min-height: 44px;
+	margin-top: 12px;
+	padding: 10px;
+	background-color: #31594b;
+	border: 1px solid #8cba95;
+}
+.ReplayRunButton Label { horizontal-align: center; color: #ffffff; font-size: 20px; }
+.ReplayRunButton:hover { brightness: 1.4; }
+.ReplayRunButton:disabled { saturation: 0; brightness: 0.6; }
+.ReplayRunHint { width: 100%; color: #bac4ca; font-size: 16px; margin-top: 6px; text-align: center; }
+
+.BattleResult.RadiantVictory
+{
+	border-color: #61d0b5;
+}
+
+.BattleResult.DireVictory
+{
+	border-color: #e96e64;
+}
+
+#BattleResultLabel
+{
+	width: 100%;
+	horizontal-align: center;
+	margin-bottom: 12px;
+	font-family: titleFont;
+	font-size: 31px;
+	font-weight: bold;
+	color: #f5eddd;
+	text-align: center;
+	text-overflow: shrink;
+}
+
+.Hidden
+{
+	visibility: collapse;
+}
+
+/* 悬浮下拉层：菜单覆盖在内容上方，不撑开行 */
+.DropdownLayer
+{
+	width: 100%;
+	height: 100%;
+	z-index: 1000;
+}
+
+.DropdownLayer .ActionMenu
+{
+	horizontal-align: left;
+	vertical-align: top;
+	margin-right: 0px;
+	z-index: 900;
+}
+
+/* 自绘规则列表滚动条（悬停裁剪视口 + 右侧轨道） */
+.RulesViewport
+{
+	width: 100%;
+	height: 380px;
+	flow-children: right;
+	overflow: noclip clip;
+}
+
+.RulesViewport .RulesContainer
+{
+	width: fill-parent-flow(1.0);
+	height: 1300px;
+}
+
+.RulesScrollRail
+{
+	width: 26px;
+	height: 380px;
+	flow-children: down;
+}
+
+.RulesScrollButton
+{
+	width: 26px;
+	height: 26px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.RulesScrollButton:hover
+{
+	brightness: 1.35;
+}
+
+.RulesScrollButton Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 11px;
+	color: #d9e1e5;
+}
+
+.RulesScrollTrack
+{
+	width: 26px;
+	height: fill-parent-flow(1.0);
+	background-color: #0b1015cc;
+	border: 1px solid #3b474f;
+}
+
+.RulesScrollThumb
+{
+	width: 20px;
+	height: 80px;
+	horizontal-align: center;
+	background-color: #d7b85a;
+	border: 1px solid #f0d487;
+	transition-property: margin-top;
+	transition-duration: 0.08s;
+}
+
+.DeleteRuleButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 4px;
+	background-color: #5a2a2a;
+	border: 1px solid #a05050;
+}
+
+.DeleteRuleButton:hover
+{
+	brightness: 1.4;
+}
+
+.DeleteRuleButton:disabled
+{
+	visibility: collapse;
+}
+
+.DeleteGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #f0c0c0;
+}
+
+.ActionMenu
+{
+	width: 300px;
+	height: 300px;
+	overflow: squish scroll;
+	flow-children: down;
+	background-color: #141d23;
+	border: 1px solid #8b989f;
+	box-shadow: #000000dd 0px 4px 12px 0px;
+	z-index: 300;
+}
+
+.ActionMenu .ActionOption
+{
+	width: 100%;
+	height: 44px;
+	flow-children: right;
+	background-color: #1c272e;
+	border-bottom: 1px solid #39454d;
+}
+
+.ActionOptionImage
+{
+	width: 36px;
+	height: 36px;
+	margin-left: 4px;
+	vertical-align: center;
+}
+
+.ActionMenu .ActionOption .ActionOptionLabel
+{
+	width: fill-parent-flow(1.0);
+	font-size: 14px;
+}
+
+.ActionMenu .ActionOption:hover
+{
+	brightness: 1.35;
+}
+
+.AddRuleButton
+{
+	width: 26px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 4px;
+	background-color: #1e4a2e;
+	border: 1px solid #4fa06a;
+}
+
+.AddRuleButton:hover
+{
+	brightness: 1.4;
+}
+
+.AddRuleButton:disabled
+{
+	visibility: collapse;
+}
+
+.AddGlyph
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 14px;
+	font-weight: bold;
+	color: #a8f0b8;
+}
+
+.ItemShopPanel
+{
+	margin-top: 8px;
+}
+
+.ItemSellNotice
+{
+	width: 100%;
+	margin-top: 3px;
+	padding: 3px 5px;
+	font-size: 12px;
+	color: #f2d982;
+	background-color: #17232b;
+	white-space: normal;
+}
+
+.ItemSellNotice.Success
+{
+	color: #a8f0b8;
+}
+
+.ItemSellNotice.Error
+{
+	color: #e99486;
+}
+
+.ItemTargetRow
+{
+	width: 100%;
+	height: 38px;
+	flow-children: right;
+	margin-top: 4px;
+	padding: 3px 5px;
+	background-color: #182128;
+	border: 1px solid #65727a;
+}
+
+.ItemTargetLabel
+{
+	width: fill-parent-flow(1.0);
+	vertical-align: center;
+	font-size: 13px;
+	font-weight: bold;
+	color: #f2d982;
+	text-overflow: shrink;
+}
+
+.ItemTargetLabel.Empty
+{
+	color: #e99486;
+}
+
+.ItemTargetHeroes
+{
+	height: 30px;
+	flow-children: right;
+	vertical-align: center;
+}
+
+.ItemTargetPortrait
+{
+	width: 30px;
+	height: 30px;
+	margin-left: 3px;
+	border: 1px solid #65727a;
+	brightness: 0.52;
+	saturation: 0.55;
+}
+
+.ItemTargetPortrait:hover
+{
+	brightness: 1.05;
+	saturation: 1;
+	border-color: #d7b85a;
+}
+
+.ItemTargetPortrait.Selected
+{
+	brightness: 1.15;
+	saturation: 1;
+	border: 2px solid #f2d982;
+}
+
+.ItemEquippedList
+{
+	width: 100%;
+	height: 142px;
+	padding-right: 10px;
+	overflow: squish scroll;
+	flow-children: down;
+	margin-top: 3px;
+	background-color: #111820;
+	border: 1px solid #34414a;
+}
+
+.ItemStockList, .ScrollShopList
+{
+	width: 100%;
+	height: fit-children;
+	overflow: noclip;
+	flow-children: down;
+	margin-top: 3px;
+	background-color: #11182099;
+	border: 1px solid #34414a;
+}
+
+.ItemStockList
+{
+	height: 142px;
+	padding-right: 10px;
+	overflow: squish scroll;
+	flow-children: down;
+}
+
+/* Each inventory shows two 70px rows plus its border. The parent remains
+   scrollable on short screens, with the shop following the bounded lists. */
+#EquipmentBody { padding-right: 9px; }
+#EquipmentBody VerticalScrollBar
+{
+	width: 6px;
+	opacity: 1;
+	height: 100%;
+	horizontal-align: right;
+	background-color: #0a1018ee;
+	border: 1px solid #596978;
+}
+#EquipmentBody VerticalScrollBar .ScrollThumb
+{
+	width: 4px;
+	opacity: 1;
+	min-height: 24px;
+	horizontal-align: center;
+	background-color: #e7c568;
+	border: 1px solid #ffe5a0;
+}
+#EquipmentBody VerticalScrollBar .ScrollThumb:hover { brightness: 1.3; }
+.ScrollShopList { height: fit-children; min-height: 112px; }
+
+.ItemRow
+{
+	width: 100%;
+	height: 34px;
+	flow-children: right;
+	border-bottom: 1px solid #2a333b;
+}
+
+.ItemEquippedRow
+{
+	width: 100%;
+	height: 32px;
+	flow-children: right;
+	border-right: 1px solid #2a333b;
+}
+
+/* Explicit pairs keep two cards on each row even when a scrollbar takes space. */
+.ItemInventoryPair
+{
+	width: 100%;
+	height: 70px;
+	flow-children: right;
+}
+.ItemInventoryCell
+{
+	width: fill-parent-flow(1);
+	height: 70px;
+}
+.ItemInventoryCard
+{
+	width: 100%;
+	height: 70px;
+	flow-children: none;
+	border-right: 1px solid #2a333b;
+	border-bottom: 1px solid #2a333b;
+}
+.ItemInventoryCard .ItemIcon { vertical-align: top; margin-top: 4px; }
+.ItemInventoryCard .ItemRowName { width: 74%; height: 32px; vertical-align: top; margin: 3px 0px 0px 34px; white-space: normal; }
+.ItemInventoryCard .ItemRowBtn { width: 46%; horizontal-align: left; vertical-align: bottom; margin: 0px 0px 4px 3px; }
+.ItemInventoryCard .ItemSellBtn { horizontal-align: right; margin: 0px 3px 4px 0px; }
+
+.ItemIcon
+{
+	width: 26px;
+	height: 26px;
+	margin-left: 3px;
+	vertical-align: center;
+	border: 1px solid #58656d;
+}
+
+.ItemRowName
+{
+	width: fill-parent-flow(1.0);
+	vertical-align: center;
+	margin-left: 5px;
+	font-size: 12px;
+	color: #dfe6e9;
+	text-overflow: shrink;
+}
+
+.ItemRowCost
+{
+	width: 50px;
+	vertical-align: center;
+	font-size: 12px;
+	font-weight: bold;
+	color: #f2d982;
+	text-align: right;
+	padding-right: 4px;
+}
+
+.ItemRowBtn
+{
+	width: 52px;
+	height: 26px;
+	vertical-align: center;
+	margin-left: 3px;
+	background-color: #29333a;
+	border: 1px solid #65727a;
+}
+
+.ItemEquipBtn
+{
+	background-color: #1e4a3a;
+	border-color: #5bbf9f;
+}
+
+.ItemScrollBuyBtn
+{
+	width: 52px;
+	background-color: #4a3d22;
+	border-color: #d7b85a;
+}
+
+.ItemUnequipBtn
+{
+	width: 50px;
+	background-color: #493237;
+	border-color: #aa737a;
+}
+
+.ItemSellBtn
+{
+	width: 52px;
+	margin-right: 3px;
+	background-color: #4a3d22;
+	border-color: #d7b85a;
+}
+
+.ItemRowBtn:hover
+{
+	brightness: 1.35;
+}
+
+.ItemRowBtn:disabled
+{
+	brightness: 0.38;
+}
+
+.ItemRowBtn Label
+{
+	horizontal-align: center;
+	vertical-align: center;
+	font-size: 10px;
+	color: #e7edf0;
+	text-overflow: shrink;
+}
+
+/* Battle damage breakdown; keep edge restore buttons accessible. */
+.DamagePanel { width: 340px; height: 650px; horizontal-align: right; vertical-align: center; margin-right: 76px; padding: 12px; flow-children: down; background-color: #111820f5; border: 1px solid #657078; }
+.DamageTitle { width: 100%; height: 30px; font-size: 17px; color: #e5edf2; text-overflow: ellipsis; }
+.DamageTabs { width: 100%; height: 34px; flow-children: right; margin-bottom: 6px; }
+.DamageTabs Button { width: 50%; height: 30px; background-color: #29343f; padding: 4px; }
+.DamagePanel Label { color: #d6e0e8; font-size: 15px; }
+.DamageUnits { width: 100%; height: 255px; flow-children: down; overflow: squish scroll; margin-bottom: 8px; }
+.DamageUnit { width: 100%; height: 48px; flow-children: down; padding: 4px; margin-bottom: 3px; background-color: #202c36; }
+.DamageUnit Label { height: 23px; width: 100%; text-overflow: ellipsis; }
+.DamageBar { width: 100%; height: 10px; flow-children: right; background-color: #080c11; }
+.DamageSegment { height: 100%; }
+.DamageSources { width: 100%; height: 100px; flow-children: down; overflow: squish scroll; margin-bottom: 8px; }
+.DamageSource { width: 100%; height: 27px; flow-children: right; padding: 3px; }
+.DamageSwatch { width: 12px; height: 12px; margin-right: 6px; vertical-align: center; }
+.DamageSource Label { text-overflow: ellipsis; }
+.DamageTargets { width: 100%; height: 100px; flow-children: down; overflow: squish scroll; }
+.DamageTargets Label { width: 100%; height: 25px; text-overflow: ellipsis; }
+.DamagePanel .Selected { background-color: #3b5060; }
+.DamagePanel Button:hover { brightness: 1.3; }
+
+
+
+#WalletBalance { color: #f4cf69; font-size: 20px; horizontal-align: center; }
+
+/* Explicit per-rule conditions in the compact action list. */
+.RuleSyncNotice { horizontal-align: center; margin-top: 135px; width: 750px; color: #ffd5ae; font-size: 17px; background-color: transparent; text-shadow: 0px 1px 3px 3.0 #000000; padding: 8px; white-space: normal; z-index: 50; }
+.RuleSettingsButton { vertical-align: center; margin-left: 6px; margin-right: 2px; width: fill-parent-flow(1); height: 36px; background-color: gradient(linear, 0% 0%, 0% 100%, from(#453825), to(#241f19)); border: 1px solid #a48750; border-radius: 5px; box-shadow: #0006 0px 2px 4px 0px; transition-property: background-color, border; transition-duration: 0.12s; }
+.RuleSettingsButton Label { font-size: 14px; color: #f1d9a4; horizontal-align: center; vertical-align: center; text-shadow: 0px 1px 2px 2.0 #0009; }
+.RuleSettingsButton.HasAdvancedSettings { border-color: #edc879; border-left: 3px solid #edc879; background-color: gradient(linear, 0% 0%, 0% 100%, from(#5b4628), to(#30271b)); }
+.RuleSettingsButton:hover { background-color: gradient(linear, 0% 0%, 0% 100%, from(#705632), to(#44331f)); border-color: #ffe0a0; }
+.RuleSettingsButton:active { brightness: 0.85; }
+.RuleSettings { width: 100%; height: 100%; background-color: #000b; z-index: 100; }
+.RuleSettingsCard { width: 980px; height: 900px; max-height: 94%; horizontal-align: center; vertical-align: center; flow-children: down; padding: 20px; background-color: #15232dfc; border: 1px solid #71858f; box-shadow: #0009 0px 0px 20px 2px; }
+.V2Title { color: #e9d6a0; font-size: 25px; margin-bottom: 8px; }
+.V2Hint { color: #b3c3cc; font-size: 15px; margin-bottom: 10px; white-space: normal; }
+.RuleSettingsHeader { width: 100%; min-height: 44px; }
+.RuleSettingsHeader .V2Title { margin-right: 190px; }
+.RuleSettingsHeader .RuleSettingsReset { horizontal-align: right; vertical-align: top; background-color: #762e35; border: 1px solid #bd6469; margin-top: 0px; }
+.RuleSettingsHeader .RuleSettingsReset:hover { background-color: #953e46; }
+.RuleSettingsHeader .RuleSettingsReset:disabled { saturation: 0; opacity: 0.45; }
+.RuleSettingsBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; padding-right: 0px; }
+/* Keep wheel navigation while hiding the thin native scrollbar chrome. */
+.RuleSettingsBody VerticalScrollBar, .RuleSettingsBody HorizontalScrollBar,
+.RulesContainer HorizontalScrollBar { width: 0px; opacity: 0; visibility: collapse; }
+.V2SectionTitle { color: #e9d6a0; font-size: 20px; margin-top: 12px; margin-bottom: 6px; }
+.V2Preview { width: 100%; height: fit-children; white-space: normal; font-size: 15px; color: #d0dde4; margin-bottom: 12px; }
+.V2Condition { width: 100%; height: fit-children; min-height: 58px; flow-children: right; padding: 5px; border-bottom: 1px solid #354550; }
+.V2SlotNumber { width: 25px; color: #a9bbc5; font-size: 18px; margin-top: 8px; }
+.V2Selector { width: 345px; height: fit-children; flow-children: down; }
+.V2Button { min-height: 32px; padding: 5px 10px; background-color: #293e4b; border: 1px solid #546f80; margin-bottom: 3px; }
+.V2Button Label { font-size: 16px; color: #e1e9ed; vertical-align: center; }
+/* A selected label has percentage width, so its button must not size itself
+   from that label: the circular fit-children dependency collapses to ~30px. */
+.V2Selector > .V2Button { width: 100%; height: 48px; min-height: 48px; }
+.V2Selector > .V2Button Label { width: 100%; max-height: 38px; white-space: normal; text-overflow: ellipsis; }
+.V2Field > .V2Button { width: 100%; min-height: 40px; }
+.V2Button:hover { background-color: #416177; }
+.V2Choices { width: 340px; height: 280px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
+.V2Choices .V2Button { width: 100%; height: fit-children; }
+.V2Choices .V2Button Label { width: 100%; white-space: normal; }
+/* Both combination modes stay visible as one direct switch. */
+.V2ModeSwitch { width: 345px; height: 44px; flow-children: right; padding: 3px; margin-bottom: 8px; background-color: #0d201e; border: 1px solid #345d55; border-radius: 8px; }
+.V2ModeSwitch > .V2ModeOption { width: fill-parent-flow(1); height: 36px; min-height: 36px; margin: 0px 2px; padding: 5px 8px; border: 1px solid transparent; border-radius: 5px; background-color: transparent; }
+.V2ModeSwitch > .V2ModeOption Label { width: 100%; color: #91aaa3; font-size: 17px; text-align: center; vertical-align: center; }
+.V2ModeSwitch > .V2ModeOption:hover { background-color: #24463d; border-color: #5a8c7e; }
+.V2ModeSwitch > .V2ModeOption.Selected { background-color: gradient(linear, 0% 0%, 0% 100%, from(#357e68), to(#225446)); border-color: #8cd8b7; border-bottom: 2px solid #b6f2d4; }
+.V2ModeSwitch > .V2ModeOption.Selected Label { color: #e1ffef; font-weight: bold; }
+.V2ModeSwitch > .V2ModeOption.Selected:hover { brightness: 1.15; }
+.V2ModeSwitch > .V2ModeOption:disabled { saturation: 0.25; opacity: 0.65; }
+.V2Category { color: #dabd77; font-size: 14px; margin-top: 8px; margin-bottom: 5px; }
+.V2Parameters { width: fill-parent-flow(1); height: fit-children; flow-children: right; }
+.V2Parameters.V2ActionOptions { width: 100%; }
+.V2Field { width: 110px; min-width: 110px; height: fit-children; flow-children: down; margin-left: 10px; margin-bottom: 6px; }
+.V2Field.V2WideField { width: 240px; min-width: 240px; }
+.V2Field.V2PhaseField { width: 160px; min-width: 160px; }
+.V2WideField > .V2Choices, .V2PhaseField > .V2Choices { width: 100%; }
+.V2StatusChoice { flow-children: right; }
+.V2Field .V2StatusChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
+.V2Field .V2ModifierCodeLabel { margin-top: 5px; font-size: 12px; }
+.V2Field .V2Input.V2ModifierCode { height: 30px; font-size: 13px; color: #a9bbc5; }
+.V2Field .V2Input.V2ModifierCode Label { font-size: 13px; color: #a9bbc5; }
+/* Movement and positioning stay in the scrollable condition modal. */
+.RuleSettingsBody .V2MotionField { width: 440px; min-width: 340px; margin-left: 0px; }
+.RuleSettingsBody .V2MotionField > Label { width: 100%; white-space: normal; }
+.RuleSettingsBody .V2MotionField .V2Input { width: 160px; }
+.RuleSettingsBody .V2MotionField .V2TextInput { width: 100%; }
+.V2Field.V2ActionField { width: 340px; min-width: 340px; }
+.V2Field Label, .V2Selector > Label { color: #b3c3cc; font-size: 14px; }
+.V2Field .V2Input { width: 100%; min-width: 100px; height: 36px; padding: 4px 6px; font-size: 18px; color: #ffffff; background-color: #091720; border: 1px solid #617a88; }
+.V2Field .V2Input Label { width: 100%; font-size: 18px; color: #ffffff; }
+.V2AbilityChoices { width: 340px; height: 360px; flow-children: down; overflow: squish scroll; background-color: #0f1a22; padding: 5px; }
+.V2ActionChoice { width: 100%; height: fit-children; min-height: 44px; flow-children: right; padding: 4px; }
+.V2ActionChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
+.V2AbilityIcon { width: 36px; height: 36px; margin-right: 8px; }
+.V2TargetChoice { width: 100%; min-height: 52px; height: fit-children; flow-children: right; padding: 4px; }
+.V2TargetChoice Label { width: fill-parent-flow(1); white-space: normal; vertical-align: center; }
+.V2TargetPortrait { width: 64px; height: 48px; margin-right: 8px; }
+.V2UnavailableTarget Label { color: #edaa83; }
+.V2Footer { width: 100%; flow-children: right; margin-top: 12px; }
+.V2Footer .V2Button { width: 150px; margin-right: 12px; }
+
+.V2Error { color: #ffb293; font-size: 15px; margin-top: 5px; }
+.ActionIcon.UnavailableAction { saturation: 0; border-color: #9a6657; }
+
+/* The sidebar stops above the native HUD; each expanded body scrolls independently. */
+#RightSidebar { width: 352px; height: 69%; horizontal-align: right; vertical-align: top; margin-top: 72px; margin-right: 20px; flow-children: down; }
+#RightSidebar .DamagePanel, #RightSidebar .ItemShopPanel { width: 100%; height: fill-parent-flow(1); min-height: 42px; horizontal-align: left; vertical-align: top; margin: 0px; padding: 8px; flow-children: down; background-color: #111820f5; border: 1px solid #657078; }
+#RightSidebar .DamagePanel { height: fill-parent-flow(1.2); }
+#RightSidebar .ItemShopPanel { margin-top: 8px; }
+#ItemShopPanel .SidePanelHeader { height: 40px; }
+#EquipmentTitle { height: 38px; font-family: titleFont; font-size: 30px; font-weight: bold; color: #e8d289; text-shadow: 0px 2px 6px 3 #000000; }
+.SidePanelHeader { width: 100%; height: 28px; flow-children: right; }
+.SidePanelHeader .DamageTitle, .SidePanelHeader .LineupHeader { width: fill-parent-flow(1); vertical-align: center; }
+.SidePanelToggle { width: 28px; height: 26px; background-color: #304451; border: 1px solid #657078; }
+.SidePanelToggle Label { horizontal-align: center; vertical-align: center; font-size: 22px; color: #ffffff; }
+.SidePanelToggle:hover { brightness: 1.5; }
+.SidePanelBody { width: 100%; height: fill-parent-flow(1); flow-children: down; overflow: squish scroll; }
+#RightSidebar .SidePanelMinimized { height: 56px; }
+#BattleCountdown { horizontal-align: center; color: #e8dba0; font-size: 24px; font-weight: bold; }
+#BattleCountdown.CountdownUrgent { color: #ff7777; }
+
+/* Capability-aware editor and the bounded last-evaluation badge. */
+/* “条件设置”标题在按钮内水平+垂直居中，字号比原来的 14px 大一档。
+   两条必须守住的规则：
+   1) 按钮不能设 flow-children，标题宽度也必须自适应 —— 标签一旦占满宽度，
+      horizontal-align 就只管面板不管文字，字会跑到左边（本行踩过这个坑）。
+   2) 那条 13px 的诊断行只在有内容时才出现（.Empty 折叠），否则它会占位，
+      把标题顶到按钮上半部分。有诊断内容时标题改贴顶、诊断贴底，两者不重叠。 */
+.RuleSettingsButton { padding: 1px 3px; }
+.RuleSettingsButton .RuleSettingsTitle { horizontal-align: center; vertical-align: center; font-size: 17px; }
+.RuleSettingsButton.HasDiagnostic .RuleSettingsTitle { height: 20px; vertical-align: top; }
+.RuleSettingsButton .RuleDiagnostic { width: 100%; height: 13px; vertical-align: bottom; font-size: 11px; color: #a4cbb1; text-overflow: ellipsis; }
+.RuleSettingsButton .RuleDiagnostic.Empty { visibility: collapse; }
+.RuleSettingsButton .RuleDiagnosticWarning { color: #e3bd83; }
+.V2Button:disabled { opacity: 0.38; saturation: 0; }
+#RuleSettingsError { white-space: normal; max-height: 110px; overflow: squish scroll; }
+#V2CapabilitySummary { width: 100%; color: #b8d6e1; }
+#V2ModifierAckRow { width: 100%; }
+#V2StatePolicyRow, #V2AutocastRow, #V2VariantRow { margin-top: 7px; }

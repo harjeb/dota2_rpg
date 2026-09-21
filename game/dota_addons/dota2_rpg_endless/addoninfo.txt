@@ -1,10 +1,10 @@
 "AddonInfo"
 {
-    "maps" "dota"
+    "maps" "dota2_rpg_demo"
     "IsPlayable" "1"
     "MinimalPrecache" "0"
     "HeroGuidesSupported" "0"
-    "dota"
+    "dota2_rpg_demo"
     {
         "MaxPlayers" "1"
     }

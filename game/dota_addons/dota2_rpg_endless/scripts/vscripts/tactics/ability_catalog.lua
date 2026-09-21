@@ -1,0 +1,149 @@
+-- The editor exposes both phases of reviewed native skill swaps. Runtime
+-- availability (hidden, deactivated, cooldown, etc.) belongs to ActionAdapter.
+local Catalog = {}
+
+-- Only real handles owned by this hero are included. At least one member must
+-- be visible, so unavailable upgrade/facet groups do not leak into the picker.
+-- Keep native identities separate; never alias a follow-up to its first cast.
+local phase_groups = {
+    {"ember_spirit_fire_remnant", "ember_spirit_activate_fire_remnant"},
+    {"elder_titan_ancestral_spirit", "elder_titan_move_spirit", "elder_titan_return_spirit"},
+    {"dawnbreaker_celestial_hammer", "dawnbreaker_converge"},
+    {"dawnbreaker_solar_guardian", "dawnbreaker_land"},
+    {"phoenix_fire_spirits", "phoenix_launch_fire_spirit"},
+    {"phoenix_icarus_dive", "phoenix_icarus_dive_stop"},
+    {"phoenix_sun_ray", "phoenix_sun_ray_stop", "phoenix_sun_ray_toggle_move"},
+    {"kunkka_x_marks_the_spot", "kunkka_return"},
+    {"alchemist_unstable_concoction", "alchemist_unstable_concoction_throw"},
+    {"ancient_apparition_ice_blast", "ancient_apparition_ice_blast_release"},
+    {"puck_illusory_orb", "puck_ethereal_jaunt"},
+    {"shredder_chakram", "shredder_return_chakram"},
+    {"tusk_snowball", "tusk_launch_snowball"},
+    {"keeper_of_the_light_illuminate", "keeper_of_the_light_illuminate_end"},
+    {"hoodwink_sharpshooter", "hoodwink_sharpshooter_release"},
+    {"primal_beast_onslaught", "primal_beast_onslaught_release"},
+    {"monkey_king_mischief", "monkey_king_untransform"},
+    {"monkey_king_primal_spring", "monkey_king_primal_spring_early"},
+    {"naga_siren_song_of_the_siren", "naga_siren_song_of_the_siren_cancel"},
+    {"life_stealer_infest", "life_stealer_consume"},
+    {"rubick_telekinesis", "rubick_telekinesis_land"},
+    {"ringmaster_tame_the_beasts", "ringmaster_tame_the_beasts_crack"},
+    {"tiny_tree_grab", "tiny_toss_tree"},
+    {"wisp_tether", "wisp_tether_break"},
+    {"nyx_assassin_burrow", "nyx_assassin_unburrow"},
+}
+
+local function editable_abilities(hero)
+    local abilities, owned, visible, selectable = {}, {}, {}, {}
+    for slot = 0, hero:GetAbilityCount() - 1 do
+        local ability = hero:GetAbilityByIndex(slot)
+        if ability ~= nil and not ability:IsNull() then
+            local name = ability:GetAbilityName()
+            if name ~= "" and name ~= "generic_hidden" and not name:match("^special_bonus")
+                and not name:match("^rubick_hidden%d+$") and not owned[name] then
+                owned[name] = ability
+                abilities[#abilities + 1] = ability
+                visible[name] = ability.IsHidden == nil or not ability:IsHidden()
+                selectable[name] = visible[name]
+            end
+        end
+    end
+    for _, group in ipairs(phase_groups) do
+        local hasVisibleMember = false
+        for _, name in ipairs(group) do
+            if visible[name] then hasVisibleMember = true end
+        end
+        if hasVisibleMember then
+            for _, name in ipairs(group) do
+                if owned[name] ~= nil then selectable[name] = true end
+            end
+        end
+    end
+    local result = {}
+    for _, ability in ipairs(abilities) do
+        if selectable[ability:GetAbilityName()] then result[#result + 1] = ability end
+    end
+    return result
+end
+
+function Catalog.ListAbilities(hero)
+    local names = {}
+    for _, ability in ipairs(editable_abilities(hero)) do
+        names[#names + 1] = ability:GetAbilityName()
+    end
+    return names
+end
+
+function Catalog.ListActions(hero, includeBuyback)
+    local actions = {}
+    for _, ability in ipairs(editable_abilities(hero)) do
+        if not ability:IsPassive() then
+            actions[#actions + 1] = ability:GetAbilityName()
+        end
+    end
+    if hero.GetItemInSlot ~= nil then
+        for slot = 0, 5 do
+            local item = hero:GetItemInSlot(slot)
+            if item ~= nil and not item:IsNull() and not item:IsHidden() and not item:IsPassive() then
+                table.insert(actions, "item_" .. (slot + 1))
+            end
+        end
+    end
+    if includeBuyback == true then table.insert(actions, "buyback") end
+    table.insert(actions, "sustained_move")
+    table.insert(actions, "attack")
+    return actions
+end
+
+function Catalog.DescribeAction(hero, action)
+    if action == "buyback" then return "buyback", "" end
+    if action == "sustained_move" then return "move", "" end
+    if action == "attack" then return "attack", "" end
+    if action == "ultimate" then
+        for slot = 0, hero:GetAbilityCount() - 1 do
+            local ability = hero:GetAbilityByIndex(slot)
+            if ability ~= nil and not ability:IsNull() and not ability:IsPassive()
+                and not ability:IsHidden() and ability:GetAbilityType() == ABILITY_TYPE_ULTIMATE then
+                return "ability", ability:GetAbilityName()
+            end
+        end
+        return "ability", ""
+    end
+    local slot = tonumber(action:match("^ability_(%d+)$"))
+    if slot ~= nil then
+        local ability = hero:GetAbilityByIndex(slot - 1)
+        return "ability", ability ~= nil and not ability:IsNull() and ability:GetAbilityName() or ""
+    end
+    slot = tonumber(action:match("^item_(%d+)$"))
+    if slot ~= nil and hero.GetItemInSlot ~= nil then
+        local item = hero:GetItemInSlot(slot - 1)
+        return "item", item ~= nil and not item:IsNull() and item:GetAbilityName() or ""
+    end
+    local ability = hero.FindAbilityByName ~= nil and hero:FindAbilityByName(action) or nil
+    if ability ~= nil and not ability:IsNull() then return "ability", ability:GetAbilityName() end
+    return "ability", action
+end
+
+local capabilityRevision=0
+function Catalog.PublishCapabilities(hero,actions,heroKey,player)
+    capabilityRevision=capabilityRevision+1
+    local A=require("tactics/ability_capability")
+    for _,id in ipairs(actions or {}) do
+        local kind,name=Catalog.DescribeAction(hero,id)
+        local action={kind=kind,name=name,logical_id=id}
+        local cap=A.ForAction(hero,action)
+        if cap then
+            cap.source_index=require("tactics/condition_context").Call(A.Source(hero,action),"entindex") or -1
+            local payload = {
+                hero_index=hero:entindex(),rule_key=heroKey or "",action_id=id,
+                revision=capabilityRevision,capability=cap}
+            if player ~= nil then
+                CustomGameEventManager:Send_ServerToPlayer(player,"rpg_action_capability",payload)
+            else
+                CustomGameEventManager:Send_ServerToAllClients("rpg_action_capability",payload)
+            end
+        end
+    end
+    return capabilityRevision
+end
+return Catalog

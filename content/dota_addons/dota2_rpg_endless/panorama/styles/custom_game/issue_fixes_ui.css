@@ -1,0 +1,165 @@
+/* The refresh action shares the settings footer with Apply and Cancel. */
+.V2Footer .RpgConditionRefresh
+{
+    visibility: visible;
+    width: fit-children;
+    max-width: 560px;
+    min-width: 160px;
+    margin-right: 10px;
+    padding: 8px 12px;
+}
+.RpgConditionRefresh Label
+{
+    font-size: 16px;
+}
+.RpgConditionRefresh:disabled
+{
+    opacity: 0.45;
+}
+
+/* Action-panel collapse control: never shrink to a one-pixel vertical strip. */
+.RpgFixedActionPanel
+{
+    min-width: 52px;
+}
+
+.RpgActionPanelArrowButton,
+.TeamEditor .RpgActionPanelArrowButton
+{
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    horizontal-align: right;
+    vertical-align: top;
+    margin: 6px;
+    margin-left: 6px;
+    margin-right: 6px;
+    padding: 0px;
+    background-color: #111111cc;
+    border: 1px solid #c9c9c966;
+    border-radius: 3px;
+    box-shadow: none;
+    overflow: noclip;
+}
+
+.RpgActionPanelArrowButton Label
+{
+    width: 100%;
+    height: 100%;
+    horizontal-align: center;
+    vertical-align: center;
+    text-align: center;
+    font-size: 30px;
+    color: white;
+    text-shadow: 0px 1px 2px 2.0 #000000;
+}
+
+.RpgActionPanelCollapsed,
+.TeamEditor.RpgActionPanelCollapsed
+{
+    width: 56px !important;
+    min-width: 56px !important;
+    max-width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    padding: 0px !important;
+    background-color: transparent !important;
+    border: 0px !important;
+    box-shadow: none !important;
+    overflow: noclip;
+}
+
+.RpgActionPanelCollapsed .EditorBody,
+.RpgActionPanelCollapsed .TeamIdentity,
+.RpgActionPanelCollapsed .HeroStrip,
+.RpgActionPanelCollapsed .ActionPanelBody,
+.RpgActionPanelCollapsed .TacticPanelBody,
+.RpgActionPanelCollapsed .RulesBody,
+.RpgActionPanelCollapsed #ActionPanelBody,
+.RpgActionPanelCollapsed #TacticPanelBody,
+.RpgActionPanelCollapsed #RulesBody
+{
+    visibility: collapse;
+}
+
+.RpgActionPanelCollapsed .RpgActionPanelArrowButton
+{
+    visibility: visible;
+}
+
+.TeamEditor.RpgActionPanelCollapsed .TeamHeader
+{
+    width: 56px;
+    height: 56px;
+    padding: 0px;
+    border: 0px;
+    flow-children: none;
+}
+
+/* Restore controls are root siblings, outside the hidden editor's clip bounds. */
+.EditorRestoreButton
+{
+    width: 48px;
+    height: 48px;
+    vertical-align: center;
+    margin-top: 18px;
+    background-color: #202a2eee;
+    border: 2px solid #c5d2d8;
+    z-index: 1001;
+}
+.EditorRestoreButton:hover
+{
+    brightness: 1.4;
+}
+.EditorRestoreButton Label
+{
+    horizontal-align: center;
+    vertical-align: center;
+    font-size: 30px;
+    color: white;
+}
+.RadiantRestore
+{
+    horizontal-align: left;
+    margin-left: 18px;
+    border-color: #4bb99f;
+}
+.DireRestore
+{
+    horizontal-align: right;
+    margin-right: 18px;
+    border-color: #d65e56;
+}
+
+/* Hero shop: remove the large opaque frame while preserving readable controls. */
+.RpgTransparentHeroShop,
+.RpgTransparentHeroShop .ShopFrame,
+.RpgTransparentHeroShop .ShopBody,
+.RpgTransparentHeroShop .PanelBackground,
+.RpgTransparentHeroShop #ShopFrame,
+.RpgTransparentHeroShop #ShopBody,
+.RpgTransparentHeroShop #PanelBackground,
+.RpgTransparentHeroShop #ShopOffer
+{
+    background-color: transparent !important;
+    border: 0px !important;
+    box-shadow: none !important;
+}
+
+.RpgTransparentHeroShop Label
+{
+    text-shadow: 0px 1px 3px 3.0 #000000;
+}
+
+.RpgTransparentHeroShop Button,
+.RpgTransparentHeroShop .HeroOffer,
+.RpgTransparentHeroShop .ShopOfferSlot
+{
+    /* Keep only the individual interactive cards readable; no full-panel mask. */
+    background-color: #11111199;
+    box-shadow: none;
+}

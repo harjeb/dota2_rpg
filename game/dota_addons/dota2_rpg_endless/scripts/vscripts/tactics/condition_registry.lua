@@ -1,0 +1,579 @@
+local Context = require("tactics/condition_context")
+local SpecialTargets = require("tactics/special_targets")
+local Lifecycle = require("tactics/action_lifecycle")
+local Observation = require("tactics/condition_observation")
+local ConditionRegistry = {
+    use_conditions = {},
+    target_filters = {},
+}
+
+local function is_valid_entity(entity)
+    if entity == nil then
+        return false
+    end
+    if entity.IsNull ~= nil and entity:IsNull() then
+        return false
+    end
+    return true
+end
+
+local function action_actor(ctx, condition)
+    if condition.action_actor == nil or condition.action_actor == "" then return ctx.caster end
+    if type(ctx.get_action_actor) ~= "function" then return nil end
+    return ctx.get_action_actor(condition.action_actor)
+end
+
+local function clamp(value, min_value, max_value)
+    if value < min_value then
+        return min_value
+    end
+    if value > max_value then
+        return max_value
+    end
+    return value
+end
+
+local function health_pct(unit)
+    if not is_valid_entity(unit) then
+        return 0
+    end
+    local max_health = math.max(1, unit:GetMaxHealth())
+    return clamp(unit:GetHealth() / max_health, 0, 1)
+end
+
+local function mana_pct(unit)
+    if not is_valid_entity(unit) or unit.GetMaxMana == nil then
+        return 0
+    end
+    local max_mana = math.max(1, unit:GetMaxMana())
+    return clamp(unit:GetMana() / max_mana, 0, 1)
+end
+
+local function distance_between(a, b)
+    if not is_valid_entity(a) or not is_valid_entity(b) then
+        return math.huge
+    end
+    return (a:GetAbsOrigin() - b:GetAbsOrigin()):Length2D()
+end
+
+local function has_tag(ctx, unit, wanted)
+    if ctx.get_tags == nil then
+        return false
+    end
+    local tags = ctx.get_tags(unit) or {}
+    if tags[wanted] == true then
+        return true
+    end
+    for _, tag in pairs(tags) do
+        if tag == wanted then
+            return true
+        end
+    end
+    return false
+end
+
+local function safe_boolean_call(fn, ...)
+    local ok, result = pcall(fn, ...)
+    if not ok then
+        return false, result
+    end
+    return result == true, nil
+end
+
+function ConditionRegistry:RegisterUseCondition(name, evaluator)
+    assert(type(name) == "string" and name ~= "", "use condition name is required")
+    assert(type(evaluator) == "function", "use condition evaluator must be a function")
+    self.use_conditions[name] = evaluator
+end
+
+function ConditionRegistry:RegisterTargetFilter(name, evaluator)
+    assert(type(name) == "string" and name ~= "", "target filter name is required")
+    assert(type(evaluator) == "function", "target filter evaluator must be a function")
+    self.target_filters[name] = evaluator
+end
+
+function ConditionRegistry.NormalizeMode(mode)
+    return mode == "priority" and "priority" or "all"
+end
+
+function ConditionRegistry:EvaluateUseConditions(conditions, ctx, mode)
+    if mode == "priority" and #(conditions or {}) > 0 then
+        for index, condition in ipairs(conditions) do
+            local evaluator = self.use_conditions[condition.type]
+            local passed, err = false, nil
+            if evaluator then passed, err = safe_boolean_call(evaluator, ctx, condition) end
+            Observation.Record(ctx, "use", index, condition, ctx.caster, passed, err)
+            if passed then return true, nil, index end
+        end
+        return false, "no_use_condition_matched"
+    end
+    for index, condition in ipairs(conditions or {}) do
+        local evaluator = self.use_conditions[condition.type]
+        if evaluator == nil then
+            return false, "unknown_use_condition:" .. tostring(condition.type), index
+        end
+
+        local passed, err = safe_boolean_call(evaluator, ctx, condition)
+        Observation.Record(ctx, "use", index, condition, ctx.caster, passed, err)
+        if err ~= nil then
+            return false, "use_condition_error:" .. tostring(condition.type), index
+        end
+        if not passed then
+            return false, "use_condition_failed:" .. tostring(condition.type), index
+        end
+    end
+    return true, nil, nil
+end
+
+function ConditionRegistry:EvaluateTargetFilters(filters, ctx, target, mode)
+    if mode == "priority" and #(filters or {}) > 0 then
+        for index, condition in ipairs(filters) do
+            local evaluator = self.target_filters[condition.type]
+            local passed, err = false, nil
+            if evaluator then passed, err = safe_boolean_call(evaluator, ctx, target, condition) end
+            Observation.Record(ctx, "target", index, condition, target, passed, err)
+            if passed then return true, nil, index end
+        end
+        return false, "no_target_filter_matched"
+    end
+    for index, condition in ipairs(filters or {}) do
+        local evaluator = self.target_filters[condition.type]
+        if evaluator == nil then
+            return false, "unknown_target_filter:" .. tostring(condition.type), index
+        end
+
+        local passed, err = safe_boolean_call(evaluator, ctx, target, condition)
+        Observation.Record(ctx, "target", index, condition, target, passed, err)
+        if err ~= nil then
+            return false, "target_filter_error:" .. tostring(condition.type), index
+        end
+        if not passed then
+            return false, "target_filter_failed:" .. tostring(condition.type), index
+        end
+    end
+    return true, nil, nil
+end
+
+ConditionRegistry:RegisterTargetFilter("specified_enemy", function(ctx, target, condition)
+    if not require("tactics/rule_snapshot").ValidTargetActor(condition.target_actor)
+        or type(ctx.get_target_actor) ~= "function" or not is_valid_entity(target)
+        or target.IsAlive == nil or not target:IsAlive() then return false end
+    return ctx.get_target_actor(condition.target_actor) == target
+end)
+
+ConditionRegistry:RegisterTargetFilter("specified_ally", function(ctx, target, condition)
+    if not require("tactics/rule_snapshot").ValidAllyActor(condition.target_actor)
+        or type(ctx.get_ally_actor) ~= "function" or not is_valid_entity(target)
+        or target.IsAlive == nil or not target:IsAlive() then return false end
+    return ctx.get_ally_actor(condition.target_actor) == target
+        and target:GetTeamNumber() == ctx.caster:GetTeamNumber()
+end)
+
+-- Use conditions -----------------------------------------------------------
+
+ConditionRegistry:RegisterUseCondition("incoming_aoe", function(ctx, condition)
+    return require("tactics/aoe_reaction").Match(ctx, condition)
+end)
+
+ConditionRegistry:RegisterUseCondition("always", function(_ctx, _condition)
+    return true
+end)
+
+ConditionRegistry:RegisterUseCondition("self_hp_pct_lte", function(ctx, condition)
+    return health_pct(ctx.caster) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("self_hp_pct_gte", function(ctx, condition)
+    return health_pct(ctx.caster) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("self_mana_pct_lte", function(ctx, condition)
+    return mana_pct(ctx.caster) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("self_mana_pct_gte", function(ctx, condition)
+    return mana_pct(ctx.caster) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("alive_ally_count_gte", function(ctx, condition)
+    return tonumber(ctx.alive_ally_count or 0) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("alive_enemy_count_lte", function(ctx, condition)
+    return tonumber(ctx.alive_enemy_count or 0) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("elapsed_gte", function(ctx, condition)
+    return tonumber(ctx.elapsed or 0) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("elapsed_lte", function(ctx, condition)
+    return tonumber(ctx.elapsed or 0) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("phase_is", function(ctx, condition)
+    return tostring(ctx.boss_phase or "") == tostring(condition.value or "")
+end)
+
+ConditionRegistry:RegisterUseCondition("action_use_count_lt", function(ctx, condition)
+    local logical_id = tostring(condition.action_id or ctx.current_action_id or "")
+    local actor = action_actor(ctx, condition)
+    if actor == nil or ctx.get_action_use_count == nil then return false end
+    local count = tonumber(ctx.get_action_use_count(actor, logical_id))
+    return count ~= nil and count < tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterUseCondition("self_recently_damaged", function(ctx, condition)
+    if ctx.was_recently_damaged == nil then
+        return false
+    end
+    return ctx.was_recently_damaged(ctx.caster, tonumber(condition.seconds or condition.value or 2))
+end)
+
+ConditionRegistry:RegisterUseCondition("any_ally_recently_damaged", function(ctx, condition)
+    if ctx.any_ally_recently_damaged == nil then
+        return false
+    end
+    return ctx.any_ally_recently_damaged(ctx.caster, tonumber(condition.seconds or condition.value or 2))
+end)
+
+ConditionRegistry:RegisterUseCondition("no_enemy_within", function(ctx, condition)
+    if ctx.count_enemies_around == nil then
+        return false
+    end
+    return ctx.count_enemies_around(ctx.caster, tonumber(condition.radius or condition.value)) == 0
+end)
+
+ConditionRegistry:RegisterUseCondition("self_has_modifier", function(ctx, condition)
+    return ctx.caster:HasModifier(tostring(condition.modifier or condition.value))
+end)
+
+ConditionRegistry:RegisterUseCondition("self_not_has_modifier", function(ctx, condition)
+    return not ctx.caster:HasModifier(tostring(condition.modifier or condition.value))
+end)
+
+-- Target hard filters ------------------------------------------------------
+
+-- Fixed 30-degree total cone. Scale before normalizing to avoid overflow or
+-- underflow for valid, non-unit horizontal vectors. Height does not affect aim.
+local FACING_ENEMY_COS = math.cos(math.rad(15))
+local function horizontal_unit(x, y)
+    x, y = Context.Number(x), Context.Number(y)
+    if x == nil or y == nil then return nil end
+    local scale = math.max(math.abs(x), math.abs(y))
+    if scale == 0 then return nil end
+    x, y = x / scale, y / scale
+    local length = math.sqrt(x * x + y * y)
+    return x / length, y / length
+end
+
+ConditionRegistry:RegisterTargetFilter("facing_enemy", function(ctx, target, _condition)
+    -- Guard vector member access as well as native entity methods: stale handles
+    -- and malformed observations are a false condition, never an evaluator error.
+    local ok, result = pcall(function()
+        local caster = ctx.caster
+        if not is_valid_entity(caster) or not is_valid_entity(target) then return false end
+        local caster_team = Context.Number(Context.Call(caster, "GetTeamNumber"))
+        local target_team = Context.Number(Context.Call(target, "GetTeamNumber"))
+        if caster_team == nil or target_team == nil or caster_team == target_team then return false end
+        local forward = Context.Call(caster, "GetForwardVector")
+        local origin = Context.Call(caster, "GetAbsOrigin")
+        local destination = Context.Call(target, "GetAbsOrigin")
+        if forward == nil or origin == nil or destination == nil then return false end
+        local fx, fy = horizontal_unit(forward.x, forward.y)
+        local ox, oy = Context.Number(origin.x), Context.Number(origin.y)
+        local tx, ty = Context.Number(destination.x), Context.Number(destination.y)
+        if fx == nil or ox == nil or oy == nil or tx == nil or ty == nil then return false end
+        local dx, dy = horizontal_unit(tx - ox, ty - oy)
+        if dx == nil then return false end
+        -- Roundoff tolerance keeps both exact 15-degree boundaries inclusive.
+        return fx * dx + fy * dy >= FACING_ENEMY_COS - 1e-12
+    end)
+    return ok and result == true
+end)
+
+ConditionRegistry:RegisterTargetFilter("hp_pct_lte", function(_ctx, target, condition)
+    return health_pct(target) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("hp_pct_gte", function(_ctx, target, condition)
+    return health_pct(target) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("mana_pct_lte", function(_ctx, target, condition)
+    return mana_pct(target) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("mana_pct_gte", function(_ctx, target, condition)
+    return mana_pct(target) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("health_lte", function(_ctx, target, condition)
+    return target:GetHealth() <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("health_gte", function(_ctx, target, condition)
+    return target:GetHealth() >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("distance_lte", function(ctx, target, condition)
+    return distance_between(ctx.caster, target) <= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_channeling", function(_ctx, target, _condition)
+    return target.IsChanneling ~= nil and target:IsChanneling()
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_casting", function(_ctx, target, _condition)
+    if Context.Call(target, "IsInAbilityPhase") == true then return true end
+    local active = Context.Call(target, "GetCurrentActiveAbility")
+    if Context.Call(active, "IsInAbilityPhase") == true then return true end
+    return Context.Call(target, "IsChanneling") == true
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_stunned", function(_ctx, target, _condition)
+    return target.IsStunned ~= nil and target:IsStunned()
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_silenced", function(_ctx, target, _condition)
+    return target.IsSilenced ~= nil and target:IsSilenced()
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_rooted", function(_ctx, target, _condition)
+    return target.IsRooted ~= nil and target:IsRooted()
+end)
+
+ConditionRegistry:RegisterTargetFilter("has_modifier", function(_ctx, target, condition)
+    return target:HasModifier(tostring(condition.modifier or condition.value))
+end)
+
+ConditionRegistry:RegisterTargetFilter("not_has_modifier", function(_ctx, target, condition)
+    return not target:HasModifier(tostring(condition.modifier or condition.value))
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_hero", function(_ctx, target, _condition)
+    return target.IsRealHero ~= nil and target:IsRealHero()
+end)
+
+ConditionRegistry:RegisterTargetFilter("is_summon", function(ctx, target, _condition)
+    if type(ctx.is_summon) == "function" then return ctx.is_summon(target) == true end
+    return Context.IsSummon(target)
+end)
+
+ConditionRegistry:RegisterTargetFilter("recently_damaged", function(ctx, target, condition)
+    if ctx.was_recently_damaged == nil then
+        return false
+    end
+    return ctx.was_recently_damaged(target, tonumber(condition.seconds or condition.value or 2))
+end)
+
+ConditionRegistry:RegisterTargetFilter("nearby_allies_gte", function(ctx, target, condition)
+    if ctx.count_allies_around == nil then
+        return false
+    end
+    return ctx.count_allies_around(target, tonumber(condition.radius or 600)) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("nearby_enemies_gte", function(ctx, target, condition)
+    if ctx.count_enemies_around == nil then
+        return false
+    end
+    return ctx.count_enemies_around(target, tonumber(condition.radius or 600)) >= tonumber(condition.value)
+end)
+
+ConditionRegistry:RegisterTargetFilter("has_affix", function(ctx, target, condition)
+    if ctx.has_affix == nil then
+        return false
+    end
+    return ctx.has_affix(target, tostring(condition.value))
+end)
+
+ConditionRegistry:RegisterTargetFilter("has_dispellable_buff", function(ctx, target, _condition)
+    return ctx.has_dispellable_buff ~= nil and ctx.has_dispellable_buff(target)
+end)
+
+ConditionRegistry:RegisterTargetFilter("has_dispellable_debuff", function(ctx, target, _condition)
+    return ctx.has_dispellable_debuff ~= nil and ctx.has_dispellable_debuff(target)
+end)
+
+ConditionRegistry:RegisterTargetFilter("has_shield", function(ctx, target, _condition)
+    return ctx.has_shield ~= nil and ctx.has_shield(target)
+end)
+
+
+-- Conditions v2: explicit observations, shared by caster and selected target.
+for _, resource in ipairs({ "hp", "mana" }) do
+    local currentMethod = resource == "hp" and "GetHealth" or "GetMana"
+    local maxMethod = resource == "hp" and "GetMaxHealth" or "GetMaxMana"
+    for _, direction in ipairs({ "gte", "lte" }) do
+        local function evaluate(unit, condition)
+            local current = Context.Number(Context.Call(unit, currentMethod))
+            local maximum = Context.Number(Context.Call(unit, maxMethod))
+            local threshold = Context.Number(condition.value)
+            if current == nil or maximum == nil or maximum <= 0 or threshold == nil then return false end
+            local fraction = clamp(current / maximum, 0, 1)
+            if direction == "gte" then return fraction >= threshold end
+            return fraction <= threshold
+        end
+        ConditionRegistry:RegisterUseCondition("self_" .. resource .. "_pct_" .. direction,
+            function(ctx, c) return evaluate(ctx.caster, c) end)
+        ConditionRegistry:RegisterTargetFilter(resource .. "_pct_" .. direction,
+            function(_, target, c) return evaluate(target, c) end)
+    end
+end
+for _, side in ipairs({ "allies", "enemies" }) do
+    ConditionRegistry:RegisterUseCondition("nearby_" .. side .. "_gte", function(ctx, c)
+        local fn = ctx["count_" .. side .. "_around"]
+        local count = fn and fn(ctx.caster, tonumber(c.radius or 600))
+        return count ~= nil and count >= tonumber(c.value)
+    end)
+end
+ConditionRegistry:RegisterUseCondition("alive_enemy_count_gte", function(ctx, c)
+    return ctx.alive_enemy_count ~= nil and ctx.alive_enemy_count >= tonumber(c.value)
+end)
+for _, direction in ipairs({ "gte", "lte" }) do
+    local function compare(actual, c)
+        if actual == nil then return false end
+        if direction == "gte" then return actual >= tonumber(c.value) end
+        return actual <= tonumber(c.value)
+    end
+    ConditionRegistry:RegisterTargetFilter("missing_health_" .. direction, function(_, target, c)
+        return compare(math.max(0, target:GetMaxHealth() - target:GetHealth()), c)
+    end)
+    for _, property in ipairs({ "stacks", "remaining" }) do
+        local method = property == "stacks" and "GetStackCount" or "GetRemainingTime"
+        local function evaluate(unit, c)
+            return compare(Context.ModifierValue(unit, c.modifier, method), c)
+        end
+        ConditionRegistry:RegisterUseCondition("self_modifier_" .. property .. "_" .. direction,
+            function(ctx, c) return evaluate(ctx.caster, c) end)
+        ConditionRegistry:RegisterTargetFilter("modifier_" .. property .. "_" .. direction,
+            function(_, target, c) return evaluate(target, c) end)
+    end
+end
+ConditionRegistry:RegisterTargetFilter("distance_gte", function(ctx, target, c)
+    return distance_between(ctx.caster, target) >= tonumber(c.value)
+end)
+ConditionRegistry:RegisterTargetFilter("exclude_self", function(ctx, target) return target ~= ctx.caster end)
+ConditionRegistry:RegisterTargetFilter("is_controlled", function(_, target)
+    for _, method in ipairs({ "IsStunned", "IsRooted", "IsSilenced", "IsHexed" }) do
+        if Context.Call(target, method) == true then return true end
+    end
+    return false
+end)
+for id, method in pairs({ spell_immune = "IsMagicImmune" }) do
+    ConditionRegistry:RegisterTargetFilter("is_" .. id, function(_, target)
+        return Context.Call(target, method) == true
+    end)
+    ConditionRegistry:RegisterTargetFilter("not_" .. id, function(_, target)
+        return Context.Call(target, method) == false
+    end)
+end
+ConditionRegistry:RegisterUseCondition("ability_charges_gte", function(ctx, c)
+    local actor = action_actor(ctx, c)
+    if actor == nil or ctx.get_ability_charges == nil then return false end
+    local n = ctx.get_ability_charges(actor, c.action_id or ctx.current_action_id)
+    return n ~= nil and n >= tonumber(c.value)
+end)
+-- 观测不到冷却就不成立：未知不等于"正在冷却中"。
+-- 不填 action_id 时看本条动作自己的冷却；不填 action_actor 时看施法者本人。
+ConditionRegistry:RegisterUseCondition("self_ability_on_cooldown", function(ctx, c)
+    local actor = action_actor(ctx, c)
+    if actor == nil or ctx.get_ability_cooldown == nil then return false end
+    local remaining = ctx.get_ability_cooldown(actor, c.action_id or ctx.current_action_id)
+    return remaining ~= nil and remaining > 0
+end)
+
+-- Special conditions use explicit observations; unknown is never zero.
+local function observe(ctx, name, ...)
+    if type(ctx[name]) ~= "function" then return nil end
+    local ok, value = pcall(ctx[name], ...)
+    if ok then return Context.Number(value) end
+end
+local function measured_compare(actual, threshold, direction)
+    threshold = Context.Number(threshold)
+    if actual == nil or threshold == nil then return false end
+    if direction == "gte" then return actual >= threshold end
+    return actual <= threshold
+end
+for _, direction in ipairs({ "gte", "lte" }) do
+    ConditionRegistry:RegisterUseCondition("action_elapsed_" .. direction, function(ctx, c)
+        local actor = action_actor(ctx, c)
+        if actor == nil then return false end
+        local elapsed = observe(ctx, "get_action_elapsed", actor, c.action_id or ctx.current_action_id)
+        return elapsed ~= nil and elapsed >= 0 and measured_compare(elapsed, c.seconds or c.value, direction)
+    end)
+end
+ConditionRegistry:RegisterUseCondition("action_succeeded_after", function(ctx, c)
+    local actor = action_actor(ctx, c)
+    if not actor or not c.action_id or type(ctx.action_succeeded_after) ~= "function" then return false end
+    return ctx.action_succeeded_after(actor, c.action_id, ctx.caster, ctx.current_action_id, tonumber(c.seconds or c.value or 2)) == true
+end)
+ConditionRegistry:RegisterTargetFilter("owned_by_self", function(ctx, target)
+    if type(ctx.is_owned_by) ~= "function" then return false end
+    local ok, owned = pcall(ctx.is_owned_by, target, ctx.caster)
+    return ok and owned == true
+end)
+ConditionRegistry:RegisterTargetFilter("is_illusion", function(_, target)
+    return Context.Call(target, "IsIllusion") == true
+end)
+
+ConditionRegistry.HealthPct = health_pct
+ConditionRegistry.ManaPct = mana_pct
+ConditionRegistry.DistanceBetween = distance_between
+ConditionRegistry.HasTag = has_tag
+ConditionRegistry.IsValidEntity = is_valid_entity
+
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_enemy", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and unit:GetTeamNumber() ~= ctx.caster:GetTeamNumber()
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_ally", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and unit:GetTeamNumber() == ctx.caster:GetTeamNumber()
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_hero", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and Context.Call(unit,"IsHero") == true
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_is_creep", function(ctx)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and Context.Call(unit,"IsCreep") == true
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_hp_pct_lte", function(ctx,c)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and health_pct(unit) <= tonumber(c.value)
+end)
+ConditionRegistry:RegisterUseCondition("tiny_grab_hp_pct_gte", function(ctx,c)
+    local unit = SpecialTargets.GrabTarget(ctx)
+    return unit ~= nil and health_pct(unit) >= tonumber(c.value)
+end)
+
+local function observed_action(ctx, c, actor)
+    local name = c.action_id
+    if name and ctx.resolve_action_name then name = ctx.resolve_action_name(actor, name) end
+    if not name then
+        local spec = ctx.current_action_spec or {}
+        local own = Context.Call(spec.source, "GetAbilityName") or ctx.current_action_id
+        name = Lifecycle.release_parents[own] or own
+    end
+    return name
+end
+for _, direction in ipairs({"gte", "lte"}) do
+    ConditionRegistry:RegisterUseCondition("channel_elapsed_" .. direction, function(ctx, c)
+        local actor = action_actor(ctx, c)
+        if not actor then return false end
+        local elapsed = Lifecycle.ChannelElapsed(actor, observed_action(ctx,c,actor), ctx.now)
+        return measured_compare(elapsed, c.seconds or c.value, direction)
+    end)
+end
+ConditionRegistry:RegisterUseCondition("action_phase_is", function(ctx,c)
+    local actor = action_actor(ctx,c)
+    if not actor then return false end
+    return Lifecycle.Phase(actor,observed_action(ctx,c,actor),ctx.now) == c.value
+end)
+ConditionRegistry:RegisterUseCondition("release_action_available", function(ctx)
+    return Lifecycle.CanRelease(ctx.caster,ctx.current_action_spec)
+end)
+
+return ConditionRegistry

@@ -1,0 +1,2368 @@
+{
+	"ch01": {
+		"name": "第01关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_centaur_khan",
+				"level": 1,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.0,
+				"attack_multiplier": 1.0,
+				"bonus_armor": 0,
+				"magic_resistance": 25,
+				"status_resistance": 0
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 1,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.0,
+				"attack_multiplier": 1.0,
+				"bonus_armor": 0,
+				"magic_resistance": 25,
+				"status_resistance": 0
+			}
+		],
+		"reward": {
+			"gold": 900,
+			"xp_pool": 200
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 1,
+		"multi": 1.0
+	},
+	"ch02": {
+		"name": "第02关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_centaur_khan",
+				"level": 2,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.1,
+				"attack_multiplier": 1.05,
+				"bonus_armor": 1,
+				"magic_resistance": 26,
+				"status_resistance": 1
+			},
+			{
+				"unit": "npc_dota_neutral_alpha_wolf",
+				"level": 2,
+				"count": 1,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 1.1,
+				"attack_multiplier": 1.05,
+				"bonus_armor": 1,
+				"magic_resistance": 26,
+				"status_resistance": 1
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 2,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.1,
+				"attack_multiplier": 1.05,
+				"bonus_armor": 1,
+				"magic_resistance": 26,
+				"status_resistance": 1
+			}
+		],
+		"reward": {
+			"gold": 1000,
+			"xp_pool": 225
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 2,
+		"multi": 1.05
+	},
+	"ch03": {
+		"name": "第03关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_centaur_khan",
+				"level": 3,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.2,
+				"attack_multiplier": 1.1,
+				"bonus_armor": 2,
+				"magic_resistance": 27,
+				"status_resistance": 2
+			},
+			{
+				"unit": "npc_dota_neutral_satyr_hellcaller",
+				"level": 3,
+				"count": 1,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 1.2,
+				"attack_multiplier": 1.1,
+				"bonus_armor": 2,
+				"magic_resistance": 27,
+				"status_resistance": 2
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 3,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.2,
+				"attack_multiplier": 1.1,
+				"bonus_armor": 2,
+				"magic_resistance": 27,
+				"status_resistance": 2
+			},
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
+				"level": 3,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.2,
+				"attack_multiplier": 1.1,
+				"bonus_armor": 2,
+				"magic_resistance": 27,
+				"status_resistance": 2
+			}
+		],
+		"reward": {
+			"gold": 1100,
+			"xp_pool": 250
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 3,
+		"multi": 1.1
+	},
+	"ch04": {
+		"name": "第04关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_centaur_khan",
+				"level": 5,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.35,
+				"attack_multiplier": 1.2,
+				"bonus_armor": 3,
+				"magic_resistance": 28,
+				"status_resistance": 3
+			},
+			{
+				"unit": "npc_dota_neutral_satyr_hellcaller",
+				"level": 5,
+				"count": 1,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 1.35,
+				"attack_multiplier": 1.2,
+				"bonus_armor": 3,
+				"magic_resistance": 28,
+				"status_resistance": 3
+			},
+			{
+				"unit": "npc_dota_neutral_ogre_mauler",
+				"level": 5,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.35,
+				"attack_multiplier": 1.2,
+				"bonus_armor": 3,
+				"magic_resistance": 28,
+				"status_resistance": 3
+			},
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
+				"level": 5,
+				"count": 1,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.35,
+				"attack_multiplier": 1.2,
+				"bonus_armor": 3,
+				"magic_resistance": 28,
+				"status_resistance": 3
+			}
+		],
+		"reward": {
+			"gold": 1200,
+			"xp_pool": 275
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 4,
+		"multi": 1.15
+	},
+	"ch05": {
+		"name": "第05关 · 精英检查",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_axe",
+				"level": 8,
+				"items": [
+          "item_phase_boots",
+          "item_blink",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"elite"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_drow_ranger",
+				"level": 8,
+				"items": [
+          "item_power_treads",
+          "item_dragon_lance",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_crystal_maiden",
+				"level": 8,
+				"items": [
+          "item_arcane_boots",
+          "item_glimmer_cape",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 800,
+			"xp_pool": 1150
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 5,
+		"multi": 1.2
+	},
+	"ch06": {
+		"name": "第06关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_gnoll_assassin",
+				"level": 8,
+				"count": 3,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 1.6,
+				"attack_multiplier": 1.35,
+				"bonus_armor": 5,
+				"magic_resistance": 30,
+				"status_resistance": 5
+			},
+			{
+				"unit": "npc_dota_neutral_dark_troll_warlord",
+				"level": 8,
+				"count": 2,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 1.6,
+				"attack_multiplier": 1.35,
+				"bonus_armor": 5,
+				"magic_resistance": 30,
+				"status_resistance": 5
+			},
+			{
+				"unit": "npc_dota_neutral_polar_furbolg_champion",
+				"level": 8,
+				"count": 1,
+				"template": "elite",
+				"ai": "aggro_front",
+				"hp_multiplier": 1.6,
+				"attack_multiplier": 1.35,
+				"bonus_armor": 5,
+				"magic_resistance": 30,
+				"status_resistance": 5
+			}
+		],
+		"reward": {
+			"gold": 3500,
+			"xp_pool": 400
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 6,
+		"multi": 1.25
+	},
+	"ch07": {
+		"name": "第07关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_dragon_knight",
+				"level": 10,
+				"items": [
+          "item_power_treads",
+          "item_blink",
+          "item_armlet",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_sniper",
+				"level": 10,
+				"items": [
+          "item_power_treads",
+          "item_maelstrom",
+          "item_dragon_lance",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_witch_doctor",
+				"level": 10,
+				"items": [
+          "item_arcane_boots",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 1300,
+			"xp_pool": 600
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 7,
+		"multi": 1.3
+	},
+	"ch08": {
+		"name": "第08关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_huskar",
+				"level": 11,
+				"items": [
+          "item_power_treads",
+          "item_armlet",
+          "item_heavens_halberd",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_clinkz",
+				"level": 11,
+				"items": [
+          "item_power_treads",
+          "item_desolator",
+          "item_dragon_lance",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_oracle",
+				"level": 11,
+				"items": [
+          "item_arcane_boots",
+          "item_glimmer_cape",
+          "item_blink",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 1500,
+			"xp_pool": 700
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 8,
+		"multi": 1.35
+	},
+	"ch09": {
+		"name": "第09关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_sand_king",
+				"level": 12,
+				"items": [
+          "item_arcane_boots",
+          "item_blink",
+          "item_ultimate_scepter",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_phantom_assassin",
+				"level": 12,
+				"items": [
+          "item_power_treads",
+          "item_desolator",
+          "item_basher",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_dazzle",
+				"level": 12,
+				"items": [
+          "item_arcane_boots",
+          "item_glimmer_cape",
+          "item_force_staff",
+          "item_magic_wand"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 1700,
+			"xp_pool": 800
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 9,
+		"multi": 1.4
+	},
+	"ch10": {
+		"name": "第10关 · 章节 Boss",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_centaur",
+				"level": 14,
+				"items": [
+          "item_phase_boots",
+          "item_blink",
+          "item_heart",
+          "item_pipe"
+        ],
+				"tags": [
+					"boss"
+				],
+				"ai": "aggro_front",
+				"boss_max_health": 6000,
+				"boss_attack_damage_pct": 16.666667,
+				"boss_spell_amp_pct": 16.666667,
+				"boss_cooldown_reduction_pct": 4.166667
+			}
+    ],
+		"reward": {
+			"gold": 2000,
+			"xp_pool": 1100
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 10,
+		"multi": 1.45
+	},
+	"ch11": {
+		"name": "第11关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_rock_golem",
+				"level": 15,
+				"count": 3,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 4.5,
+				"attack_multiplier": 2.5,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
+				"status_resistance": 10
+			},
+			{
+				"unit": "npc_dota_neutral_ice_shaman",
+				"level": 15,
+				"count": 2,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 4.5,
+				"attack_multiplier": 2.5,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
+				"status_resistance": 10
+			},
+			{
+				"unit": "npc_dota_neutral_granite_golem",
+				"level": 15,
+				"count": 1,
+				"template": "elite",
+				"ai": "aggro_front",
+				"hp_multiplier": 4.5,
+				"attack_multiplier": 2.5,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
+				"status_resistance": 10
+			},
+			{
+				"unit": "npc_dota_neutral_black_drake",
+				"level": 15,
+				"count": 1,
+				"template": "minion",
+				"ai": "simple_nearest",
+				"hp_multiplier": 4.5,
+				"attack_multiplier": 2.5,
+				"bonus_armor": 20,
+				"magic_resistance": 55,
+				"status_resistance": 10
+			}
+		],
+		"reward": {
+			"gold": 6500,
+			"xp_pool": 500
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 11,
+		"multi": 1.5
+	},
+	"ch12": {
+		"name": "第12关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_tidehunter",
+				"level": 16,
+				"items": [
+          "item_arcane_boots",
+          "item_blink",
+          "item_ultimate_scepter",
+          "item_pipe"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_sven",
+				"level": 16,
+				"items": [
+          "item_power_treads",
+          "item_echo_sabre",
+          "item_blink",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_lina",
+				"level": 16,
+				"items": [
+          "item_arcane_boots",
+          "item_kaya_and_sange",
+          "item_ultimate_scepter",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_lion",
+				"level": 16,
+				"items": [
+          "item_arcane_boots",
+          "item_blink",
+          "item_force_staff",
+          "item_glimmer_cape"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 2800,
+			"xp_pool": 1000
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 12,
+		"multi": 1.55
+	},
+	"ch13": {
+		"name": "第13关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_bristleback",
+				"level": 17,
+				"items": [
+          "item_phase_boots",
+          "item_bloodstone",
+          "item_sange_and_yasha",
+          "item_lotus_orb"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_razor",
+				"level": 17,
+				"items": [
+          "item_power_treads",
+          "item_yasha",
+          "item_black_king_bar",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_viper",
+				"level": 17,
+				"items": [
+          "item_power_treads",
+          "item_dragon_lance",
+          "item_yasha",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_shadow_shaman",
+				"level": 17,
+				"items": [
+          "item_arcane_boots",
+          "item_blink",
+          "item_aether_lens",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 3200,
+			"xp_pool": 1100
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 13,
+		"multi": 1.6
+	},
+	"ch14": {
+		"name": "第14关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_slardar",
+				"level": 18,
+				"items": [
+          "item_power_treads",
+          "item_blink",
+          "item_echo_sabre",
+          "item_black_king_bar",
+          "item_ultimate_scepter"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_luna",
+				"level": 18,
+				"items": [
+          "item_power_treads",
+          "item_yasha",
+          "item_black_king_bar",
+          "item_butterfly",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_gyrocopter",
+				"level": 18,
+				"items": [
+          "item_power_treads",
+          "item_ultimate_scepter",
+          "item_maelstrom",
+          "item_black_king_bar",
+          "item_greater_crit"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_warlock",
+				"level": 18,
+				"items": [
+          "item_arcane_boots",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_force_staff",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 3500,
+			"xp_pool": 1200
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 14,
+		"multi": 1.65
+	},
+	"ch15": {
+		"name": "第15关 · 精英检查",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_skeleton_king",
+				"level": 19,
+				"items": [
+          "item_phase_boots",
+          "item_armlet",
+          "item_radiance",
+          "item_blink",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"elite"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_bloodseeker",
+				"level": 19,
+				"items": [
+          "item_power_treads",
+          "item_maelstrom",
+          "item_basher",
+          "item_black_king_bar",
+          "item_butterfly"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_slark",
+				"level": 19,
+				"items": [
+          "item_power_treads",
+          "item_diffusal_blade",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_skadi"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_troll_warlord",
+				"level": 19,
+				"items": [
+          "item_power_treads",
+          "item_bfury",
+          "item_yasha",
+          "item_black_king_bar",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_jakiro",
+				"level": 19,
+				"items": [
+          "item_arcane_boots",
+          "item_force_staff",
+          "item_glimmer_cape",
+          "item_cyclone",
+          "item_ultimate_scepter"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 4000,
+			"xp_pool": 1400
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 15,
+		"multi": 1.7
+	},
+	"ch16": {
+		"name": "第16关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_frostbitten_golem",
+				"level": 21,
+				"count": 3,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 6,
+				"attack_multiplier": 3.5,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
+				"status_resistance": 15
+			},
+			{
+				"unit": "npc_dota_neutral_ice_shaman",
+				"level": 21,
+				"count": 2,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 6,
+				"attack_multiplier": 3.5,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
+				"status_resistance": 15
+			},
+			{
+				"unit": "npc_dota_neutral_granite_golem",
+				"level": 21,
+				"count": 2,
+				"template": "elite",
+				"ai": "aggro_front",
+				"hp_multiplier": 6,
+				"attack_multiplier": 3.5,
+				"bonus_armor": 30,
+				"magic_resistance": 62,
+				"status_resistance": 15
+			}
+		],
+		"reward": {
+			"gold": 9500,
+			"xp_pool": 600
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 16,
+		"multi": 1.75
+	},
+	"ch17": {
+		"name": "第17关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_life_stealer",
+				"level": 21,
+				"items": [
+          "item_phase_boots",
+          "item_armlet",
+          "item_radiance",
+          "item_sange_and_yasha",
+          "item_basher"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_ursa",
+				"level": 21,
+				"items": [
+          "item_phase_boots",
+          "item_bfury",
+          "item_blink",
+          "item_black_king_bar",
+          "item_basher"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_antimage",
+				"level": 21,
+				"items": [
+          "item_power_treads",
+          "item_bfury",
+          "item_yasha",
+          "item_basher",
+          "item_skadi"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_phantom_lancer",
+				"level": 21,
+				"items": [
+          "item_power_treads",
+          "item_diffusal_blade",
+          "item_ultimate_scepter",
+          "item_yasha",
+          "item_skadi"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_disruptor",
+				"level": 21,
+				"items": [
+          "item_arcane_boots",
+          "item_blink",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_force_staff"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 4500,
+			"xp_pool": 1300
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 17,
+		"multi": 1.8
+	},
+	"ch18": {
+		"name": "第18关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_chaos_knight",
+				"level": 22,
+				"items": [
+          "item_power_treads",
+          "item_armlet",
+          "item_blink",
+          "item_manta",
+          "item_black_king_bar",
+          "item_heart"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_templar_assassin",
+				"level": 22,
+				"items": [
+          "item_power_treads",
+          "item_desolator",
+          "item_blink",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_hurricane_pike"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_nevermore",
+				"level": 22,
+				"items": [
+          "item_power_treads",
+          "item_hurricane_pike",
+          "item_manta",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_death_prophet",
+				"level": 22,
+				"items": [
+          "item_arcane_boots",
+          "item_wind_waker",
+          "item_black_king_bar",
+          "item_kaya_and_sange",
+          "item_shivas_guard",
+          "item_octarine_core"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_vengefulspirit",
+				"level": 22,
+				"items": [
+          "item_arcane_boots",
+          "item_force_staff",
+          "item_glimmer_cape",
+          "item_lotus_orb",
+          "item_ultimate_scepter",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 5000,
+			"xp_pool": 1400
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 18,
+		"multi": 1.85
+	},
+	"ch19": {
+		"name": "第19关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_night_stalker",
+				"level": 23,
+				"items": [
+          "item_phase_boots",
+          "item_blink",
+          "item_harpoon",
+          "item_black_king_bar",
+          "item_nullifier",
+          "item_assault"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_necrolyte",
+				"level": 23,
+				"items": [
+          "item_arcane_boots",
+          "item_radiance",
+          "item_kaya_and_sange",
+          "item_black_king_bar",
+          "item_heart",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_queenofpain",
+				"level": 23,
+				"items": [
+          "item_power_treads",
+          "item_kaya_and_sange",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_shivas_guard",
+          "item_octarine_core"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_leshrac",
+				"level": 23,
+				"items": [
+          "item_arcane_boots",
+          "item_bloodstone",
+          "item_blink",
+          "item_kaya_and_sange",
+          "item_black_king_bar",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_venomancer",
+				"level": 23,
+				"items": [
+          "item_arcane_boots",
+          "item_spirit_vessel",
+          "item_force_staff",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 5200,
+			"xp_pool": 1500
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 19,
+		"multi": 1.9
+	},
+	"ch20": {
+		"name": "第20关 · 章节 Boss",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_spirit_breaker",
+				"level": 24,
+				"items": [
+          "item_silver_edge",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_octarine_core",
+          "item_moon_shard",
+          "item_moon_shard"
+        ],
+				"tags": [
+					"boss"
+				],
+				"ai": "aggro_front",
+				"boss_max_health": 20000,
+				"boss_magic_resistance_pct": 80,
+				"boss_magic_resistance_bonus_pct": 0,
+				"boss_bonus_armor": 15,
+				"boss_attack_damage_pct": 75,
+				"boss_spell_amp_pct": 25.0,
+				"boss_cooldown_reduction_pct": 6.666667
+			}
+    ],
+		"reward": {
+			"gold": 5800,
+			"xp_pool": 2000
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 20,
+		"multi": 1.95
+	},
+	"ch21": {
+		"name": "第21关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_frostbitten_golem",
+				"level": 26,
+				"count": 3,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 8.5,
+				"attack_multiplier": 4.5,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
+				"status_resistance": 20
+			},
+			{
+				"unit": "npc_dota_neutral_ice_shaman",
+				"level": 26,
+				"count": 2,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 8.5,
+				"attack_multiplier": 4.5,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
+				"status_resistance": 20
+			},
+			{
+				"unit": "npc_dota_neutral_granite_golem",
+				"level": 26,
+				"count": 2,
+				"template": "elite",
+				"ai": "aggro_front",
+				"hp_multiplier": 8.5,
+				"attack_multiplier": 4.5,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
+				"status_resistance": 20
+			},
+			{
+				"unit": "npc_dota_neutral_small_thunder_lizard",
+				"level": 26,
+				"count": 1,
+				"template": "minion",
+				"ai": "simple_nearest",
+				"hp_multiplier": 8.5,
+				"attack_multiplier": 4.5,
+				"bonus_armor": 42,
+				"magic_resistance": 70,
+				"status_resistance": 20
+			}
+		],
+		"reward": {
+			"gold": 11000,
+			"xp_pool": 700
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 21,
+		"multi": 2.0
+	},
+	"ch22": {
+		"name": "第22关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_abaddon",
+				"level": 26,
+				"items": [
+          "item_overwhelming_blink",
+          "item_radiance",
+          "item_manta",
+          "item_abyssal_blade",
+          "item_assault",
+          "item_harpoon"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_sniper",
+				"level": 26,
+				"items": [
+          "item_swift_blink",
+          "item_mjollnir",
+          "item_hurricane_pike",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_clinkz",
+				"level": 26,
+				"items": [
+          "item_swift_blink",
+          "item_desolator",
+          "item_hurricane_pike",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_ultimate_scepter"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_phantom_assassin",
+				"level": 26,
+				"items": [
+          "item_swift_blink",
+          "item_desolator",
+          "item_abyssal_blade",
+          "item_black_king_bar",
+          "item_satanic",
+          "item_nullifier"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_grimstroke",
+				"level": 26,
+				"items": [
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_octarine_core",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_shadow_demon",
+				"level": 26,
+				"items": [
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_octarine_core",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 5200,
+			"xp_pool": 1800
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 22,
+		"multi": 2.05
+	},
+	"ch23": {
+		"name": "第23关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_omniknight",
+				"level": 27,
+				"items": [
+          "item_guardian_greaves",
+          "item_lotus_orb",
+          "item_pipe",
+          "item_ultimate_scepter",
+          "item_octarine_core",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_riki",
+				"level": 27,
+				"items": [
+          "item_swift_blink",
+          "item_disperser",
+          "item_manta",
+          "item_black_king_bar",
+          "item_abyssal_blade",
+          "item_butterfly"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_juggernaut",
+				"level": 27,
+				"items": [
+          "item_swift_blink",
+          "item_mjollnir",
+          "item_manta",
+          "item_abyssal_blade",
+          "item_butterfly",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_sven",
+				"level": 27,
+				"items": [
+          "item_overwhelming_blink",
+          "item_harpoon",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_satanic",
+          "item_assault"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_bane",
+				"level": 27,
+				"items": [
+          "item_boots_of_bearing",
+          "item_octarine_core",
+          "item_ultimate_scepter",
+          "item_arcane_blink",
+          "item_black_king_bar",
+          "item_glimmer_cape"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_silencer",
+				"level": 27,
+				"items": [
+          "item_boots_of_bearing",
+          "item_wind_waker",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_refresher",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 5700,
+			"xp_pool": 1900
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 23,
+		"multi": 2.1
+	},
+	"ch24": {
+		"name": "第24关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_undying",
+				"level": 28,
+				"items": [
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_glimmer_cape",
+          "item_black_king_bar",
+          "item_octarine_core",
+          "item_ultimate_scepter"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_lina",
+				"level": 28,
+				"items": [
+          "item_arcane_blink",
+          "item_yasha_and_kaya",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_sheepstick",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_razor",
+				"level": 28,
+				"items": [
+          "item_swift_blink",
+          "item_sange_and_yasha",
+          "item_black_king_bar",
+          "item_satanic",
+          "item_butterfly",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_viper",
+				"level": 28,
+				"items": [
+          "item_swift_blink",
+          "item_hurricane_pike",
+          "item_manta",
+          "item_black_king_bar",
+          "item_skadi",
+          "item_butterfly"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_treant",
+				"level": 28,
+				"items": [
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_wind_waker",
+          "item_lotus_orb",
+          "item_ultimate_scepter",
+          "item_refresher"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_enchantress",
+				"level": 28,
+				"items": [
+          "item_boots_of_bearing",
+          "item_hurricane_pike",
+          "item_wind_waker",
+          "item_lotus_orb",
+          "item_ultimate_scepter",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 6100,
+			"xp_pool": 2100
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 24,
+		"multi": 2.15
+	},
+	"ch25": {
+		"name": "第25关 · 精英检查",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_axe",
+				"level": 28,
+				"items": [
+          "item_assault",
+          "item_overwhelming_blink",
+          "item_blade_mail",
+          "item_black_king_bar",
+          "item_heart",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"elite"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_luna",
+				"level": 28,
+				"items": [
+          "item_swift_blink",
+          "item_manta",
+          "item_black_king_bar",
+          "item_butterfly",
+          "item_satanic",
+          "item_greater_crit"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_gyrocopter",
+				"level": 28,
+				"items": [
+          "item_swift_blink",
+          "item_ultimate_scepter",
+          "item_mjollnir",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_bloodseeker",
+				"level": 28,
+				"items": [
+          "item_swift_blink",
+          "item_mjollnir",
+          "item_abyssal_blade",
+          "item_black_king_bar",
+          "item_butterfly",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_ogre_magi",
+				"level": 28,
+				"items": [
+          "item_boots_of_bearing",
+          "item_glimmer_cape",
+          "item_octarine_core",
+          "item_wind_waker",
+          "item_ultimate_scepter",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_dragon_knight",
+				"level": 28,
+				"items": [
+          "item_overwhelming_blink",
+          "item_assault",
+          "item_black_king_bar",
+          "item_satanic",
+          "item_greater_crit",
+          "item_heart"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_dark_willow",
+				"level": 28,
+				"items": [
+          "item_boots_of_bearing",
+          "item_wind_waker",
+          "item_arcane_blink",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 7000,
+			"xp_pool": 2400
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 25,
+		"multi": 2.2
+	},
+	"ch26": {
+		"name": "第26关 · 野怪讨伐",
+		"type": "creep",
+		"enemies": [
+			{
+				"unit": "npc_dota_neutral_big_thunder_lizard",
+				"level": 30,
+				"count": 2,
+				"template": "standard",
+				"ai": "simple_nearest",
+				"hp_multiplier": 11,
+				"attack_multiplier": 6,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
+				"status_resistance": 25
+			},
+			{
+				"unit": "npc_dota_neutral_ice_shaman",
+				"level": 30,
+				"count": 2,
+				"template": "specialist",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 11,
+				"attack_multiplier": 6,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
+				"status_resistance": 25
+			},
+			{
+				"unit": "npc_dota_neutral_granite_golem",
+				"level": 30,
+				"count": 2,
+				"template": "elite",
+				"ai": "aggro_front",
+				"hp_multiplier": 11,
+				"attack_multiplier": 6,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
+				"status_resistance": 25
+			},
+			{
+				"unit": "npc_dota_neutral_black_dragon",
+				"level": 30,
+				"count": 1,
+				"template": "beast",
+				"ai": "focus_lowest_hp",
+				"hp_multiplier": 11,
+				"attack_multiplier": 6,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
+				"status_resistance": 25
+			},
+			{
+				"unit": "npc_dota_neutral_frostbitten_golem",
+				"level": 30,
+				"count": 1,
+				"template": "minion",
+				"ai": "simple_nearest",
+				"hp_multiplier": 11,
+				"attack_multiplier": 6,
+				"bonus_armor": 56,
+				"magic_resistance": 75,
+				"status_resistance": 25
+			}
+		],
+		"reward": {
+			"gold": 18000,
+			"xp_pool": 900
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 26,
+		"multi": 2.25
+	},
+	"ch27": {
+		"name": "第27关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_huskar",
+				"level": 29,
+				"items": [
+          "item_overwhelming_blink",
+          "item_heavens_halberd",
+          "item_black_king_bar",
+          "item_ultimate_scepter",
+          "item_satanic",
+          "item_assault"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_slark",
+				"level": 29,
+				"items": [
+          "item_swift_blink",
+          "item_disperser",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_skadi",
+          "item_butterfly"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_troll_warlord",
+				"level": 29,
+				"items": [
+          "item_swift_blink",
+          "item_sange_and_yasha",
+          "item_black_king_bar",
+          "item_satanic",
+          "item_abyssal_blade",
+          "item_butterfly"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_ursa",
+				"level": 29,
+				"items": [
+          "item_swift_blink",
+          "item_abyssal_blade",
+          "item_black_king_bar",
+          "item_satanic",
+          "item_butterfly",
+          "item_nullifier"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_crystal_maiden",
+				"level": 29,
+				"items": [
+          "item_boots_of_bearing",
+          "item_glimmer_cape",
+          "item_arcane_blink",
+          "item_black_king_bar",
+          "item_ultimate_scepter",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_sand_king",
+				"level": 29,
+				"items": [
+          "item_assault",
+          "item_overwhelming_blink",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_shivas_guard",
+          "item_octarine_core"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_witch_doctor",
+				"level": 29,
+				"items": [
+          "item_boots_of_bearing",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_black_king_bar",
+          "item_octarine_core",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 8000,
+			"xp_pool": 2300
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 27,
+		"multi": 2.3
+	},
+	"ch28": {
+		"name": "第28关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_centaur",
+				"level": 29,
+				"items": [
+          "item_assault",
+          "item_overwhelming_blink",
+          "item_heart",
+          "item_pipe",
+          "item_ultimate_scepter",
+          "item_black_king_bar"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_antimage",
+				"level": 29,
+				"items": [
+          "item_swift_blink",
+          "item_manta",
+          "item_abyssal_blade",
+          "item_skadi",
+          "item_butterfly",
+          "item_bloodthorn"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_phantom_lancer",
+				"level": 29,
+				"items": [
+          "item_swift_blink",
+          "item_disperser",
+          "item_ultimate_scepter",
+          "item_manta",
+          "item_skadi",
+          "item_heart"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_templar_assassin",
+				"level": 29,
+				"items": [
+          "item_butterfly",
+          "item_desolator",
+          "item_swift_blink",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_hurricane_pike"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_oracle",
+				"level": 29,
+				"items": [
+          "item_guardian_greaves",
+          "item_glimmer_cape",
+          "item_arcane_blink",
+          "item_ultimate_scepter",
+          "item_aeon_disk",
+          "item_sheepstick"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_tidehunter",
+				"level": 29,
+				"items": [
+          "item_overwhelming_blink",
+          "item_ultimate_scepter",
+          "item_pipe",
+          "item_shivas_guard",
+          "item_refresher",
+          "item_guardian_greaves"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_dazzle",
+				"level": 29,
+				"items": [
+          "item_guardian_greaves",
+          "item_glimmer_cape",
+          "item_lotus_orb",
+          "item_sheepstick",
+          "item_octarine_core",
+          "item_arcane_blink"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 9000,
+			"xp_pool": 2500
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 28,
+		"multi": 2.35
+	},
+	"ch29": {
+		"name": "第29关 · 英雄遭遇",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_bristleback",
+				"level": 30,
+				"items": [
+          "item_overwhelming_blink",
+          "item_bloodstone",
+          "item_sange_and_yasha",
+          "item_lotus_orb",
+          "item_shivas_guard",
+          "item_ultimate_scepter"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_nevermore",
+				"level": 30,
+				"items": [
+          "item_swift_blink",
+          "item_hurricane_pike",
+          "item_manta",
+          "item_black_king_bar",
+          "item_greater_crit",
+          "item_satanic"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_death_prophet",
+				"level": 30,
+				"items": [
+          "item_arcane_blink",
+          "item_wind_waker",
+          "item_black_king_bar",
+          "item_kaya_and_sange",
+          "item_shivas_guard",
+          "item_octarine_core"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_necrolyte",
+				"level": 30,
+				"items": [
+          "item_arcane_blink",
+          "item_radiance",
+          "item_kaya_and_sange",
+          "item_black_king_bar",
+          "item_heart",
+          "item_shivas_guard"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_lich",
+				"level": 30,
+				"items": [
+          "item_boots_of_bearing",
+          "item_glimmer_cape",
+          "item_arcane_blink",
+          "item_ultimate_scepter",
+          "item_wind_waker",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_slardar",
+				"level": 30,
+				"items": [
+          "item_overwhelming_blink",
+          "item_harpoon",
+          "item_black_king_bar",
+          "item_ultimate_scepter",
+          "item_nullifier",
+          "item_assault"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_lion",
+				"level": 30,
+				"items": [
+          "item_boots_of_bearing",
+          "item_arcane_blink",
+          "item_wind_waker",
+          "item_glimmer_cape",
+          "item_ultimate_scepter",
+          "item_aeon_disk"
+        ],
+				"tags": [
+					"hero"
+				],
+				"ai": "ai_healer_protect"
+			}
+		],
+		"reward": {
+			"gold": 10500,
+			"xp_pool": 2700
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 29,
+		"multi": 2.4
+	},
+	"ch30": {
+		"name": "第30关 · 最终 Boss",
+		"type": "hero",
+		"enemies": [
+			{
+				"unit": "npc_dota_hero_skeleton_king",
+				"level": 30,
+				"items": [
+          "item_overwhelming_blink",
+          "item_radiance",
+          "item_black_king_bar",
+          "item_assault",
+          "item_abyssal_blade",
+          "item_satanic"
+        ],
+				"tags": [
+					"boss"
+				],
+				"ai": "aggro_front",
+				"boss_max_health": 50000,
+				"boss_magic_resistance_bonus_pct": 80,
+				"boss_bonus_armor": 100,
+				"boss_attack_damage_pct": 100,
+				"boss_bonus_attack_damage": 300,
+				"boss_spell_amp_pct": 33.333333,
+				"boss_cooldown_reduction_pct": 8.333333
+			},
+			{
+				"unit": "npc_dota_hero_life_stealer",
+				"level": 30,
+				"items": [
+          "item_armlet",
+          "item_monkey_king_bar",
+          "item_abyssal_blade",
+          "item_nullifier",
+          "item_assault",
+          "item_satanic"
+        ],
+				"backpack_items": ["", "", ""],
+				"neutral_item": "item_desolator_2",
+				"quality_upgrades": ["scepter", "shard"],
+				"tags": [],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_mirana",
+				"level": 30,
+				"items": [
+          "item_essence_distiller",
+          "item_wind_waker",
+          "item_aeon_disk",
+          "item_ward_sentry",
+          "item_ultimate_scepter",
+          "item_boots"
+        ],
+				"backpack_items": ["item_dust", "", ""],
+				"neutral_item": "item_conjurers_catalyst",
+				"quality_upgrades": [],
+				"tags": [],
+				"ai": "focus_lowest_hp"
+			},
+			{
+				"unit": "npc_dota_hero_pangolier",
+				"level": 30,
+				"items": [
+          "item_lotus_orb",
+          "item_gem",
+          "item_disperser",
+          "item_refresher",
+          "item_blink",
+          "item_abyssal_blade"
+        ],
+				"backpack_items": ["item_power_treads", "item_bottle", ""],
+				"neutral_item": "item_desolator_2",
+				"quality_upgrades": ["scepter", "shard"],
+				"tags": [],
+				"ai": "aggro_front"
+			},
+			{
+				"unit": "npc_dota_hero_bane",
+				"level": 30,
+				"items": [
+          "item_blink",
+          "item_tranquil_boots",
+          "item_aeon_disk",
+          "item_ultimate_scepter",
+          "item_quelling_blade",
+          "item_dust"
+        ],
+				"backpack_items": ["", "", ""],
+				"neutral_item": "item_demonicon",
+				"quality_upgrades": ["shard"],
+				"tags": [],
+				"ai": "ai_healer_protect"
+			},
+			{
+				"unit": "npc_dota_hero_dark_seer",
+				"level": 30,
+				"items": [
+          "item_shivas_guard",
+          "item_overwhelming_blink",
+          "item_sheepstick",
+          "item_travel_boots_2",
+          "item_refresher",
+          "item_aeon_disk"
+        ],
+				"backpack_items": ["item_lotus_orb", "item_black_king_bar", ""],
+				"neutral_item": "item_riftshadow_prism",
+				"quality_upgrades": ["shard"],
+				"tags": [],
+				"ai": "ai_healer_protect"
+			}
+    ],
+		"reward": {
+			"gold": 14500,
+			"xp_pool": 3000
+		},
+		"time_bonus_cap": 0.25,
+		"max_attempts": 5,
+		"time_limit": 120,
+		"recommended_level": 30,
+		"multi": 2.45
+	}
+}

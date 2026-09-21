@@ -1,0 +1,114 @@
+local M = {}
+
+-- 已确认的开局规则。
+M.INITIAL_GOLD = 1500
+M.STARTER_FREE_RECRUITS = 2
+M.TIME_BONUS_CAP = 0.10
+-- DESIGN.md §2.4/§2.6：原成长曲线按五名主力校准。
+M.XP_REFERENCE_PARTY_SIZE = 5
+M.MAX_LEVEL = 30
+
+-- 到达对应等级所需的累计经验；索引 1 代表 1 级。
+M.XP_TO_LEVEL = {
+    0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700,
+    3300, 4000, 4800, 5700, 6700, 7800, 9000, 10300, 11700, 13200,
+    14800, 16500, 18300, 20200, 22200, 24300, 26500, 28800, 31200, 33700,
+}
+
+-- 原设计的每名主力经验，仅用于换算固定关卡总池和核对成长基准。
+M.ORIGINAL_STAGE_XP_PER_HERO = {
+    120, 160, 200, 250, 320,
+    360, 420, 480, 540, 650,
+    700, 760, 820, 900, 1050,
+    1100, 1180, 1260, 1350, 1550,
+    1600, 1700, 1800, 1900, 2200,
+    2300, 2400, 2600, 3050,
+    0, -- 第 30 关为 Run 结束后的展示奖励，不再用于继续养成。
+}
+
+-- 关卡总经验不随实际上阵/拥有英雄数量增长。
+M.STAGE_XP = {}
+for stage, perHero in ipairs(M.ORIGINAL_STAGE_XP_PER_HERO) do
+    M.STAGE_XP[stage] = perHero * M.XP_REFERENCE_PARTY_SIZE
+end
+
+M.STAGE_GOLD = {
+    900, 1000, 1100, 1200, 1000,
+    3000, 1400, 1600, 1800, 2500,
+    5200, 2500, 2800, 3100, 4000,
+    7500, 3600, 4000, 4400, 5600,
+    9000, 4800, 5300, 5800, 7200,
+    12000, 6500, 7600, 9000,
+    15000,
+}
+
+-- 价格 = 招募等级基础价 × 品质倍率。品质倍率与 DESIGN.md §招募品质 一致：
+-- 普通 1.0 / 精良 1.2 / 史诗 1.5 / 传说 2.0。基础价都能被这两个倍率整除，结果恒为整数。
+M.QUALITY_PRICE_MULTIPLIER = {
+    common = 1.0,
+    fine = 1.2,
+    epic = 1.5,
+    legendary = 2.0,
+}
+
+M.RECRUIT_BANDS = {
+    { from_stage = 1,  to_stage = 4,  level = 1, price = 500 },
+    { from_stage = 5,  to_stage = 9,  level = 5, price = 900 },
+    { from_stage = 10, to_stage = 14, level = 10, price = 1600 },
+    { from_stage = 15, to_stage = 19, level = 15, price = 2600 },
+    { from_stage = 20, to_stage = 24, level = 20, price = 4000 },
+    { from_stage = 25, to_stage = 30, level = 24, price = 5500 },
+}
+
+function M.StageNumber(level_id)
+    if type(level_id) == "number" then
+        return math.max(1, math.min(30, math.floor(level_id)))
+    end
+    local value = tonumber(string.match(tostring(level_id or ""), "ch(%d+)")) or 1
+    return math.max(1, math.min(30, math.floor(value)))
+end
+
+function M.GetRecruitBand(stage)
+    stage = M.StageNumber(stage)
+    for _, band in ipairs(M.RECRUIT_BANDS) do
+        if stage >= band.from_stage and stage <= band.to_stage then
+            return band
+        end
+    end
+    return M.RECRUIT_BANDS[1]
+end
+
+function M.PriceForLevel(level)
+    level = math.floor(tonumber(level) or 1)
+    for _, band in ipairs(M.RECRUIT_BANDS) do
+        if band.level == level then
+            return band.price
+        end
+    end
+    return nil
+end
+
+-- 品质倍率：未知/缺失品质按普通处理，避免出现 nil 价格。
+function M.QualityMultiplier(quality)
+    return M.QUALITY_PRICE_MULTIPLIER[tostring(quality or "common")] or 1.0
+end
+
+-- 最终售价 = 等级基础价 × 品质倍率。基础价均为整数且倍率只有 1.0/1.2/1.5/2.0，
+-- 乘法结果仍然是整数，不需要额外取整。
+function M.PriceFor(level, quality)
+    local base = M.PriceForLevel(level)
+    if base == nil then
+        return nil
+    end
+    return math.floor(base * M.QualityMultiplier(quality) + 0.5)
+end
+
+function M.XpNeededForNextLevel(level)
+    level = math.floor(tonumber(level) or 1)
+    if level < 1 or level >= M.MAX_LEVEL then
+        return 0
+    end
+    return M.XP_TO_LEVEL[level + 1] - M.XP_TO_LEVEL[level]
+end
+
+return M

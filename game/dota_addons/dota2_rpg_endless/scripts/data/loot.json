@@ -1,0 +1,16 @@
+{
+	"demo_basic": {
+		"name": "基础掉落",
+		"items": [
+			{ "item": "item_tango", "chance": 0.5 },
+			{ "item": "item_branches", "chance": 0.4 }
+		]
+	},
+	"demo_elite": {
+		"name": "精英掉落",
+		"items": [
+			{ "item": "item_vanguard", "chance": 0.25 },
+			{ "item": "item_power_treads", "chance": 0.2 }
+		]
+	}
+}

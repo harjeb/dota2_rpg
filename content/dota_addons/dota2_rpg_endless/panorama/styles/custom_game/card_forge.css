@@ -138,3 +138,7 @@
 .CfModalActions Button { margin-right:16px; }
 .CfHelpText { width:100%; font-size:18px; color:#bbc8b1; line-spacing:14px; white-space:normal; margin-bottom:28px; }
 .CfDragGhost { width:154px; height:218px; opacity:.93; }
+
+#EndlessHeader { horizontal-align:right; vertical-align:top; margin:116px 20px 0px 0px; padding:8px 12px; flow-children:down; background-color:#101923ee; border:1px solid #74603c; min-width:180px; }
+#EndlessHeader Label { color:#ead5ab; font-size:16px; }
+#CardForgeRoot .CfSupportBadge { vertical-align:top; horizontal-align:center; margin-top:3px; font-size:11px; color:#f1d8a1; background-color:#101923ee; }

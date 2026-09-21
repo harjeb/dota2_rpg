@@ -1,0 +1,286 @@
+<root>
+	<styles>
+		<include src="file://{resources}/styles/custom_game/campaign_difficulty.css" />
+		<include src="file://{resources}/styles/custom_game/rpg_demo_hud.css" />
+		<include src="file://{resources}/styles/custom_game/condition_help.css" />
+		<include src="file://{resources}/styles/custom_game/skill_debug.css" />
+		<include src="file://{resources}/styles/custom_game/arena_hud.css" />
+		<include src="file://{resources}/styles/custom_game/issue_fixes_ui.css" />
+	</styles>
+	<scripts>
+		<include src="file://{resources}/scripts/custom_game/ability_capabilities.js" />
+        <include src="file://{resources}/scripts/custom_game/condition_catalog.js" />
+        <include src="file://{resources}/scripts/custom_game/skill_condition_presets.js" />
+		<include src="file://{resources}/scripts/custom_game/panorama_rule_sync.js" />
+		<include src="file://{resources}/scripts/custom_game/issue_fixes_ui.js" />
+		<include src="file://{resources}/scripts/custom_game/rule_diagnostics.js" />
+		<include src="file://{resources}/scripts/custom_game/native_shop_wallet.js" />
+        <include src="file://{resources}/scripts/custom_game/shop_transport.js" />
+        <include src="file://{resources}/scripts/custom_game/neutral_recruitment.js" />
+        <include src="file://{resources}/scripts/custom_game/rpg_demo_hud.js" />
+		<include src="file://{resources}/scripts/custom_game/condition_help_data.js" />
+		<include src="file://{resources}/scripts/custom_game/condition_help.js" />
+		<include src="file://{resources}/scripts/custom_game/skill_debug.js" />
+		<!-- 天梯暂不开放。重新开放时与服务端 arena_integration.Install 一起恢复此入口。
+		-->
+	</scripts>
+
+	<Panel class="RpgDemoHudRoot" hittest="false">
+        <Label id="RuleSyncNotice" class="RuleSyncNotice" text="" visible="false" hittest="false" />
+        <Label id="RuleLibraryNotice" text="" visible="false" hittest="false" />
+		<Panel id="RunLivesPanel" hittest="false" hittestchildren="false">
+			<Label id="RunLivesTitle" text="#dota2_rpg_lives_title" />
+			<Panel id="RunLivesRow">
+				<Panel id="RunHearts" />
+				<Label id="RunLivesCount" text="5 / 5" />
+			</Panel>
+			<Label id="RunLivesHint" text="#dota2_rpg_lives_hint" />
+		</Panel>
+		<Panel id="BattleHeader">
+			<Label id="LevelProgress" text="#dota2_rpg_level_progress_initial" />
+			<Label id="BuildTag" text="#dota2_rpg_build_tag" />
+			<Label id="WalletBalance" text="" hittest="false" />
+			<Label id="BattleCountdown" text="#dota2_rpg_countdown_initial" hittest="false" />
+			<Label id="BattleStatus" text="#dota2_rpg_status_preparing" />
+		</Panel>
+
+		<Panel id="RadiantEditor" class="TeamEditor RadiantEditor" hittest="true">
+			<Panel class="TeamHeader">
+				<Panel class="TeamIdentity">
+					<Label class="TeamName" text="#dota2_rpg_radiant_logic" />
+					<Label id="RadiantTeamLevel" class="TeamLevel" text="#dota2_rpg_level_30" />
+					<Label id="RadiantSelectedHero" class="SelectedHeroName" />
+				</Panel>
+				<Button id="RadiantCollapseButton" class="CollapseButton">
+					<Label id="RadiantCollapseLabel" class="CollapseGlyph" text="&lt;" />
+				</Button>
+			</Panel>
+			<Panel id="RadiantEditorBody" class="EditorBody" flow-children="down">
+				<Panel id="RadiantHeroStrip" class="HeroStrip" />
+                <Panel id="NeutralRecruitment" class="NeutralRecruitment" visible="false" />
+				<Panel class="ColumnHeader">
+					<Label class="ActionColumn" text="#dota2_rpg_action_column" />
+				</Panel>
+				<Panel id="RadiantRulesViewport" class="RulesViewport">
+					<Panel id="RadiantRules" class="RulesContainer" hittest="true" hittestchildren="true" />
+					<Panel id="RadiantRulesScrollRail" class="RulesScrollRail" hittest="true">
+						<Button id="RadiantRulesScrollUp" class="RulesScrollButton"><Label text="▲" /></Button>
+						<Panel id="RadiantRulesScrollTrack" class="RulesScrollTrack">
+							<Panel id="RadiantRulesScrollThumb" class="RulesScrollThumb" />
+						</Panel>
+						<Button id="RadiantRulesScrollDown" class="RulesScrollButton"><Label text="▼" /></Button>
+					</Panel>
+				</Panel>
+			</Panel>
+		</Panel>
+
+		<Panel id="BattleControls" hittest="true">
+			<Panel id="ShopPanel" class="ShopPanel">
+				<Panel class="ShopHeaderRow">
+					<Label id="ShopHeader" text="#dota2_rpg_shop_title" />
+				</Panel>
+				<Panel id="ShopOffer" class="ShopOffer" />
+				<Panel class="ShopButtons">
+					<Button id="RefreshShopButton" class="ShopButton">
+						<Label id="RefreshShopLabel" text="#dota2_rpg_shop_refresh" />
+					</Button>
+					<Button id="BenchBuyButton" class="ShopButton">
+						<Label id="BenchBuyLabel" text="#dota2_rpg_bench_buy" />
+					</Button>
+				</Panel>
+				<Panel id="LineupPanel" class="LineupPanel">
+					<Label class="LineupHeader" text="#dota2_rpg_lineup_title" />
+					<Panel id="LineupStrip" class="HeroStrip" />
+				</Panel>
+			</Panel>
+			<Label id="VersusLabel" text="#dota2_rpg_versus" />
+			<Button id="StartBattleButton">
+				<Label id="StartBattleLabel" text="#dota2_rpg_start_battle" />
+			</Button>
+			<Label id="ControlStatus" text="#dota2_rpg_status_preparing" />
+		</Panel>
+
+		<Button id="RadiantRestoreButton" class="EditorRestoreButton RadiantRestore" visible="false" hittest="true">
+			<Label text="&gt;" hittest="false" />
+		</Button>
+
+		<Button id="SkillDebugButton" hittest="true"><Label id="SkillDebugButtonLabel" hittest="false" /></Button>
+		<Button id="ConditionHelpButton" hittest="true"><Label text="?" hittest="false" /></Button>
+		<Panel id="RightSidebar" hittest="false" hittestchildren="true">
+			<Panel id="DamagePanel" class="DamagePanel" hittest="true">
+				<Panel class="SidePanelHeader">
+					<Label id="DamageTitle" class="DamageTitle" text="DPS" />
+					<Button id="DamageToggle" class="SidePanelToggle">
+						<Label id="DamageToggleLabel" text="−" />
+					</Button>
+				</Panel>
+				<Panel id="DamageBody" class="SidePanelBody">
+					<Panel class="DamageTabs">
+						<Button id="DamageFriendly">
+							<Label text="#dota2_rpg_damage_friendly" />
+						</Button>
+						<Button id="DamageEnemy">
+							<Label text="#dota2_rpg_damage_enemy" />
+						</Button>
+					</Panel>
+					<Panel id="DamageUnits" class="DamageUnits" />
+					<Label id="DamageSelection" class="DamageTitle" />
+					<Panel id="DamageSources" class="DamageSources" />
+					<Label id="DamageTargetsTitle" class="DamageTitle" />
+					<Panel id="DamageTargets" class="DamageTargets" />
+				</Panel>
+			</Panel>
+			<Panel id="ItemShopPanel" class="ItemShopPanel">
+				<Panel class="SidePanelHeader">
+					<Label id="EquipmentTitle" class="LineupHeader" text="#dota2_rpg_item_shop" />
+					<Button id="EquipmentToggle" class="SidePanelToggle">
+						<Label id="EquipmentToggleLabel" text="−" />
+					</Button>
+				</Panel>
+				<Panel id="EquipmentBody" class="SidePanelBody">
+					<Label id="ItemSellNotice" class="ItemSellNotice Hidden" text="" />
+					<Label id="ItemTransferNotice" class="ItemSellNotice Hidden" text="" />
+					<Panel class="ItemTargetRow">
+						<Label id="ItemTargetLabel" class="ItemTargetLabel" />
+						<Panel id="ItemTargetHeroes" class="ItemTargetHeroes" />
+					</Panel>
+					<Panel id="ItemEquippedList" class="ItemEquippedList" />
+					<Label class="LineupHeader" text="#dota2_rpg_item_stash" />
+					<Panel id="ItemStockList" class="ItemStockList" />
+					<Label class="LineupHeader" text="#dota2_rpg_scroll_shop" />
+					<Panel id="ScrollShopList" class="ScrollShopList" />
+				</Panel>
+			</Panel>
+		</Panel>
+		<Panel id="BattleResult" class="BattleResult Hidden" hittest="true">
+            <Panel id="SettlementPanel" class="SettlementPanel Hidden">
+                <Label id="BattleResultLabel" />
+                <Label id="RewardLabel" />
+                <Panel id="LootPopup" class="LootPopup Hidden" hittest="true">
+                    <Label class="LootPopupTitle" text="#dota2_rpg_loot_title" />
+                    <Panel id="LootPopupItems" class="LootPopupItems" />
+                </Panel>
+                <Button id="LootPopupConfirm" class="LootPopupConfirm"><Label text="#dota2_rpg_loot_confirm" /></Button>
+                <Label class="LootPopupHint" text="#dota2_rpg_loot_hint" />
+            </Panel>
+            <Panel id="RunLeaderboard" class="RunLeaderboard Hidden">
+                <Label id="RunScoreTitle" class="RunScoreTitle" />
+                <Label id="RunScoreValue" class="RunScoreValue" />
+                <Label id="RunScoreBreakdown" class="RunScoreBreakdown" />
+                <Label id="RunMetrics" class="RunMetrics" />
+                <Label class="RankHeading" text="#dota2_rpg_rank_heading" />
+                <Label id="RunRankStatus" class="RunRankStatus" />
+                <Label id="RunScoreRank" class="RunRankRow" />
+                <Label id="RunSpeedrunRank" class="RunRankRow" />
+                <Label id="RunRecordMessage" class="RunRecordMessage Hidden" />
+                <Label class="RunRankHint" text="#dota2_rpg_rank_snapshot" />
+                <Panel class="RankTabs">
+                    <Button id="RunScoreTab" class="RankTab RankTabSelected"><Label text="#dota2_rpg_rank_score" /></Button>
+                    <Button id="RunSpeedrunTab" class="RankTab"><Label text="#dota2_rpg_rank_speedrun" /></Button>
+                </Panel>
+                <Panel class="RankTableRow RankTableHeading">
+                    <Label class="RankNumber" text="#dota2_rpg_rank_column" />
+                    <Label class="RankPlayer" text="#dota2_rpg_rank_player" />
+                    <Label class="RankYou" />
+                    <Label id="RunRankValueHeading" class="RankValue" text="#dota2_rpg_rank_score" />
+                </Panel>
+                <Label id="RunRankTableStatus" class="RunRankHint" />
+                <Panel id="RunRankRows" class="RunRankRows" />
+                <Label id="RunRankNameTooltip" class="RankNameTooltip Hidden" html="false" hittest="false" />
+                <Label class="RunRankHint" text="#dota2_rpg_rank_hint" />
+            </Panel>
+            <Button id="ReplayRunButton" class="ReplayRunButton Hidden"><Label id="ReplayRunLabel" /></Button>
+            <Label id="ReplayRunHint" class="ReplayRunHint Hidden" text="#dota2_rpg_replay_hint" />
+		</Panel>
+		<Panel id="DropdownLayer" class="DropdownLayer" hittest="false" hittestchildren="true" />
+		<Panel id="RuleSettings" class="RuleSettings Hidden">
+			<Panel class="RuleSettingsCard">
+				<Panel class="RuleSettingsHeader">
+					<Label class="V2Title" text="#dota2_rpg_v2_settings" />
+					<Button id="V2ClearConditions" class="V2Button RuleSettingsReset"><Label text="#dota2_rpg_v2_clear_conditions" /></Button>
+				</Panel>
+				<Label class="V2Hint" text="#dota2_rpg_v2_intro" />
+				<Panel id="RuleSettingsBody" class="RuleSettingsBody" />
+				<Label id="RuleSettingsError" class="V2Error" />
+				<Panel class="V2Footer">
+					<Button id="RuleSettingsClose" class="V2Button"><Label text="#dota2_rpg_v2_cancel" /></Button>
+					<Button id="RuleSettingsApply" class="V2Button"><Label text="#dota2_rpg_v2_apply" /></Button>
+				</Panel>
+			</Panel>
+		</Panel>
+		<Panel id="ConditionHelp" class="Hidden" hittest="true" hittestchildren="true">
+			<Button id="ConditionHelpBackdrop" />
+			<Panel id="ConditionHelpCard" hittest="true">
+				<Panel class="HelpHeader">
+					<Label id="ConditionHelpTitle" />
+					<Button id="ConditionHelpClose"><Label id="ConditionHelpCloseLabel" /></Button>
+				</Panel>
+				<Label id="ConditionHelpSubtitle" />
+				<Panel class="HelpColumns">
+					<Panel class="HelpSidebar">
+						<Label id="ConditionHelpSearchHint" />
+						<Panel class="HelpSearchRow">
+							<TextEntry id="ConditionHelpSearch" maxchars="80" />
+							<Button id="ConditionHelpClear"><Label id="ConditionHelpClearLabel" /></Button>
+						</Panel>
+						<Label id="ConditionHelpCount" />
+						<Panel id="ConditionHelpNav" />
+					</Panel>
+					<Panel id="ConditionHelpBody" />
+				</Panel>
+				<Label id="ConditionHelpFooter" />
+			</Panel>
+		</Panel>
+		<Panel id="SkillDebug" class="Hidden" hittest="true" hittestchildren="true">
+			<Button id="SkillDebugBackdrop" />
+			<Panel id="SkillDebugCard" hittest="true">
+				<Panel class="DebugHeader">
+					<Label id="SkillDebugTitle" />
+					<Button id="SkillDebugClose" class="DebugButton"><Label id="SkillDebugCloseLabel" /></Button>
+				</Panel>
+				<Label id="SkillDebugIntro" class="DebugParagraph" />
+				<Panel class="DebugColumns">
+					<Panel class="DebugPicker">
+						<Label id="SkillDebugSearchHint" class="DebugFieldTitle" />
+						<TextEntry id="SkillDebugSearch" maxchars="80" />
+						<Label id="SkillDebugCount" />
+						<Panel id="SkillDebugHeroes" />
+					</Panel>
+					<Panel class="DebugOptions">
+						<Label id="SkillDebugSelected" />
+						<Label id="SkillDebugDamageTitle" class="DebugFieldTitle" />
+						<TextEntry id="SkillDebugDamage" text="100" maxchars="6" />
+						<Button id="SkillDebugApplyDamage" class="DebugButton"><Label id="SkillDebugApplyDamageLabel" /></Button>
+						<Label id="SkillDebugInstructions" class="DebugParagraph" />
+						<Label id="SkillDebugWarning" />
+						<Button id="SkillDebugStart" class="DebugButton"><Label id="SkillDebugStartLabel" /></Button>
+						<Button id="SkillDebugReset" class="DebugButton"><Label id="SkillDebugResetLabel" /></Button>
+						<Button id="SkillDebugExit" class="DebugButton"><Label id="SkillDebugExitLabel" /></Button>
+						<Label id="SkillDebugStatus" />
+						<Label id="SkillDebugError" />
+					</Panel>
+				</Panel>
+                <Panel class="DebugLibraryRow Hidden">
+                    <Button id="RuleLibraryOpen" class="DebugButton"><Label id="RuleLibraryOpenLabel" /></Button>
+                    <Label id="RuleLibraryCount" />
+                </Panel>
+				<Label id="SkillDebugFooter" />
+			</Panel>
+            <Panel id="RuleLibraryDialog" class="Hidden" hittest="true" hittestchildren="true">
+                <Panel class="DebugHeader">
+                    <Label id="RuleLibraryTitle" />
+                    <Button id="RuleLibraryClose" class="DebugButton"><Label id="RuleLibraryCloseLabel" /></Button>
+                </Panel>
+                <Label id="RuleLibraryHelp" class="DebugParagraph" />
+                <TextEntry id="RuleLibraryText" multiline="true" maxchars="2097152" />
+                <Panel class="DebugLibraryRow">
+                    <Button id="RuleLibraryExport" class="DebugButton"><Label id="RuleLibraryExportLabel" /></Button>
+                    <Button id="RuleLibraryImport" class="DebugButton"><Label id="RuleLibraryImportLabel" /></Button>
+                </Panel>
+                <Label id="RuleLibraryStatus" class="DebugParagraph" />
+            </Panel>
+		</Panel>
+		<Panel id="ArenaRoot" hittest="false" hittestchildren="true" />
+		<Panel id="CampaignDifficultyRoot" hittest="false" hittestchildren="true" />
+	</Panel>
+</root>

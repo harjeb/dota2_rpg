@@ -1,0 +1,160 @@
+local Catalog = require("tactics/ability_catalog")
+local Snapshot = {}
+local function unit_name(unit)
+    if unit == nil then return nil end
+    local ok, name = pcall(function()
+        if unit.IsNull ~= nil and unit:IsNull() then return nil end
+        return unit:GetUnitName()
+    end)
+    if ok then return name end
+end
+function Snapshot.IsDeveloperMode()
+    if type(IsInToolsMode) ~= "function" then return false end
+    local ok, value = pcall(IsInToolsMode)
+    return ok and value == true
+end
+function Snapshot.IsEnemy(manager, hero)
+    for _, unit in ipairs(manager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
+        if unit == hero then return true end
+    end
+    return false
+end
+function Snapshot.HeroKey(manager, hero)
+    local name = unit_name(hero)
+    if name == nil then return nil end
+    -- Assigned at spawn, before dead creeps disappear from the engine. This
+    -- preserves duplicate-enemy identities even after earlier copies vanish.
+    if hero.ruleSnapshotKey ~= nil then return hero.ruleSnapshotKey end
+    if hero.lineupHeroName ~= nil then return hero.lineupHeroName end
+    local occurrence = 0
+    for _, unit in ipairs(manager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
+        if unit_name(unit) == name then
+            if unit == hero then return "enemy:" .. name .. ":" .. occurrence end
+            occurrence = occurrence + 1
+        end
+    end
+    return name
+end
+-- Public wire identity: <currentLevelId>:enemy:<unit name>:<zero-based occurrence>.
+function Snapshot.ValidTargetActor(key)
+    if type(key) ~= "string" or #key > 256 then return false end
+    local chapter, name, occurrence = key:match("^([%w_-]+):enemy:([%w_]+):(%d+)$")
+    return chapter ~= nil and name ~= nil and (occurrence == "0" or occurrence:match("^[1-9]%d*$") ~= nil)
+end
+-- Allied references reuse the stable action-actor hero identity, not entity indices.
+function Snapshot.ValidAllyActor(key)
+    return type(key) == "string" and #key <= 128 and key:match("^npc_dota_hero_[%w_]+$") ~= nil
+end
+function Snapshot.ResolveAllyActor(manager, caster, key)
+    if not Snapshot.ValidAllyActor(key) or unit_name(caster) == nil then return nil end
+    local side = caster:GetTeamNumber()
+    for _, hero in ipairs(manager.teamHeroes[side] or {}) do
+        if unit_name(hero) ~= nil and hero:GetTeamNumber() == side
+            and (Snapshot.HeroKey(manager, hero) == key
+                or (manager.arenaActive and unit_name(hero) == key)) then return hero end
+    end
+    return nil
+end
+function Snapshot.TargetActor(manager, chapter, hero)
+    if chapter == nil or not Snapshot.IsEnemy(manager, hero) then return nil end
+    local key = Snapshot.HeroKey(manager, hero)
+    key = key and (tostring(chapter) .. ":" .. key)
+    return Snapshot.ValidTargetActor(key) and key or nil
+end
+function Snapshot.ResolveTargetActor(manager, chapter, caster, key)
+    if not Snapshot.ValidTargetActor(key) or unit_name(caster) == nil then return nil end
+    local casterTeam = caster:GetTeamNumber()
+    if manager.arenaActive then
+        local name, occurrence = key:match("^arena:enemy:([%w_]+):(%d+)$")
+        if not name then return nil end
+        local side = casterTeam == DOTA_TEAM_GOODGUYS and DOTA_TEAM_BADGUYS or DOTA_TEAM_GOODGUYS
+        local count = 0
+        for _, hero in ipairs(manager.teamHeroes[side] or {}) do
+            if unit_name(hero) == name then
+                if count == tonumber(occurrence) then
+                    return hero:GetTeamNumber() ~= casterTeam and hero or nil
+                end
+                count = count + 1
+            end
+        end
+        return nil
+    end
+    for _, hero in ipairs(manager.teamHeroes[DOTA_TEAM_BADGUYS] or {}) do
+        if unit_name(hero) ~= nil and Snapshot.TargetActor(manager, chapter, hero) == key then
+            local team = hero:GetTeamNumber()
+            -- Stage neutrals use their registered opposing side; converted
+            -- units use their actual allegiance rather than their spawn side.
+            if team ~= DOTA_TEAM_GOODGUYS and team ~= DOTA_TEAM_BADGUYS then team = DOTA_TEAM_BADGUYS end
+            if team ~= casterTeam and hero ~= caster then return hero end
+        end
+    end
+    return nil
+end
+-- Saved ally references are relative to the team that authored the profile.
+-- Identical hero names on opposing teams must never resolve to the other side.
+function Snapshot.ResolveArenaActionActor(manager, caster, key)
+    if not manager.arenaActive or unit_name(caster) == nil or type(key) ~= "string" then return nil end
+    local side = caster:GetTeamNumber()
+    local name, occurrence = key:match("^enemy:([%w_]+):(%d+)$")
+    if name then side = side == DOTA_TEAM_GOODGUYS and DOTA_TEAM_BADGUYS or DOTA_TEAM_GOODGUYS
+    else name, occurrence = key, "0" end
+    local count = 0
+    for _, actor in ipairs(manager.teamHeroes[side] or {}) do
+        if unit_name(actor) == name then
+            if count == tonumber(occurrence) then return actor end
+            count = count + 1
+        end
+    end
+    return nil
+end
+local function list(input)
+    local output = {}
+    for _, condition in ipairs(input or {}) do
+        local entry = {}
+        for _, key in ipairs({ "type", "value", "radius", "seconds", "action_id", "action_actor", "target_actor", "modifier", "response", "reaction_min_ms", "reaction_max_ms" }) do
+            if condition[key] ~= nil then entry[key] = condition[key] end
+        end
+        output[#output+1] = entry
+    end
+    return output
+end
+function Snapshot.ForHero(manager, hero)
+    if unit_name(hero) == nil then return {} end
+    local result = {}
+    local rules = manager.getRules ~= nil and manager.getRules(hero) or {}
+    for _, rule in ipairs(rules or {}) do
+        require("tactics/buyback_rule").Normalize(rule)
+        require("tactics/special_targets").NormalizeRule(rule)
+        local action = rule.action or {}
+        local name = action.logical_id or action.name or "attack"
+        if action.kind == "attack" then
+            name = "attack"
+        elseif action.kind == "ability" then
+            local _, native = Catalog.DescribeAction(hero, name)
+            name = native ~= "" and native or name
+        elseif action.kind == "item" then
+            -- Inventory slots are presentation positions, not rule identities.
+            -- Legacy rules can carry a slot logical_id alongside the native name.
+            name = action.name or name
+        end
+        result[#result+1] = { action=name, enabled=rule.enabled ~= false and 1 or 0,
+            target_team=rule.target and rule.target.team or "enemy",
+            target_types=table.concat(rule.target and rule.target.types or {"hero","monster","summon"}, ","),
+            prediction_direction=rule.target and rule.target.prediction_direction,
+            prediction_distance=rule.target and rule.target.prediction_direction and (rule.target.prediction_distance or 200) or nil,
+            forced=rule.approach == "allow_approach" and 1 or 0,
+            chase_timeout=rule.chase_timeout, max_chase_distance=rule.max_chase_distance,
+            use_conditions_mode=require("tactics/condition_registry").NormalizeMode(rule.use_conditions_mode),
+            target_filters_mode=require("tactics/condition_registry").NormalizeMode(rule.target_filters_mode),
+            use_conditions=list(rule.use_conditions), target_filters=list(rule.target_filters),
+            target_priorities=list(rule.target_priorities),
+            destination=action.destination or "target",
+            cast_preference=action.cast_preference or "auto",
+            desired_toggle_state=action.desired_toggle_state == nil and "" or (action.desired_toggle_state and "1" or "0") }
+        require("tactics/movement_contract").Copy(action, result[#result])
+        require("tactics/action_options").Copy(action, result[#result])
+        result[#result].allow_unverified_modifiers = rule.allow_unverified_modifiers and 1 or 0
+    end
+    return result
+end
+return Snapshot

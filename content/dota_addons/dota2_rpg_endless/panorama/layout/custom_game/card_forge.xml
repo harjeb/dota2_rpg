@@ -4,9 +4,11 @@
         <include src="file://{resources}/scripts/custom_game/card_forge_data.js" />
         <include src="file://{resources}/scripts/custom_game/card_forge_model.js" />
         <include src="file://{resources}/scripts/custom_game/card_forge.js" />
+        <include src="file://{resources}/scripts/custom_game/endless_hud.js" />
     </scripts>
     <Panel id="CardForgeRoot" hittest="false">
         <Button id="CardForgeEntry" class="CfMetal CfHidden"><Label text="#cf_entry" /></Button>
+        <Panel id="EndlessHeader"><Label id="EndlessWave" text="#cf_loading" /><Label id="EndlessLives" /><Label id="EndlessPhase" /></Panel>
         <Panel id="CardForgeOverlay" class="CfHidden" hittest="true">
             <Panel class="CfBackdrop" hittest="true" />
             <Panel id="CfWindow" hittest="true" acceptsfocus="true">
@@ -41,7 +43,7 @@
                     <Panel class="CfLineupHeading"><Label class="CfSectionTitle" text="#cf_lineup" /><Label class="CfHint" text="#cf_lineup_hint" /><Label id="CfFieldCount" /><Label id="CfCost" /><ProgressBar id="CfBudgetBar" min="0" max="64" value="19" /></Panel>
                     <Panel id="CfRoster" />
                 </Panel>
-                <Panel id="CfCommands"><Label id="CfControlsHint" class="CfHint" text="#cf_controls" /><Button id="CfUndo" class="CfMetal"><Label text="#cf_undo" /></Button><Button id="CfConfirm" class="CfPrimary"><Label text="#cf_confirm" /></Button></Panel>
+                <Panel id="CfCommands"><Label id="CfControlsHint" class="CfHint" text="#cf_controls" /><Button id="CfConfirm" class="CfPrimary"><Label text="#cf_confirm" /></Button></Panel>
                 <Label id="CfNotice" class="CfNotice CfHidden" />
                 <Panel id="CfModal" class="CfHidden" hittest="true"><Panel class="CfBackdrop" /><Panel id="CfModalBox" class="CfStone"><Button id="CfModalClose" class="CfIconButton"><Label text="×" /></Button><Panel id="CfModalContent" /></Panel></Panel>
             </Panel>
