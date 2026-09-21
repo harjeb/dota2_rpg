@@ -1,6 +1,7 @@
 <root>
     <styles><include src="file://{resources}/styles/custom_game/card_forge.css" /></styles>
     <scripts>
+        <include src="file://{resources}/scripts/custom_game/card_forge_data.js" />
         <include src="file://{resources}/scripts/custom_game/card_forge_model.js" />
         <include src="file://{resources}/scripts/custom_game/card_forge.js" />
     </scripts>
@@ -19,6 +20,7 @@
                     <Panel id="CfSidebar">
                         <Label class="CfEyebrow" text="#cf_contracts" />
                         <Button id="CfLibraryTab" class="CfNav CfActive"><Label text="#cf_library" /></Button>
+                        <Button id="CfCatalogTab" class="CfNav"><Label text="#cf_catalog" /></Button>
                         <Button id="CfOffersTab" class="CfNav"><Label text="#cf_offers" /></Button>
                         <Button id="CfForgeTab" class="CfNav"><Label text="#cf_forge" /></Button>
                         <Label class="CfOrnament" text="◆" /><Label class="CfEyebrow" text="#cf_marks" />
@@ -26,7 +28,7 @@
                         <Label class="CfSidebarNote" text="#cf_shared" />
                     </Panel>
                     <Panel id="CfInventory" class="CfStone">
-                        <Panel class="CfHeadingRow"><Panel class="CfTitleGroup"><Label class="CfEyebrow" text="THE RELIQUARY" /><Label class="CfHeading" text="#cf_library" /></Panel><Panel class="CfCapacityGroup"><Label id="CfCapacity" /><Label class="CfSmall" text="#cf_capacity_hint" /></Panel></Panel>
+                        <Panel class="CfHeadingRow"><Panel class="CfTitleGroup"><Label class="CfEyebrow" text="THE RELIQUARY" /><Label id="CfLibraryTitle" class="CfHeading" text="#cf_library" /></Panel><Panel class="CfCapacityGroup"><Label id="CfCapacity" /><Label id="CfCapacityHint" class="CfSmall" text="#cf_capacity_hint" /></Panel></Panel>
                         <Panel id="CfFactions" />
                         <Panel id="CfTools"><TextEntry id="CfSearch" placeholder="#cf_search" /><Button id="CfType" class="CfMetal" /><Button id="CfSort" class="CfMetal" /></Panel>
                         <Panel id="CfGrid" hittest="true" />
@@ -36,7 +38,7 @@
                     <Panel id="CfInspector" class="CfStone" />
                 </Panel>
                 <Panel id="CfLineup" class="CfStone">
-                    <Panel class="CfLineupHeading"><Label class="CfSectionTitle" text="#cf_lineup" /><Label class="CfHint" text="#cf_lineup_hint" /><Label id="CfCost" /><ProgressBar id="CfBudgetBar" min="0" max="64" value="19" /></Panel>
+                    <Panel class="CfLineupHeading"><Label class="CfSectionTitle" text="#cf_lineup" /><Label class="CfHint" text="#cf_lineup_hint" /><Label id="CfFieldCount" /><Label id="CfCost" /><ProgressBar id="CfBudgetBar" min="0" max="64" value="19" /></Panel>
                     <Panel id="CfRoster" />
                 </Panel>
                 <Panel id="CfCommands"><Label id="CfControlsHint" class="CfHint" text="#cf_controls" /><Button id="CfUndo" class="CfMetal"><Label text="#cf_undo" /></Button><Button id="CfConfirm" class="CfPrimary"><Label text="#cf_confirm" /></Button></Panel>

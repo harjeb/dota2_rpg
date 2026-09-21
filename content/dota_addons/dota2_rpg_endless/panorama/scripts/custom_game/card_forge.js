@@ -4,6 +4,7 @@
     if (!root || !M) { return; }
     // This gallery deliberately has no server mutation transport. All assets are preview fixtures.
     var state = M.initial(), selected = "H-lina", faction = "all", kind = "all", query = "", descending = true;
+    var catalog = false, inspectLevel = 1;
     var history = [], drag = null, noticeGeneration = 0, modalKind = "", open = false;
     var slots = {}, cards = {}, types = ["all", "hero", "buff", "charge", "field"];
     var validFactions = Object.keys(M.factions);
@@ -57,24 +58,28 @@
         if (message) { notify(local(message), false); } return true;
     }
     function cardView(parent, card, detail) {
-        var p = panel("Panel", parent, "", "CfCard"); background(p, card.faction);
+        var p = panel("Panel", parent, "", "CfCard CfKind_" + card.type); background(p, card.faction);
         var well = panel("Panel", p, "", "CfArtWell"); well.hittest = false; well.hittestchildren = false;
-        image(well, card.art, "CfCardArt"); panel("Panel", well, "", "CfCardShade").hittest = false;
+        if (card.type === "hero") { image(well, card.art, "CfCardArt"); }
+        else { label(well, "", {buff:"＋", charge:"◆", field:"◎"}[card.type], "CfKindGlyph"); }
+        panel("Panel", well, "", "CfCardShade").hittest = false;
+        if (card.axis && card.axis !== "—") { label(p, "", card.axis, "CfAxisBadge"); }
         var copy = panel("Panel", p, "", "CfCardCopy"); copy.hittest = false; copy.hittestchildren = false;
         label(copy, "", cardName(card), "CfCardName"); label(copy, "", factionName(card.faction) + " · " + local("type_" + card.type), "CfCardType");
-        label(copy, "", "◆".repeat(card.level) + "◇".repeat(3 - card.level), "CfCardLevel");
-        label(p, "", String(M.cost(card)), "CfCardCost");
+        label(copy, "", catalog ? "Lv.1 / 2 / 3" : "Lv." + card.load + " / " + card.level, "CfCardLevel");
+        if (card.type === "charge") { label(copy, "", catalog ? "1 / 2 / 3" : "× " + card.load, "CfChargeCount"); }
+        if (!catalog) { label(p, "", String(M.cost(card)), "CfCardCost"); }
         if (!detail) {
             cards[card.id] = p; p.SetHasClass("CfSelected", selected === card.id);
-            p.SetPanelEvent("onactivate", function () { selected = card.id; renderSelection(); });
-            attachDrag(p, card.id);
+            p.SetPanelEvent("onactivate", function () { selected = card.id; inspectLevel = 1; renderSelection(); });
+            if (!catalog) { attachDrag(p, card.id); }
         }
         return p;
     }
     function attachDrag(p, id) {
         p.SetDraggable(state.phase === "prepare");
         $.RegisterEventHandler("DragStart", p, function (source, callback) {
-            if (!open || state.phase !== "prepare" || drag) { return false; }
+            if (!open || catalog || state.phase !== "prepare" || drag) { return false; }
             selected = id; var ghost = cardView(root, M.get(state, id), true);
             ghost.AddClass("CfDragGhost"); ghost.hittest = false; ghost.hittestchildren = false;
             drag = { id: id, display: ghost, consumed: false };
@@ -89,20 +94,21 @@
     }
     function dropTarget(p, key) {
         $.RegisterEventHandler("DragEnter", p, function (target, display) {
-            if (!drag || display !== drag.display) { return false; }
+            if (catalog || !drag || display !== drag.display) { return false; }
             var error = key ? M.eligibility(state, drag.id, key) : null;
             p.SetHasClass("CfDropHover", !error); p.SetHasClass("CfDropInvalid", !!error);
             if (key) { preview(key); } return !error;
         });
         $.RegisterEventHandler("DragLeave", p, function () { p.RemoveClass("CfDropHover"); p.RemoveClass("CfDropInvalid"); return true; });
         $.RegisterEventHandler("DragDrop", p, function (target, display) {
-            if (!drag || drag.consumed || display !== drag.display) { return false; }
+            if (catalog || !drag || drag.consumed || display !== drag.display) { return false; }
             drag.consumed = true;
             var success = key ? execute({type:"equip", id:drag.id, slot:key}, "equipped") : execute({type:"unequip", id:drag.id}, "unequipped");
             p.RemoveClass("CfDropHover"); p.RemoveClass("CfDropInvalid"); return success;
         });
     }
     function preview(key) {
+        if (catalog) { return; }
         var id = drag ? drag.id : selected;
         if (!id || !M.get(state, id)) { return; }
         var result = M.apply(state, {type:"equip", id:id, slot:key});
@@ -111,16 +117,17 @@
     function renderSelection() {
         Object.keys(cards).forEach(function (id) { cards[id].SetHasClass("CfSelected", id === selected); });
         Object.keys(slots).forEach(function (key) {
-            var active = !!selected && !!M.get(state, selected) && state.phase === "prepare";
+            var active = !catalog && !!selected && !!M.get(state, selected) && state.phase === "prepare";
             var allowed = active && !M.eligibility(state, selected, key);
             slots[key].SetHasClass("CfEligible", !!allowed); slots[key].SetHasClass("CfIneligible", !!active && !allowed);
         });
         renderInspector();
     }
     function renderGrid() {
+        if (drag) { return; }
         var grid = $("#CfGrid"); grid.RemoveAndDeleteChildren(); cards = {};
-        var list = M.inventory(state).filter(function (c) {
-            var text = cardName(c) + " " + factionName(c.faction) + " " + (c.hero ? heroName(c.hero) : "");
+        var list = (catalog ? M.definitions.filter(function (c) { return c.type !== "hero"; }) : M.inventory(state)).filter(function (c) {
+            var text = c.id + " " + cardName(c) + " " + factionName(c.faction) + " " + (c.axis || "") + " " + (c.hero ? heroName(c.hero) : "");
             return (faction === "all" || c.faction === faction) && (kind === "all" || c.type === kind) && text.toLowerCase().indexOf(query.toLowerCase()) >= 0;
         });
         list.sort(function (a, b) { return (descending ? b.level - a.level : a.level - b.level) || a.id.localeCompare(b.id); });
@@ -129,21 +136,33 @@
     }
     function renderInspector() {
         var target = $("#CfInspector"); target.RemoveAndDeleteChildren();
-        var c = M.get(state, selected);
+        var c = catalog ? M.definitions.find(function (item) { return item.id === selected; }) : M.get(state, selected);
         if (!c) { label(target, "", local("select_hint"), "CfDetailText"); return; }
         label(target, "", local("detail"), "CfEyebrow");
         cardView(target, c, true).AddClass("CfShowcase");
         label(target, "", cardName(c), "CfDetailTitle"); panel("Panel", target, "", "CfDetailRule");
         label(target, "", c.hero ? fmt("hero_only", {hero:heroName(c.hero)}) : local("general_any"), "CfDetailText");
         label(target, "", local("all_allies"), "CfDetailText");
-        label(target, "", c.type === "charge" ? fmt("charges", {n:c.load}) : local(c.type === "field" ? "field_lifecycle" : "battle_lifecycle"), "CfDetailText");
-        label(target, "", fmt("owned_level", {n:c.level, copies:c.copies}), "CfSmall");
+        label(target, "", c.type === "charge" ? fmt("charges", {n:catalog ? inspectLevel : c.load}) : local(c.type === "field" ? "field_lifecycle" : "battle_lifecycle"), "CfDetailText");
+        if (c.axis && c.axis !== "—") { label(target, "", fmt("axis", {axis:c.axis}), "CfSmall"); }
+        if (c.condition) {
+            label(target, "", local("condition"), "CfDetailCaption");
+            label(target, "", c.condition.replace(/\*\*/g, ""), "CfDetailText");
+        }
+        if (c.effect) {
+            label(target, "", local("effect"), "CfDetailCaption");
+            label(target, "", c.effect.replace(/\*\*/g, ""), "CfEffectText");
+        }
+        if (c.type === "charge") { label(target, "", local("prepare_status"), "CfSmall"); }
+        label(target, "", catalog ? local("catalog_level") : fmt("owned_level", {n:c.level, copies:c.copies}), "CfSmall");
         var row = panel("Panel", target, "", "CfLevelRow");
         [1,2,3].forEach(function (n) {
-            var b = button(row, "CfLevel" + n, "Lv." + n, "CfLevel", function () { execute({type:"level", id:c.id, level:n}, "level_changed"); });
+            var b = button(row, "CfLevel" + n, "Lv." + n, "CfLevel", function () { if (catalog) { inspectLevel = n; renderInspector(); } else { execute({type:"level", id:c.id, level:n}, "level_changed"); } });
             label(b, "", M.curves[c.tier][n-1] + " COST", "CfSmall");
-            b.enabled = n <= c.level && state.phase === "prepare"; b.SetHasClass("CfActive", n === c.load);
+            b.enabled = catalog || (n <= c.level && state.phase === "prepare"); b.SetHasClass("CfActive", n === (catalog ? inspectLevel : c.load));
         });
+        label(target, "", local("cost_sample"), "CfSmall");
+        if (catalog) { label(target, "", local("catalog_readonly"), "CfDetailText"); label(target, "", local("effects_pending"), "CfSmall"); return; }
         var actions = panel("Panel", target, "", "CfDetailActions"), location = M.location(state, c.id);
         var equip = button(actions, "CfDetailEquip", local(location ? "unequip" : "select_slot"), "CfMetal", function () {
             if (location) { execute({type:"unequip", id:c.id}, "unequipped"); } else { notify(local("select_slot_hint")); }
@@ -164,31 +183,38 @@
             ["hero", "general"].forEach(function (type) {
                 var key = h.id + ":" + type, c = M.get(state, state.slots[key]);
                 var slot = panel("Panel", row, "CfSlot_" + h.id + "_" + type, "CfSlot"); slots[key] = slot;
-                if (c) { image(slot, c.art, "CfSlotArt"); attachDrag(slot, c.id); }
+                if (c) { image(slot, c.art, "CfSlotArt"); if (!catalog) { attachDrag(slot, c.id); } }
                 var copy = panel("Panel", slot, "", "CfSlotCopy"); copy.hittest = false; copy.hittestchildren = false;
                 label(copy, "", c ? cardName(c) : local("slot_" + type));
                 label(copy, "", c ? "Lv." + c.load + " · " + M.cost(c) + " COST" : "◇", "CfSmall");
                 slot.SetPanelEvent("onactivate", function () {
                     if (state.phase !== "prepare") { notify(local("locked"), true); return; }
-                    if (selected && M.get(state, selected) && selected !== state.slots[key]) { execute({type:"equip", id:selected, slot:key}, "equipped"); }
-                    else if (c) { selected = c.id; renderSelection(); }
+                    if (!catalog && selected && M.get(state, selected) && selected !== state.slots[key]) { execute({type:"equip", id:selected, slot:key}, "equipped"); }
+                    else if (c) { catalog = false; selected = c.id; render(); }
                 });
-                slot.SetPanelEvent("oncontextmenu", function () { if (c) { selected = c.id; renderSelection(); } });
+                slot.SetPanelEvent("oncontextmenu", function () { if (c) { catalog = false; selected = c.id; render(); } });
                 slot.SetPanelEvent("onmouseover", function () { preview(key); });
-                slot.SetPanelEvent("onmouseout", function () { $("#CfDropHint").text = local("drag_hint"); });
+                slot.SetPanelEvent("onmouseout", function () { $("#CfDropHint").text = local(catalog ? "catalog_readonly" : "drag_hint"); });
                 dropTarget(slot, key);
             });
         });
     }
     function render() {
-        $("#CfCapacity").text = M.inventory(state).length + " / 24";
+        if (drag) { return; }
+        $("#CfCapacity").text = catalog ? "100" : M.inventory(state).length + " / 24";
+        $("#CfCapacityHint").text = catalog ? fmt("catalog_count", {n:100}) : local("capacity_hint");
+        $("#CfLibraryTitle").text = local(catalog ? "catalog" : "library");
+        $("#CfLibraryTab").SetHasClass("CfActive", !catalog);
+        $("#CfCatalogTab").SetHasClass("CfActive", catalog);
+        $("#CfDropHint").text = local(catalog ? "catalog_readonly" : "drag_hint");
+        $("#CfFieldCount").text = fmt("field_count", {n:Object.keys(state.slots).filter(function (key) { return M.get(state, state.slots[key]).type === "field"; }).length});
         $("#CfWallet").text = "◈ " + state.gold;
         $("#CfCost").text = "COST  " + M.used(state) + " / " + M.budget(state);
         $("#CfCost").SetHasClass("CfOver", M.used(state) > M.budget(state));
         $("#CfBudgetBar").max = M.budget(state); $("#CfBudgetBar").value = Math.min(M.used(state), M.budget(state));
         $("#CfBudgetBar").SetHasClass("CfOver", M.used(state) > M.budget(state));
-        $("#CfConfirm").enabled = state.phase === "prepare" && M.used(state) <= M.budget(state);
-        $("#CfUndo").enabled = history.length > 0 && state.phase === "prepare";
+        $("#CfConfirm").enabled = !catalog && state.phase === "prepare" && M.used(state) <= M.budget(state);
+        $("#CfUndo").enabled = !catalog && history.length > 0 && state.phase === "prepare";
         var ledger = $("#CfLedger"), tabs = $("#CfFactions"); ledger.RemoveAndDeleteChildren(); tabs.RemoveAndDeleteChildren();
         validFactions.forEach(function (f) { var row = panel("Panel", ledger, "", "CfLedgerRow"); label(row, "", M.factions[f].glyph + "  " + factionName(f)); label(row, "", String(state.points[f]), "CfLedgerCount"); });
         ["all"].concat(validFactions).forEach(function (f) {
@@ -266,13 +292,14 @@
     $("#CfType").SetPanelEvent("onactivate", function () { kind = types[(types.indexOf(kind)+1)%types.length]; render(); });
     $("#CfSort").SetPanelEvent("onactivate", function () { descending = !descending; render(); });
     $("#CfHelp").SetPanelEvent("onactivate", showHelp);
-    $("#CfLibraryTab").SetPanelEvent("onactivate", function () { closeModal(); $("#CfSearch").SetFocus(); });
+    $("#CfLibraryTab").SetPanelEvent("onactivate", function () { if (drag) { return; } closeModal(); catalog = false; selected = null; render(); $("#CfSearch").SetFocus(); });
+    $("#CfCatalogTab").SetPanelEvent("onactivate", function () { if (drag) { return; } closeModal(); catalog = true; selected = null; render(); });
     $("#CfOffersTab").SetPanelEvent("onactivate", showOffers);
     $("#CfForgeTab").SetPanelEvent("onactivate", showForge);
     $("#CfModalClose").SetPanelEvent("onactivate", closeModal);
-    $("#CfUndo").SetPanelEvent("onactivate", function () { if (history.length && state.phase === "prepare") { state = history.pop(); render(); notify(local("undone")); } });
+    $("#CfUndo").SetPanelEvent("onactivate", function () { if (!catalog && !drag && history.length && state.phase === "prepare") { state = history.pop(); render(); notify(local("undone")); } });
     $("#CfConfirm").SetPanelEvent("onactivate", function () {
-        if (!execute({type:"confirm"})) { return; }
+        if (catalog || drag || !execute({type:"confirm"})) { return; }
         var parent = openModal(local("sealed"), fmt("sealed_hint", {n:Object.keys(state.slots).length, used:M.used(state), max:M.budget(state)}), "confirm");
         label(parent, "", local("preview_notice"), "CfHelpText");
         button(parent, "CfReturn", local("return"), "CfPrimary", closeModal);

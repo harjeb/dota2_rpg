@@ -14,7 +14,7 @@
     ["omniknight", "全能骑士", "divine"], ["nevermore", "影魔", "abyss"],
     ["ursa", "熊战士", "wild"], ["windrunner", "风行者", "wild"]
   ].map(([id, name, faction]) => ({ id, name, faction, level: 8 }));
-  const definitions = [
+  const fixtures = [
     ["E-g1", "奥术共鸣", "element", "buff", "crystal_maiden", 3, "普通", "法术 · 共鸣"],
     ["E-g2", "法力涌动", "element", "buff", "storm_spirit", 2, "普通", "法力 · 循环"],
     ["E-c1", "爆裂符文", "element", "charge", "lina", 2, "普通", "符文 · 反击"],
@@ -38,10 +38,13 @@
     ["E-g3", "咒能循环", "element", "buff", "invoker", 1, "普通", "冷却 · 循环"],
     ["D-g3", "光辉庇佑", "divine", "buff", "dawnbreaker", 1, "普通", "护盾 · 守护"]
   ].map(([id, name, faction, type, art, copies, tier, theme, hero]) => ({ id, name, faction, type, art, copies, tier, theme, hero, level: Math.min(3, copies), load: 1, plus: 0 }));
+  const basicCards = typeof module !== "undefined" ? require("./card_forge_data.js") : GameUI.CustomUIConfig().CardForgeData;
+  const definitions = basicCards.concat(fixtures.filter(c => c.type === "hero"));
   const curves = { "普通": [1, 5, 10], "强力": [1, 6, 15], "顶级": [1, 8, 20] };
   const clone = value => JSON.parse(JSON.stringify(value));
   function initial() {
-    const state = { cards: clone(definitions), heroes: clone(heroes), slots: {}, points: {element: 2, civilization: 1, divine: 3, abyss: 1, wild: 2}, gold: 1200, purchases: 0, offers: ["E-g1", "H-dk", "D-g2", "H-sf", "W-f1"], bought: [], phase: "prepare" };
+    const owned = fixtures.map(fixture => Object.assign({}, clone(definitions.find(c => c.id === fixture.id)), { copies:fixture.copies, level:fixture.level, load:1 }));
+    const state = { cards: owned, heroes: clone(heroes), slots: {}, points: {element: 2, civilization: 1, divine: 3, abyss: 1, wild: 2}, gold: 1200, purchases: 0, offers: ["E-g1", "H-dk", "D-g2", "H-sf", "W-f1"], bought: [], phase: "prepare" };
     [ ["crystal_maiden:hero", "H-cm", 2], ["dragon_knight:general", "C-g2", 2], ["omniknight:hero", "H-omni", 1], ["nevermore:general", "A-g1", 2], ["ursa:hero", "H-ursa", 1], ["windrunner:general", "W-g1", 1] ].forEach(([slot, id, level]) => { state.slots[slot] = id; state.cards.find(c => c.id === id).load = level; });
     return state;
   }

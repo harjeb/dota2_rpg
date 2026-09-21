@@ -7,10 +7,17 @@ const {execFileSync} = require("node:child_process");
 const root = path.resolve(__dirname, "..");
 const base = path.join(root, "content/dota_addons/dota2_rpg_endless/panorama");
 const modelPath = path.join(base, "scripts/custom_game/card_forge_model.js");
+const dataPath = path.join(base, "scripts/custom_game/card_forge_data.js");
 const source = fs.readFileSync(path.join(base, "scripts/custom_game/card_forge.js"), "utf8");
 const M = require(modelPath);
 function mutate(s, a) { const result=M.apply(s,a); assert(!result.error,result.error); return result.state; }
 
+execFileSync("python",[path.join(root,"scripts/build-native-card-data.py"),"--check"]);
+const basic=M.definitions.filter(c=>c.type!=="hero");
+assert.equal(basic.length,100);
+for(const [type,count] of [["buff",45],["charge",35],["field",20]]) assert.equal(basic.filter(c=>c.type===type).length,count);
+assert.equal(M.definitions.find(c=>c.id==="C-g1").name,"冲锋号角");
+assert(basic.every(c=>c.effect && c.name));
 let s=M.initial();
 assert.equal(M.inventory(s).length,16);
 assert.equal(M.used(s),19);
@@ -66,7 +73,7 @@ const dictionaries={};
 for(const lang of ["schinese","english"]){
     const locale=fs.readFileSync(path.join(root,"game/dota_addons/dota2_rpg_endless/resource/addon_"+lang+".txt"),"utf8");
     dictionaries[lang]=Object.fromEntries([...locale.matchAll(/"(cf_[^"]+)"\s+"([^"]*)"/g)].map(m=>["#"+m[1],m[2]]));
-    assert(locale.includes(lang==="english"?'"UI version 98"':'"界面版本 98"'));
+    assert(locale.includes(lang==="english"?'"UI version 100"':'"界面版本 100"'));
 }
 assert.deepEqual(Object.keys(dictionaries.schinese).sort(),Object.keys(dictionaries.english).sort());
 function launch(lang){
@@ -90,6 +97,7 @@ function launch(lang){
     $.Schedule=(delay,fn)=>{scheduled.push(fn);};
     const config={};
     const context=vm.createContext({$,GameUI:{CustomUIConfig:()=>config},Game:{AddCommand:(name,fn)=>commands[name]=fn},Players:{GetLocalPlayer:()=>0},GameEvents:{Subscribe:(name,fn)=>subscriptions[name]=fn,SendCustomGameEventToServer:()=>{throw Error("Preview must never send gameplay mutations");}},console});
+    vm.runInContext(fs.readFileSync(dataPath,"utf8"),context);
     vm.runInContext(fs.readFileSync(modelPath,"utf8"),context);vm.runInContext(source,context);
     const click=id=>{const p=ids[id];assert(p,"Missing panel "+id);assert(p.enabled,"Disabled panel "+id);p.events.onactivate();};
     function all(p=global){return [p,...p.children.flatMap(c=>all(c))];}
@@ -134,10 +142,37 @@ for(const lang of ["schinese","english"]){
     ui.click("CfClose");
     assert(ui.ids.CardForgeOverlay.BHasClass("CfHidden"));
     dest=ui.ids.CfSlot_lina_hero;assert.equal(dest.handlers.DragDrop(dest,callback.displayPanel),false,"closing mid-drag blocks stale drop");source.handlers.DragEnd();
+    ui.click("CardForgeEntry");
+    source=ui.card("E-g1");callback={};source.handlers.DragStart(source,callback);
+    ui.click("CfCatalogTab");assert(source.alive,"tab transition cannot destroy active native drag source");
+    assert.equal(ui.ids.CfCapacity.text,"16 / 24","tab switch deferred until drag ends");
+    source.handlers.DragEnd();
+    ui.card("E-g1").events.onactivate();ui.click("CfSlot_lina_general");
+    ui.click("CfCatalogTab");assert(!ui.ids.CfUndo.enabled,"catalog disables Undo");
+    assert(!ui.ids.CfConfirm.enabled,"catalog disables confirmation");
+    const catalogCost=ui.ids.CfCost.text;ui.ids.CfUndo.events.onactivate();assert.equal(ui.ids.CfCost.text,catalogCost);
+    ui.click("CfLibraryTab");ui.click("CfUndo");ui.click("CfCatalogTab");
+    assert.equal(ui.ids.CfGrid.children.length,100);
+    assert.equal(ui.ids.CfCapacity.text,"100");
+    const costBefore=ui.ids.CfCost.text;
+    for(const id of basic.map(c=>c.id)) {
+        const card=ui.card(id); assert(card,"catalog has "+id); assert(!card.draggable,"catalog cannot drag");
+        card.events.onactivate();
+        const text=ui.all(ui.ids.CfInspector).map(p=>p.text).join("|");
+        assert(text.includes(M.definitions.find(c=>c.id===id).effect.replace(/\*\*/g,"")),"current effect shown "+id);
+        assert(!ui.ids.CfDetailEquip,"catalog has no equip button");
+    }
+    ui.card("E-g1").events.onactivate();ui.click("CfLevel3");
+    assert.equal(ui.ids.CfCost.text,costBefore,"catalog tier inspection does not change loadout");
+    ui.click("CfSlot_lina_general");
+    assert.equal(ui.ids.CfCost.text,costBefore,"catalog cannot equip even owned cards");
+    ui.ids.CfSearch.text="C-g1";ui.ids.CfSearch.events.ontextentrychange();assert.equal(ui.ids.CfGrid.children.length,1);
+    ui.ids.CfSearch.text="";ui.ids.CfSearch.events.ontextentrychange();
+    ui.click("CfLibraryTab");assert.equal(ui.ids.CfCapacity.text,"16 / 24");
     assert.deepEqual(ui.missing,[],"all visible native text is localized");
 }
 const css=fs.readFileSync(path.join(base,"styles/custom_game/card_forge.css"),"utf8");
-assert(!/display\s*:\s*(grid|flex)|var\(--|:root|@media/.test(css),"native styles must not rely on browser layout");
+assert(!/display\s*:\s*(grid|flex)|var\(--|:root|@media|line-height\s*:/.test(css),"native styles must not rely on browser layout");
 assert(!/document\.|window\.|localStorage|dataTransfer/.test(source),"native controller must not use browser APIs");
 assert(fs.readFileSync(path.join(base,"layout/custom_game/custom_ui_manifest.xml"),"utf8").includes("card_forge.xml"));
 console.log("PASS card model transactions, native drag lifecycle, click fallback, inventory, purchases, smelting, gallery isolation, confirmation and both locales");

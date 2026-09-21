@@ -52,6 +52,7 @@ if ($Compile) {
         $resources += Join-Path $targetContent ('panorama/images/custom_game/card_forge/' + $name + '_png.vtex')
     }
     $resources += @(
+        (Join-Path $targetContent 'panorama/scripts/custom_game/card_forge_data.js'),
         (Join-Path $targetContent 'panorama/scripts/custom_game/card_forge_model.js'),
         (Join-Path $targetContent 'panorama/scripts/custom_game/card_forge.js'),
         (Join-Path $targetContent 'panorama/styles/custom_game/card_forge.css'),
@@ -69,5 +70,5 @@ foreach ($locale in @('addon_schinese.txt', 'addon_english.txt')) {
     $target = Join-Path $targetGame ('resource/' + $locale)
     if ((Get-FileHash -LiteralPath $source).Hash -ne (Get-FileHash -LiteralPath $target).Hash) { throw "Locale mismatch: $locale" }
 }
-Write-Output 'PASS: native gallery installed; both locale files match UI 98 sources.'
+Write-Output 'PASS: native gallery installed; both locale files match UI 100 sources.'
 Write-Output 'VConsole: dota_launch_custom_game dota2_rpg_endless dota'
